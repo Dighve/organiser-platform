@@ -6,10 +6,10 @@ spring:
     active: ${SPRING_PROFILE:dev}
   
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/organiser_db}
-    username: ${DATABASE_USERNAME:postgres}
-    password: ${DATABASE_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+    url: ${DATABASE_URL:jdbc:mariadb://localhost:3306/organiser_db}
+    username: ${DATABASE_USERNAME:root}
+    password: ${DATABASE_PASSWORD:root}
+    driver-class-name: org.mariadb.jdbc.Driver
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5
@@ -23,7 +23,7 @@ spring:
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.MariaDBDialect
         format_sql: true
         use_sql_comments: true
         jdbc:
@@ -108,3 +108,9 @@ cors:
   allowed-methods: GET,POST,PUT,DELETE,PATCH,OPTIONS
   allowed-headers: "*"
   allow-credentials: true
+
+# Application Configuration
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:3000}
+  email:
+    from: ${EMAIL_FROM:noreply@organiserplatform.com}

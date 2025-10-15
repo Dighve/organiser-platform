@@ -1,20 +1,21 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: organiser-postgres
+  # MariaDB Database
+  mariadb:
+    image: mariadb:11.2
+    container_name: organiser-mariadb
     environment:
-      POSTGRES_DB: organiser_db
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      MARIADB_DATABASE: organiser_db
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_CHARACTER_SET_SERVER: utf8mb4
+      MARIADB_COLLATION_SERVER: utf8mb4_unicode_ci
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -41,16 +42,16 @@ services:
     container_name: organiser-backend
     environment:
       SPRING_PROFILE: prod
-      DATABASE_URL: jdbc:postgresql://postgres:5432/organiser_db
-      DATABASE_USERNAME: postgres
-      DATABASE_PASSWORD: postgres
+      DATABASE_URL: jdbc:mariadb://mariadb:3306/organiser_db
+      DATABASE_USERNAME: root
+      DATABASE_PASSWORD: root
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: your-production-secret-key-change-this
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
+      mariadb:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -71,5 +72,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
+  mariadb_data:
   redis_data:

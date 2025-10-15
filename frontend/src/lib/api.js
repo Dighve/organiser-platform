@@ -38,8 +38,8 @@ api.interceptors.response.use(
 
 // Auth API
 export const authAPI = {
-  register: (data) => api.post('/auth/register', data),
-  login: (data) => api.post('/auth/login', data),
+  requestMagicLink: (data) => api.post('/auth/magic-link', data),
+  verifyMagicLink: (token) => api.get(`/auth/verify?token=${token}`),
 }
 
 // Events API

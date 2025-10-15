@@ -12,11 +12,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     
     Optional<User> findByEmail(String email);
     
-    Optional<User> findByUsername(String username);
-    
     boolean existsByEmail(String email);
-    
-    boolean existsByUsername(String username);
     
     @Query("SELECT u FROM User u WHERE u.role = 'ORGANISER' AND u.active = true")
     Iterable<User> findAllActiveOrganisers();

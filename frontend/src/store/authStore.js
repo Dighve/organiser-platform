@@ -7,12 +7,14 @@ export const useAuthStore = create(
       user: null,
       token: null,
       isAuthenticated: false,
+      pendingEmail: null, // Store email while waiting for magic link
       
       login: (userData, token) => {
         set({
           user: userData,
           token,
           isAuthenticated: true,
+          pendingEmail: null,
         })
       },
       
@@ -21,7 +23,12 @@ export const useAuthStore = create(
           user: null,
           token: null,
           isAuthenticated: false,
+          pendingEmail: null,
         })
+      },
+      
+      setPendingEmail: (email) => {
+        set({ pendingEmail: email })
       },
       
       updateUser: (userData) => {

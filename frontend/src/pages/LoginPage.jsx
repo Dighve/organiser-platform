@@ -1,35 +1,68 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
-import { Mountain } from 'lucide-react'
+import { Mountain, Mail, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
+  const [emailSent, setEmailSent] = useState(false)
   const navigate = useNavigate()
-  const { login } = useAuthStore()
-  const { register, handleSubmit, formState: { errors } } = useForm()
+  const { setPendingEmail } = useAuthStore()
+  const { register, handleSubmit, formState: { errors }, watch } = useForm()
+
+  const email = watch('email')
 
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
-      const response = await authAPI.login({
-        usernameOrEmail: data.usernameOrEmail,
-        password: data.password,
+      await authAPI.requestMagicLink({
+        email: data.email,
+        displayName: data.displayName,
       })
       
-      const { token, userId, username, email, role } = response.data
-      login({ userId, username, email, role }, token)
-      
-      toast.success('Login successful!')
-      navigate('/')
+      setPendingEmail(data.email)
+      setEmailSent(true)
+      toast.success('Magic link sent! Check your email.')
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed. Please check your credentials.')
+      toast.error(error.response?.data?.message || 'Failed to send magic link. Please try again.')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (emailSent) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div>
+            <div className="flex justify-center">
+              <CheckCircle className="h-16 w-16 text-primary-600" />
+            </div>
+            <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+              Check your email
+            </h2>
+            <p className="mt-2 text-center text-gray-600">
+              We've sent a magic link to <strong>{email}</strong>
+            </p>
+            <p className="mt-4 text-sm text-gray-500">
+              Click the link in the email to sign in. The link will expire in 15 minutes.
+            </p>
+          </div>
+
+          <div className="mt-8">
+            <button
+              onClick={() => setEmailSent(false)}
+              className="btn btn-secondary"
+            >
+              Didn't receive it? Try again
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -40,66 +73,51 @@ export default function LoginPage() {
             <Mountain className="h-12 w-12 text-primary-600" />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Sign in with Magic Link
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{' '}
-            <Link to="/register" className="font-medium text-primary-600 hover:text-primary-500">
-              create a new account
-            </Link>
+            No password needed! We'll send you a secure link to sign in.
           </p>
         </div>
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
-          <div className="rounded-md shadow-sm space-y-4">
+          <div className="space-y-4">
             <div>
-              <label htmlFor="usernameOrEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                Username or Email
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                Email Address *
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  {...register('email', {
+                    required: 'Email is required',
+                    pattern: {
+                      value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                      message: 'Invalid email address'
+                    }
+                  })}
+                  type="email"
+                  className="input pl-10"
+                  placeholder="you@example.com"
+                />
+              </div>
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
+                Display Name (optional - can be a pseudonym)
               </label>
               <input
-                {...register('usernameOrEmail', { required: 'Username or email is required' })}
+                {...register('displayName')}
                 type="text"
                 className="input"
-                placeholder="Enter your username or email"
+                placeholder="Your name or pseudonym"
               />
-              {errors.usernameOrEmail && (
-                <p className="mt-1 text-sm text-red-600">{errors.usernameOrEmail.message}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <input
-                {...register('password', { required: 'Password is required' })}
-                type="password"
-                className="input"
-                placeholder="Enter your password"
-              />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
-              )}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-              />
-              <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                Remember me
-              </label>
-            </div>
-
-            <div className="text-sm">
-              <a href="#" className="font-medium text-primary-600 hover:text-primary-500">
-                Forgot your password?
-              </a>
             </div>
           </div>
 
@@ -107,10 +125,23 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full btn btn-primary py-3 text-base"
+              className="w-full btn btn-primary py-3 text-base flex items-center justify-center space-x-2"
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? (
+                <span>Sending magic link...</span>
+              ) : (
+                <>
+                  <Mail className="h-5 w-5" />
+                  <span>Send Magic Link</span>
+                </>
+              )}
             </button>
+          </div>
+
+          <div className="text-center text-sm text-gray-500">
+            <p>
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </p>
           </div>
         </form>
       </div>

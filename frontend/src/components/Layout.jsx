@@ -59,7 +59,7 @@ export default function Layout() {
                   <div className="relative group">
                     <button className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                       <User className="h-4 w-4" />
-                      <span>{user?.username}</span>
+                      <span>{user?.email}</span>
                     </button>
                     
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
@@ -83,15 +83,9 @@ export default function Layout() {
                 <>
                   <Link
                     to="/login"
-                    className="text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
                     className="btn btn-primary"
                   >
-                    Sign Up
+                    Sign In
                   </Link>
                 </>
               )}
@@ -163,14 +157,7 @@ export default function Layout() {
                     className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Login
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Sign Up
+                    Sign In
                   </Link>
                 </>
               )}

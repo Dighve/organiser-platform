@@ -32,32 +32,11 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
     
-    @Column(nullable = false, unique = true, length = 50)
-    private String username;
+    @Column(name = "display_name", length = 100)
+    private String displayName; // Optional display name (can be pseudonym)
     
-    @Column(nullable = false)
-    private String password;
-    
-    @Column(name = "first_name", length = 50)
-    private String firstName;
-    
-    @Column(name = "last_name", length = 50)
-    private String lastName;
-    
-    @Column(length = 500)
-    private String bio;
-    
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
-    
-    @Column(name = "phone_number", length = 20)
-    private String phoneNumber;
-    
-    @Column(length = 100)
-    private String city;
-    
-    @Column(length = 100)
-    private String country;
+    @Column(name = "profile_photo_url", length = 500)
+    private String profilePhotoUrl; // Optional profile photo
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
