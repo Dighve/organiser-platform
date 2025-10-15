@@ -1,8 +1,7 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.12'  // Updated to version 3.2.12
+    id 'org.springframework.boot' version '3.0.13'
     id 'io.spring.dependency-management' version '1.1.4'
-    id 'io.freefair.lombok' version '8.4'
 }
 
 // Apply Java plugin explicitly to ensure proper Java toolchain configuration
@@ -27,13 +26,14 @@ configurations.all {
     resolutionStrategy {
         failOnVersionConflict()
         // Force specific versions to avoid conflicts
-        force 'org.springframework.boot:spring-boot-starter-web:3.2.0'
-        force 'org.springframework.boot:spring-boot-starter-data-jpa:3.2.0'
-        force 'org.springframework.boot:spring-boot-starter-security:3.2.0'
-        force 'org.springframework.boot:spring-boot-starter-validation:3.2.0'
-        force 'org.springframework.boot:spring-boot-starter-cache:3.2.0'
-        force 'org.springframework.boot:spring-boot-starter-data-redis:3.2.0'
-        force 'org.springframework.boot:spring-boot-starter-actuator:3.2.0'
+        force 'org.springframework.boot:spring-boot-starter-web:3.0.13'
+        force 'org.springframework.boot:spring-boot-starter-data-jpa:3.0.13'
+        force 'org.springframework.boot:spring-boot-starter-security:3.0.13'
+        force 'org.springframework.boot:spring-boot-starter-validation:3.0.13'
+        force 'org.springframework.boot:spring-boot-starter-cache:3.0.13'
+        force 'org.springframework.boot:spring-boot-starter-data-redis:3.0.13'
+        // Temporarily removed actuator due to compatibility issues
+        // force 'org.springframework.boot:spring-boot-starter-actuator:3.1.5'
         force 'org.springframework:spring-core:6.0.13'
         force 'org.projectlombok:lombok:1.18.30'
         
@@ -43,7 +43,7 @@ configurations.all {
         // Ensure consistent versions for all Spring modules
         eachDependency { details ->
             if (details.requested.group.startsWith('org.springframework.boot')) {
-                details.useVersion '3.2.0'
+                details.useVersion '3.0.13'
             }
             if (details.requested.group == 'org.springframework') {
                 details.useVersion '6.0.13'
@@ -56,6 +56,11 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
+}
+
+// Exclude problematic auto-configuration
+configurations.all {
+    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-actuator'
 }
 
 // Repositories are now configured in settings.gradle
@@ -83,8 +88,8 @@ tasks.named('javadoc') {
 }
 
 dependencies {
-    // Spring Boot Starters - Using version 3.2.12
-    implementation platform('org.springframework.boot:spring-boot-dependencies:3.2.12')
+    // Spring Boot Starters - Using version 3.0.13 (most stable with Java 17)
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.0.13')
     
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -92,7 +97,10 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Temporarily removed actuator due to compatibility issues
+    // implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework:spring-context-support'
+    implementation 'org.springframework.boot:spring-boot-starter'
     
     // Database
     runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.3.0'
@@ -124,7 +132,7 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-prometheus'
     
     // Testing dependencies
-    testImplementation platform('org.springframework.boot:spring-boot-dependencies:3.2.0')
+    testImplementation platform('org.springframework.boot:spring-boot-dependencies:3.0.13')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'

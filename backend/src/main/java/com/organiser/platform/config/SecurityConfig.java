@@ -11,6 +11,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -33,15 +34,16 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v1/auth/**",
-                                "/api/v1/events/public/**",
-                                "/api/v1/activities/public/**",
-                                "/actuator/**",
-                                "/swagger-ui/**",
-                                "/v3/api-docs/**"
+                                new AntPathRequestMatcher("/api/v1/auth/**"),
+                                new AntPathRequestMatcher("/api/v1/events/public/**"),
+                                new AntPathRequestMatcher("/api/v1/activities/public/**"),
+                                new AntPathRequestMatcher("/actuator/**"),
+                                new AntPathRequestMatcher("/swagger-ui/**"),
+                                new AntPathRequestMatcher("/v3/api-docs/**"),
+                                new AntPathRequestMatcher("/h2-console/**")
                         ).permitAll()
-                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/organiser/**").hasAnyRole("ORGANISER", "ADMIN")
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**")).hasRole("ADMIN")
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/organiser/**")).hasAnyRole("ORGANISER", "ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -44,15 +44,16 @@ public class EventController {
         return ResponseEntity.ok(eventService.searchEvents(keyword, pageable));
     }
     
-    @GetMapping("/public/activity/{activityTypeId}")
-    public ResponseEntity<Page<EventDTO>> getEventsByActivityType(
-            @PathVariable Long activityTypeId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
-        return ResponseEntity.ok(eventService.getEventsByActivityType(activityTypeId, pageable));
-    }
+    // TODO: Re-enable once activityType relationship is added
+    // @GetMapping("/public/activity/{activityTypeId}")
+    // public ResponseEntity<Page<EventDTO>> getEventsByActivityType(
+    //         @PathVariable Long activityTypeId,
+    //         @RequestParam(defaultValue = "0") int page,
+    //         @RequestParam(defaultValue = "20") int size
+    // ) {
+    //     Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
+    //     return ResponseEntity.ok(eventService.getEventsByActivityType(activityTypeId, pageable));
+    // }
     
     @PostMapping
     public ResponseEntity<EventDTO> createEvent(
@@ -90,16 +91,17 @@ public class EventController {
         return ResponseEntity.ok(eventService.leaveEvent(id, userId));
     }
     
-    @GetMapping("/organiser/my-events")
-    public ResponseEntity<Page<EventDTO>> getMyEvents(
-            Authentication authentication,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
-    ) {
-        Long userId = getUserIdFromAuth(authentication);
-        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
-        return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable));
-    }
+    // TODO: Re-enable once repository method is fixed
+    // @GetMapping("/organiser/my-events")
+    // public ResponseEntity<Page<EventDTO>> getMyEvents(
+    //         Authentication authentication,
+    //         @RequestParam(defaultValue = "0") int page,
+    //         @RequestParam(defaultValue = "20") int size
+    // ) {
+    //     Long userId = getUserIdFromAuth(authentication);
+    //     Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
+    //     return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable));
+    // }
     
     private Long getUserIdFromAuth(Authentication authentication) {
         // In a real implementation, extract userId from JWT token claims

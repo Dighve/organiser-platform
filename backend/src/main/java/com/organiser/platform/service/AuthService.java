@@ -119,7 +119,7 @@ public class AuthService {
     /**
      * Cleanup expired and used magic links every hour
      */
-    @Scheduled(fixedRate = 3600000) // 1 hour
+    @Scheduled(fixedRate = 3600000, initialDelay = 60000) // Run every hour, start after 1 minute
     @Transactional
     public void cleanupExpiredLinks() {
         magicLinkRepository.deleteExpiredAndUsedLinks(LocalDateTime.now());

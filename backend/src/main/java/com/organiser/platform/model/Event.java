@@ -126,7 +126,7 @@ public class Event {
     @Column(name = "item")
     private Set<String> includedItems = new HashSet<>();
     
-    @Column(name = "average_rating", precision = 2, scale = 1)
+    @Column(name = "average_rating")
     private Double averageRating;
     
     @Column(name = "total_reviews")
