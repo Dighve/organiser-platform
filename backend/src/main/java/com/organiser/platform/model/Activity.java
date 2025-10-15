@@ -12,14 +12,18 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Activity entity - represents types of activities (e.g., Hiking, Cycling, Running)
+ * Each group is linked to ONE activity
+ */
 @Entity
-@Table(name = "activity_types")
+@Table(name = "activities")
 @EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ActivityType {
+public class Activity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -41,16 +45,7 @@ public class ActivityType {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
     
-    @OneToMany(mappedBy = "activityType")
-    private Set<Event> events = new HashSet<>();
-    
-    // Specific fields for hiking (can be extended for other activities)
-    @Column(name = "requires_difficulty_level")
-    private Boolean requiresDifficultyLevel = false;
-    
-    @Column(name = "requires_distance")
-    private Boolean requiresDistance = false;
-    
-    @Column(name = "requires_elevation")
-    private Boolean requiresElevation = false;
+    // Groups for this activity
+    @OneToMany(mappedBy = "activity")
+    private Set<Group> groups = new HashSet<>();
 }

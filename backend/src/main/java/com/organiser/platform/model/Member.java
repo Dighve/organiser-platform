@@ -13,17 +13,20 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Member entity - represents any user in the system
+ * Members can create groups, subscribe to groups, and join events
+ */
 @Entity
-@Table(name = "users", indexes = {
-    @Index(name = "idx_user_email", columnList = "email"),
-    @Index(name = "idx_user_username", columnList = "username")
+@Table(name = "members", indexes = {
+    @Index(name = "idx_member_email", columnList = "email")
 })
 @EntityListeners(AuditingEntityListener.class)
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class User {
+public class Member {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,14 +36,10 @@ public class User {
     private String email;
     
     @Column(name = "display_name", length = 100)
-    private String displayName; // Optional display name (can be pseudonym)
+    private String displayName;
     
     @Column(name = "profile_photo_url", length = 500)
-    private String profilePhotoUrl; // Optional profile photo
-    
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserRole role = UserRole.MEMBER;
+    private String profilePhotoUrl;
     
     @Column(nullable = false)
     private Boolean verified = false;
@@ -56,18 +55,11 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
-    @OneToMany(mappedBy = "organiser", cascade = CascadeType.ALL)
-    private Set<Event> organisedEvents = new HashSet<>();
+    // Subscriptions to groups
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    private Set<Subscription> subscriptions = new HashSet<>();
     
-    @ManyToMany(mappedBy = "participants")
-    private Set<Event> participatingEvents = new HashSet<>();
-    
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private Set<Review> reviews = new HashSet<>();
-    
-    public enum UserRole {
-        MEMBER,
-        ORGANISER,
-        ADMIN
-    }
+    // Events this member is participating in
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    private Set<EventParticipant> eventParticipations = new HashSet<>();
 }

@@ -14,11 +14,15 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Event entity - belongs to a Group
+ * Members can join events through EventParticipant
+ */
 @Entity
 @Table(name = "events", indexes = {
+    @Index(name = "idx_event_group", columnList = "group_id"),
     @Index(name = "idx_event_date", columnList = "event_date"),
-    @Index(name = "idx_event_status", columnList = "status"),
-    @Index(name = "idx_event_activity", columnList = "activity_type_id")
+    @Index(name = "idx_event_status", columnList = "status")
 })
 @EntityListeners(AuditingEntityListener.class)
 @Data
@@ -37,13 +41,19 @@ public class Event {
     @Column(columnDefinition = "TEXT")
     private String description;
     
+    // Event belongs to a Group
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "organiser_id", nullable = false)
-    private User organiser;
+    @JoinColumn(name = "group_id", nullable = false)
+    private Group group;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "activity_type_id", nullable = false)
-    private ActivityType activityType;
+    // Event organisers (members organizing this specific event)
+    @ManyToMany
+    @JoinTable(
+        name = "event_organisers",
+        joinColumns = @JoinColumn(name = "event_id"),
+        inverseJoinColumns = @JoinColumn(name = "member_id")
+    )
+    private Set<Member> eventOrganisers = new HashSet<>();
     
     @Column(name = "event_date", nullable = false)
     private LocalDateTime eventDate;
@@ -76,56 +86,11 @@ public class Event {
     @Column(nullable = false)
     private EventStatus status = EventStatus.DRAFT;
     
-    @Enumerated(EnumType.STRING)
-    @Column(name = "difficulty_level")
-    private DifficultyLevel difficultyLevel;
-    
-    @Column(name = "distance_km", precision = 10, scale = 2)
-    private BigDecimal distanceKm;
-    
-    @Column(name = "elevation_gain_m")
-    private Integer elevationGainM;
-    
-    @Column(name = "estimated_duration_hours", precision = 5, scale = 2)
-    private BigDecimal estimatedDurationHours;
-    
-    @Column(name = "image_url")
+    @Column(name = "image_url", length = 500)
     private String imageUrl;
-    
-    @ElementCollection
-    @CollectionTable(name = "event_images", joinColumns = @JoinColumn(name = "event_id"))
-    @Column(name = "image_url")
-    private Set<String> additionalImages = new HashSet<>();
-    
-    @ElementCollection
-    @CollectionTable(name = "event_requirements", joinColumns = @JoinColumn(name = "event_id"))
-    @Column(name = "requirement")
-    private Set<String> requirements = new HashSet<>();
-    
-    @ElementCollection
-    @CollectionTable(name = "event_included_items", joinColumns = @JoinColumn(name = "event_id"))
-    @Column(name = "item")
-    private Set<String> includedItems = new HashSet<>();
     
     @Column(name = "cancellation_policy", columnDefinition = "TEXT")
     private String cancellationPolicy;
-    
-    @ManyToMany
-    @JoinTable(
-        name = "event_participants",
-        joinColumns = @JoinColumn(name = "event_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<User> participants = new HashSet<>();
-    
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
-    private Set<Review> reviews = new HashSet<>();
-    
-    @Column(name = "average_rating", precision = 3, scale = 2)
-    private BigDecimal averageRating;
-    
-    @Column(name = "total_reviews")
-    private Integer totalReviews = 0;
     
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -135,20 +100,16 @@ public class Event {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    // Members participating in this event
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    private Set<EventParticipant> participants = new HashSet<>();
+    
     public enum EventStatus {
         DRAFT,
         PUBLISHED,
         CANCELLED,
         COMPLETED,
         FULL
-    }
-    
-    public enum DifficultyLevel {
-        EASY,
-        MODERATE,
-        CHALLENGING,
-        DIFFICULT,
-        EXPERT
     }
     
     public int getCurrentParticipantCount() {
