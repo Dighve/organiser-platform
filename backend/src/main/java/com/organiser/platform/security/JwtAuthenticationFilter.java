@@ -1,7 +1,7 @@
 package com.organiser.platform.security;
 
-import com.organiser.platform.model.User;
-import com.organiser.platform.repository.UserRepository;
+import com.organiser.platform.model.Member;
+import com.organiser.platform.repository.MemberRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +22,7 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
     
     @Override
     protected void doFilterInternal(
@@ -44,16 +44,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         email = jwtUtil.extractUsername(jwt); // Extract email from token
         
         if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // Load user by email
-            User user = userRepository.findByEmail(email).orElse(null);
+            // Load member by email
+            Member member = memberRepository.findByEmail(email).orElse(null);
             
-            if (user != null && user.getActive()) {
+            if (member != null && member.getActive()) {
                 // Create simple UserDetails-like object
                 org.springframework.security.core.userdetails.User userDetails = 
                     new org.springframework.security.core.userdetails.User(
-                        user.getEmail(),
+                        member.getEmail(),
                         "",  // No password needed
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
+                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"))
                     );
                 
                 if (jwtUtil.validateToken(jwt, userDetails)) {

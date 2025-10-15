@@ -1,6 +1,6 @@
 package com.organiser.platform.repository;
 
-import com.organiser.platform.model.User;
+import com.organiser.platform.model.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -8,12 +8,9 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface MemberRepository extends JpaRepository<Member, Long> {
     
-    Optional<User> findByEmail(String email);
+    Optional<Member> findByEmail(String email);
     
     boolean existsByEmail(String email);
-    
-    @Query("SELECT u FROM User u WHERE u.role = 'ORGANISER' AND u.active = true")
-    Iterable<User> findAllActiveOrganisers();
 }

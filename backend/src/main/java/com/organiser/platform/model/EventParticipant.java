@@ -49,6 +49,10 @@ public class EventParticipant {
     private String notes;
     
     @CreatedDate
+    @Column(name = "registration_date", nullable = false, updatable = false)
+    private LocalDateTime registrationDate;
+    
+    @CreatedDate
     @Column(name = "registered_at", nullable = false, updatable = false)
     private LocalDateTime registeredAt;
     

@@ -31,6 +31,13 @@ import java.util.Set;
 @AllArgsConstructor
 public class Event {
     
+    public enum DifficultyLevel {
+        BEGINNER,
+        INTERMEDIATE,
+        ADVANCED,
+        EXPERT
+    }
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -91,6 +98,39 @@ public class Event {
     
     @Column(name = "cancellation_policy", columnDefinition = "TEXT")
     private String cancellationPolicy;
+    
+    @Enumerated(EnumType.STRING)
+    private DifficultyLevel difficultyLevel;
+    
+    @Column(name = "distance_km", precision = 10, scale = 2)
+    private BigDecimal distanceKm;
+    
+    @Column(name = "elevation_gain_m")
+    private Integer elevationGainM;
+    
+    @Column(name = "estimated_duration_hours", precision = 4, scale = 2)
+    private BigDecimal estimatedDurationHours;
+    
+    @ElementCollection
+    @CollectionTable(name = "event_additional_images", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "image_url")
+    private Set<String> additionalImages = new HashSet<>();
+    
+    @ElementCollection
+    @CollectionTable(name = "event_requirements", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "requirement")
+    private Set<String> requirements = new HashSet<>();
+    
+    @ElementCollection
+    @CollectionTable(name = "event_included_items", joinColumns = @JoinColumn(name = "event_id"))
+    @Column(name = "item")
+    private Set<String> includedItems = new HashSet<>();
+    
+    @Column(name = "average_rating", precision = 2, scale = 1)
+    private Double averageRating;
+    
+    @Column(name = "total_reviews")
+    private Integer totalReviews = 0;
     
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -22,6 +22,8 @@ public class EventDTO {
     private String organiserName;
     private Long activityTypeId;
     private String activityTypeName;
+    private Long groupId;
+    private String groupName;
     private LocalDateTime eventDate;
     private LocalDateTime endDate;
     private LocalDateTime registrationDeadline;
@@ -46,4 +48,5 @@ public class EventDTO {
     private Integer totalReviews;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private Set<Long> participantIds;
 }

@@ -1,6 +1,6 @@
 package com.organiser.platform.repository;
 
-import com.organiser.platform.model.ActivityType;
+import com.organiser.platform.model.Activity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ActivityTypeRepository extends JpaRepository<ActivityType, Long> {
+public interface ActivityRepository extends JpaRepository<Activity, Long> {
     
-    Optional<ActivityType> findByName(String name);
+    Optional<Activity> findByName(String name);
     
-    List<ActivityType> findByActiveTrue();
+    List<Activity> findByActiveTrue();
 }

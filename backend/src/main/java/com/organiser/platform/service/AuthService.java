@@ -3,10 +3,9 @@ package com.organiser.platform.service;
 import com.organiser.platform.dto.AuthResponse;
 import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.model.MagicLink;
-import com.organiser.platform.model.User;
-import com.organiser.platform.model.UserRole;
+import com.organiser.platform.model.Member;
 import com.organiser.platform.repository.MagicLinkRepository;
-import com.organiser.platform.repository.UserRepository;
+import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.security.JwtUtil;
 import com.organiser.platform.util.AvatarGenerator;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthService {
     
-    private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
     private final MagicLinkRepository magicLinkRepository;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
@@ -37,9 +36,9 @@ public class AuthService {
     public void requestMagicLink(MagicLinkRequest request) {
         String email = request.getEmail().toLowerCase().trim();
         
-        // Create user if doesn't exist
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> createNewUser(email, request));
+        // Create member if doesn't exist
+        Member member = memberRepository.findByEmail(email)
+                .orElseGet(() -> createNewMember(email, request));
         
         // Delete any existing unused magic links for this email
         magicLinkRepository.deleteUnusedLinksByEmail(email);
@@ -50,6 +49,7 @@ public class AuthService {
                 .token(token)
                 .email(email)
                 .expiresAt(LocalDateTime.now().plusMinutes(MAGIC_LINK_EXPIRY_MINUTES))
+                .user(member)
                 .used(false)
                 .build();
         
@@ -77,45 +77,43 @@ public class AuthService {
         magicLinkRepository.save(magicLink);
         
         // Get user
-        User user = userRepository.findByEmail(magicLink.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Member member = magicLink.getUser();
         
         // Mark user as verified
-        if (!user.getVerified()) {
-            user.setVerified(true);
-            userRepository.save(user);
+        if (!member.getVerified()) {
+            member.setVerified(true);
+            memberRepository.save(member);
         }
         
         // Generate JWT token
-        String jwtToken = jwtUtil.generateToken(user.getEmail(), user.getId(), user.getRole().name());
+        String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), "MEMBER");
         
         return AuthResponse.builder()
                 .token(jwtToken)
-                .userId(user.getId())
-                .email(user.getEmail())
-                .role(user.getRole().name())
+                .userId(member.getId())
+                .email(member.getEmail())
+                .role("MEMBER")
                 .build();
     }
     
     /**
-     * Create a new user with auto-generated avatar
+     * Create a new member with auto-generated avatar
      */
-    private User createNewUser(String email, MagicLinkRequest request) {
+    private Member createNewMember(String email, MagicLinkRequest request) {
         String displayName = request.getDisplayName();
         
         // Generate avatar URL based on display name or email
         String avatarUrl = avatarGenerator.generateAvatarUrl(displayName, email);
         
-        User newUser = User.builder()
+        Member newMember = Member.builder()
                 .email(email)
                 .displayName(displayName)
                 .profilePhotoUrl(avatarUrl)  // Auto-generated avatar
-                .role(UserRole.MEMBER)
                 .verified(false)
                 .active(true)
                 .build();
         
-        return userRepository.save(newUser);
+        return memberRepository.save(newMember);
     }
     
     /**

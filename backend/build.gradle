@@ -1,14 +1,55 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.0'
+    id 'org.springframework.boot' version '3.2.12'  // Updated to version 3.2.12
     id 'io.spring.dependency-management' version '1.1.4'
+    id 'io.freefair.lombok' version '8.4'
 }
+
+// Apply Java plugin explicitly to ensure proper Java toolchain configuration
+apply plugin: 'java'
+apply plugin: 'io.spring.dependency-management'
+
+// Configure Java toolchain to use Java 17 (LTS)
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+// Build cache configuration removed for Gradle 9.0 compatibility
 
 group = 'com.organiser'
 version = '1.0.0'
 
-java {
-    sourceCompatibility = '17'
+
+// Ensure the build fails early if there are any dependency resolution issues
+configurations.all {
+    resolutionStrategy {
+        failOnVersionConflict()
+        // Force specific versions to avoid conflicts
+        force 'org.springframework.boot:spring-boot-starter-web:3.2.0'
+        force 'org.springframework.boot:spring-boot-starter-data-jpa:3.2.0'
+        force 'org.springframework.boot:spring-boot-starter-security:3.2.0'
+        force 'org.springframework.boot:spring-boot-starter-validation:3.2.0'
+        force 'org.springframework.boot:spring-boot-starter-cache:3.2.0'
+        force 'org.springframework.boot:spring-boot-starter-data-redis:3.2.0'
+        force 'org.springframework.boot:spring-boot-starter-actuator:3.2.0'
+        force 'org.springframework:spring-core:6.0.13'
+        force 'org.projectlombok:lombok:1.18.30'
+        
+        // Resolve Checker Framework conflict
+        force 'org.checkerframework:checker-qual:3.37.0'
+        
+        // Ensure consistent versions for all Spring modules
+        eachDependency { details ->
+            if (details.requested.group.startsWith('org.springframework.boot')) {
+                details.useVersion '3.2.0'
+            }
+            if (details.requested.group == 'org.springframework') {
+                details.useVersion '6.0.13'
+            }
+        }
+    }
 }
 
 configurations {
@@ -17,12 +58,34 @@ configurations {
     }
 }
 
-repositories {
-    mavenCentral()
+// Repositories are now configured in settings.gradle
+
+tasks.named('compileJava') {
+    options.encoding = 'UTF-8'
+    // Uncomment to enable preview features
+    // options.compilerArgs += '--enable-preview'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    // Uncomment to enable preview features for tests
+    // jvmArgs '--enable-preview'
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+// Configure Javadoc for Java 17
+tasks.named('javadoc') {
+    // Uncomment to enable preview features for Javadoc
+    // options.addStringOption('source', '17')
+    // options.addBooleanOption('enable-preview', true)
 }
 
 dependencies {
-    // Spring Boot Starters
+    // Spring Boot Starters - Using version 3.2.12
+    implementation platform('org.springframework.boot:spring-boot-dependencies:3.2.12')
+    
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -36,13 +99,19 @@ dependencies {
     runtimeOnly 'com.h2database:h2'
     
     // JWT
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
     
     // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    
+    // For MapStruct + Lombok integration
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    
+    // Required for Java 17+
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     
     // MapStruct
     implementation 'org.mapstruct:mapstruct:1.5.5.Final'
@@ -54,11 +123,16 @@ dependencies {
     // Micrometer for metrics
     implementation 'io.micrometer:micrometer-registry-prometheus'
     
-    // Testing
+    // Testing dependencies
+    testImplementation platform('org.springframework.boot:spring-boot-dependencies:3.2.0')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    
+    // Exclude JUnit 4 (vintage) as we're using JUnit 5 (jupiter)
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-}
+// Test configuration moved to the dependencies section
