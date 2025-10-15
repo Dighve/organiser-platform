@@ -59,13 +59,22 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
+                "http://localhost:3002",
+                "http://127.0.0.1:3002",
                 "http://localhost:5173",
                 "https://organiser-platform.netlify.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setExposedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
+        
+        // Log CORS configuration for debugging
+        System.out.println("CORS Configuration:");
+        System.out.println("Allowed Origins: " + configuration.getAllowedOrigins());
+        System.out.println("Allowed Methods: " + configuration.getAllowedMethods());
+        System.out.println("Allowed Headers: " + configuration.getAllowedHeaders());
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

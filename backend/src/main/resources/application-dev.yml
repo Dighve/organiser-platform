@@ -24,4 +24,8 @@ logging:
     root: INFO
     com.organiser.platform: DEBUG
     org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
     org.hibernate.SQL: DEBUG
+    org.springframework.security.web.FilterChainProxy: DEBUG
+    org.springframework.security.web.access.ExceptionTranslationFilter: DEBUG
+    org.springframework.security.web.authentication.www.BasicAuthenticationFilter: DEBUG
