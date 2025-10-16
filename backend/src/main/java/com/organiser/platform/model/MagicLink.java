@@ -32,14 +32,15 @@ public class MagicLink {
     @Column(nullable = false, length = 100)
     private String email;
     
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id", nullable = false)
     private Member user;
     
     @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean used = false;
     
     @Column(name = "used_at")

@@ -56,6 +56,7 @@ public class Group {
         joinColumns = @JoinColumn(name = "group_id"),
         inverseJoinColumns = @JoinColumn(name = "member_id")
     )
+    @Builder.Default
     private Set<Member> coOrganisers = new HashSet<>();
     
     // ONE activity per group
@@ -70,9 +71,11 @@ public class Group {
     private Integer maxMembers;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isPublic = true;
     
     @CreatedDate
@@ -85,10 +88,12 @@ public class Group {
     
     // Members subscribed to this group
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Subscription> subscriptions = new HashSet<>();
     
     // Events organized by this group
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Event> events = new HashSet<>();
     
     public int getSubscriberCount() {

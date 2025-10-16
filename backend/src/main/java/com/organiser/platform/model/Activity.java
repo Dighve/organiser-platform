@@ -39,6 +39,7 @@ public class Activity {
     private String iconUrl;
     
     @Column(nullable = false)
+    @Builder.Default
     private Boolean active = true;
     
     @CreatedDate
@@ -47,5 +48,6 @@ public class Activity {
     
     // Groups for this activity
     @OneToMany(mappedBy = "activity")
+    @Builder.Default
     private Set<Group> groups = new HashSet<>();
 }

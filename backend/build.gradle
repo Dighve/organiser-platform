@@ -2,53 +2,48 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.1.5'
     id 'io.spring.dependency-management' version '1.1.3'
+    id 'org.flywaydb.flyway' version '9.22.3'
+    id 'io.freefair.lombok' version '8.4'
 }
 
-// Apply Java plugin explicitly to ensure proper Java toolchain configuration
-apply plugin: 'java'
-apply plugin: 'io.spring.dependency-management'
+group = 'com.organiser'
+version = '1.0.0'
 
-// Configure Java toolchain to use Java 17 (LTS)
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
 
-// Build cache configuration removed for Gradle 9.0 compatibility
+// Configure versions
+ext {
+    flywayVersion = '9.22.3'
+    mysqlConnectorVersion = '8.0.33'
+    mapstructVersion = '1.5.5.Final'
+    testcontainersVersion = '1.19.3'
+}
 
-group = 'com.organiser'
-version = '1.0.0'
+flyway {
+    url = 'jdbc:mysql://localhost:3306/organiser_platform'
+    user = 'root'
+    password = 'password'
+    baselineOnMigrate = true
+    locations = ['classpath:db/migration']
+    cleanDisabled = false
+}
 
+tasks.named('flywayMigrate') {
+    dependsOn compileJava
+}
 
-// Ensure the build fails early if there are any dependency resolution issues
-configurations.all {
-    resolutionStrategy {
-        failOnVersionConflict()
-        // Force specific versions to avoid conflicts
-        force 'org.springframework.boot:spring-boot-starter-web:3.0.13'
-        force 'org.springframework.boot:spring-boot-starter-data-jpa:3.0.13'
-        force 'org.springframework.boot:spring-boot-starter-security:3.0.13'
-        force 'org.springframework.boot:spring-boot-starter-validation:3.0.13'
-        force 'org.springframework.boot:spring-boot-starter-cache:3.0.13'
-        force 'org.springframework.boot:spring-boot-starter-data-redis:3.0.13'
-        // Temporarily removed actuator due to compatibility issues
-        // force 'org.springframework.boot:spring-boot-starter-actuator:3.1.5'
-        force 'org.springframework:spring-core:6.0.13'
-        force 'org.projectlombok:lombok:1.18.30'
-        
-        // Resolve Checker Framework conflict
-        force 'org.checkerframework:checker-qual:3.37.0'
-        
-        // Ensure consistent versions for all Spring modules
-        eachDependency { details ->
-            if (details.requested.group.startsWith('org.springframework.boot')) {
-                details.useVersion '3.0.13'
-            }
-            if (details.requested.group == 'org.springframework') {
-                details.useVersion '6.0.13'
-            }
-        }
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'PASSED', 'FAILED', 'SKIPPED'
+        showStandardStreams = true
+    }
+    filter {
+        includeTestsMatching 'com.organiser.platform.service.*'
     }
 }
 
@@ -56,128 +51,81 @@ configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
-}
-
-// Exclude problematic auto-configuration
-configurations.all {
-    exclude group: 'org.springframework.boot', module: 'spring-boot-starter-actuator'
-}
-
-// Repositories are now configured in settings.gradle
-
-tasks.named('compileJava') {
-    options.encoding = 'UTF-8'
-    // Uncomment to enable preview features
-    // options.compilerArgs += '--enable-preview'
-}
-
-tasks.named('test') {
-    useJUnitPlatform()
-    // Uncomment to enable preview features for tests
-    // jvmArgs '--enable-preview'
-    testLogging {
-        events 'passed', 'skipped', 'failed'
+    testCompileOnly {
+        extendsFrom testAnnotationProcessor
     }
 }
 
-// Configure Javadoc for Java 17
-tasks.named('javadoc') {
-    // Uncomment to enable preview features for Javadoc
-    // options.addStringOption('source', '17')
-    // options.addBooleanOption('enable-preview', true)
+repositories {
+    mavenCentral()
 }
 
-configurations.all {
-    resolutionStrategy {
-        // Force specific versions of dependencies to avoid conflicts
-        force 'org.apache.httpcomponents:httpclient:4.5.14',
-              'org.apache.httpcomponents:httpcore:4.4.16',
-              'commons-codec:commons-codec:1.16.0',
-              'net.java.dev.jna:jna:5.13.0'  // Force JNA version for Testcontainers
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:2022.0.4"
+        mavenBom "org.testcontainers:testcontainers-bom:1.18.3"
     }
 }
 
 dependencies {
-    // Add dependency constraints to resolve version conflicts
-    constraints {
-        // JNA version used by Testcontainers
-        implementation 'net.java.dev.jna:jna:5.13.0'
-        testImplementation 'net.java.dev.jna:jna:5.13.0'
-    }
-    // Database
-    runtimeOnly 'com.h2database:h2'
-    
     // Spring Boot Starters
-    implementation platform('org.springframework.boot:spring-boot-dependencies:3.1.5')
-    
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-cache'
-    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    // Temporarily removed actuator due to compatibility issues
-    // implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework:spring-context-support'
-    implementation 'org.springframework.boot:spring-boot-starter'
     
     // Database
     implementation 'org.flywaydb:flyway-core'
     implementation 'org.flywaydb:flyway-mysql'
-    runtimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.1.4'
-    runtimeOnly 'com.h2database:h2'
-    
-    // Jakarta Persistence API (JPA)
-    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+    runtimeOnly 'mysql:mysql-connector-java:8.0.33'
     
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-    implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
-    implementation 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+    
+    // Jakarta Persistence API
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
     
     // Lombok
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
+    testCompileOnly 'org.projectlombok:lombok:1.18.30'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.30'
     
-    // For MapStruct + Lombok integration
-    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
-    testAnnotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'com.h2database:h2'
+    testImplementation 'com.icegreen:greenmail-junit5:2.0.0'
+    
+    // Development tools
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
     
     // Required for Java 17+
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
     
-    // MapStruct
-    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
-    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    // Test containers for integration tests
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.3'
+    testImplementation 'org.testcontainers:mysql:1.19.3'
     
-    // AWS SDK for S3
-    implementation 'software.amazon.awssdk:s3:2.21.0'
-    
-    // Micrometer for metrics
-    implementation 'io.micrometer:micrometer-registry-prometheus'
-    
-    // Testing dependencies
-    testImplementation platform('org.springframework.boot:spring-boot-dependencies:3.0.13')
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'org.springframework.security:spring-security-test'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    
-    // Test containers for integration testing (aligned with Spring Boot 3.0.13)
-    testImplementation 'org.testcontainers:testcontainers:1.17.6'
-    testImplementation 'org.testcontainers:junit-jupiter:1.17.6'
-    testImplementation 'org.testcontainers:mysql:1.17.6'
-    
-    // JUnit 5 Jupiter API and Engine (aligned with Spring Boot 3.0.13)
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
-    
-    // Mockito for mocking in tests (aligned with Spring Boot 3.0.13)
-    testImplementation 'org.mockito:mockito-core:4.11.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:4.11.0'
-    
-    // AssertJ for fluent assertions (aligned with Spring Boot 3.0.13)
+    // AssertJ for fluent assertions
     testImplementation 'org.assertj:assertj-core:3.24.2'
+    // Temporarily removed actuator due to compatibility issues
+    // implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Test containers for integration testing
+    testImplementation("org.testcontainers:testcontainers:${testcontainersVersion}") {
+        exclude group: 'org.checkerframework', module: 'checker-qual'
+    }
+    testImplementation("org.testcontainers:junit-jupiter:${testcontainersVersion}") {
+        exclude group: 'org.checkerframework', module: 'checker-qual'
+    }
+    testImplementation("org.testcontainers:mysql:${testcontainersVersion}") {
+        exclude group: 'org.checkerframework', module: 'checker-qual'
+    }
     
     // Database drivers for test containers
     testRuntimeOnly 'mysql:mysql-connector-java:8.0.33'

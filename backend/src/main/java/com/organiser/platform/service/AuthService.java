@@ -34,6 +34,9 @@ public class AuthService {
      */
     @Transactional
     public void requestMagicLink(MagicLinkRequest request) {
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
         String email = request.getEmail().toLowerCase().trim();
         
         // Create member if doesn't exist

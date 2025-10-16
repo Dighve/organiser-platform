@@ -60,6 +60,7 @@ public class Event {
         joinColumns = @JoinColumn(name = "event_id"),
         inverseJoinColumns = @JoinColumn(name = "member_id")
     )
+    @Builder.Default
     private Set<Member> eventOrganisers = new HashSet<>();
     
     @Column(name = "event_date", nullable = false)
@@ -84,13 +85,16 @@ public class Event {
     private Integer maxParticipants;
     
     @Column(name = "min_participants")
+    @Builder.Default
     private Integer minParticipants = 1;
     
     @Column(precision = 10, scale = 2)
+    @Builder.Default
     private BigDecimal price = BigDecimal.ZERO;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private EventStatus status = EventStatus.DRAFT;
     
     @Column(name = "image_url", length = 500)
@@ -114,22 +118,26 @@ public class Event {
     @ElementCollection
     @CollectionTable(name = "event_additional_images", joinColumns = @JoinColumn(name = "event_id"))
     @Column(name = "image_url")
+    @Builder.Default
     private Set<String> additionalImages = new HashSet<>();
     
     @ElementCollection
     @CollectionTable(name = "event_requirements", joinColumns = @JoinColumn(name = "event_id"))
     @Column(name = "requirement")
+    @Builder.Default
     private Set<String> requirements = new HashSet<>();
     
     @ElementCollection
     @CollectionTable(name = "event_included_items", joinColumns = @JoinColumn(name = "event_id"))
     @Column(name = "item")
+    @Builder.Default
     private Set<String> includedItems = new HashSet<>();
     
     @Column(name = "average_rating")
     private Double averageRating;
     
     @Column(name = "total_reviews")
+    @Builder.Default
     private Integer totalReviews = 0;
     
     @CreatedDate
@@ -142,6 +150,7 @@ public class Event {
     
     // Members participating in this event
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<EventParticipant> participants = new HashSet<>();
     
     public enum EventStatus {

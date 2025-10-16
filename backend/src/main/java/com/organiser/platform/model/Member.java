@@ -35,15 +35,20 @@ public class Member {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
     
+    @Column(length = 100)
+    private String name;
+    
     @Column(name = "display_name", length = 100)
     private String displayName;
     
     @Column(name = "profile_photo_url", length = 500)
     private String profilePhotoUrl;
     
+    @Builder.Default
     @Column(nullable = false)
     private Boolean verified = false;
     
+    @Builder.Default
     @Column(nullable = false)
     private Boolean active = true;
     
@@ -56,10 +61,12 @@ public class Member {
     private LocalDateTime updatedAt;
     
     // Subscriptions to groups
+    @Builder.Default
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private Set<Subscription> subscriptions = new HashSet<>();
     
     // Events this member is participating in
+    @Builder.Default
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
     private Set<EventParticipant> eventParticipations = new HashSet<>();
 }

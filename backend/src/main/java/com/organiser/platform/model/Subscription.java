@@ -43,9 +43,11 @@ public class Subscription {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private SubscriptionStatus status = SubscriptionStatus.ACTIVE;
     
     @Column(name = "notification_enabled")
+    @Builder.Default
     private Boolean notificationEnabled = true;
     
     @CreatedDate
