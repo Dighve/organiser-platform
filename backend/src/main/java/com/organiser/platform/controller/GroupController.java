@@ -47,6 +47,12 @@ public class GroupController {
         return ResponseEntity.ok(groupService.getUserSubscribedGroups(userId));
     }
     
+    @GetMapping("/my-organised-groups")
+    public ResponseEntity<List<GroupDTO>> getMyOrganisedGroups(Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(groupService.getUserOrganisedGroups(userId));
+    }
+    
     @GetMapping("/public")
     public ResponseEntity<List<GroupDTO>> getAllPublicGroups() {
         return ResponseEntity.ok(groupService.getAllPublicGroups());

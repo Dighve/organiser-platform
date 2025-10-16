@@ -93,6 +93,21 @@ public class GroupService {
                 .collect(Collectors.toList());
     }
     
+    @Cacheable(value = "groups", key = "'organiser_' + #memberId")
+    public List<GroupDTO> getUserOrganisedGroups(Long memberId) {
+        List<Group> groups = groupRepository.findByPrimaryOrganiserId(memberId);
+        
+        return groups.stream()
+                .map(group -> {
+                    int memberCount = (int) subscriptionRepository.countByGroupIdAndStatus(
+                            group.getId(), 
+                            Subscription.SubscriptionStatus.ACTIVE
+                    );
+                    return GroupDTO.fromEntity(group, memberCount);
+                })
+                .collect(Collectors.toList());
+    }
+    
     @Cacheable(value = "groups", key = "'public'")
     public List<GroupDTO> getAllPublicGroups() {
         List<Group> groups = groupRepository.findByIsPublicTrueAndActiveTrue();

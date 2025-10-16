@@ -96,6 +96,7 @@ public class AuthService {
                 .userId(member.getId())
                 .email(member.getEmail())
                 .role("MEMBER")
+                .isOrganiser(member.getIsOrganiser())
                 .build();
     }
     

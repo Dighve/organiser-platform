@@ -76,6 +76,8 @@ export const activityTypesAPI = {
 export const groupsAPI = {
   getMyGroups: () => api.get('/groups/my-groups'),
   
+  getMyOrganisedGroups: () => api.get('/groups/my-organised-groups'),
+  
   getAllPublicGroups: () => api.get('/groups/public'),
   
   getGroupById: (groupId) => api.get(`/groups/${groupId}`),
@@ -85,6 +87,13 @@ export const groupsAPI = {
   unsubscribeFromGroup: (groupId) => api.post(`/groups/${groupId}/unsubscribe`),
   
   createGroup: (data) => api.post('/groups', data),
+}
+
+// Members API
+export const membersAPI = {
+  becomeOrganiser: () => api.post('/members/become-organiser'),
+  
+  getCurrentMember: () => api.get('/members/me'),
 }
 
 export default api

@@ -88,7 +88,7 @@ export default function LoginPage() {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  
                 </div>
                 <input
                   {...register('email', {
@@ -108,17 +108,7 @@ export default function LoginPage() {
               )}
             </div>
 
-            <div>
-              <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
-                Display Name (optional - can be a pseudonym)
-              </label>
-              <input
-                {...register('displayName')}
-                type="text"
-                className="input"
-                placeholder="Your name or pseudonym"
-              />
-            </div>
+            
           </div>
 
           <div>

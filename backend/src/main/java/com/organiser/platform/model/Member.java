@@ -49,6 +49,10 @@ public class Member {
     @Column(nullable = false)
     private Boolean active = true;
     
+    @Builder.Default
+    @Column(name = "is_organiser", nullable = false)
+    private Boolean isOrganiser = false;
+    
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

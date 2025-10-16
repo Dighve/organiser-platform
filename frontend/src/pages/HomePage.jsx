@@ -6,13 +6,21 @@ import { useAuthStore } from '../store/authStore'
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
+  const [activeGroupTab, setActiveGroupTab] = useState('member')
   
-  // Fetch user's groups (only if authenticated)
+  // Fetch user's subscribed groups (only if authenticated)
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
     queryKey: ['myGroups'],
     queryFn: () => groupsAPI.getMyGroups(),
     enabled: isAuthenticated,
+  })
+  
+  // Fetch user's organised groups (only if authenticated and is organiser)
+  const { data: organisedGroupsData, isLoading: organisedGroupsLoading } = useQuery({
+    queryKey: ['myOrganisedGroups'],
+    queryFn: () => groupsAPI.getMyOrganisedGroups(),
+    enabled: isAuthenticated && user?.isOrganiser,
   })
   
   // Fetch user's events (only if authenticated)
@@ -28,13 +36,10 @@ export default function HomePage() {
     queryFn: () => eventsAPI.getUpcomingEvents(0, 10),
   })
   
-  const groups = groupsData?.data || []
+  const memberGroups = groupsData?.data || []
+  const organisedGroups = organisedGroupsData?.data || []
   const yourEvents = yourEventsData?.data?.content || []
   const allEvents = allEventsData?.data?.content || []
-
-  // Separate groups by organizer and member
-  const organizerGroups = groups.filter(group => group.isOrganizer === true)
-  const memberGroups = groups.filter(group => group.isOrganizer !== true)
 
   // Check if user has already clicked discover before
   const [showDiscover, setShowDiscover] = useState(() => {
@@ -89,67 +94,98 @@ export default function HomePage() {
       {/* Left: Your Groups */}
       <div className="w-full lg:w-1/5">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Groups</h2>
-        <div className="space-y-6">
-          {groupsLoading ? (
-            <div className="text-gray-600">Loading groups...</div>
-          ) : groups.length > 0 ? (
-            <>
-              {/* Organizer Groups */}
-              {organizerGroups.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Organizer</h3>
-                  <div className="space-y-3">
-                    {organizerGroups.map(group => (
-                      <div key={group.id} className="bg-white rounded-lg shadow p-4">
-                        <div className="mb-3">
-                          <div 
-                            className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/groups/${group.id}`)}
-                          >
-                            {group.name}
-                          </div>
-                          <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
-                          <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
-                        </div>
-                        <button
-                          className="w-full btn btn-primary btn-sm"
-                          onClick={() => navigate('/create-event')}
-                        >
-                          Create Event
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        
+        {/* Tabs */}
+        {isAuthenticated && (
+          <div className="mb-4 border-b border-gray-200">
+            <nav className="-mb-px flex space-x-4">
+              <button
+                onClick={() => setActiveGroupTab('member')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeGroupTab === 'member'
+                    ? 'border-primary-500 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Member
+              </button>
+              {user?.isOrganiser && (
+                <button
+                  onClick={() => setActiveGroupTab('organiser')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                    activeGroupTab === 'organiser'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Organiser
+                </button>
               )}
-
-              {/* Member Groups */}
-              {memberGroups.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Member</h3>
-                  <div className="space-y-3">
-                    {memberGroups.map(group => (
-                      <div key={group.id} className="bg-white rounded-lg shadow p-4">
-                        <div className="mb-3">
-                          <div 
-                            className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
-                            onClick={() => navigate(`/groups/${group.id}`)}
-                          >
-                            {group.name}
-                          </div>
-                          <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
-                          <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
-                        </div>
+            </nav>
+          </div>
+        )}
+        
+        <div className="space-y-3">
+          {/* Member Tab */}
+          {activeGroupTab === 'member' && (
+            <>
+              {groupsLoading ? (
+                <div className="text-gray-600">Loading groups...</div>
+              ) : memberGroups.length > 0 ? (
+                memberGroups.map(group => (
+                  <div key={group.id} className="bg-white rounded-lg shadow p-4">
+                    <div className="mb-3">
+                      <div 
+                        className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/groups/${group.id}`)}
+                      >
+                        {group.name}
                       </div>
-                    ))}
+                      <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
+                      <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="text-gray-600">
+                  {isAuthenticated ? 'No groups yet. Join some groups to get started!' : 'Login to see your groups'}
                 </div>
               )}
             </>
-          ) : (
-            <div className="text-gray-600">
-              {isAuthenticated ? 'No groups yet. Join some groups to get started!' : 'Login to see your groups'}
-            </div>
+          )}
+          
+          {/* Organiser Tab */}
+          {activeGroupTab === 'organiser' && user?.isOrganiser && (
+            <>
+              {organisedGroupsLoading ? (
+                <div className="text-gray-600">Loading organised groups...</div>
+              ) : organisedGroups.length > 0 ? (
+                organisedGroups.map(group => (
+                  <div key={group.id} className="bg-white rounded-lg shadow p-4">
+                    <div className="mb-3">
+                      <div 
+                        className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
+                        onClick={() => navigate(`/groups/${group.id}`)}
+                      >
+                        {group.name}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
+                      <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
+                    </div>
+                    <button
+                      className="w-full btn btn-primary btn-sm"
+                      onClick={() => navigate(`/create-event?groupId=${group.id}`)}
+                    >
+                      Create Event
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-600">
+                  No organised groups yet. Create a group to get started!
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

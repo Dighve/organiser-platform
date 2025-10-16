@@ -2,11 +2,24 @@ import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { Menu, X, User, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
+import { useMutation } from '@tanstack/react-query'
+import { membersAPI } from '../lib/api'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { isAuthenticated, user, logout } = useAuthStore()
+  const { isAuthenticated, user, logout, updateUser } = useAuthStore()
   const navigate = useNavigate()
+
+  const becomeOrganiserMutation = useMutation({
+    mutationFn: membersAPI.becomeOrganiser,
+    onSuccess: (response) => {
+      updateUser({ isOrganiser: response.data.isOrganiser })
+      alert('You are now an organiser! You can create groups and events.')
+    },
+    onError: (error) => {
+      alert(error.response?.data?.message || 'Failed to become organiser')
+    },
+  })
 
   const handleLogout = () => {
     logout()
@@ -73,6 +86,15 @@ export default function Layout() {
                       >
                         Profile
                       </Link>
+                      {!user?.isOrganiser && (
+                        <button
+                          onClick={() => becomeOrganiserMutation.mutate()}
+                          disabled={becomeOrganiserMutation.isLoading}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          {becomeOrganiserMutation.isLoading ? 'Processing...' : 'Become Organiser'}
+                        </button>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
@@ -118,6 +140,18 @@ export default function Layout() {
                   >
                     Profile
                   </Link>
+                  {!user?.isOrganiser && (
+                    <button
+                      onClick={() => {
+                        becomeOrganiserMutation.mutate()
+                        setMobileMenuOpen(false)
+                      }}
+                      disabled={becomeOrganiserMutation.isLoading}
+                      className="block w-full text-left text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium disabled:opacity-50"
+                    >
+                      {becomeOrganiserMutation.isLoading ? 'Processing...' : 'Become Organiser'}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       handleLogout()
