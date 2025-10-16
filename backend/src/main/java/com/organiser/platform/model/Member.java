@@ -35,9 +35,6 @@ public class Member {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
     
-    @Column(length = 100)
-    private String name;
-    
     @Column(name = "display_name", length = 100)
     private String displayName;
     
