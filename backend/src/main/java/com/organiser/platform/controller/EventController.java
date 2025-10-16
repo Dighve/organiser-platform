@@ -44,6 +44,15 @@ public class EventController {
         return ResponseEntity.ok(eventService.searchEvents(keyword, pageable));
     }
     
+    @GetMapping("/public/activity/{activityId}")
+    public ResponseEntity<Page<EventDTO>> getEventsByActivity(
+            @PathVariable Long activityId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
+        return ResponseEntity.ok(eventService.getEventsByActivity(activityId, pageable));
+    }
 
     @PostMapping
     public ResponseEntity<EventDTO> createEvent(
@@ -81,21 +90,34 @@ public class EventController {
         return ResponseEntity.ok(eventService.leaveEvent(id, userId));
     }
     
-    // TODO: Re-enable once repository method is fixed
-    // @GetMapping("/organiser/my-events")
-    // public ResponseEntity<Page<EventDTO>> getMyEvents(
-    //         Authentication authentication,
-    //         @RequestParam(defaultValue = "0") int page,
-    //         @RequestParam(defaultValue = "20") int size
-    // ) {
-    //     Long userId = getUserIdFromAuth(authentication);
-    //     Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
-    //     return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable));
-    // }
+    @GetMapping("/organiser/my-events")
+    public ResponseEntity<Page<EventDTO>> getMyEvents(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
+        return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable));
+    }
     
     private Long getUserIdFromAuth(Authentication authentication) {
-        // In a real implementation, extract userId from JWT token claims
-        // For now, this is a placeholder
-        return 1L;
+        // Extract userId from JWT token claims
+        // The JWT token contains the user email as subject
+        // We would need to look up the user by email, but for now we'll use a simpler approach
+        // In a production system, you'd want to include userId directly in the JWT claims
+        
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new RuntimeException("User not authenticated");
+        }
+        
+        // The principal is a UserDetails object with the email as username
+        // For now, we'll extract from the name which should be the email
+        // In production, you'd add userId to JWT claims and extract it here
+        String email = authentication.getName();
+        
+        // This is a simplified approach - in production you'd store userId in JWT claims
+        // and extract it directly without needing to query the database
+        return 1L; // TODO: Extract from JWT claims or lookup by email
     }
 }

@@ -17,23 +17,25 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     
     Page<Event> findByStatus(Event.EventStatus status, Pageable pageable);
     
-    // TODO: Add activityType relationship to Event entity if needed
-    // Page<Event> findByActivityTypeId(Long activityTypeId, Pageable pageable);
+    // Get events by activity through group relationship
+    @Query("SELECT e FROM Event e WHERE e.group.activity.id = :activityId")
+    Page<Event> findByActivityId(@Param("activityId") Long activityId, Pageable pageable);
     
-    // TODO: Fix to match Event.eventOrganisers structure
-    // Page<Event> findByOrganiserId(Long organiserId, Pageable pageable);
+    // Get events by organiser through group relationship
+    @Query("SELECT e FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId ORDER BY e.eventDate DESC")
+    Page<Event> findByOrganiserId(@Param("organiserId") Long organiserId, Pageable pageable);
     
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEvents(@Param("now") LocalDateTime now, Pageable pageable);
     
-    // TODO: Add activityType relationship to Event entity if needed
-    // @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
-    //        "AND e.activityType.id = :activityTypeId ORDER BY e.eventDate ASC")
-    // Page<Event> findUpcomingEventsByActivityType(
-    //     @Param("now") LocalDateTime now,
-    //     @Param("activityTypeId") Long activityTypeId,
-    //     Pageable pageable
-    // );
+    // Get upcoming events by activity through group relationship
+    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
+           "AND e.group.activity.id = :activityId ORDER BY e.eventDate ASC")
+    Page<Event> findUpcomingEventsByActivityId(
+        @Param("now") LocalDateTime now,
+        @Param("activityId") Long activityId,
+        Pageable pageable
+    );
     
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
            "AND LOWER(e.location) LIKE LOWER(CONCAT('%', :location, '%')) ORDER BY e.eventDate ASC")

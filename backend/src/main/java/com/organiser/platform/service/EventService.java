@@ -95,23 +95,21 @@ public class EventService {
                 .map(this::convertToDTO);
     }
     
-    // TODO: Re-enable once activityType relationship is added to Event entity
-    // public Page<EventDTO> getEventsByActivityType(Long activityTypeId, Pageable pageable) {
-    //     return eventRepository.findUpcomingEventsByActivityType(
-    //             LocalDateTime.now(), activityTypeId, pageable
-    //     ).map(this::convertToDTO);
-    // }
+    public Page<EventDTO> getEventsByActivity(Long activityId, Pageable pageable) {
+        return eventRepository.findUpcomingEventsByActivityId(
+                LocalDateTime.now(), activityId, pageable
+        ).map(this::convertToDTO);
+    }
     
     public Page<EventDTO> searchEvents(String keyword, Pageable pageable) {
         return eventRepository.searchEvents(keyword, LocalDateTime.now(), pageable)
                 .map(this::convertToDTO);
     }
     
-    // TODO: Fix to match Event.eventOrganisers structure
-    // public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable) {
-    //     return eventRepository.findByOrganiserId(organiserId, pageable)
-    //             .map(this::convertToDTO);
-    // }
+    public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable) {
+        return eventRepository.findByOrganiserId(organiserId, pageable)
+                .map(this::convertToDTO);
+    }
     
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
