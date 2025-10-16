@@ -47,7 +47,7 @@ git push -u origin main
 2. Click **"New +"** → **"Blueprint"**
 3. Connect your GitHub repository
 4. Select the repository: `organiser-platform`
-5. Render will automatically detect `backend/render.yaml`
+5. Render will automatically detect `render.yaml` at the repository root
 6. Click **"Apply"**
 
 #### Step 3: Configure Environment Variables
