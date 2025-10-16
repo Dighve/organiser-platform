@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore'
 export default function HomePage() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
-  const [activeGroupTab, setActiveGroupTab] = useState('member')
+  const [activeGroupTab, setActiveGroupTab] = useState('organiser')
   
   // Fetch user's subscribed groups (only if authenticated)
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
@@ -182,12 +182,6 @@ export default function HomePage() {
           {/* Organiser Tab */}
           {activeGroupTab === 'organiser' && user?.isOrganiser && (
             <>
-              <button
-                className="w-full btn btn-primary mb-4"
-                onClick={() => navigate('/groups/create')}
-              >
-                + Create Group
-              </button>
               {organisedGroupsLoading ? (
                 <div className="text-gray-600">Loading organised groups...</div>
               ) : organisedGroups.length > 0 ? (
@@ -233,6 +227,12 @@ export default function HomePage() {
                   No organised groups yet. Create a group to get started!
                 </div>
               )}
+              <button
+                className="w-full btn btn-primary mb-4"
+                onClick={() => navigate('/groups/create')}
+              >
+                + Create Group
+              </button>
             </>
           )}
         </div>

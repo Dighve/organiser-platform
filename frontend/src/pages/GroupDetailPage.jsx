@@ -26,8 +26,17 @@ export default function GroupDetailPage() {
     enabled: isAuthenticated && user?.isOrganiser,
   })
 
+  // Fetch user's subscribed groups to check subscription status
+  const { data: subscribedGroupsData } = useQuery({
+    queryKey: ['myGroups'],
+    queryFn: () => groupsAPI.getMyGroups(),
+    enabled: isAuthenticated,
+  })
+
   const organisedGroups = organisedGroupsData?.data || []
+  const subscribedGroups = subscribedGroupsData?.data || []
   const isGroupOrganiser = organisedGroups.some(g => g.id === Number.parseInt(id))
+  const isSubscribed = subscribedGroups.some(g => g.id === Number.parseInt(id))
 
   // Fetch group events (using getUpcomingEvents and filtering by group)
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
@@ -260,7 +269,7 @@ export default function GroupDetailPage() {
                   <div className="text-center py-8 bg-gray-50 rounded-lg">
                     <Calendar className="h-12 w-12 mx-auto text-gray-400 mb-3" />
                     <p className="text-gray-600">No events scheduled for this group yet.</p>
-                    {(group.isSubscribed || isGroupOrganiser) && (
+                    {(isSubscribed || isGroupOrganiser) && (
                       <button
                         onClick={() => navigate(`/create-event?groupId=${id}`)}
                         className="mt-4 btn btn-primary"
@@ -291,7 +300,7 @@ export default function GroupDetailPage() {
                     ) : (
                       // Show Join/Leave buttons for non-organizers
                       <>
-                        {group.isSubscribed ? (
+                        {isSubscribed ? (
                           <>
                             <button
                               onClick={() => navigate(`/create-event?groupId=${id}`)}

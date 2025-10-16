@@ -10,7 +10,7 @@ export default function BrowseGroupsPage() {
   const { isAuthenticated, user } = useAuthStore()
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('explore')
+  const [activeTab, setActiveTab] = useState('organiser') // organiser, member, explore
   
   // Fetch all public groups
   const { data, isLoading, error } = useQuery({
@@ -131,6 +131,17 @@ export default function BrowseGroupsPage() {
       {/* Tabs */}
       <div className="mb-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
+          {user?.isOrganiser && (
+            <button
+              onClick={() => setActiveTab('organiser')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'organiser'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+            >
+              Organiser
+            </button>
+          )}
           {isAuthenticated && (
             <button
               onClick={() => setActiveTab('member')}
@@ -143,18 +154,7 @@ export default function BrowseGroupsPage() {
               Member
             </button>
           )}
-          {user?.isOrganiser && (
-            <button
-              onClick={() => setActiveTab('organiser')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'organiser'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Organiser
-            </button>
-          )}
+          
           <button
             onClick={() => setActiveTab('explore')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -366,11 +366,10 @@ function GroupCard({ group, onNavigate, onSubscribe, onUnsubscribe, isSubscribed
           {showActions && isSubscribed && !isOrganiser && (
             <>
               <button
-                onClick={() => onNavigate(`/create-event?groupId=${group.id}`)}
+                onClick={() => onNavigate(`/groups/${group.id}`)}
                 className="flex-1 btn btn-primary btn-sm"
               >
-                <Calendar className="h-4 w-4 mr-1" />
-                Create Event
+                View Group
               </button>
               <button
                 onClick={() => onUnsubscribe(group.id)}
