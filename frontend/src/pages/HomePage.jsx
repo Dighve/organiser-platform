@@ -1,143 +1,106 @@
-import { Link } from 'react-router-dom'
-import { Mountain, Users, Calendar, TrendingUp } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
-import { eventsAPI } from '../lib/api'
-import EventCard from '../components/EventCard'
+import React, { useState } from 'react'
 
 export default function HomePage() {
-  const { data: eventsData, isLoading } = useQuery({
-    queryKey: ['upcomingEvents', 0],
-    queryFn: () => eventsAPI.getUpcomingEvents(0, 6),
-  })
+  // Dummy data for groups and events
+  const groups = [
+    { id: 1, name: 'Peak District Hikers' },
+    { id: 2, name: 'Lake District Explorers' },
+    { id: 3, name: 'Snowdonia Trekkers' }
+  ]
+  const yourEvents = [
+    { id: 1, title: 'Hike to Kinder Scout', date: '2025-10-20' },
+    { id: 2, title: 'Snowdon Summit', date: '2025-11-05' }
+  ]
+  const allEvents = [
+    { id: 3, title: 'Helvellyn Adventure', date: '2025-10-25' },
+    { id: 4, title: 'Mam Tor Sunrise', date: '2025-11-10' }
+  ]
 
-  const events = eventsData?.data?.content || []
+  const [showDiscover, setShowDiscover] = useState(false)
 
+  // Cartoon hiking SVG background
+  const cartoonBg = (
+    <div className="absolute inset-0 -z-10 w-full h-full bg-gradient-to-b from-green-200 to-green-400 flex items-center justify-center">
+      <svg width="100%" height="100%" viewBox="0 0 800 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
+        <ellipse cx="400" cy="350" rx="350" ry="80" fill="#7ed957" />
+        <ellipse cx="200" cy="300" rx="120" ry="40" fill="#b6e388" />
+        <ellipse cx="600" cy="320" rx="100" ry="30" fill="#b6e388" />
+        <ellipse cx="400" cy="250" rx="60" ry="20" fill="#4e944f" />
+        <ellipse cx="500" cy="270" rx="40" ry="15" fill="#4e944f" />
+        <ellipse cx="300" cy="270" rx="40" ry="15" fill="#4e944f" />
+        {/* Cartoon trees */}
+        <circle cx="150" cy="260" r="20" fill="#388e3c" />
+        <rect x="145" y="260" width="10" height="20" fill="#795548" />
+        <circle cx="650" cy="280" r="18" fill="#388e3c" />
+        <rect x="645" y="280" width="8" height="16" fill="#795548" />
+      </svg>
+    </div>
+  )
+
+  if (!showDiscover) {
+    return (
+      <div className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden bg-gradient-to-b from-green-200 to-green-400">
+        {cartoonBg}
+        <h1 className="text-4xl sm:text-5xl font-bold text-green-900 mb-4 drop-shadow-lg">Platform for organising and participate in a hiking event.</h1>
+        <p className="text-lg text-green-800 mb-8">Find your next hike, subscribe to hiking groups, and create hiking events!</p>
+        <button
+          className="btn px-8 py-3 text-xl rounded-full shadow-lg bg-black hover:bg-gray-800 text-white"
+          onClick={() => setShowDiscover(true)}
+        >
+          Discover
+        </button>
+      </div>
+    )
+  }
+
+  // Discover view: groups/events layout, grey background
   return (
-    <div>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              Discover Outdoor Adventures
-            </h1>
-            <p className="text-xl md:text-2xl mb-8 text-primary-100">
-              Join hiking trips, cycling tours, and more with fellow enthusiasts
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/events" className="btn bg-white text-primary-600 hover:bg-gray-100 px-8 py-3 text-lg">
-                Browse Events
-              </Link>
-              <Link to="/create-event" className="btn btn-outline border-white text-white hover:bg-white hover:text-primary-600 px-8 py-3 text-lg">
+    <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row gap-8 px-4 py-8">
+      {/* Left: Your Groups */}
+      <div className="w-full lg:w-1/3">
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Groups</h2>
+        <div className="space-y-4">
+          {groups.map(group => (
+            <div key={group.id} className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
+              <span className="font-semibold text-gray-800">{group.name}</span>
+              <button
+                className="btn btn-outline btn-sm text-gray-700 border-gray-400 hover:bg-gray-200"
+                // onClick logic for create event
+              >
                 Create Event
-              </Link>
+              </button>
             </div>
-          </div>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* Features Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose Us?</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-                <Mountain className="h-8 w-8 text-primary-600" />
+      {/* Right: Events */}
+      <div className="w-full lg:w-2/3 flex flex-col gap-8">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Events</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {yourEvents.map(event => (
+              <div key={event.id} className="bg-white rounded-lg shadow p-4">
+                <div className="font-semibold text-gray-800">{event.title}</div>
+                <div className="text-sm text-gray-600">{event.date}</div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Diverse Activities</h3>
-              <p className="text-gray-600">
-                From hiking to cycling, find activities that match your interests
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-                <Users className="h-8 w-8 text-primary-600" />
+            ))}
+            {yourEvents.length === 0 && <div className="text-gray-700">No events yet.</div>}
+          </div>
+        </div>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">All Events</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {allEvents.map(event => (
+              <div key={event.id} className="bg-white rounded-lg shadow p-4">
+                <div className="font-semibold text-gray-800">{event.title}</div>
+                <div className="text-sm text-gray-600">{event.date}</div>
               </div>
-              <h3 className="text-xl font-semibold mb-2">Community Driven</h3>
-              <p className="text-gray-600">
-                Connect with like-minded people and build lasting friendships
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-                <Calendar className="h-8 w-8 text-primary-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-2">Easy Organization</h3>
-              <p className="text-gray-600">
-                Powerful tools for organizers to manage events effortlessly
-              </p>
-            </div>
+            ))}
+            {allEvents.length === 0 && <div className="text-gray-700">No events found.</div>}
           </div>
         </div>
-      </section>
-
-      {/* Upcoming Events Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center mb-8">
-            <h2 className="text-3xl font-bold">Upcoming Events</h2>
-            <Link to="/events" className="text-primary-600 hover:text-primary-700 font-medium">
-              View All →
-            </Link>
-          </div>
-          
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="card animate-pulse">
-                  <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-                </div>
-              ))}
-            </div>
-          ) : events.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {events.map((event) => (
-                <EventCard key={event.id} event={event} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No upcoming events yet. Be the first to create one!</p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 bg-primary-600 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">10,000+</div>
-              <div className="text-primary-100">Active Members</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">500+</div>
-              <div className="text-primary-100">Events Organized</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">50+</div>
-              <div className="text-primary-100">Cities Covered</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 bg-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Your Adventure?</h2>
-          <p className="text-xl text-gray-600 mb-8">
-            Join thousands of outdoor enthusiasts and discover your next adventure
-          </p>
-          <Link to="/register" className="btn btn-primary px-8 py-3 text-lg">
-            Get Started Free
-          </Link>
-        </div>
-      </section>
+      </div>
     </div>
   )
 }

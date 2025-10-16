@@ -35,7 +35,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/auth/**"),
-                                new AntPathRequestMatcher("/api/v1/events/public/**"),
+                                new AntPathRequestMatcher("/api/v1/events/**"),
                                 new AntPathRequestMatcher("/api/v1/activities/public/**"),
                                 new AntPathRequestMatcher("/actuator/**"),
                                 new AntPathRequestMatcher("/swagger-ui/**"),

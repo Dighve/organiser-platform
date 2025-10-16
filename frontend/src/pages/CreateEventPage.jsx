@@ -1,43 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { MapPin, Clock, FileText, Users, ArrowRight, ArrowLeft, Check } from 'lucide-react'
+import { MapPin, Clock, FileText, Users, ArrowRight, ArrowLeft, Check, Edit2 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 
 const STEPS = {
   LOCATION: 0,
-  TRAVEL: 1,
-  TIME: 2,
-  DESCRIPTION: 3,
-  GPX: 4,
-  SOCIAL: 5,
-  REVIEW: 6
+  TIME: 1,
+  DESCRIPTION: 2,
+  REVIEW: 3
 }
 
 const STEP_TITLES = {
   [STEPS.LOCATION]: 'Where are we going?',
-  [STEPS.TRAVEL]: 'How do we get there?',
   [STEPS.TIME]: 'When does it happen?',
   [STEPS.DESCRIPTION]: 'Tell us about the event',
-  [STEPS.GPX]: 'Route details (optional)',
-  [STEPS.SOCIAL]: 'Social arrangements (optional)',
   [STEPS.REVIEW]: 'Review & Create'
 }
 
 const DIFFICULTY_OPTIONS = [
-  { value: 'EASY', label: 'Easy' },
-  { value: 'MODERATE', label: 'Moderate' },
-  { value: 'CHALLENGING', label: 'Challenging' },
+  { value: 'BEGINNER', label: 'Beginner' },
+  { value: 'INTERMEDIATE', label: 'Intermediate' },
+  { value: 'ADVANCED', label: 'Advanced' },
   { value: 'EXPERT', label: 'Expert' }
 ]
 
 export default function CreateEventPage() {
   const [currentStep, setCurrentStep] = useState(STEPS.LOCATION)
   const [formData, setFormData] = useState({})
-  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm()
+  const { register, handleSubmit, watch, formState: { errors }, reset, setValue } = useForm()
   const navigate = useNavigate()
 
   const watchedValues = watch()
+
+  // Load saved form data into form fields when returning to a step
+  useEffect(() => {
+    Object.keys(formData).forEach(key => {
+      setValue(key, formData[key])
+    })
+  }, [currentStep, formData, setValue])
 
   const updateFormData = (stepData) => {
     setFormData(prev => ({ ...prev, ...stepData }))
@@ -301,59 +302,124 @@ export default function CreateEventPage() {
 
   // Social step removed
 
+  const goToStep = (step) => {
+    setCurrentStep(step)
+  }
+
   const renderReviewStep = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
         <Check className="mx-auto h-16 w-16 text-primary-600 mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Review & Confirm</h2>
-        <p className="text-gray-600">Preview all event details below. Click Confirm & Submit to create your event.</p>
+        <p className="text-gray-600">Preview all event details below. Click any Edit button to make changes.</p>
       </div>
 
-      <div className="space-y-6">
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-2">Location</h3>
-          <p>{formData.location}</p>
-          {formData.latitude && <p className="text-gray-600">Latitude: {formData.latitude}</p>}
-          {formData.longitude && <p className="text-gray-600">Longitude: {formData.longitude}</p>}
-        </div>
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-2">Timing</h3>
-          <p>Event Date: {formData.eventDate} {formData.startTime && `at ${formData.startTime}`}</p>
-          {formData.endDate && <p className="text-gray-600">End: {formData.endDate} {formData.endTime && `at ${formData.endTime}`}</p>}
-          {formData.registrationDeadline && <p className="text-gray-600">Registration Deadline: {formData.registrationDeadline}</p>}
-        </div>
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-2">Details</h3>
-          <p>Title: {formData.title}</p>
-          {formData.description && <p className="text-gray-600">{formData.description}</p>}
-          {formData.activityTypeId && <p className="text-gray-600">Activity Type ID: {formData.activityTypeId}</p>}
-          {formData.difficultyLevel && <p className="text-gray-600">Difficulty: {formData.difficultyLevel}</p>}
-        </div>
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-2">Participants & Price</h3>
-          {formData.maxParticipants && <p>Max: {formData.maxParticipants}</p>}
-          {formData.minParticipants && <p>Min: {formData.minParticipants}</p>}
-          <p>Price: £{formData.price || 0}</p>
-        </div>
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-2">Route & Images</h3>
-          {formData.distanceKm && <p>Distance: {formData.distanceKm} km</p>}
-          {formData.elevationGainM && <p>Elevation Gain: {formData.elevationGainM} m</p>}
-          {formData.estimatedDurationHours && <p>Estimated Duration: {formData.estimatedDurationHours} hours</p>}
-          {formData.imageUrl && <p>Image: <a href={formData.imageUrl} target="_blank" rel="noopener noreferrer" className="underline">{formData.imageUrl}</a></p>}
-          {formData.additionalImages && formData.additionalImages.split(',').map((img, i) => <p key={i} className="text-gray-600">Additional: <a href={img.trim()} target="_blank" rel="noopener noreferrer" className="underline">{img.trim()}</a></p>)}
-        </div>
-        <div className="card">
-          <h3 className="font-semibold text-gray-900 mb-2">Requirements & Included Items</h3>
-          {formData.requirements && <p>Requirements: {formData.requirements}</p>}
-          {formData.includedItems && <p>Included: {formData.includedItems}</p>}
-        </div>
-        {formData.cancellationPolicy && (
-          <div className="card">
-            <h3 className="font-semibold text-gray-900 mb-2">Cancellation Policy</h3>
-            <p>{formData.cancellationPolicy}</p>
+      <div className="space-y-4">
+        <div className="card border-2 border-gray-200 hover:border-primary-300 transition-colors">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary-600" />
+              Location
+            </h3>
+            <button
+              type="button"
+              onClick={() => goToStep(STEPS.LOCATION)}
+              className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm font-medium"
+            >
+              <Edit2 className="h-4 w-4" /> Edit
+            </button>
           </div>
-        )}
+          <div className="text-gray-700 space-y-1">
+            <p className="font-medium">{formData.location || 'Not set'}</p>
+            {formData.latitude && <p className="text-sm text-gray-600">Latitude: {formData.latitude}</p>}
+            {formData.longitude && <p className="text-sm text-gray-600">Longitude: {formData.longitude}</p>}
+          </div>
+        </div>
+
+        <div className="card border-2 border-gray-200 hover:border-primary-300 transition-colors">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary-600" />
+              Timing
+            </h3>
+            <button
+              type="button"
+              onClick={() => goToStep(STEPS.TIME)}
+              className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm font-medium"
+            >
+              <Edit2 className="h-4 w-4" /> Edit
+            </button>
+          </div>
+          <div className="text-gray-700 space-y-1">
+            <p><span className="font-medium">Event Date:</span> {formData.eventDate} {formData.startTime && `at ${formData.startTime}`}</p>
+            {formData.endDate && <p className="text-sm text-gray-600">End: {formData.endDate} {formData.endTime && `at ${formData.endTime}`}</p>}
+            {formData.registrationDeadline && <p className="text-sm text-gray-600">Registration Deadline: {formData.registrationDeadline}</p>}
+          </div>
+        </div>
+
+        <div className="card border-2 border-gray-200 hover:border-primary-300 transition-colors">
+          <div className="flex justify-between items-start mb-3">
+            <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary-600" />
+              Event Details
+            </h3>
+            <button
+              type="button"
+              onClick={() => goToStep(STEPS.DESCRIPTION)}
+              className="text-primary-600 hover:text-primary-700 flex items-center gap-1 text-sm font-medium"
+            >
+              <Edit2 className="h-4 w-4" /> Edit
+            </button>
+          </div>
+          <div className="text-gray-700 space-y-2">
+            <p className="font-medium text-lg">{formData.title || 'No title'}</p>
+            {formData.description && <p className="text-gray-600 text-sm">{formData.description}</p>}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm mt-2">
+              {formData.activityTypeId && <p><span className="font-medium">Activity Type ID:</span> {formData.activityTypeId}</p>}
+              {formData.difficultyLevel && <p><span className="font-medium">Difficulty:</span> {formData.difficultyLevel}</p>}
+              {formData.maxParticipants && <p><span className="font-medium">Max Participants:</span> {formData.maxParticipants}</p>}
+              {formData.minParticipants && <p><span className="font-medium">Min Participants:</span> {formData.minParticipants}</p>}
+              <p><span className="font-medium">Price:</span> £{formData.price || 0}</p>
+              {formData.distanceKm && <p><span className="font-medium">Distance:</span> {formData.distanceKm} km</p>}
+              {formData.elevationGainM && <p><span className="font-medium">Elevation Gain:</span> {formData.elevationGainM} m</p>}
+              {formData.estimatedDurationHours && <p><span className="font-medium">Duration:</span> {formData.estimatedDurationHours} hours</p>}
+            </div>
+            {formData.imageUrl && (
+              <div className="mt-2">
+                <p className="text-sm font-medium mb-1">Main Image:</p>
+                <img src={formData.imageUrl} alt="Event" className="w-full h-48 object-cover rounded-lg" onError={(e) => e.target.style.display = 'none'} />
+              </div>
+            )}
+            {formData.additionalImages && (
+              <div className="mt-2">
+                <p className="text-sm font-medium">Additional Images:</p>
+                <div className="flex gap-2 flex-wrap mt-1">
+                  {formData.additionalImages.split(',').map((img, i) => (
+                    <img key={i} src={img.trim()} alt={`Additional ${i+1}`} className="w-20 h-20 object-cover rounded" onError={(e) => e.target.style.display = 'none'} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {formData.requirements && (
+              <div className="mt-2">
+                <p className="text-sm font-medium">Requirements:</p>
+                <p className="text-sm text-gray-600">{formData.requirements}</p>
+              </div>
+            )}
+            {formData.includedItems && (
+              <div className="mt-2">
+                <p className="text-sm font-medium">Included Items:</p>
+                <p className="text-sm text-gray-600">{formData.includedItems}</p>
+              </div>
+            )}
+            {formData.cancellationPolicy && (
+              <div className="mt-2">
+                <p className="text-sm font-medium">Cancellation Policy:</p>
+                <p className="text-sm text-gray-600">{formData.cancellationPolicy}</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="flex justify-between mt-8">
@@ -371,16 +437,10 @@ export default function CreateEventPage() {
     switch (currentStep) {
       case STEPS.LOCATION:
         return renderLocationStep()
-      case STEPS.TRAVEL:
-        return renderTravelStep()
       case STEPS.TIME:
         return renderTimeStep()
       case STEPS.DESCRIPTION:
         return renderDescriptionStep()
-      case STEPS.GPX:
-        return renderGpxStep()
-      case STEPS.SOCIAL:
-        return renderSocialStep()
       case STEPS.REVIEW:
         return renderReviewStep()
       default:
