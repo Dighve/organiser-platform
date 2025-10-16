@@ -10,7 +10,7 @@ export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
 
   const { data, isLoading } = useQuery({
     queryKey: ['event', id],
@@ -66,6 +66,9 @@ export default function EventDetailPage() {
     )
   }
 
+  // Check if current user is the event organiser
+  const isEventOrganiser = isAuthenticated && user?.email === event.organiserEmail
+
   const formattedDate = format(new Date(event.eventDate), 'EEEE, MMMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
 
@@ -81,13 +84,18 @@ export default function EventDetailPage() {
 
       {/* Event Image */}
       <div className="relative h-96 rounded-lg overflow-hidden bg-gray-200 mb-8">
-        {event.imageUrl ? (
-          <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <Calendar className="h-32 w-32" />
-          </div>
-        )}
+        <img 
+          src={event.imageUrl || [
+            'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=1200&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=600&fit=crop'
+          ][Number.parseInt(id) % 6]}
+          alt={event.title} 
+          className="w-full h-full object-cover" 
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -211,22 +219,30 @@ export default function EventDetailPage() {
             </div>
 
             {isAuthenticated ? (
-              <div className="space-y-3">
-                <button
-                  onClick={() => joinMutation.mutate()}
-                  disabled={event.status === 'FULL' || joinMutation.isLoading}
-                  className="w-full btn btn-primary"
-                >
-                  {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
-                </button>
-                <button
-                  onClick={() => leaveMutation.mutate()}
-                  disabled={leaveMutation.isLoading}
-                  className="w-full btn btn-outline"
-                >
-                  {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
-                </button>
-              </div>
+              isEventOrganiser ? (
+                // Organiser view - show message instead of join/leave buttons
+                <div className="text-center p-4 bg-primary-50 rounded-lg">
+                  <p className="text-primary-700 font-medium">You are the organiser of this event</p>
+                </div>
+              ) : (
+                // Regular user view - show join/leave buttons
+                <div className="space-y-3">
+                  <button
+                    onClick={() => joinMutation.mutate()}
+                    disabled={event.status === 'FULL' || joinMutation.isLoading}
+                    className="w-full btn btn-primary"
+                  >
+                    {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
+                  </button>
+                  <button
+                    onClick={() => leaveMutation.mutate()}
+                    disabled={leaveMutation.isLoading}
+                    className="w-full btn btn-outline"
+                  >
+                    {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
+                  </button>
+                </div>
+              )
             ) : (
               <button
                 onClick={() => navigate('/login')}

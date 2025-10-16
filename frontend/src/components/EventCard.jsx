@@ -10,17 +10,18 @@ export default function EventCard({ event }) {
     <Link to={`/events/${event.id}`} className="card hover:shadow-lg transition-shadow duration-200">
       {/* Event Image */}
       <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-gray-200">
-        {event.imageUrl ? (
-          <img
-            src={event.imageUrl}
-            alt={event.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400">
-            <Calendar className="h-16 w-16" />
-          </div>
-        )}
+        <img
+          src={event.imageUrl || [
+            'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+          ][Number.parseInt(event.id) % 6]}
+          alt={event.title}
+          className="w-full h-full object-cover"
+        />
         {event.status === 'FULL' && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
             Full

@@ -32,10 +32,11 @@ export default function CreateGroupPage() {
   // Create group mutation
   const createGroupMutation = useMutation({
     mutationFn: (data) => groupsAPI.createGroup(data),
-    onSuccess: () => {
+    onSuccess: (response) => {
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['publicGroups'])
-      navigate('/groups')
+      const groupId = response.data?.id
+      navigate(groupId ? `/groups/${groupId}` : '/')
     },
     onError: (error) => {
       console.error('Error creating group:', error)
@@ -107,11 +108,11 @@ export default function CreateGroupPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <button
-        onClick={() => navigate('/groups')}
+        onClick={() => navigate('/')}
         className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
       >
         <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to My Groups
+        Back to Home
       </button>
       
       <h1 className="text-3xl font-bold mb-8">Create New Group</h1>
@@ -242,7 +243,7 @@ export default function CreateGroupPage() {
         <div className="flex gap-3 pt-4">
           <button
             type="button"
-            onClick={() => navigate('/groups')}
+            onClick={() => navigate('/')}
             className="btn btn-outline flex-1"
           >
             Cancel

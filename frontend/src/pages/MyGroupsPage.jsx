@@ -9,7 +9,8 @@ export default function MyGroupsPage() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
   const queryClient = useQueryClient()
-  const [activeTab, setActiveTab] = useState('subscribed')
+  // Default to 'organiser' tab if user is organiser, otherwise 'subscribed'
+  const [activeTab, setActiveTab] = useState(user?.isOrganiser ? 'organiser' : 'subscribed')
   
   // Fetch user's subscribed groups
   const { data, isLoading, error } = useQuery({
@@ -74,12 +75,6 @@ export default function MyGroupsPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">My Groups</h1>
         <div className="flex gap-3">
-          <button
-            onClick={() => navigate('/groups/browse')}
-            className="btn btn-outline"
-          >
-            Browse Groups
-          </button>
           {user?.isOrganiser && activeTab === 'organiser' && (
             <button
               onClick={() => navigate('/groups/create')}
@@ -95,6 +90,17 @@ export default function MyGroupsPage() {
       {/* Tabs */}
       <div className="mb-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
+          {user?.isOrganiser && (
+            <button
+              onClick={() => setActiveTab('organiser')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'organiser'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+            >
+              Organiser
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('subscribed')}
             className={`py-4 px-1 border-b-2 font-medium text-sm ${
@@ -103,20 +109,8 @@ export default function MyGroupsPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            My Groups
+            Member
           </button>
-          {user?.isOrganiser && (
-            <button
-              onClick={() => setActiveTab('organiser')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'organiser'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              Organiser
-            </button>
-          )}
         </nav>
       </div>
       
@@ -131,20 +125,30 @@ export default function MyGroupsPage() {
             <div className="card text-center py-12">
               <Users className="h-16 w-16 mx-auto text-gray-400 mb-4" />
               <p className="text-gray-600 mb-4">You haven't joined any groups yet.</p>
-              <button
-                onClick={() => navigate('/groups/browse')}
-                className="btn btn-primary"
-              >
-                Browse Groups
-              </button>
+              <p className="text-sm text-gray-500">Browse groups on the home page to get started.</p>
             </div>
           ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {groups.map(group => (
-            <div
+            <div onClick={() => navigate(`/groups/${group.id}`)}
               key={group.id}
-              className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+              className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
             >
+              {/* Group Banner */}
+              <div className="relative h-40 bg-gradient-to-r from-primary-300 to-primary-500 overflow-hidden">
+                <img 
+                  src={group.bannerImage || [
+                    'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                    'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                    'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                    'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                    'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                  ][Number.parseInt(group.id) % 6]}
+                  alt={`${group.name} banner`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -236,8 +240,23 @@ export default function MyGroupsPage() {
               {organisedGroups.map(group => (
                 <div
                   key={group.id}
-                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
                 >
+                  {/* Group Banner */}
+                  <div className="relative h-40 bg-gradient-to-r from-primary-300 to-primary-500 overflow-hidden">
+                    <img 
+                      src={group.bannerImage || [
+                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                      ][Number.parseInt(group.id) % 6]}
+                      alt={`${group.name} banner`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
                   <div className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">

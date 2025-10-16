@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Menu, X, User, LogOut } from 'lucide-react'
+import { Menu, X, User, LogOut, Search } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useMutation } from '@tanstack/react-query'
@@ -7,6 +7,7 @@ import { membersAPI } from '../lib/api'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const { isAuthenticated, user, logout, updateUser } = useAuthStore()
   const navigate = useNavigate()
 
@@ -24,6 +25,14 @@ export default function Layout() {
   const handleLogout = () => {
     logout()
     navigate('/')
+  }
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchQuery('')
+    }
   }
 
   return (
@@ -49,9 +58,9 @@ export default function Layout() {
           </svg>
         </div>
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex justify-between items-center h-16 gap-4">
             {/* Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center flex-shrink-0">
               <Link to="/" className="flex items-center">
                 {/* Custom SVG: Mountain range and hiker with pole */}
                 <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -68,8 +77,25 @@ export default function Layout() {
                 </svg>
               </Link>
             </div>
+
+            {/* Search Bar - Desktop */}
+            <div className="hidden md:flex flex-1 max-w-lg">
+              <form onSubmit={handleSearch} className="w-full">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search events..."
+                    className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white/90 backdrop-blur-sm"
+                  />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                </div>
+              </form>
+            </div>
+
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
               {isAuthenticated ? (
                 <>
                   <div className="relative group z-[1000]">
@@ -85,6 +111,12 @@ export default function Layout() {
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         Profile
+                      </Link>
+                      <Link
+                        to="/my-groups"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        My Groups
                       </Link>
                       {!user?.isOrganiser && (
                         <button
@@ -131,6 +163,20 @@ export default function Layout() {
           {/* Mobile Navigation */}
           {mobileMenuOpen && (
             <div className="md:hidden py-4 space-y-2">
+              {/* Search Bar - Mobile */}
+              <form onSubmit={handleSearch} className="px-3 pb-2">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search events..."
+                    className="w-full pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white"
+                  />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                </div>
+              </form>
+              
               {isAuthenticated ? (
                 <>
                   <Link
@@ -139,6 +185,13 @@ export default function Layout() {
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     Profile
+                  </Link>
+                  <Link
+                    to="/my-groups"
+                    className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    My Groups
                   </Link>
                   {!user?.isOrganiser && (
                     <button
@@ -183,37 +236,8 @@ export default function Layout() {
 
       {/* Footer */}
       <footer className="bg-gray-800 text-white mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Organiser Platform</h3>
-              <p className="text-gray-400">
-                Connect with outdoor enthusiasts and join amazing activities.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link to="/groups/browse" className="text-gray-400 hover:text-white">
-                    Browse Groups
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/events" className="text-gray-400 hover:text-white">
-                    Browse Events
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold mb-4">Contact</h3>
-              <p className="text-gray-400">
-                Email: support@organiserplatform.com
-              </p>
-            </div>
-          </div>
-          <div className="mt-8 pt-8 border-t border-gray-700 text-center text-gray-400">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="text-center text-gray-400">
             <p>&copy; 2025 Organiser Platform. All rights reserved.</p>
           </div>
         </div>

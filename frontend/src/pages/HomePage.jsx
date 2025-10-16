@@ -93,12 +93,31 @@ export default function HomePage() {
     <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row gap-6 px-4 py-8">
       {/* Left: Your Groups */}
       <div className="w-full lg:w-1/5">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Groups</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-900">Your Groups</h2>
+          <button
+            onClick={() => navigate('/browse-groups')}
+            className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+          >
+            Explore
+          </button>
+        </div>
         
         {/* Tabs */}
         {isAuthenticated && (
           <div className="mb-4 border-b border-gray-200">
             <nav className="-mb-px flex space-x-4">
+              {user?.isOrganiser && (
+                <button
+                  onClick={() => setActiveGroupTab('organiser')}
+                  className={`py-2 px-1 border-b-2 font-medium text-sm ${activeGroupTab === 'organiser'
+                      ? 'border-primary-500 text-primary-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                >
+                  Organiser
+                </button>
+              )}
               <button
                 onClick={() => setActiveGroupTab('member')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -109,18 +128,7 @@ export default function HomePage() {
               >
                 Member
               </button>
-              {user?.isOrganiser && (
-                <button
-                  onClick={() => setActiveGroupTab('organiser')}
-                  className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeGroupTab === 'organiser'
-                      ? 'border-primary-500 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  Organiser
-                </button>
-              )}
+              
             </nav>
           </div>
         )}
@@ -133,16 +141,33 @@ export default function HomePage() {
                 <div className="text-gray-600">Loading groups...</div>
               ) : memberGroups.length > 0 ? (
                 memberGroups.map(group => (
-                  <div key={group.id} className="bg-white rounded-lg shadow p-4">
-                    <div className="mb-3">
-                      <div 
-                        className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
-                        onClick={() => navigate(`/groups/${group.id}`)}
-                      >
-                        {group.name}
+                  <div key={group.id} className="bg-white rounded-lg shadow overflow-hidden">
+                    {/* Group Banner */}
+                    <div className="relative h-24 bg-gradient-to-r from-primary-300 to-primary-500 overflow-hidden">
+                      <img 
+                        src={group.bannerImage || [
+                          'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                        ][Number.parseInt(group.id) % 6]}
+                        alt={`${group.name} banner`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <div className="mb-3">
+                        <div 
+                          className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
+                          onClick={() => navigate(`/groups/${group.id}`)}
+                        >
+                          {group.name}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
+                        <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
                       </div>
-                      <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
-                      <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
                     </div>
                   </div>
                 ))
@@ -157,27 +182,50 @@ export default function HomePage() {
           {/* Organiser Tab */}
           {activeGroupTab === 'organiser' && user?.isOrganiser && (
             <>
+              <button
+                className="w-full btn btn-primary mb-4"
+                onClick={() => navigate('/groups/create')}
+              >
+                + Create Group
+              </button>
               {organisedGroupsLoading ? (
                 <div className="text-gray-600">Loading organised groups...</div>
               ) : organisedGroups.length > 0 ? (
                 organisedGroups.map(group => (
-                  <div key={group.id} className="bg-white rounded-lg shadow p-4">
-                    <div className="mb-3">
-                      <div 
-                        className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
-                        onClick={() => navigate(`/groups/${group.id}`)}
-                      >
-                        {group.name}
-                      </div>
-                      <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
-                      <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
+                  <div key={group.id} className="bg-white rounded-lg shadow overflow-hidden">
+                    {/* Group Banner */}
+                    <div className="relative h-24 bg-gradient-to-r from-primary-300 to-primary-500 overflow-hidden">
+                      <img 
+                        src={group.bannerImage || [
+                          'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                          'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                        ][Number.parseInt(group.id) % 6]}
+                        alt={`${group.name} banner`}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
-                    <button
-                      className="w-full btn btn-primary btn-sm"
-                      onClick={() => navigate(`/create-event?groupId=${group.id}`)}
-                    >
-                      Create Event
-                    </button>
+                    <div className="p-4">
+                      <div className="mb-3">
+                        <div 
+                          className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
+                          onClick={() => navigate(`/groups/${group.id}`)}
+                        >
+                          {group.name}
+                        </div>
+                        <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
+                        <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
+                      </div>
+                      <button
+                        className="w-full btn btn-primary btn-sm"
+                        onClick={() => navigate(`/create-event?groupId=${group.id}`)}
+                      >
+                        Create Event
+                      </button>
+                    </div>
                   </div>
                 ))
               ) : (
@@ -208,12 +256,19 @@ export default function HomePage() {
                   onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
                 >
                   {/* Event Image */}
-                  <div className="w-full h-40 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                    {event.imageUrl ? (
-                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-white text-5xl">🏔️</span>
-                    )}
+                  <div className="w-full h-40 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={event.imageUrl || [
+                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                      ][Number.parseInt(event.id) % 6]}
+                      alt={event.title} 
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
                   {/* Event Content */}
                   <div className="p-4">
@@ -258,12 +313,19 @@ export default function HomePage() {
                   onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
                 >
                   {/* Event Image */}
-                  <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-                    {event.imageUrl ? (
-                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-white text-5xl">⛰️</span>
-                    )}
+                  <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center overflow-hidden">
+                    <img 
+                      src={event.imageUrl || [
+                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                      ][Number.parseInt(event.id) % 6]}
+                      alt={event.title} 
+                      className="w-full h-full object-cover" 
+                    />
                   </div>
                   {/* Event Content */}
                   <div className="p-4">

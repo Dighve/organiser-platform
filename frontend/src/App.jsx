@@ -4,10 +4,8 @@ import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import VerifyMagicLinkPage from './pages/VerifyMagicLinkPage'
-import EventsPage from './pages/EventsPage'
 import EventDetailPage from './pages/EventDetailPage'
 import CreateEventPage from './pages/CreateEventPage'
-import MyEventsPage from './pages/MyEventsPage'
 import MyGroupsPage from './pages/MyGroupsPage'
 import BrowseGroupsPage from './pages/BrowseGroupsPage'
 import CreateGroupPage from './pages/CreateGroupPage'
@@ -26,7 +24,6 @@ function App() {
         <Route index element={<HomePage />} />  
         <Route path="login" element={<LoginPage />} />
         <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
-        <Route path="events" element={<EventsPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />
         <Route
           path="create-event"
@@ -37,22 +34,14 @@ function App() {
           }
         />
         <Route
-          path="my-events"
-          element={
-            <PrivateRoute>
-              <MyEventsPage />
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="groups"
+          path="my-groups"
           element={
             <PrivateRoute>
               <MyGroupsPage />
             </PrivateRoute>
           }
         />
-        <Route path="groups/browse" element={<BrowseGroupsPage />} />
+        <Route path="browse-groups" element={<BrowseGroupsPage />} />
         <Route path="groups/:id" element={<GroupDetailPage />} />
         <Route
           path="groups/create"

@@ -102,7 +102,7 @@ export default function CreateEventPage() {
     try {
       await eventsAPI.createEvent(payload)
       toast.success('Event created successfully!')
-      navigate(groupId ? '/groups' : '/my-events')
+      navigate(groupId ? `/groups/${groupId}` : '/')
     } catch (error) {
       console.error('Error creating event:', error)
       toast.error('Failed to create event. Please try again.')
