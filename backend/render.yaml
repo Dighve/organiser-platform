@@ -5,9 +5,7 @@ services:
     region: oregon # Free tier available
     plan: free
     buildCommand: ./gradlew clean build -x test
-    startCommand: |
-      export JDBC_DATABASE_URL="jdbc:${DATABASE_URL}"
-      java -Dserver.port=$PORT -jar build/libs/platform-1.0.0.jar
+    startCommand: java -Dserver.port=$PORT -jar build/libs/platform-1.0.0.jar
     envVars:
       - key: JAVA_TOOL_OPTIONS
         value: "-Xmx512m"
