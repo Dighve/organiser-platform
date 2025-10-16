@@ -45,11 +45,9 @@ java {
     }
 }
 
-// Exclude PostgreSQL migrations for local dev (uses MariaDB)
-// For production Docker builds, all migrations are included
-processResources {
-    exclude '**/db/migration/postgresql/**'
-}
+// Include all migrations in the build for flexibility
+// Local dev uses MariaDB (configured in application.properties)
+// Production uses PostgreSQL (configured in application-prod.properties)
 
 // Configure versions
 ext {

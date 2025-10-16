@@ -13,14 +13,6 @@ services:
         fromDatabase:
           name: hikehub-db
           property: connectionString
-      - key: DATABASE_USERNAME
-        fromDatabase:
-          name: hikehub-db
-          property: user
-      - key: DATABASE_PASSWORD
-        fromDatabase:
-          name: hikehub-db
-          property: password
       - key: JWT_SECRET
         generateValue: true
         # You can also set this manually in Render dashboard

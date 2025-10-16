@@ -1,5 +1,5 @@
--- Database schema migration for PostgreSQL
--- This creates the complete schema for the Organiser Platform
+-- Database schema migration for PostgreSQL matching JPA entities
+-- This creates the complete schema for the Organiser Platform (HikeHub)
 
 -- ========== Core Tables ==========
 
@@ -49,92 +49,119 @@ CREATE INDEX idx_group_activity ON groups(activity_id);
 -- Group co-organisers (many-to-many)
 CREATE TABLE group_co_organisers (
     group_id BIGINT NOT NULL,
-    co_organiser_id BIGINT NOT NULL,
-    joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (group_id, co_organiser_id),
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-    FOREIGN KEY (co_organiser_id) REFERENCES members(id) ON DELETE CASCADE
-);
-
--- Group members (many-to-many with status)
-CREATE TABLE group_members (
-    group_id BIGINT NOT NULL,
     member_id BIGINT NOT NULL,
-    is_organiser BOOLEAN NOT NULL DEFAULT FALSE,
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (group_id, member_id),
     FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
     FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
-CREATE INDEX idx_group_members_group ON group_members(group_id);
-CREATE INDEX idx_group_members_member ON group_members(member_id);
 
--- Events table
+-- Events table (groups organize events)
 CREATE TABLE events (
     id BIGSERIAL PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
     description TEXT,
     group_id BIGINT NOT NULL,
-    organiser_id BIGINT NOT NULL,
+    event_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP,
+    registration_deadline TIMESTAMP,
     location VARCHAR(200) NOT NULL,
-    meeting_point VARCHAR(500),
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP,
+    latitude DECIMAL(10, 7),
+    longitude DECIMAL(10, 7),
     max_participants INT,
+    min_participants INT DEFAULT 1,
+    price DECIMAL(10, 2) DEFAULT 0.00,
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    image_url VARCHAR(500),
+    cancellation_policy TEXT,
     difficulty_level VARCHAR(20),
-    status VARCHAR(20) NOT NULL DEFAULT 'SCHEDULED',
+    distance_km DECIMAL(10, 2),
+    elevation_gain_m INT,
+    estimated_duration_hours DECIMAL(4, 2),
+    average_rating DOUBLE PRECISION,
+    total_reviews INT DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-    FOREIGN KEY (organiser_id) REFERENCES members(id) ON DELETE CASCADE
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
 );
 CREATE INDEX idx_event_group ON events(group_id);
-CREATE INDEX idx_event_organiser ON events(organiser_id);
-CREATE INDEX idx_event_start_time ON events(start_time);
+CREATE INDEX idx_event_date ON events(event_date);
 CREATE INDEX idx_event_status ON events(status);
 
--- Event participants (many-to-many with RSVP status)
-CREATE TABLE event_participants (
+-- Event organisers (many-to-many between events and members)
+CREATE TABLE event_organisers (
     event_id BIGINT NOT NULL,
     member_id BIGINT NOT NULL,
-    rsvp_status VARCHAR(20) NOT NULL DEFAULT 'GOING',
-    response_notes VARCHAR(500),
-    rsvp_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    checked_in BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY (event_id, member_id),
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
-CREATE INDEX idx_event_participants_event ON event_participants(event_id);
-CREATE INDEX idx_event_participants_member ON event_participants(member_id);
 
--- Authentication table
-CREATE TABLE authentication (
+-- Event participants table
+CREATE TABLE event_participants (
     id BIGSERIAL PRIMARY KEY,
-    member_id BIGINT NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    salt VARCHAR(255),
-    last_password_change TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    failed_login_attempts INT NOT NULL DEFAULT 0,
-    account_locked_until TIMESTAMP,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    event_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL,
+    role VARCHAR(20) NOT NULL DEFAULT 'ATTENDEE',
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT unique_event_member UNIQUE (event_id, member_id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
     FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
+CREATE INDEX idx_event_participants_member_id ON event_participants(member_id);
 
--- Refresh tokens table
-CREATE TABLE refresh_tokens (
+-- Event additional images (element collection)
+CREATE TABLE event_additional_images (
+    event_id BIGINT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+-- Event requirements (element collection)
+CREATE TABLE event_requirements (
+    event_id BIGINT NOT NULL,
+    requirement VARCHAR(500) NOT NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+-- Event included items (element collection)
+CREATE TABLE event_included_items (
+    event_id BIGINT NOT NULL,
+    item VARCHAR(500) NOT NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+);
+
+-- Subscriptions table (members subscribe to groups)
+CREATE TABLE subscriptions (
     id BIGSERIAL PRIMARY KEY,
     member_id BIGINT NOT NULL,
-    token VARCHAR(500) NOT NULL UNIQUE,
+    group_id BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    notification_enabled BOOLEAN DEFAULT TRUE,
+    subscribed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    unsubscribed_at TIMESTAMP NULL,
+    CONSTRAINT unique_member_group UNIQUE (member_id, group_id),
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE
+);
+CREATE INDEX idx_subscription_member ON subscriptions(member_id);
+CREATE INDEX idx_subscription_group ON subscriptions(group_id);
+
+-- Magic links table (for passwordless authentication)
+CREATE TABLE magic_links (
+    id BIGSERIAL PRIMARY KEY,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL,
+    member_id BIGINT NOT NULL,
     expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    used_at TIMESTAMP NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    revoked BOOLEAN NOT NULL DEFAULT FALSE,
     FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
 );
-CREATE INDEX idx_refresh_token ON refresh_tokens(token);
-CREATE INDEX idx_refresh_token_member ON refresh_tokens(member_id);
+CREATE INDEX idx_magic_link_token ON magic_links(token);
+CREATE INDEX idx_magic_link_email ON magic_links(email);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -155,5 +182,5 @@ CREATE TRIGGER update_groups_updated_at BEFORE UPDATE ON groups
 CREATE TRIGGER update_events_updated_at BEFORE UPDATE ON events
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_authentication_updated_at BEFORE UPDATE ON authentication
+CREATE TRIGGER update_event_participants_updated_at BEFORE UPDATE ON event_participants
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
