@@ -85,6 +85,7 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "#id")
     public EventDTO getEventById(Long id) {
         Event event = eventRepository.findById(id)
@@ -92,28 +93,33 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "'upcoming_' + #pageable.pageNumber")
     public Page<EventDTO> getUpcomingEvents(Pageable pageable) {
         return eventRepository.findUpcomingEvents(LocalDateTime.now(), pageable)
                 .map(this::convertToDTO);
     }
     
+    @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByActivity(Long activityId, Pageable pageable) {
         return eventRepository.findUpcomingEventsByActivityId(
                 LocalDateTime.now(), activityId, pageable
         ).map(this::convertToDTO);
     }
     
+    @Transactional(readOnly = true)
     public Page<EventDTO> searchEvents(String keyword, Pageable pageable) {
         return eventRepository.searchEvents(keyword, LocalDateTime.now(), pageable)
                 .map(this::convertToDTO);
     }
     
+    @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable) {
         return eventRepository.findByOrganiserId(organiserId, pageable)
                 .map(this::convertToDTO);
     }
     
+    @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "'group_' + #groupId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<EventDTO> getEventsByGroup(Long groupId, Pageable pageable) {
         return eventRepository.findByGroupId(groupId, pageable)

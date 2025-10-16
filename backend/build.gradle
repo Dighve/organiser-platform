@@ -45,6 +45,12 @@ java {
     }
 }
 
+// Exclude PostgreSQL migrations for local dev (uses MariaDB)
+// For production Docker builds, all migrations are included
+processResources {
+    exclude '**/db/migration/postgresql/**'
+}
+
 // Configure versions
 ext {
     springCloudVersion = "2022.0.4"
