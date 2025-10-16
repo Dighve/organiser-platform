@@ -1,19 +1,108 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export default function HomePage() {
+  const navigate = useNavigate()
   // Dummy data for groups and events
   const groups = [
-    { id: 1, name: 'Peak District Hikers' },
-    { id: 2, name: 'Lake District Explorers' },
-    { id: 3, name: 'Snowdonia Trekkers' }
+    { id: 1, name: 'Peak District Hikers', members: 156 },
+    { id: 2, name: 'Lake District Explorers', members: 243 },
+    { id: 3, name: 'Snowdonia Trekkers', members: 89 },
+    { id: 4, name: 'Yorkshire Dales Wanderers', members: 124 }
   ]
   const yourEvents = [
-    { id: 1, title: 'Hike to Kinder Scout', date: '2025-10-20' },
-    { id: 2, title: 'Snowdon Summit', date: '2025-11-05' }
+    { 
+      id: 1, 
+      title: 'Hike to Kinder Scout', 
+      date: '2025-10-20',
+      time: '09:00 AM',
+      location: 'Peak District',
+      participants: 12,
+      maxParticipants: 20,
+      difficulty: 'Intermediate'
+    },
+    { 
+      id: 2, 
+      title: 'Snowdon Summit Challenge', 
+      date: '2025-11-05',
+      time: '07:00 AM',
+      location: 'Snowdonia',
+      participants: 15,
+      maxParticipants: 15,
+      difficulty: 'Advanced'
+    },
+    { 
+      id: 3, 
+      title: 'Coastal Walk - Whitby', 
+      date: '2025-10-28',
+      time: '10:30 AM',
+      location: 'North Yorkshire Coast',
+      participants: 8,
+      maxParticipants: 25,
+      difficulty: 'Beginner'
+    }
   ]
   const allEvents = [
-    { id: 3, title: 'Helvellyn Adventure', date: '2025-10-25' },
-    { id: 4, title: 'Mam Tor Sunrise', date: '2025-11-10' }
+    { 
+      id: 4, 
+      title: 'Helvellyn Adventure', 
+      date: '2025-10-25',
+      time: '08:00 AM',
+      location: 'Lake District',
+      participants: 18,
+      maxParticipants: 20,
+      difficulty: 'Advanced'
+    },
+    { 
+      id: 5, 
+      title: 'Mam Tor Sunrise Hike', 
+      date: '2025-11-10',
+      time: '06:00 AM',
+      location: 'Peak District',
+      participants: 10,
+      maxParticipants: 15,
+      difficulty: 'Intermediate'
+    },
+    { 
+      id: 6, 
+      title: 'Scafell Pike Expedition', 
+      date: '2025-11-15',
+      time: '07:30 AM',
+      location: 'Lake District',
+      participants: 5,
+      maxParticipants: 12,
+      difficulty: 'Expert'
+    },
+    { 
+      id: 7, 
+      title: 'Three Peaks Challenge', 
+      date: '2025-11-20',
+      time: '05:00 AM',
+      location: 'Yorkshire Dales',
+      participants: 20,
+      maxParticipants: 30,
+      difficulty: 'Expert'
+    },
+    { 
+      id: 8, 
+      title: 'Forest Trail Walk', 
+      date: '2025-10-30',
+      time: '11:00 AM',
+      location: 'Sherwood Forest',
+      participants: 14,
+      maxParticipants: 25,
+      difficulty: 'Beginner'
+    },
+    { 
+      id: 9, 
+      title: 'Countryside Ramble', 
+      date: '2025-11-02',
+      time: '09:30 AM',
+      location: 'Cotswolds',
+      participants: 7,
+      maxParticipants: 20,
+      difficulty: 'Beginner'
+    }
   ]
 
   const [showDiscover, setShowDiscover] = useState(false)
@@ -61,11 +150,16 @@ export default function HomePage() {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Groups</h2>
         <div className="space-y-4">
           {groups.map(group => (
-            <div key={group.id} className="bg-white rounded-lg shadow p-4 flex justify-between items-center">
-              <span className="font-semibold text-gray-800">{group.name}</span>
+            <div key={group.id} className="bg-white rounded-lg shadow p-4">
+              <div className="flex justify-between items-start mb-3">
+                <div>
+                  <div className="font-bold text-gray-900">{group.name}</div>
+                  <div className="text-sm text-gray-600 mt-1">👥 {group.members} members</div>
+                </div>
+              </div>
               <button
-                className="btn btn-outline btn-sm text-gray-700 border-gray-400 hover:bg-gray-200"
-                // onClick logic for create event
+                className="w-full btn btn-outline btn-sm text-gray-700 border-gray-400 hover:bg-gray-200"
+                onClick={() => navigate('/create-event')}
               >
                 Create Event
               </button>
@@ -80,9 +174,30 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Events</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {yourEvents.map(event => (
-              <div key={event.id} className="bg-white rounded-lg shadow p-4">
-                <div className="font-semibold text-gray-800">{event.title}</div>
-                <div className="text-sm text-gray-600">{event.date}</div>
+              <div 
+                key={event.id} 
+                className="bg-white rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => navigate(`/events/${event.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
+              >
+                <div className="font-bold text-lg text-gray-900 mb-2">{event.title}</div>
+                <div className="text-sm text-gray-600 mb-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span>📅 {event.date}</span>
+                    <span>⏰ {event.time}</span>
+                  </div>
+                  <div className="mb-1">📍 {event.location}</div>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                    {event.difficulty}
+                  </span>
+                  <span className="text-gray-600">
+                    👥 {event.participants}/{event.maxParticipants}
+                  </span>
+                </div>
               </div>
             ))}
             {yourEvents.length === 0 && <div className="text-gray-700">No events yet.</div>}
@@ -92,9 +207,30 @@ export default function HomePage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">All Events</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {allEvents.map(event => (
-              <div key={event.id} className="bg-white rounded-lg shadow p-4">
-                <div className="font-semibold text-gray-800">{event.title}</div>
-                <div className="text-sm text-gray-600">{event.date}</div>
+              <div 
+                key={event.id} 
+                className="bg-white rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => navigate(`/events/${event.id}`)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
+              >
+                <div className="font-bold text-lg text-gray-900 mb-2">{event.title}</div>
+                <div className="text-sm text-gray-600 mb-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span>📅 {event.date}</span>
+                    <span>⏰ {event.time}</span>
+                  </div>
+                  <div className="mb-1">📍 {event.location}</div>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                    {event.difficulty}
+                  </span>
+                  <span className="text-gray-600">
+                    👥 {event.participants}/{event.maxParticipants}
+                  </span>
+                </div>
               </div>
             ))}
             {allEvents.length === 0 && <div className="text-gray-700">No events found.</div>}

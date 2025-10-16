@@ -11,9 +11,8 @@ import MyEventsPage from './pages/MyEventsPage'
 import ProfilePage from './pages/ProfilePage'
 
 function PrivateRoute({ children }) {
-  // const { isAuthenticated } = useAuthStore()
-  // return isAuthenticated ? children : <Navigate to="/login" />
-  return children
+  const { isAuthenticated } = useAuthStore()
+  return isAuthenticated ? children : <Navigate to="/login" />
 }
 
 function App() {
