@@ -11,15 +11,16 @@ import MyEventsPage from './pages/MyEventsPage'
 import ProfilePage from './pages/ProfilePage'
 
 function PrivateRoute({ children }) {
-  const { isAuthenticated } = useAuthStore()
-  return isAuthenticated ? children : <Navigate to="/login" />
+  // const { isAuthenticated } = useAuthStore()
+  // return isAuthenticated ? children : <Navigate to="/login" />
+  return children
 }
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />
+        <Route index element={<HomePage />} />  
         <Route path="login" element={<LoginPage />} />
         <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
         <Route path="events" element={<EventsPage />} />

@@ -93,7 +93,6 @@ class AuthServiceIntegrationTest {
         // Given - create existing user
         Member existingMember = new Member();
         existingMember.setEmail(TEST_EMAIL);
-        existingMember.setName("Test User");
         memberRepository.save(existingMember);
         
         MagicLinkRequest request = new MagicLinkRequest();
@@ -125,7 +124,6 @@ class AuthServiceIntegrationTest {
         // Given - create existing unused magic link
         Member member = new Member();
         member.setEmail(TEST_EMAIL);
-        member.setName("Test User");
         member = memberRepository.save(member);
         entityManager.flush();
         

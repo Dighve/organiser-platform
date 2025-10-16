@@ -1,51 +1,103 @@
--- Combined database schema migration (V1 + V2)
--- This combines all schema changes from V1__Initial_schema.sql and V2__Fix_schema_structure.sql
+-- Database schema migration matching JPA entities
+-- This creates the complete schema for the Organiser Platform
 
--- ========== V1 Schema ==========
+-- ========== Core Tables ==========
 
--- Create users table (renamed to members in V2)
-CREATE TABLE IF NOT EXISTS members (
+-- Members table
+CREATE TABLE members (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
     display_name VARCHAR(100),
     profile_photo_url VARCHAR(500),
     verified BOOLEAN NOT NULL DEFAULT FALSE,
-    active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Create events table
-CREATE TABLE IF NOT EXISTS events (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    start_time TIMESTAMP NOT NULL,
-    end_time TIMESTAMP,
-    location VARCHAR(255),
-    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
-    is_public BOOLEAN DEFAULT FALSE,
-    created_by BIGINT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES members(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Create activities table
-CREATE TABLE IF NOT EXISTS activities (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    event_id BIGINT,
-    name VARCHAR(50) NOT NULL,
-    description TEXT,
-    icon_url VARCHAR(255),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    UNIQUE KEY uk_activity_name (name)
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_member_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create event_participants table
-CREATE TABLE IF NOT EXISTS event_participants (
+-- Activities table (e.g., Hiking, Cycling, Running)
+CREATE TABLE activities (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description VARCHAR(500),
+    icon_url VARCHAR(255),
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Groups table (each group is linked to one activity)
+CREATE TABLE `groups` (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    description TEXT,
+    image_url VARCHAR(500),
+    primary_organiser_id BIGINT NOT NULL,
+    activity_id BIGINT NOT NULL,
+    location VARCHAR(200),
+    max_members INT,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    is_public BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (primary_organiser_id) REFERENCES members(id) ON DELETE CASCADE,
+    FOREIGN KEY (activity_id) REFERENCES activities(id) ON DELETE RESTRICT,
+    INDEX idx_group_primary_organiser (primary_organiser_id),
+    INDEX idx_group_activity (activity_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Group co-organisers (many-to-many)
+CREATE TABLE group_co_organisers (
+    group_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL,
+    PRIMARY KEY (group_id, member_id),
+    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Events table (groups organize events)
+CREATE TABLE events (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(200) NOT NULL,
+    description TEXT,
+    group_id BIGINT NOT NULL,
+    event_date TIMESTAMP NOT NULL,
+    end_date TIMESTAMP,
+    registration_deadline TIMESTAMP,
+    location VARCHAR(200) NOT NULL,
+    latitude DECIMAL(10, 7),
+    longitude DECIMAL(10, 7),
+    max_participants INT,
+    min_participants INT DEFAULT 1,
+    price DECIMAL(10, 2) DEFAULT 0.00,
+    status VARCHAR(20) NOT NULL DEFAULT 'DRAFT',
+    image_url VARCHAR(500),
+    cancellation_policy TEXT,
+    difficulty_level VARCHAR(20),
+    distance_km DECIMAL(10, 2),
+    elevation_gain_m INT,
+    estimated_duration_hours DECIMAL(4, 2),
+    average_rating DOUBLE,
+    total_reviews INT DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
+    INDEX idx_event_group (group_id),
+    INDEX idx_event_date (event_date),
+    INDEX idx_event_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Event organisers (many-to-many between events and members)
+CREATE TABLE event_organisers (
+    event_id BIGINT NOT NULL,
+    member_id BIGINT NOT NULL,
+    PRIMARY KEY (event_id, member_id),
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Event participants table
+CREATE TABLE event_participants (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     event_id BIGINT NOT NULL,
     member_id BIGINT NOT NULL,
@@ -55,73 +107,58 @@ CREATE TABLE IF NOT EXISTS event_participants (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     UNIQUE KEY unique_event_member (event_id, member_id),
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+    INDEX idx_event_participants_member_id (member_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create groups table
-CREATE TABLE IF NOT EXISTS `groups` (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    created_by BIGINT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (created_by) REFERENCES members(id) ON DELETE CASCADE
+-- Event additional images (element collection)
+CREATE TABLE event_additional_images (
+    event_id BIGINT NOT NULL,
+    image_url VARCHAR(500) NOT NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create group_members table
-CREATE TABLE IF NOT EXISTS `group_members` (
+-- Event requirements (element collection)
+CREATE TABLE event_requirements (
+    event_id BIGINT NOT NULL,
+    requirement VARCHAR(500) NOT NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Event included items (element collection)
+CREATE TABLE event_included_items (
+    event_id BIGINT NOT NULL,
+    item VARCHAR(500) NOT NULL,
+    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Subscriptions table (members subscribe to groups)
+CREATE TABLE subscriptions (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    group_id BIGINT NOT NULL,
     member_id BIGINT NOT NULL,
-    role VARCHAR(20) NOT NULL DEFAULT 'MEMBER',
-    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY unique_group_member (group_id, member_id),
+    group_id BIGINT NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    notification_enabled BOOLEAN DEFAULT TRUE,
+    subscribed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    unsubscribed_at TIMESTAMP NULL,
+    UNIQUE KEY unique_member_group (member_id, group_id),
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
     FOREIGN KEY (group_id) REFERENCES `groups`(id) ON DELETE CASCADE,
-    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+    INDEX idx_subscription_member (member_id),
+    INDEX idx_subscription_group (group_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Create magic_links table (with V2 structure)
-CREATE TABLE IF NOT EXISTS magic_links (
+-- Magic links table (for passwordless authentication)
+CREATE TABLE magic_links (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     token VARCHAR(255) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL,
-    member_id BIGINT,
-    expires_at TIMESTAMP NOT NULL,
-    is_used BOOLEAN DEFAULT FALSE,
-    used_at TIMESTAMP NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- Create subscriptions table
-CREATE TABLE IF NOT EXISTS subscriptions (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     member_id BIGINT NOT NULL,
-    plan_type VARCHAR(50) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
-    start_date TIMESTAMP NOT NULL,
-    end_date TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    used_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (member_id) REFERENCES members(id) ON DELETE CASCADE,
+    INDEX idx_magic_link_token (token),
+    INDEX idx_magic_link_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- ========== Indexes ==========
-
--- Indexes for better query performance
-CREATE INDEX idx_events_created_by ON events(created_by);
-CREATE INDEX idx_activities_event_id ON activities(event_id);
-CREATE INDEX idx_event_participants_member_id ON event_participants(member_id);
-CREATE INDEX idx_magic_links_token ON magic_links(token);
-CREATE INDEX idx_magic_links_email ON magic_links(email);
-CREATE INDEX idx_subscriptions_member_id ON subscriptions(member_id);
-
--- ========== Data Migration Notes ==========
--- Note: This is a combined schema. For existing deployments, you would need to:
--- 1. Back up your data
--- 2. Run the database migration with flyway.clean() to reset the database
--- 3. Run the migration with this combined script
--- 4. Restore any necessary data
--- 
--- For new deployments, this script can be used as is.

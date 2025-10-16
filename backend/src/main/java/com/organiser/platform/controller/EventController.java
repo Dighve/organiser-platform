@@ -44,17 +44,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.searchEvents(keyword, pageable));
     }
     
-    // TODO: Re-enable once activityType relationship is added
-    // @GetMapping("/public/activity/{activityTypeId}")
-    // public ResponseEntity<Page<EventDTO>> getEventsByActivityType(
-    //         @PathVariable Long activityTypeId,
-    //         @RequestParam(defaultValue = "0") int page,
-    //         @RequestParam(defaultValue = "20") int size
-    // ) {
-    //     Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
-    //     return ResponseEntity.ok(eventService.getEventsByActivityType(activityTypeId, pageable));
-    // }
-    
+
     @PostMapping
     public ResponseEntity<EventDTO> createEvent(
             @Valid @RequestBody CreateEventRequest request,
