@@ -1,12 +1,11 @@
 services:
   - type: web
     name: hikehub-backend
-    env: java
+    runtime: docker
     region: oregon # Free tier available
     plan: free
-    rootDir: backend  # Important: backend is in a subdirectory
-    buildCommand: cd backend && ./gradlew clean build -x test
-    startCommand: cd backend && java -Dserver.port=$PORT -jar build/libs/platform-1.0.0.jar
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     envVars:
       - key: JAVA_TOOL_OPTIONS
         value: "-Xmx512m"
