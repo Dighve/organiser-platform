@@ -16,7 +16,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header with cartoon hiking background */}
-  <header className="relative bg-transparent sticky top-0 z-50 overflow-hidden">
+  <header className="relative bg-transparent sticky top-0 z-[999] overflow-visible">
         {/* Cartoon hiking SVG background */}
   <div className="absolute inset-0 -z-10 w-full h-full bg-gradient-to-b from-green-200 to-green-400 flex items-center justify-center">
   {/* Smooth gradient fade at bottom of header */}
@@ -73,12 +73,14 @@ export default function Layout() {
                     <Users className="h-4 w-4" />
                     <span>Browse Groups</span>
                   </Link>
-                  <div className="relative group">
+                                    <div className="relative group z-[1000]">
                     <button className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                       <User className="h-4 w-4" />
                       <span>{user?.email}</span>
                     </button>
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block">
+                    {/* Invisible bridge to prevent dropdown from closing */}
+                    <div className="absolute right-0 top-full w-48 h-2 hidden group-hover:block"></div>
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-xl py-1 hidden group-hover:block border border-gray-200">
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

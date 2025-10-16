@@ -36,6 +36,7 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     private final SubscriptionRepository subscriptionRepository;
+    private final com.organiser.platform.repository.ActivityRepository activityRepository;
     
     @Transactional
     @CacheEvict(value = "groups", allEntries = true)
@@ -43,18 +44,35 @@ public class GroupService {
         // Find the member (organiser)
         Member organiser = memberRepository.findById(organiserId)
                 .orElseThrow(() -> new RuntimeException("Organiser not found"));
+        
+        // Find the activity
+        Activity activity = activityRepository.findById(request.getActivityId())
+                .orElseThrow(() -> new RuntimeException("Activity not found"));
 
         Group group = Group.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .imageUrl(request.getImageUrl())
-                .primaryOrganiser(request.getPrimaryOrganiser())
-                .coOrganisers(request.getCoOrganisers())
-                .activity(request.getActivity())
+                .primaryOrganiser(organiser)
+                .activity(activity)
+                .location(request.getLocation())
+                .maxMembers(request.getMaxMembers())
+                .isPublic(request.getIsPublic() != null ? request.getIsPublic() : true)
+                .active(true)
                 .build();
-
         
         group = groupRepository.save(group);
+        
+        // Automatically subscribe the organiser to the group
+        Subscription subscription = Subscription.builder()
+                .member(organiser)
+                .group(group)
+                .status(Subscription.SubscriptionStatus.ACTIVE)
+                .notificationEnabled(true)
+                .subscribedAt(LocalDateTime.now())
+                .build();
+        subscriptionRepository.save(subscription);
+        
         return group;
     }
     
