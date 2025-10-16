@@ -52,6 +52,11 @@ public class GroupController {
         return ResponseEntity.ok(groupService.getAllPublicGroups());
     }
     
+    @GetMapping("/{groupId}")
+    public ResponseEntity<GroupDTO> getGroupById(@PathVariable Long groupId) {
+        return ResponseEntity.ok(groupService.getGroupById(groupId));
+    }
+    
     @PostMapping("/{groupId}/subscribe")
     public ResponseEntity<Void> subscribeToGroup(
             @PathVariable Long groupId,

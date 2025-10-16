@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Menu, X, User, LogOut, Users } from 'lucide-react'
+import { Menu, X, User, LogOut } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 
@@ -59,28 +59,14 @@ export default function Layout() {
             <div className="hidden md:flex items-center space-x-4">
               {isAuthenticated ? (
                 <>
-                  <Link
-                    to="/groups"
-                    className="flex items-center space-x-1 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>My Groups</span>
-                  </Link>
-                  <Link
-                    to="/groups/browse"
-                    className="flex items-center space-x-1 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
-                  >
-                    <Users className="h-4 w-4" />
-                    <span>Browse Groups</span>
-                  </Link>
-                                    <div className="relative group z-[1000]">
+                  <div className="relative group z-[1000]">
+                    {/* Invisible bridge to keep dropdown open */}
+                    <div className="absolute right-0 top-full w-48 h-2 hidden group-hover:block"></div>
                     <button className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
                       <User className="h-4 w-4" />
                       <span>{user?.email}</span>
                     </button>
-                    {/* Invisible bridge to prevent dropdown from closing */}
-                    <div className="absolute right-0 top-full w-48 h-2 hidden group-hover:block"></div>
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-xl py-1 hidden group-hover:block border border-gray-200">
+                    <div className="absolute right-0 top-full w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block z-[1000]">
                       <Link
                         to="/profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -98,7 +84,12 @@ export default function Layout() {
                   </div>
                 </>
               ) : (
-                <></>
+                <Link
+                  to="/login"
+                  className="bg-primary-600 text-white hover:bg-primary-700 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  Login
+                </Link>
               )}
             </div>
             {/* Mobile menu button */}
@@ -121,20 +112,6 @@ export default function Layout() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/groups"
-                    className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    My Groups
-                  </Link>
-                  <Link
-                    to="/groups/browse"
-                    className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Browse Groups
-                  </Link>
-                  <Link
                     to="/profile"
                     className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setMobileMenuOpen(false)}
@@ -152,7 +129,13 @@ export default function Layout() {
                   </button>
                 </>
               ) : (
-                <></>
+                <Link
+                  to="/login"
+                  className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Login
+                </Link>
               )}
             </div>
           )}

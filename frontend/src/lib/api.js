@@ -78,6 +78,8 @@ export const groupsAPI = {
   
   getAllPublicGroups: () => api.get('/groups/public'),
   
+  getGroupById: (groupId) => api.get(`/groups/${groupId}`),
+  
   subscribeToGroup: (groupId) => api.post(`/groups/${groupId}/subscribe`),
   
   unsubscribeFromGroup: (groupId) => api.post(`/groups/${groupId}/unsubscribe`),

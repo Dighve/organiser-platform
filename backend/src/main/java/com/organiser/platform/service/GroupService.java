@@ -108,6 +108,19 @@ public class GroupService {
                 .collect(Collectors.toList());
     }
     
+    @Cacheable(value = "groups", key = "'group_' + #groupId")
+    public GroupDTO getGroupById(Long groupId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        int memberCount = (int) subscriptionRepository.countByGroupIdAndStatus(
+                group.getId(), 
+                Subscription.SubscriptionStatus.ACTIVE
+        );
+        
+        return GroupDTO.fromEntity(group, memberCount);
+    }
+    
     @Transactional
     @CacheEvict(value = "groups", allEntries = true)
     public void subscribeToGroup(Long groupId, Long memberId) {

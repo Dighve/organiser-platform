@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
@@ -32,7 +32,21 @@ export default function HomePage() {
   const yourEvents = yourEventsData?.data?.content || []
   const allEvents = allEventsData?.data?.content || []
 
-  const [showDiscover, setShowDiscover] = useState(false)
+  // Separate groups by organizer and member
+  const organizerGroups = groups.filter(group => group.isOrganizer === true)
+  const memberGroups = groups.filter(group => group.isOrganizer !== true)
+
+  // Check if user has already clicked discover before
+  const [showDiscover, setShowDiscover] = useState(() => {
+    const hasDiscovered = localStorage.getItem('hasDiscovered')
+    return hasDiscovered !== 'true'
+  })
+
+  // Handle discover button click
+  const handleDiscoverClick = () => {
+    localStorage.setItem('hasDiscovered', 'true')
+    setShowDiscover(false)
+  }
 
   // Cartoon hiking SVG background
   const cartoonBg = (
@@ -53,7 +67,7 @@ export default function HomePage() {
     </div>
   )
 
-  if (!showDiscover) {
+  if (showDiscover) {
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden bg-gradient-to-b from-green-200 to-green-400">
         {cartoonBg}
@@ -61,7 +75,7 @@ export default function HomePage() {
         <p className="text-lg text-green-800 mb-8">Find your next hike, subscribe to hiking groups, and create hiking events!</p>
         <button
           className="btn px-8 py-3 text-xl rounded-full shadow-lg bg-black hover:bg-gray-800 text-white"
-          onClick={() => setShowDiscover(true)}
+          onClick={handleDiscoverClick}
         >
           Discover
         </button>
@@ -71,31 +85,67 @@ export default function HomePage() {
 
   // Discover view: groups/events layout, grey background
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row gap-8 px-4 py-8">
+    <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row gap-6 px-4 py-8">
       {/* Left: Your Groups */}
-      <div className="w-full lg:w-1/3">
+      <div className="w-full lg:w-1/5">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Groups</h2>
-        <div className="space-y-4">
+        <div className="space-y-6">
           {groupsLoading ? (
             <div className="text-gray-600">Loading groups...</div>
           ) : groups.length > 0 ? (
-            groups.map(group => (
-              <div key={group.id} className="bg-white rounded-lg shadow p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <div className="font-bold text-gray-900">{group.name}</div>
-                    <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
-                    <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
+            <>
+              {/* Organizer Groups */}
+              {organizerGroups.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Organizer</h3>
+                  <div className="space-y-3">
+                    {organizerGroups.map(group => (
+                      <div key={group.id} className="bg-white rounded-lg shadow p-4">
+                        <div className="mb-3">
+                          <div 
+                            className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
+                            onClick={() => navigate(`/groups/${group.id}`)}
+                          >
+                            {group.name}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
+                          <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
+                        </div>
+                        <button
+                          className="w-full btn btn-primary btn-sm"
+                          onClick={() => navigate('/create-event')}
+                        >
+                          Create Event
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <button
-                  className="w-full btn btn-primary btn-sm"
-                  onClick={() => navigate('/groups')}
-                >
-                  View Groups
-                </button>
-              </div>
-            ))
+              )}
+
+              {/* Member Groups */}
+              {memberGroups.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Member</h3>
+                  <div className="space-y-3">
+                    {memberGroups.map(group => (
+                      <div key={group.id} className="bg-white rounded-lg shadow p-4">
+                        <div className="mb-3">
+                          <div 
+                            className="font-bold text-gray-900 hover:text-primary-600 cursor-pointer transition-colors"
+                            onClick={() => navigate(`/groups/${group.id}`)}
+                          >
+                            {group.name}
+                          </div>
+                          <div className="text-sm text-gray-600 mt-1">👥 {group.currentMembers || 0} members</div>
+                          <div className="text-xs text-gray-500 mt-1">{group.activityName}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-gray-600">
               {isAuthenticated ? 'No groups yet. Join some groups to get started!' : 'Login to see your groups'}
@@ -105,37 +155,47 @@ export default function HomePage() {
       </div>
 
       {/* Right: Events */}
-      <div className="w-full lg:w-2/3 flex flex-col gap-8">
+      <div className="w-full lg:w-4/5 flex flex-col gap-8">
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Your Events</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {yourEventsLoading ? (
               <div className="text-gray-600">Loading your events...</div>
             ) : yourEvents.length > 0 ? (
               yourEvents.map(event => (
                 <div 
                   key={event.id} 
-                  className="bg-white rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                   onClick={() => navigate(`/events/${event.id}`)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
                 >
-                  <div className="font-bold text-lg text-gray-900 mb-2">{event.title}</div>
-                  <div className="text-sm text-gray-600 mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span>📅 {new Date(event.eventDate).toLocaleDateString()}</span>
-                      <span>⏰ {new Date(event.eventDate).toLocaleTimeString()}</span>
-                    </div>
-                    <div className="mb-1">📍 {event.location}</div>
+                  {/* Event Image */}
+                  <div className="w-full h-40 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                    {event.imageUrl ? (
+                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-5xl">🏔️</span>
+                    )}
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
-                      {event.difficultyLevel}
-                    </span>
-                    <span className="text-gray-600">
-                      👥 {event.currentParticipants}/{event.maxParticipants}
-                    </span>
+                  {/* Event Content */}
+                  <div className="p-4">
+                    <div className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">{event.title}</div>
+                    <div className="text-sm text-gray-600 mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span>📅 {new Date(event.eventDate).toLocaleDateString()}</span>
+                      </div>
+                      <div className="mb-1 truncate">📍 {event.location}</div>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">
+                        {event.difficultyLevel}
+                      </span>
+                      <span className="text-gray-600">
+                        👥 {event.currentParticipants}/{event.maxParticipants}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -148,34 +208,44 @@ export default function HomePage() {
         </div>
         <div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">All Events</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {allEventsLoading ? (
               <div className="text-gray-600">Loading events...</div>
             ) : allEvents.length > 0 ? (
               allEvents.map(event => (
                 <div 
                   key={event.id} 
-                  className="bg-white rounded-lg shadow p-5 cursor-pointer hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-lg shadow overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
                   onClick={() => navigate(`/events/${event.id}`)}
                   role="button"
                   tabIndex={0}
                   onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
                 >
-                  <div className="font-bold text-lg text-gray-900 mb-2">{event.title}</div>
-                  <div className="text-sm text-gray-600 mb-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span>📅 {new Date(event.eventDate).toLocaleDateString()}</span>
-                      <span>⏰ {new Date(event.eventDate).toLocaleTimeString()}</span>
-                    </div>
-                    <div className="mb-1">📍 {event.location}</div>
+                  {/* Event Image */}
+                  <div className="w-full h-40 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                    {event.imageUrl ? (
+                      <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-white text-5xl">⛰️</span>
+                    )}
                   </div>
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                      {event.difficultyLevel}
-                    </span>
-                    <span className="text-gray-600">
-                      👥 {event.currentParticipants}/{event.maxParticipants}
-                    </span>
+                  {/* Event Content */}
+                  <div className="p-4">
+                    <div className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">{event.title}</div>
+                    <div className="text-sm text-gray-600 mb-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span>📅 {new Date(event.eventDate).toLocaleDateString()}</span>
+                      </div>
+                      <div className="mb-1 truncate">📍 {event.location}</div>
+                    </div>
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                        {event.difficultyLevel}
+                      </span>
+                      <span className="text-gray-600">
+                        👥 {event.currentParticipants}/{event.maxParticipants}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))

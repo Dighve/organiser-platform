@@ -11,6 +11,7 @@ import MyEventsPage from './pages/MyEventsPage'
 import MyGroupsPage from './pages/MyGroupsPage'
 import BrowseGroupsPage from './pages/BrowseGroupsPage'
 import CreateGroupPage from './pages/CreateGroupPage'
+import GroupDetailPage from './pages/GroupDetailPage'
 import ProfilePage from './pages/ProfilePage'
 
 function PrivateRoute({ children }) {
@@ -52,6 +53,7 @@ function App() {
           }
         />
         <Route path="groups/browse" element={<BrowseGroupsPage />} />
+        <Route path="groups/:id" element={<GroupDetailPage />} />
         <Route
           path="groups/create"
           element={
