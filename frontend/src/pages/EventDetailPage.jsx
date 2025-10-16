@@ -63,15 +63,17 @@ export default function EventDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="animate-pulse">
-          <div className="h-96 bg-gray-200 rounded-lg mb-8"></div>
-          <div className="h-8 bg-gray-200 rounded w-3/4 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-8"></div>
-          <div className="space-y-4">
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
+        <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="animate-pulse bg-white/60 backdrop-blur-sm rounded-3xl p-8 space-y-6">
+            <div className="h-96 bg-gradient-to-br from-purple-200 to-pink-200 rounded-2xl"></div>
+            <div className="h-12 bg-gradient-to-r from-purple-200 to-pink-200 rounded-xl w-3/4"></div>
+            <div className="h-6 bg-gray-200 rounded-lg w-1/2"></div>
+            <div className="space-y-3">
+              <div className="h-4 bg-gray-200 rounded-lg"></div>
+              <div className="h-4 bg-gray-200 rounded-lg"></div>
+              <div className="h-4 bg-gray-200 rounded-lg w-5/6"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -82,8 +84,18 @@ export default function EventDetailPage() {
 
   if (!event) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <p className="text-center text-gray-600">Event not found</p>
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-10 text-center max-w-md">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Event not found</h2>
+          <p className="text-gray-600 mb-6">The event you're looking for doesn't exist or has been removed.</p>
+          <button 
+            onClick={() => navigate('/')} 
+            className="py-3 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+          >
+            Back to Home
+          </button>
+        </div>
       </div>
     )
   }
@@ -95,200 +107,221 @@ export default function EventDetailPage() {
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center text-gray-600 hover:text-gray-900 mb-6"
-      >
-        <ArrowLeft className="h-5 w-5 mr-2" />
-        Back
-      </button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
+        >
+          <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+          Back
+        </button>
 
-      {/* Event Image */}
-      <div className="relative h-96 rounded-lg overflow-hidden bg-gray-200 mb-8">
-        <img 
-          src={event.imageUrl || [
-            'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=1200&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=600&fit=crop'
-          ][Number.parseInt(id) % 6]}
-          alt={event.title} 
-          className="w-full h-full object-cover" 
-        />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
-        <div className="lg:col-span-2">
-          <div className="mb-4">
-            <span className="bg-primary-100 text-primary-700 px-3 py-1 rounded-full text-sm font-medium">
+        {/* Event Image */}
+        <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gray-200 mb-8 shadow-2xl">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-30" />
+          <img 
+            src={event.imageUrl || [
+              'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=600&fit=crop',
+              'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=600&fit=crop',
+              'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=600&fit=crop',
+              'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=600&fit=crop',
+              'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=1200&h=600&fit=crop',
+              'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=600&fit=crop'
+            ][Number.parseInt(id) % 6]}
+            alt={event.title} 
+            className="w-full h-full object-cover mix-blend-overlay" 
+          />
+          {/* Overlay info on image */}
+          <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
+            <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white font-semibold text-sm mb-3">
               {event.activityTypeName}
-            </span>
-          </div>
-
-          <h1 className="text-4xl font-bold mb-4">{event.title}</h1>
-
-          <div className="flex items-center text-gray-600 mb-6">
-            <span>Organized by <span className="font-medium text-gray-900">{event.organiserName}</span></span>
-          </div>
-
-          <div className="prose max-w-none mb-8">
-            <p className="text-gray-700 whitespace-pre-wrap">{event.description}</p>
-          </div>
-
-          {/* Event Details */}
-          <div className="card mb-8">
-            <h2 className="text-2xl font-bold mb-4">Event Details</h2>
-            <div className="space-y-4">
-              <div className="flex items-start">
-                <Calendar className="h-5 w-5 mr-3 mt-1 text-gray-400" />
-                <div>
-                  <div className="font-medium">{formattedDate}</div>
-                  <div className="text-gray-600">{formattedTime}</div>
-                </div>
-              </div>
-
-              <div className="flex items-start">
-                <MapPin className="h-5 w-5 mr-3 mt-1 text-gray-400" />
-                <div>
-                  <div className="font-medium">{event.location}</div>
-                </div>
-              </div>
-
-              {event.difficultyLevel && (
-                <div className="flex items-start">
-                  <TrendingUp className="h-5 w-5 mr-3 mt-1 text-gray-400" />
-                  <div>
-                    <div className="font-medium">Difficulty: {event.difficultyLevel}</div>
-                  </div>
-                </div>
-              )}
-
-              {event.distanceKm && (
-                <div className="flex items-start">
-                  <Clock className="h-5 w-5 mr-3 mt-1 text-gray-400" />
-                  <div>
-                    <div className="font-medium">Distance: {event.distanceKm} km</div>
-                    {event.estimatedDurationHours && (
-                      <div className="text-gray-600">Duration: ~{event.estimatedDurationHours} hours</div>
-                    )}
-                  </div>
-                </div>
-              )}
+            </div>
+            <h1 className="text-5xl font-extrabold text-white mb-3 drop-shadow-2xl">{event.title}</h1>
+            <div className="flex items-center text-white/90">
+              <span>Organized by <span className="font-bold">{event.organiserName}</span></span>
             </div>
           </div>
-
-          {/* Requirements */}
-          {event.requirements && event.requirements.length > 0 && (
-            <div className="card mb-8">
-              <h2 className="text-2xl font-bold mb-4">Requirements</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {Array.from(event.requirements).map((req, index) => (
-                  <li key={index}>{req}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Included Items */}
-          {event.includedItems && event.includedItems.length > 0 && (
-            <div className="card">
-              <h2 className="text-2xl font-bold mb-4">What's Included</h2>
-              <ul className="list-disc list-inside space-y-2 text-gray-700">
-                {Array.from(event.includedItems).map((item, index) => (
-                  <li key={index}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          )}
         </div>
 
-        {/* Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="card sticky top-20">
-            <div className="mb-6">
-              {event.price > 0 ? (
-                <div className="flex items-center text-3xl font-bold text-primary-600">
-                  <DollarSign className="h-8 w-8" />
-                  <span>{event.price}</span>
-                </div>
-              ) : (
-                <div className="text-3xl font-bold text-primary-600">Free</div>
-              )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Description */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">About This Event</h2>
+              <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{event.description}</p>
             </div>
 
-            <div className="mb-6">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-gray-600">Participants</span>
-                <span className="font-medium">
-                  {event.currentParticipants}
-                  {event.maxParticipants && `/${event.maxParticipants}`}
-                </span>
-              </div>
-              {event.maxParticipants && (
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div
-                    className="bg-primary-600 h-2 rounded-full"
-                    style={{
-                      width: `${(event.currentParticipants / event.maxParticipants) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-              )}
-            </div>
-
-            {isAuthenticated ? (
-              isEventOrganiser ? (
-                // Organiser view - show delete button
-                <div className="space-y-3">
-                  <div className="text-center p-4 bg-primary-50 rounded-lg mb-3">
-                    <p className="text-primary-700 font-medium">You are the organiser of this event</p>
+            {/* Event Details */}
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Event Details</h2>
+              <div className="space-y-5">
+                <div className="flex items-start p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                  <Calendar className="h-6 w-6 mr-4 mt-1 text-purple-600" />
+                  <div>
+                    <div className="font-bold text-gray-900">{formattedDate}</div>
+                    <div className="text-purple-600 font-semibold">{formattedTime}</div>
                   </div>
-                  <button
-                    onClick={handleDelete}
-                    disabled={deleteMutation.isLoading}
-                    className="w-full btn bg-red-600 text-white hover:bg-red-700 flex items-center justify-center gap-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {deleteMutation.isLoading ? 'Deleting...' : 'Delete Event'}
-                  </button>
                 </div>
-              ) : (
-                // Regular user view - show join/leave buttons
-                <div className="space-y-3">
-                  <button
-                    onClick={() => joinMutation.mutate()}
-                    disabled={event.status === 'FULL' || joinMutation.isLoading}
-                    className="w-full btn btn-primary"
-                  >
-                    {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
-                  </button>
-                  <button
-                    onClick={() => leaveMutation.mutate()}
-                    disabled={leaveMutation.isLoading}
-                    className="w-full btn btn-outline"
-                  >
-                    {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
-                  </button>
+
+                <div className="flex items-start p-4 bg-gradient-to-r from-pink-50 to-orange-50 rounded-xl">
+                  <MapPin className="h-6 w-6 mr-4 mt-1 text-pink-600" />
+                  <div>
+                    <div className="font-bold text-gray-900">{event.location}</div>
+                  </div>
                 </div>
-              )
-            ) : (
-              <button
-                onClick={() => navigate('/login')}
-                className="w-full btn btn-primary"
-              >
-                Login to Join
-              </button>
+
+                {event.difficultyLevel && (
+                  <div className="flex items-start p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
+                    <TrendingUp className="h-6 w-6 mr-4 mt-1 text-orange-600" />
+                    <div>
+                      <div className="text-sm text-gray-600">Difficulty Level</div>
+                      <div className="font-bold text-gray-900">{event.difficultyLevel}</div>
+                    </div>
+                  </div>
+                )}
+
+                {event.distanceKm && (
+                  <div className="flex items-start p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+                    <Clock className="h-6 w-6 mr-4 mt-1 text-green-600" />
+                    <div>
+                      <div className="font-bold text-gray-900">{event.distanceKm} km</div>
+                      {event.estimatedDurationHours && (
+                        <div className="text-gray-600">Duration: ~{event.estimatedDurationHours} hours</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Requirements */}
+            {event.requirements && event.requirements.length > 0 && (
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">⚠️ Requirements</h2>
+                <ul className="space-y-3">
+                  {Array.from(event.requirements).map((req, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-block w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                      <span className="text-gray-700">{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
 
-            {event.status === 'FULL' && (
-              <p className="mt-4 text-sm text-red-600 text-center">
-                This event is currently full
-              </p>
+            {/* Included Items */}
+            {event.includedItems && event.includedItems.length > 0 && (
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">✨ What's Included</h2>
+                <ul className="space-y-3">
+                  {Array.from(event.includedItems).map((item, index) => (
+                    <li key={index} className="flex items-start">
+                      <span className="inline-block w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                      <span className="text-gray-700">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg space-y-6">
+              <div>
+                <p className="text-sm text-gray-500 font-semibold mb-2">PRICE</p>
+                {event.price > 0 ? (
+                  <div className="flex items-center text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    <DollarSign className="h-10 w-10 text-purple-600" />
+                    <span>{event.price}</span>
+                  </div>
+                ) : (
+                  <div className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Free</div>
+                )}
+              </div>
+
+              <div className="pt-6 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-500 font-semibold">PARTICIPANTS</span>
+                  <span className="font-bold text-lg text-gray-900">
+                    {event.currentParticipants}
+                    {event.maxParticipants && `/${event.maxParticipants}`}
+                  </span>
+                </div>
+                {event.maxParticipants && (
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${(event.currentParticipants / event.maxParticipants) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-6 border-t border-gray-200">
+                {isAuthenticated ? (
+                  isEventOrganiser ? (
+                    // Organiser view - show delete button
+                    <div className="space-y-3">
+                      <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
+                        <p className="text-orange-700 font-semibold">👑 You're the organiser</p>
+                      </div>
+                      <button
+                        onClick={handleDelete}
+                        disabled={deleteMutation.isLoading}
+                        className="w-full py-3 px-6 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-red-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                        {deleteMutation.isLoading ? 'Deleting...' : 'Delete Event'}
+                      </button>
+                    </div>
+                  ) : (
+                    // Regular user view - show join/leave buttons
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => joinMutation.mutate()}
+                        disabled={event.status === 'FULL' || joinMutation.isLoading}
+                        className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
+                      >
+                        <Users className="h-5 w-5" />
+                        {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
+                      </button>
+                      <button
+                        onClick={() => leaveMutation.mutate()}
+                        disabled={leaveMutation.isLoading}
+                        className="w-full py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50"
+                      >
+                        {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
+                      </button>
+                    </div>
+                  )
+                ) : (
+                  <div className="space-y-3">
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                      <p className="text-sm text-gray-600">🔐 Login to join this event</p>
+                    </div>
+                    <button
+                      onClick={() => navigate('/login')}
+                      className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+                    >
+                      Login to Join
+                    </button>
+                  </div>
+                )}
+
+                {event.status === 'FULL' && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <p className="text-sm text-red-600 text-center font-semibold">
+                      ⚠️ This event is currently full
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

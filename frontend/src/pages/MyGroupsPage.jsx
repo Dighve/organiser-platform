@@ -39,10 +39,17 @@ export default function MyGroupsPage() {
   
   if (!isAuthenticated) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8">My Groups</h1>
-        <div className="card">
-          <p className="text-gray-600">Please login to view your groups.</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-10 text-center max-w-md">
+          <div className="text-6xl mb-4">🔐</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Login Required</h2>
+          <p className="text-gray-600 mb-6">Please login to view your groups.</p>
+          <button
+            onClick={() => navigate('/login')}
+            className="py-3 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+          >
+            Go to Login
+          </button>
         </div>
       </div>
     )
@@ -50,10 +57,13 @@ export default function MyGroupsPage() {
   
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8">My Groups</h1>
-        <div className="card">
-          <p className="text-gray-600">Loading your groups...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">👥 My Groups</h1>
+          <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-lg text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-700 font-medium">Loading your groups...</p>
+          </div>
         </div>
       </div>
     )
@@ -61,58 +71,63 @@ export default function MyGroupsPage() {
   
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-3xl font-bold mb-8">My Groups</h1>
-        <div className="card bg-red-50">
-          <p className="text-red-600">Error loading groups: {error.message}</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">👥 My Groups</h1>
+          <div className="bg-red-50 backdrop-blur-sm rounded-3xl p-8 border-2 border-red-200 shadow-lg">
+            <div className="text-5xl mb-4">⚠️</div>
+            <p className="text-red-600 font-semibold">Error loading groups: {error.message}</p>
+          </div>
         </div>
       </div>
     )
   }
   
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">My Groups</h1>
-        <div className="flex gap-3">
-          {user?.isOrganiser && activeTab === 'organiser' && (
-            <button
-              onClick={() => navigate('/groups/create')}
-              className="btn btn-primary"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Group
-            </button>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 My Groups</h1>
+          <div className="flex gap-3">
+            {user?.isOrganiser && activeTab === 'organiser' && (
+              <button
+                onClick={() => navigate('/groups/create')}
+                className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
+              >
+                <Plus className="h-5 w-5" />
+                Create Group
+              </button>
+            )}
+          </div>
         </div>
-      </div>
-      
-      {/* Tabs */}
-      <div className="mb-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {user?.isOrganiser && (
-            <button
-              onClick={() => setActiveTab('organiser')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm ${activeTab === 'organiser'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        
+        {/* Tabs */}
+        <div className="mb-8">
+          <div className="inline-flex bg-white/60 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-gray-100">
+            {user?.isOrganiser && (
+              <button
+                onClick={() => setActiveTab('organiser')}
+                className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+                  activeTab === 'organiser'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
+              >
+                💼 Organiser
+              </button>
+            )}
+            <button
+              onClick={() => setActiveTab('subscribed')}
+              className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+                activeTab === 'subscribed'
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
             >
-              Organiser
+              🌟 Member
             </button>
-          )}
-          <button
-            onClick={() => setActiveTab('subscribed')}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'subscribed'
-                ? 'border-primary-500 text-primary-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Member
-          </button>
-        </nav>
-      </div>
+          </div>
+        </div>
       
       {/* Subscribed Groups Tab */}
       {activeTab === 'subscribed' && (
@@ -122,9 +137,10 @@ export default function MyGroupsPage() {
               <p className="text-gray-600">Loading your groups...</p>
             </div>
           ) : groups.length === 0 ? (
-            <div className="card text-center py-12">
-              <Users className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 mb-4">You haven't joined any groups yet.</p>
+            <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-16 text-center border border-gray-100 shadow-lg">
+              <Users className="h-20 w-20 mx-auto text-purple-400 mb-6" />
+              <h3 className="text-2xl font-bold text-gray-900 mb-3">No Groups Yet</h3>
+              <p className="text-gray-600 mb-2">You haven't joined any groups yet.</p>
               <p className="text-sm text-gray-500">Browse groups on the home page to get started.</p>
             </div>
           ) : (
@@ -132,10 +148,10 @@ export default function MyGroupsPage() {
           {groups.map(group => (
             <div onClick={() => navigate(`/groups/${group.id}`)}
               key={group.id}
-              className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+              className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer transform hover:scale-105 border border-gray-100"
             >
               {/* Group Banner */}
-              <div className="relative h-40 bg-gradient-to-r from-primary-300 to-primary-500 overflow-hidden">
+              <div className="relative h-40 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 overflow-hidden">
                 <img 
                   src={group.bannerImage || [
                     'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
@@ -216,34 +232,36 @@ export default function MyGroupsPage() {
         </>
       )}
       
-      {/* Organiser Tab */}
-      {activeTab === 'organiser' && user?.isOrganiser && (
-        <>
-          {organisedLoading ? (
-            <div className="card">
-              <p className="text-gray-600">Loading your organised groups...</p>
-            </div>
-          ) : organisedGroups.length === 0 ? (
-            <div className="card text-center py-12">
-              <Users className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-600 mb-4">You haven't created any groups yet.</p>
-              <button
-                onClick={() => navigate('/groups/create')}
-                className="btn btn-primary"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Group
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {organisedGroups.map(group => (
-                <div
-                  key={group.id}
-                  className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden"
+        {/* Organiser Tab */}
+        {activeTab === 'organiser' && user?.isOrganiser && (
+          <>
+            {organisedLoading ? (
+              <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-lg text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                <p className="text-gray-700 font-medium">Loading your organised groups...</p>
+              </div>
+            ) : organisedGroups.length === 0 ? (
+              <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-16 text-center border border-gray-100 shadow-lg">
+                <Users className="h-20 w-20 mx-auto text-purple-400 mb-6" />
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">No Groups Created</h3>
+                <p className="text-gray-600 mb-6">You haven't created any groups yet.</p>
+                <button
+                  onClick={() => navigate('/groups/create')}
+                  className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 inline-flex items-center gap-2"
                 >
-                  {/* Group Banner */}
-                  <div className="relative h-40 bg-gradient-to-r from-primary-300 to-primary-500 overflow-hidden">
+                  <Plus className="h-5 w-5" />
+                  Create Group
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {organisedGroups.map(group => (
+                  <div
+                    key={group.id}
+                    className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer transform hover:scale-105 border border-gray-100"
+                  >
+                    {/* Group Banner */}
+                    <div className="relative h-40 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 overflow-hidden">
                     <img 
                       src={group.bannerImage || [
                         'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
@@ -290,28 +308,29 @@ export default function MyGroupsPage() {
                       )}
                     </div>
                     
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => navigate(`/create-event?groupId=${group.id}`)}
-                        className="flex-1 btn btn-primary btn-sm"
-                      >
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Create Event
-                      </button>
-                      <button
-                        onClick={() => navigate(`/groups/${group.id}`)}
-                        className="btn btn-outline btn-sm"
-                      >
-                        View
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => navigate(`/create-event?groupId=${group.id}`)}
+                          className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                        >
+                          <Calendar className="h-4 w-4" />
+                          Create Event
+                        </button>
+                        <button
+                          onClick={() => navigate(`/groups/${group.id}`)}
+                          className="py-2 px-4 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all"
+                        >
+                          View
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </div>
   )
 }
