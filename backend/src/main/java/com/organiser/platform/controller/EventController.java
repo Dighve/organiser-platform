@@ -53,6 +53,16 @@ public class EventController {
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
         return ResponseEntity.ok(eventService.getEventsByActivity(activityId, pageable));
     }
+    
+    @GetMapping("/public/group/{groupId}")
+    public ResponseEntity<Page<EventDTO>> getEventsByGroup(
+            @PathVariable Long groupId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
+        return ResponseEntity.ok(eventService.getEventsByGroup(groupId, pageable));
+    }
 
     @PostMapping
     public ResponseEntity<EventDTO> createEvent(
@@ -88,6 +98,16 @@ public class EventController {
     ) {
         Long userId = getUserIdFromAuth(authentication);
         return ResponseEntity.ok(eventService.leaveEvent(id, userId));
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEvent(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        eventService.deleteEvent(id, userId);
+        return ResponseEntity.noContent().build();
     }
     
     @GetMapping("/organiser/my-events")

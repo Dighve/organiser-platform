@@ -55,6 +55,9 @@ export const eventsAPI = {
   getEventsByActivity: (activityTypeId, page = 0, size = 20) =>
     api.get(`/events/public/activity/${activityTypeId}?page=${page}&size=${size}`),
   
+  getEventsByGroup: (groupId, page = 0, size = 50) =>
+    api.get(`/events/public/group/${groupId}?page=${page}&size=${size}`),
+  
   createEvent: (data) => api.post('/events', data),
   
   publishEvent: (id) => api.post(`/events/${id}/publish`),
@@ -62,6 +65,8 @@ export const eventsAPI = {
   joinEvent: (id) => api.post(`/events/${id}/join`),
   
   leaveEvent: (id) => api.post(`/events/${id}/leave`),
+  
+  deleteEvent: (id) => api.delete(`/events/${id}`),
   
   getMyEvents: (page = 0, size = 20) =>
     api.get(`/events/organiser/my-events?page=${page}&size=${size}`),

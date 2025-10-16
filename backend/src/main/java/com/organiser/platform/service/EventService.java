@@ -34,11 +34,14 @@ public class EventService {
         Member organiser = memberRepository.findById(organiserId)
                 .orElseThrow(() -> new RuntimeException("Organiser not found"));
         
-        // Find the group for this event (assuming the organiser is part of a group)
-        Group group = groupRepository.findByPrimaryOrganiserId(organiserId)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("No group found for the organiser"));
+        // Find the group by ID
+        Group group = groupRepository.findById(request.getGroupId())
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Verify that the user is the organiser of this group
+        if (!group.getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("You are not the organiser of this group");
+        }
         
         // Get the activity from the group
         Activity activity = group.getActivity();
@@ -108,6 +111,12 @@ public class EventService {
     
     public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable) {
         return eventRepository.findByOrganiserId(organiserId, pageable)
+                .map(this::convertToDTO);
+    }
+    
+    @Cacheable(value = "events", key = "'group_' + #groupId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+    public Page<EventDTO> getEventsByGroup(Long groupId, Pageable pageable) {
+        return eventRepository.findByGroupId(groupId, pageable)
                 .map(this::convertToDTO);
     }
     
@@ -189,6 +198,21 @@ public class EventService {
         
         event = eventRepository.save(event);
         return convertToDTO(event);
+    }
+    
+    @Transactional
+    @CacheEvict(value = "events", allEntries = true)
+    public void deleteEvent(Long eventId, Long organiserId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        
+        // Verify that the user is the organiser of the group that owns this event
+        Group group = event.getGroup();
+        if (!group.getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("You are not authorized to delete this event");
+        }
+        
+        eventRepository.delete(event);
     }
     
     private EventDTO convertToDTO(Event event) {

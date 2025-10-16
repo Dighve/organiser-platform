@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Calendar, MapPin, Users, DollarSign, Clock, TrendingUp, ArrowLeft } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, TrendingUp, ArrowLeft, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { eventsAPI } from '../lib/api'
@@ -39,6 +39,28 @@ export default function EventDetailPage() {
     },
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: () => eventsAPI.deleteEvent(id),
+    onSuccess: () => {
+      // Invalidate queries to refresh event lists
+      queryClient.invalidateQueries(['events'])
+      if (event?.groupId) {
+        queryClient.invalidateQueries(['groupEvents', event.groupId.toString()])
+      }
+      toast.success('Event deleted successfully')
+      navigate('/')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to delete event')
+    },
+  })
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
+      deleteMutation.mutate()
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -67,7 +89,7 @@ export default function EventDetailPage() {
   }
 
   // Check if current user is the event organiser
-  const isEventOrganiser = isAuthenticated && user?.email === event.organiserEmail
+  const isEventOrganiser = isAuthenticated && user?.id === event.organiserId
 
   const formattedDate = format(new Date(event.eventDate), 'EEEE, MMMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
@@ -220,9 +242,19 @@ export default function EventDetailPage() {
 
             {isAuthenticated ? (
               isEventOrganiser ? (
-                // Organiser view - show message instead of join/leave buttons
-                <div className="text-center p-4 bg-primary-50 rounded-lg">
-                  <p className="text-primary-700 font-medium">You are the organiser of this event</p>
+                // Organiser view - show delete button
+                <div className="space-y-3">
+                  <div className="text-center p-4 bg-primary-50 rounded-lg mb-3">
+                    <p className="text-primary-700 font-medium">You are the organiser of this event</p>
+                  </div>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleteMutation.isLoading}
+                    className="w-full btn bg-red-600 text-white hover:bg-red-700 flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    {deleteMutation.isLoading ? 'Deleting...' : 'Delete Event'}
+                  </button>
                 </div>
               ) : (
                 // Regular user view - show join/leave buttons

@@ -25,6 +25,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId ORDER BY e.eventDate DESC")
     Page<Event> findByOrganiserId(@Param("organiserId") Long organiserId, Pageable pageable);
     
+    // Get events by group
+    @Query("SELECT e FROM Event e WHERE e.group.id = :groupId ORDER BY e.eventDate ASC")
+    Page<Event> findByGroupId(@Param("groupId") Long groupId, Pageable pageable);
+    
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEvents(@Param("now") LocalDateTime now, Pageable pageable);
     

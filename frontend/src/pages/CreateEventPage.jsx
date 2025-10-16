@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { MapPin, Clock, FileText, Users, ArrowRight, ArrowLeft, Check, Edit2 } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
 import toast from 'react-hot-toast'
 
@@ -32,8 +32,17 @@ export default function CreateEventPage() {
   const [formData, setFormData] = useState({})
   const { register, handleSubmit, watch, formState: { errors }, reset, setValue } = useForm()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const groupId = searchParams.get('groupId')
+  
+  // Redirect if no groupId is provided (events must be created for a group)
+  useEffect(() => {
+    if (!groupId) {
+      toast.error('Events must be created for a specific group')
+      navigate('/')
+    }
+  }, [groupId, navigate])
   
   // Fetch activities
   const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
@@ -74,9 +83,15 @@ export default function CreateEventPage() {
   }
 
   const onFinalSubmit = async (data) => {
+    // Ensure groupId is present
+    if (!groupId) {
+      toast.error('Group ID is required to create an event')
+      return
+    }
+    
     // Map form data to DTO
     const payload = {
-      groupId: groupId ? Number(groupId) : null,
+      groupId: Number(groupId),
       title: data.title,
       description: data.description,
       activityTypeId: data.activityTypeId ? Number(data.activityTypeId) : null,
@@ -101,6 +116,9 @@ export default function CreateEventPage() {
     }
     try {
       await eventsAPI.createEvent(payload)
+      // Invalidate group events query to refresh the events list
+      queryClient.invalidateQueries(['groupEvents', groupId])
+      queryClient.invalidateQueries(['events'])
       toast.success('Event created successfully!')
       navigate(groupId ? `/groups/${groupId}` : '/')
     } catch (error) {

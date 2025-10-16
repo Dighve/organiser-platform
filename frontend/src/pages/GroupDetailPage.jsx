@@ -38,17 +38,14 @@ export default function GroupDetailPage() {
   const isGroupOrganiser = organisedGroups.some(g => g.id === Number.parseInt(id))
   const isSubscribed = subscribedGroups.some(g => g.id === Number.parseInt(id))
 
-  // Fetch group events (using getUpcomingEvents and filtering by group)
+  // Fetch group events using the dedicated endpoint
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ['groupEvents', id],
-    queryFn: () => eventsAPI.getUpcomingEvents(0, 50),
+    queryFn: () => eventsAPI.getEventsByGroup(id),
     enabled: !!group,
   })
 
-  // Filter events for this group
-  const groupEvents = (eventsData?.data?.content || []).filter(
-    event => event.groupId === Number.parseInt(id)
-  )
+  const groupEvents = eventsData?.data?.content || []
 
   // Subscribe mutation
   const subscribeMutation = useMutation({
@@ -56,6 +53,7 @@ export default function GroupDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['group', id])
       queryClient.invalidateQueries(['myGroups'])
+      queryClient.invalidateQueries(['groupEvents', id])
     },
     onError: (error) => {
       console.error('Subscribe error:', error)
@@ -69,6 +67,7 @@ export default function GroupDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['group', id])
       queryClient.invalidateQueries(['myGroups'])
+      queryClient.invalidateQueries(['groupEvents', id])
     },
     onError: (error) => {
       console.error('Unsubscribe error:', error)

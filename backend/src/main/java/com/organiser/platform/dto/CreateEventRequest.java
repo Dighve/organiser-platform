@@ -19,6 +19,9 @@ public class CreateEventRequest {
     
     private String description;
     
+    @NotNull(message = "Group ID is required")
+    private Long groupId;
+    
     @NotNull(message = "Activity type is required")
     private Long activityTypeId;
     
