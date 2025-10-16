@@ -1,0 +1,30 @@
+[build]
+  # Directory to change to before starting a build
+  base = "frontend/"
+  
+  # Build command
+  command = "npm run build"
+  
+  # Directory with the static content
+  publish = "dist"
+
+# Redirect all requests to index.html for client-side routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables (these will be set in Netlify dashboard)
+# VITE_API_URL = your backend URL from Render
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Headers for security
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
