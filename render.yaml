@@ -13,7 +13,19 @@ services:
         fromDatabase:
           name: hikehub-db
           property: connectionString
-      - key: DATABASE_USERNAME
+      - key: SPRING_DATASOURCE_URL
+        # Construct JDBC URL from database connection string
+        # Render gives postgres://, Spring needs jdbc:postgresql://
+        sync: false
+      - key: DATABASE_HOST
+        fromDatabase:
+          name: hikehub-db
+          property: host
+      - key: DATABASE_NAME
+        fromDatabase:
+          name: hikehub-db
+          property: database
+      - key: DATABASE_USER
         fromDatabase:
           name: hikehub-db
           property: user
