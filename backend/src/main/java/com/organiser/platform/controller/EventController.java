@@ -102,22 +102,28 @@ public class EventController {
     }
     
     private Long getUserIdFromAuth(Authentication authentication) {
-        // Extract userId from JWT token claims
-        // The JWT token contains the user email as subject
-        // We would need to look up the user by email, but for now we'll use a simpler approach
-        // In a production system, you'd want to include userId directly in the JWT claims
-        
         if (authentication == null || authentication.getPrincipal() == null) {
             throw new RuntimeException("User not authenticated");
         }
         
-        // The principal is a UserDetails object with the email as username
-        // For now, we'll extract from the name which should be the email
-        // In production, you'd add userId to JWT claims and extract it here
-        String email = authentication.getName();
+        // The principal should be a User object from Spring Security
+        // When JWT is parsed, userId is stored in the authorities or can be extracted from token
+        Object principal = authentication.getPrincipal();
         
-        // This is a simplified approach - in production you'd store userId in JWT claims
-        // and extract it directly without needing to query the database
-        return 1L; // TODO: Extract from JWT claims or lookup by email
+        if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+            // If we have UserDetails, we need to extract userId from the authentication
+            // It should be set as a detail by the JwtAuthenticationFilter
+            if (authentication.getDetails() instanceof Long) {
+                return (Long) authentication.getDetails();
+            }
+        }
+        
+        // Fallback: try to parse from name if it's a Long
+        try {
+            String name = authentication.getName();
+            return Long.parseLong(name);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException("Unable to extract userId from authentication");
+        }
     }
 }

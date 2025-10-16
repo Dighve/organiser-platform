@@ -40,32 +40,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         
-        jwt = authHeader.substring(7);
-        email = jwtUtil.extractUsername(jwt); // Extract email from token
-        
-        if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            // Load member by email
-            Member member = memberRepository.findByEmail(email).orElse(null);
+        try {
+            jwt = authHeader.substring(7);
+            email = jwtUtil.extractUsername(jwt); // Extract email from token
             
-            if (member != null && member.getActive()) {
-                // Create simple UserDetails-like object
-                org.springframework.security.core.userdetails.User userDetails = 
-                    new org.springframework.security.core.userdetails.User(
-                        member.getEmail(),
-                        "",  // No password needed
-                        Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"))
-                    );
+            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                // Extract userId from JWT token
+                Long userId = jwtUtil.extractClaim(jwt, claims -> claims.get("userId", Long.class));
                 
-                if (jwtUtil.validateToken(jwt, userDetails)) {
-                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                // Load member by email
+                Member member = memberRepository.findByEmail(email).orElse(null);
+                
+                if (member != null && member.getActive()) {
+                    // Create simple UserDetails-like object
+                    org.springframework.security.core.userdetails.User userDetails = 
+                        new org.springframework.security.core.userdetails.User(
+                            member.getEmail(),
+                            "",  // No password needed
+                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"))
+                        );
+                    
+                    if (jwtUtil.validateToken(jwt, userDetails)) {
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+                        // Store userId in the details so controllers can access it
+                        authToken.setDetails(userId != null ? userId : member.getId());
+                        SecurityContextHolder.getContext().setAuthentication(authToken);
+                    }
                 }
             }
+        } catch (Exception e) {
+            // Log the error but continue - this allows public endpoints to work even with invalid tokens
+            System.err.println("JWT token validation failed: " + e.getMessage());
+            // Don't set authentication, let Spring Security handle it based on endpoint permissions
         }
         
         filterChain.doFilter(request, response);

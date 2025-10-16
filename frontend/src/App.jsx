@@ -8,6 +8,9 @@ import EventsPage from './pages/EventsPage'
 import EventDetailPage from './pages/EventDetailPage'
 import CreateEventPage from './pages/CreateEventPage'
 import MyEventsPage from './pages/MyEventsPage'
+import MyGroupsPage from './pages/MyGroupsPage'
+import BrowseGroupsPage from './pages/BrowseGroupsPage'
+import CreateGroupPage from './pages/CreateGroupPage'
 import ProfilePage from './pages/ProfilePage'
 
 function PrivateRoute({ children }) {
@@ -37,6 +40,23 @@ function App() {
           element={
             <PrivateRoute>
               <MyEventsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="groups"
+          element={
+            <PrivateRoute>
+              <MyGroupsPage />
+            </PrivateRoute>
+          }
+        />
+        <Route path="groups/browse" element={<BrowseGroupsPage />} />
+        <Route
+          path="groups/create"
+          element={
+            <PrivateRoute>
+              <CreateGroupPage />
             </PrivateRoute>
           }
         />

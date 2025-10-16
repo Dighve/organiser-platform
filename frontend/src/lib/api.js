@@ -72,4 +72,17 @@ export const activityTypesAPI = {
   getAll: () => api.get('/activities/public'),
 }
 
+// Groups API
+export const groupsAPI = {
+  getMyGroups: () => api.get('/groups/my-groups'),
+  
+  getAllPublicGroups: () => api.get('/groups/public'),
+  
+  subscribeToGroup: (groupId) => api.post(`/groups/${groupId}/subscribe`),
+  
+  unsubscribeFromGroup: (groupId) => api.post(`/groups/${groupId}/unsubscribe`),
+  
+  createGroup: (data) => api.post('/groups', data),
+}
+
 export default api

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { MapPin, Clock, FileText, Users, ArrowRight, ArrowLeft, Check, Edit2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
+import { activityTypesAPI, eventsAPI } from '../lib/api'
 import toast from 'react-hot-toast'
 
 const STEPS = {
@@ -30,6 +32,16 @@ export default function CreateEventPage() {
   const [formData, setFormData] = useState({})
   const { register, handleSubmit, watch, formState: { errors }, reset, setValue } = useForm()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const groupId = searchParams.get('groupId')
+  
+  // Fetch activities
+  const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
+    queryKey: ['activities'],
+    queryFn: () => activityTypesAPI.getAll(),
+  })
+  
+  const activities = activitiesData?.data || []
 
   const watchedValues = watch()
 
@@ -64,6 +76,7 @@ export default function CreateEventPage() {
   const onFinalSubmit = async (data) => {
     // Map form data to DTO
     const payload = {
+      groupId: groupId ? Number(groupId) : null,
       title: data.title,
       description: data.description,
       activityTypeId: data.activityTypeId ? Number(data.activityTypeId) : null,
@@ -75,7 +88,7 @@ export default function CreateEventPage() {
       longitude: data.longitude ? Number(data.longitude) : null,
       maxParticipants: data.maxParticipants ? Number(data.maxParticipants) : null,
       minParticipants: data.minParticipants ? Number(data.minParticipants) : 1,
-      price: data.price ? Number(data.price) : 0,
+      cost: data.price ? Number(data.price) : 0,
       difficultyLevel: data.difficultyLevel || null,
       distanceKm: data.distanceKm ? Number(data.distanceKm) : null,
       elevationGainM: data.elevationGainM ? Number(data.elevationGainM) : null,
@@ -87,15 +100,11 @@ export default function CreateEventPage() {
       cancellationPolicy: data.cancellationPolicy || null
     }
     try {
-      const res = await fetch('http://localhost:8080/api/v1/events', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      if (!res.ok) throw new Error('Failed to create event')
+      await eventsAPI.createEvent(payload)
       toast.success('Event created successfully!')
-      navigate('/events')
+      navigate(groupId ? '/groups' : '/my-events')
     } catch (error) {
+      console.error('Error creating event:', error)
       toast.error('Failed to create event. Please try again.')
     }
   }
@@ -226,8 +235,19 @@ export default function CreateEventPage() {
         <textarea {...register('description')} className="input min-h-[100px]" placeholder="Describe the activity, meeting points, etc..." />
       </div>
       <div>
-        <label htmlFor="activityTypeId" className="block text-sm font-medium text-gray-700 mb-2">Activity Type ID *</label>
-        <input {...register('activityTypeId', { required: 'Activity type is required' })} type="number" className="input" placeholder="e.g., 1" />
+        <label htmlFor="activityTypeId" className="block text-sm font-medium text-gray-700 mb-2">Activity Type *</label>
+        {activitiesLoading ? (
+          <p className="text-gray-500">Loading activities...</p>
+        ) : (
+          <select {...register('activityTypeId', { required: 'Activity type is required' })} className="input">
+            <option value="">Select an activity</option>
+            {activities.map(activity => (
+              <option key={activity.id} value={activity.id}>
+                {activity.name}
+              </option>
+            ))}
+          </select>
+        )}
         {errors.activityTypeId && <p className="text-red-500 text-sm mt-1">{errors.activityTypeId.message}</p>}
       </div>
       <div>
@@ -451,7 +471,9 @@ export default function CreateEventPage() {
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Create New Event</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          {groupId ? 'Create Event for Group' : 'Create New Event'}
+        </h1>
         <p className="text-gray-600">{STEP_TITLES[currentStep]}</p>
       </div>
 

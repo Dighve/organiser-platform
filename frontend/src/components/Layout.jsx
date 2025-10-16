@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Menu, X, User, LogOut, Plus, Calendar } from 'lucide-react'
+import { Menu, X, User, LogOut, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
 
@@ -60,18 +60,18 @@ export default function Layout() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/create-event"
+                    to="/groups"
                     className="flex items-center space-x-1 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>Create Event</span>
+                    <Users className="h-4 w-4" />
+                    <span>My Groups</span>
                   </Link>
                   <Link
-                    to="/my-events"
+                    to="/groups/browse"
                     className="flex items-center space-x-1 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium"
                   >
-                    <Calendar className="h-4 w-4" />
-                    <span>My Events</span>
+                    <Users className="h-4 w-4" />
+                    <span>Browse Groups</span>
                   </Link>
                   <div className="relative group">
                     <button className="flex items-center space-x-2 text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-sm font-medium">
@@ -119,18 +119,18 @@ export default function Layout() {
               {isAuthenticated ? (
                 <>
                   <Link
-                    to="/create-event"
+                    to="/groups"
                     className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Create Event
+                    My Groups
                   </Link>
                   <Link
-                    to="/my-events"
+                    to="/groups/browse"
                     className="block text-gray-700 hover:text-primary-600 px-3 py-2 rounded-md text-base font-medium"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    My Events
+                    Browse Groups
                   </Link>
                   <Link
                     to="/profile"
@@ -176,13 +176,13 @@ export default function Layout() {
               <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
               <ul className="space-y-2">
                 <li>
-                  <Link to="/events" className="text-gray-400 hover:text-white">
-                    Browse Events
+                  <Link to="/groups/browse" className="text-gray-400 hover:text-white">
+                    Browse Groups
                   </Link>
                 </li>
                 <li>
-                  <Link to="/create-event" className="text-gray-400 hover:text-white">
-                    Create Event
+                  <Link to="/events" className="text-gray-400 hover:text-white">
+                    Browse Events
                   </Link>
                 </li>
               </ul>
