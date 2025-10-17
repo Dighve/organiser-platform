@@ -17,10 +17,17 @@ export default function EventDetailPage() {
     queryFn: () => eventsAPI.getEventById(id),
   })
 
+  const { data: participantsData } = useQuery({
+    queryKey: ['eventParticipants', id],
+    queryFn: () => eventsAPI.getEventParticipants(id),
+    enabled: !!id,
+  })
+
   const joinMutation = useMutation({
     mutationFn: () => eventsAPI.joinEvent(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['event', id])
+      queryClient.invalidateQueries(['eventParticipants', id])
       toast.success('Successfully joined the event!')
     },
     onError: (error) => {
@@ -32,6 +39,7 @@ export default function EventDetailPage() {
     mutationFn: () => eventsAPI.leaveEvent(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['event', id])
+      queryClient.invalidateQueries(['eventParticipants', id])
       toast.success('Successfully left the event')
     },
     onError: (error) => {
@@ -101,7 +109,7 @@ export default function EventDetailPage() {
   }
 
   // Check if current user is the event organiser
-  const isEventOrganiser = isAuthenticated && user?.id === event.organiserId
+  const isEventOrganiser = isAuthenticated && Number(user?.id) === Number(event.organiserId)
   
   // Check if current user has joined the event
   const hasJoined = isAuthenticated && event.participantIds?.includes(user?.id)
@@ -226,6 +234,39 @@ export default function EventDetailPage() {
                     </li>
                   ))}
                 </ul>
+              </div>
+            )}
+
+            {/* Participants */}
+            {participantsData?.data && participantsData.data.length > 0 && (
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+                  <Users className="inline h-7 w-7 mr-2 mb-1" />
+                  Participants ({participantsData.data.length})
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {participantsData.data.map((participant) => (
+                    <div 
+                      key={participant.id} 
+                      className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-shadow"
+                    >
+                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        {participant.displayName ? participant.displayName.charAt(0).toUpperCase() : participant.email.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-gray-900 truncate">
+                          {participant.displayName || participant.email.split('@')[0]}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          Joined {new Date(participant.joinedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                      {participant.isOrganiser && (
+                        <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Organiser</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>

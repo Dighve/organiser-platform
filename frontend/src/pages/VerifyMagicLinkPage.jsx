@@ -26,9 +26,9 @@ export default function VerifyMagicLinkPage() {
   const verifyToken = async (token) => {
     try {
       const response = await authAPI.verifyMagicLink(token)
-      const { token: jwtToken, userId, email, role } = response.data
+      const { token: jwtToken, userId, email, role, isOrganiser } = response.data
       
-      login({ userId, email, role }, jwtToken)
+      login({ id: userId, userId, email, role, isOrganiser }, jwtToken)
       setStatus('success')
       
       // Redirect after 2 seconds

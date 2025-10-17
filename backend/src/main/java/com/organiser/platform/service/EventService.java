@@ -291,4 +291,21 @@ public class EventService {
                 .updatedAt(event.getUpdatedAt())
                 .build();
     }
+    
+    @Transactional(readOnly = true)
+    public java.util.List<com.organiser.platform.dto.MemberDTO> getEventParticipants(Long eventId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        
+        return event.getParticipants().stream()
+                .map(participant -> com.organiser.platform.dto.MemberDTO.builder()
+                        .id(participant.getMember().getId())
+                        .email(participant.getMember().getEmail())
+                        .displayName(participant.getMember().getDisplayName())
+                        .profilePhotoUrl(participant.getMember().getProfilePhotoUrl())
+                        .isOrganiser(participant.getMember().getIsOrganiser())
+                        .joinedAt(participant.getRegistrationDate())
+                        .build())
+                .collect(Collectors.toList());
+    }
 }

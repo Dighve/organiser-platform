@@ -70,6 +70,8 @@ export const eventsAPI = {
   
   getMyEvents: (page = 0, size = 20) =>
     api.get(`/events/organiser/my-events?page=${page}&size=${size}`),
+  
+  getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),
 }
 
 // Activity Types API
@@ -92,6 +94,8 @@ export const groupsAPI = {
   unsubscribeFromGroup: (groupId) => api.post(`/groups/${groupId}/unsubscribe`),
   
   createGroup: (data) => api.post('/groups', data),
+  
+  getGroupMembers: (groupId) => api.get(`/groups/${groupId}/members`),
 }
 
 // Members API

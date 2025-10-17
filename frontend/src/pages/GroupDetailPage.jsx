@@ -46,6 +46,13 @@ export default function GroupDetailPage() {
     enabled: !!group,
   })
 
+  // Fetch group members
+  const { data: membersData, isLoading: membersLoading } = useQuery({
+    queryKey: ['groupMembers', id],
+    queryFn: () => groupsAPI.getGroupMembers(id),
+    enabled: !!id,
+  })
+
   const groupEvents = eventsData?.data?.content || []
 
   // Subscribe mutation
@@ -55,6 +62,7 @@ export default function GroupDetailPage() {
       queryClient.invalidateQueries(['group', id])
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['groupEvents', id])
+      queryClient.invalidateQueries(['groupMembers', id])
     },
     onError: (error) => {
       console.error('Subscribe error:', error)
@@ -69,6 +77,7 @@ export default function GroupDetailPage() {
       queryClient.invalidateQueries(['group', id])
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['groupEvents', id])
+      queryClient.invalidateQueries(['groupMembers', id])
     },
     onError: (error) => {
       console.error('Unsubscribe error:', error)
@@ -348,15 +357,45 @@ export default function GroupDetailPage() {
               {/* Members Tab */}
               {activeTab === 'members' && (
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Members</h2>
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-12 text-center border border-purple-100">
-                    <Users className="h-16 w-16 mx-auto text-purple-400 mb-4" />
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{group.currentMembers || 0} Members</h3>
-                    <p className="text-gray-600 mb-6">Connect with fellow members and explore adventures together!</p>
-                    <div className="inline-block px-6 py-3 bg-white rounded-xl shadow-md">
-                      <p className="text-sm text-gray-500">Member list feature coming soon! 🚀</p>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">
+                    <Users className="inline h-8 w-8 mr-2 mb-1" />
+                    Group Members ({membersData?.data?.length || 0})
+                  </h2>
+                  {membersLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
-                  </div>
+                  ) : membersData?.data && membersData.data.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {membersData.data.map((member) => (
+                        <div 
+                          key={member.id} 
+                          className="flex items-center space-x-4 p-4 bg-white/60 backdrop-blur-sm rounded-2xl hover:shadow-lg transition-shadow border border-gray-100"
+                        >
+                          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                            {member.displayName ? member.displayName.charAt(0).toUpperCase() : member.email.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-900 text-lg truncate">
+                              {member.displayName || member.email.split('@')[0]}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate">
+                              Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                            </p>
+                          </div>
+                          {member.isOrganiser && (
+                            <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-3 py-1 rounded-full font-semibold">Organiser</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-12 text-center border border-purple-100">
+                      <Users className="h-16 w-16 mx-auto text-purple-400 mb-4" />
+                      <h3 className="text-2xl font-bold text-gray-900 mb-2">No Members Yet</h3>
+                      <p className="text-gray-600 mb-6">Be the first to join this group!</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

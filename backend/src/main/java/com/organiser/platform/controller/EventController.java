@@ -121,6 +121,11 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable));
     }
     
+    @GetMapping("/public/{id}/participants")
+    public ResponseEntity<?> getEventParticipants(@PathVariable Long id) {
+        return ResponseEntity.ok(eventService.getEventParticipants(id));
+    }
+    
     private Long getUserIdFromAuth(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
             throw new RuntimeException("User not authenticated");

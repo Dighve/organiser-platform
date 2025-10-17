@@ -179,4 +179,22 @@ public class GroupService {
         subscription.setUnsubscribedAt(LocalDateTime.now());
         subscriptionRepository.save(subscription);
     }
+    
+    @Transactional(readOnly = true)
+    public java.util.List<com.organiser.platform.dto.MemberDTO> getGroupMembers(Long groupId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        return group.getSubscriptions().stream()
+                .filter(sub -> sub.getStatus() == Subscription.SubscriptionStatus.ACTIVE)
+                .map(subscription -> com.organiser.platform.dto.MemberDTO.builder()
+                        .id(subscription.getMember().getId())
+                        .email(subscription.getMember().getEmail())
+                        .displayName(subscription.getMember().getDisplayName())
+                        .profilePhotoUrl(subscription.getMember().getProfilePhotoUrl())
+                        .isOrganiser(subscription.getMember().getIsOrganiser())
+                        .joinedAt(subscription.getSubscribedAt())
+                        .build())
+                .collect(java.util.stream.Collectors.toList());
+    }
 }
