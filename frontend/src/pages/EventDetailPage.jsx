@@ -102,6 +102,9 @@ export default function EventDetailPage() {
 
   // Check if current user is the event organiser
   const isEventOrganiser = isAuthenticated && user?.id === event.organiserId
+  
+  // Check if current user has joined the event
+  const hasJoined = isAuthenticated && event.participantIds?.includes(user?.id)
 
   const formattedDate = format(new Date(event.eventDate), 'EEEE, MMMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
@@ -279,17 +282,12 @@ export default function EventDetailPage() {
                         {deleteMutation.isLoading ? 'Deleting...' : 'Delete Event'}
                       </button>
                     </div>
-                  ) : (
-                    // Regular user view - show join/leave buttons
+                  ) : hasJoined ? (
+                    // User has joined - show leave button and status
                     <div className="space-y-3">
-                      <button
-                        onClick={() => joinMutation.mutate()}
-                        disabled={event.status === 'FULL' || joinMutation.isLoading}
-                        className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
-                      >
-                        <Users className="h-5 w-5" />
-                        {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
-                      </button>
+                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                        <p className="text-green-700 font-semibold text-center">✅ You're registered!</p>
+                      </div>
                       <button
                         onClick={() => leaveMutation.mutate()}
                         disabled={leaveMutation.isLoading}
@@ -298,6 +296,16 @@ export default function EventDetailPage() {
                         {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
                       </button>
                     </div>
+                  ) : (
+                    // User hasn't joined - show join button
+                    <button
+                      onClick={() => joinMutation.mutate()}
+                      disabled={event.status === 'FULL' || joinMutation.isLoading}
+                      className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
+                    >
+                      <Users className="h-5 w-5" />
+                      {joinMutation.isLoading ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                    </button>
                   )
                 ) : (
                   <div className="space-y-3">
