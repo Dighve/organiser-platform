@@ -1,17 +1,19 @@
 version: '3.8'
 
 services:
-  # MariaDB Database
+  # MariaDB Database for local development
   mariadb:
     image: mariadb:11.2
-    container_name: organiser-mariadb
+    container_name: hikehub-mariadb
     environment:
-      MARIADB_DATABASE: organiser_db
+      MARIADB_DATABASE: organiser_platform
+      MARIADB_USER: organiser_user
+      MARIADB_PASSWORD: organiser_pass
       MARIADB_ROOT_PASSWORD: root
       MARIADB_CHARACTER_SET_SERVER: utf8mb4
       MARIADB_COLLATION_SERVER: utf8mb4_unicode_ci
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
@@ -20,57 +22,5 @@ services:
       timeout: 5s
       retries: 5
 
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: organiser-redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Spring Boot Backend
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    container_name: organiser-backend
-    environment:
-      SPRING_PROFILE: prod
-      DATABASE_URL: jdbc:mariadb://mariadb:3306/organiser_db
-      DATABASE_USERNAME: root
-      DATABASE_PASSWORD: root
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      JWT_SECRET: your-production-secret-key-change-this
-    ports:
-      - "8080:8080"
-    depends_on:
-      mariadb:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  # React Frontend (for local development)
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: organiser-frontend
-    environment:
-      VITE_API_URL: http://localhost:8080/api/v1
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
-
 volumes:
   mariadb_data:
-  redis_data:
