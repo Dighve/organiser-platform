@@ -65,7 +65,8 @@ public class SecurityConfig {
                 "http://localhost:3003",
                 "http://127.0.0.1:3002",
                 "http://localhost:5173",
-                "https://organiser-platform.netlify.app"
+                "https://organiser-platform.netlify.app",
+                "https://hikehub-poc.netlify.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
