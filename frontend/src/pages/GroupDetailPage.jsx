@@ -10,6 +10,7 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
+  const [activeTab, setActiveTab] = React.useState('events')
 
   // Fetch group details
   const { data: groupData, isLoading, error } = useQuery({
@@ -185,39 +186,58 @@ export default function GroupDetailPage() {
 
         {/* Content */}
         <div className="px-8 py-6">
+          {/* Tabs */}
+          <div className="mb-8 border-b border-gray-200">
+            <div className="flex gap-8">
+              <button
+                onClick={() => setActiveTab('events')}
+                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
+                  activeTab === 'events'
+                    ? 'text-purple-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                📅 Events
+                {activeTab === 'events' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-t"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('about')}
+                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
+                  activeTab === 'about'
+                    ? 'text-purple-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                📖 About
+                {activeTab === 'about' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-t"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('members')}
+                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
+                  activeTab === 'members'
+                    ? 'text-purple-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                👥 Members
+                {activeTab === 'members' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-t"></div>
+                )}
+              </button>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <div className="mb-8">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">About</h2>
-                {/* Group Description Image */}
-                <div className="mb-6 rounded-2xl overflow-hidden shadow-lg">
-                  <img 
-                    src={group.descriptionImage || [
-                      'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=800&h=400&fit=crop',
-                      'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&h=400&fit=crop',
-                      'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=800&h=400&fit=crop',
-                      'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800&h=400&fit=crop'
-                    ][Number.parseInt(id) % 4]}
-                    alt={`${group.name} description`}
-                    className="w-full h-72 object-cover"
-                  />
-                </div>
-                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">
-                  {group.description || 'No description available.'}
-                </p>
-              </div>
-
-              {group.createdAt && (
-                <div className="flex items-center gap-2 text-gray-500 text-sm mb-8 pb-8 border-b border-gray-200">
-                  <Calendar className="h-4 w-4" />
-                  <span>Created on {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-                </div>
-              )}
-
-              {/* Group Events Section */}
-              <div className="mt-8">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Events</h2>
+              {/* Events Tab */}
+              {activeTab === 'events' && (
+                <div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Events</h2>
                 {eventsLoading ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
@@ -293,7 +313,52 @@ export default function GroupDetailPage() {
                     )}
                   </div>
                 )}
-              </div>
+                </div>
+              )}
+
+              {/* About Tab */}
+              {activeTab === 'about' && (
+                <div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">About This Group</h2>
+                  {/* Group Description Image */}
+                  <div className="mb-6 rounded-2xl overflow-hidden shadow-lg">
+                    <img 
+                      src={group.descriptionImage || [
+                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=800&h=400&fit=crop',
+                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&h=400&fit=crop',
+                        'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=800&h=400&fit=crop',
+                        'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800&h=400&fit=crop'
+                      ][Number.parseInt(id) % 4]}
+                      alt={`${group.name} description`}
+                      className="w-full h-72 object-cover"
+                    />
+                  </div>
+                  <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap mb-8">
+                    {group.description || 'No description available.'}
+                  </p>
+                  {group.createdAt && (
+                    <div className="flex items-center gap-2 text-gray-500 text-sm pb-8 border-t border-gray-200 pt-8">
+                      <Calendar className="h-4 w-4" />
+                      <span>Created on {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Members Tab */}
+              {activeTab === 'members' && (
+                <div>
+                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Members</h2>
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-12 text-center border border-purple-100">
+                    <Users className="h-16 w-16 mx-auto text-purple-400 mb-4" />
+                    <h3 className="text-2xl font-bold text-gray-900 mb-2">{group.currentMembers || 0} Members</h3>
+                    <p className="text-gray-600 mb-6">Connect with fellow members and explore adventures together!</p>
+                    <div className="inline-block px-6 py-3 bg-white rounded-xl shadow-md">
+                      <p className="text-sm text-gray-500">Member list feature coming soon! 🚀</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Sidebar */}
