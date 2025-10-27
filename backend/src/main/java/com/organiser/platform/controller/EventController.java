@@ -30,8 +30,12 @@ public class EventController {
     }
     
     @GetMapping("/public/{id}")
-    public ResponseEntity<EventDTO> getEventById(@PathVariable Long id) {
-        return ResponseEntity.ok(eventService.getEventById(id));
+    public ResponseEntity<EventDTO> getEventById(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long memberId = authentication != null ? getUserIdFromAuth(authentication) : null;
+        return ResponseEntity.ok(eventService.getEventById(id, memberId));
     }
     
     @GetMapping("/public/search")

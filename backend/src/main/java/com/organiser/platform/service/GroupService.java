@@ -180,6 +180,25 @@ public class GroupService {
         subscriptionRepository.save(subscription);
     }
     
+    /**
+     * Check if a member is subscribed to a group (for access control)
+     */
+    public boolean isMemberOfGroup(Long memberId, Long groupId) {
+        if (memberId == null || groupId == null) {
+            return false;
+        }
+        
+        // Check if user is the group organiser
+        Optional<Group> group = groupRepository.findById(groupId);
+        if (group.isPresent() && group.get().getPrimaryOrganiser().getId().equals(memberId)) {
+            return true;
+        }
+        
+        // Check if user has an active subscription
+        Optional<Subscription> subscription = subscriptionRepository.findByMemberIdAndGroupId(memberId, groupId);
+        return subscription.isPresent() && subscription.get().getStatus() == Subscription.SubscriptionStatus.ACTIVE;
+    }
+    
     @Transactional(readOnly = true)
     public java.util.List<com.organiser.platform.dto.MemberDTO> getGroupMembers(Long groupId) {
         Group group = groupRepository.findById(groupId)

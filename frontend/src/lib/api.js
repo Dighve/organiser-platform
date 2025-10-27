@@ -74,6 +74,30 @@ export const eventsAPI = {
   getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),
 }
 
+// Comments API
+export const commentsAPI = {
+  // Get all comments for an event
+  getEventComments: (eventId) => api.get(`/events/${eventId}/comments`),
+  
+  // Create a new comment
+  createComment: (eventId, data) => api.post(`/events/${eventId}/comments`, data),
+  
+  // Update a comment
+  updateComment: (commentId, data) => api.put(`/events/comments/${commentId}`, data),
+  
+  // Delete a comment
+  deleteComment: (commentId) => api.delete(`/events/comments/${commentId}`),
+  
+  // Create a reply to a comment
+  createReply: (commentId, data) => api.post(`/events/comments/${commentId}/replies`, data),
+  
+  // Update a reply
+  updateReply: (replyId, data) => api.put(`/events/replies/${replyId}`, data),
+  
+  // Delete a reply
+  deleteReply: (replyId) => api.delete(`/events/replies/${replyId}`),
+}
+
 // Activity Types API
 export const activityTypesAPI = {
   getAll: () => api.get('/activities/public'),

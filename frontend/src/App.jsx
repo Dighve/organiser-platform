@@ -43,6 +43,7 @@ function App() {
           }
         />
         <Route path="browse-groups" element={<BrowseGroupsPage />} />
+        <Route path="groups" element={<BrowseGroupsPage />} />
         <Route path="hiking-grade-faq" element={<HikingGradeFAQPage />} />
         <Route path="groups/:id" element={<GroupDetailPage />} />
         <Route

@@ -1,10 +1,11 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Calendar, MapPin, Users, DollarSign, Clock, TrendingUp, ArrowLeft, Trash2 } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, TrendingUp, ArrowLeft, Trash2, Lock } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import CommentSection from '../components/CommentSection'
 
 export default function EventDetailPage() {
   const { id } = useParams()
@@ -12,9 +13,22 @@ export default function EventDetailPage() {
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['event', id],
     queryFn: () => eventsAPI.getEventById(id),
+    retry: (failureCount, error) => {
+      // Don't retry on 403 errors (access denied)
+      if (error?.response?.status === 403) {
+        return false
+      }
+      return failureCount < 2
+    },
+    // Don't throw error on 403 - we want to show partial view
+    onError: (error) => {
+      if (error?.response?.status !== 403) {
+        console.error('Error loading event:', error)
+      }
+    },
   })
 
   const { data: participantsData } = useQuery({
@@ -89,7 +103,11 @@ export default function EventDetailPage() {
   }
 
   const event = data?.data
+  
+  // Check if access is denied: either 403 error OR partial data (description is null but title exists)
+  const isAccessDenied = error?.response?.status === 403 || (event && event.title && !event.description)
 
+  // If no event data at all (not even partial), show not found
   if (!event) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
@@ -108,11 +126,12 @@ export default function EventDetailPage() {
     )
   }
 
+  // Backend now returns partial data for non-members, so event always exists
   // Check if current user is the event organiser
-  const isEventOrganiser = isAuthenticated && Number(user?.id) === Number(event.organiserId)
+  const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event.organiserId)
   
   // Check if current user has joined the event
-  const hasJoined = isAuthenticated && event.participantIds?.includes(user?.id)
+  const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
 
   const formattedDate = format(new Date(event.eventDate), 'EEEE, MMMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
@@ -161,13 +180,29 @@ export default function EventDetailPage() {
             {/* Description */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">About This Event</h2>
-              <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{event.description}</p>
+              {isAccessDenied ? (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4">
+                    <Lock className="h-8 w-8 text-purple-600" />
+                  </div>
+                  <p className="text-gray-600 mb-4">Only shown to members</p>
+                  <button
+                    onClick={() => navigate(`/groups/${event.groupId}`)}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    Join Group
+                  </button>
+                </div>
+              ) : (
+                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{event.description}</p>
+              )}
             </div>
 
             {/* Event Details */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Event Details</h2>
               <div className="space-y-5">
+                {/* Always show date and time */}
                 <div className="flex items-start p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
                   <Calendar className="h-6 w-6 mr-4 mt-1 text-purple-600" />
                   <div>
@@ -176,39 +211,58 @@ export default function EventDetailPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start p-4 bg-gradient-to-r from-pink-50 to-orange-50 rounded-xl">
-                  <MapPin className="h-6 w-6 mr-4 mt-1 text-pink-600" />
-                  <div>
-                    <div className="font-bold text-gray-900">{event.location}</div>
-                  </div>
-                </div>
-
-                {event.difficultyLevel && (
-                  <div className="flex items-start p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
-                    <TrendingUp className="h-6 w-6 mr-4 mt-1 text-orange-600" />
-                    <div>
-                      <div className="text-sm text-gray-600">Difficulty Level</div>
-                      <div className="font-bold text-gray-900">{event.difficultyLevel}</div>
+                {isAccessDenied ? (
+                  /* Locked state for other details */
+                  <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl">
+                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4">
+                      <Lock className="h-8 w-8 text-purple-600" />
                     </div>
+                    <p className="text-gray-600 mb-4">Location and other details only shown to members</p>
+                    <button
+                      onClick={() => navigate(`/groups/${event.groupId}`)}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    >
+                      Join Group
+                    </button>
                   </div>
-                )}
-
-                {event.distanceKm && (
-                  <div className="flex items-start p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
-                    <Clock className="h-6 w-6 mr-4 mt-1 text-green-600" />
-                    <div>
-                      <div className="font-bold text-gray-900">{event.distanceKm} km</div>
-                      {event.estimatedDurationHours && (
-                        <div className="text-gray-600">Duration: ~{event.estimatedDurationHours} hours</div>
-                      )}
+                ) : (
+                  /* Full details for members */
+                  <>
+                    <div className="flex items-start p-4 bg-gradient-to-r from-pink-50 to-orange-50 rounded-xl">
+                      <MapPin className="h-6 w-6 mr-4 mt-1 text-pink-600" />
+                      <div>
+                        <div className="font-bold text-gray-900">{event.location}</div>
+                      </div>
                     </div>
-                  </div>
+
+                    {event.difficultyLevel && (
+                      <div className="flex items-start p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
+                        <TrendingUp className="h-6 w-6 mr-4 mt-1 text-orange-600" />
+                        <div>
+                          <div className="text-sm text-gray-600">Difficulty Level</div>
+                          <div className="font-bold text-gray-900">{event.difficultyLevel}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {event.distanceKm && (
+                      <div className="flex items-start p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+                        <Clock className="h-6 w-6 mr-4 mt-1 text-green-600" />
+                        <div>
+                          <div className="font-bold text-gray-900">{event.distanceKm} km</div>
+                          {event.estimatedDurationHours && (
+                            <div className="text-gray-600">Duration: ~{event.estimatedDurationHours} hours</div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
 
             {/* Requirements */}
-            {event.requirements && event.requirements.length > 0 && (
+            {!isAccessDenied && event.requirements && event.requirements.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">⚠️ Requirements</h2>
                 <ul className="space-y-3">
@@ -223,7 +277,7 @@ export default function EventDetailPage() {
             )}
 
             {/* Included Items */}
-            {event.includedItems && event.includedItems.length > 0 && (
+            {!isAccessDenied && event.includedItems && event.includedItems.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">✨ What's Included</h2>
                 <ul className="space-y-3">
@@ -238,7 +292,7 @@ export default function EventDetailPage() {
             )}
 
             {/* Participants */}
-            {participantsData?.data && participantsData.data.length > 0 && (
+            {!isAccessDenied && participantsData?.data && participantsData.data.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
                   <Users className="inline h-7 w-7 mr-2 mb-1" />
@@ -269,45 +323,67 @@ export default function EventDetailPage() {
                 </div>
               </div>
             )}
+
+            {/* Comment Section */}
+            <CommentSection eventId={id} />
           </div>
 
           {/* Sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg space-y-6">
-              <div>
-                <p className="text-sm text-gray-500 font-semibold mb-2">PRICE</p>
-                {event.price > 0 ? (
-                  <div className="flex items-center text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    <DollarSign className="h-10 w-10 text-purple-600" />
-                    <span>{event.price}</span>
+              {!isAccessDenied && (
+                <>
+                  <div>
+                    <p className="text-sm text-gray-500 font-semibold mb-2">PRICE</p>
+                    {event.price > 0 ? (
+                      <div className="flex items-center text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                        <DollarSign className="h-10 w-10 text-purple-600" />
+                        <span>{event.price}</span>
+                      </div>
+                    ) : (
+                      <div className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Free</div>
+                    )}
                   </div>
-                ) : (
-                  <div className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Free</div>
-                )}
-              </div>
 
-              <div className="pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm text-gray-500 font-semibold">PARTICIPANTS</span>
-                  <span className="font-bold text-lg text-gray-900">
-                    {event.currentParticipants}
-                    {event.maxParticipants && `/${event.maxParticipants}`}
-                  </span>
-                </div>
-                {event.maxParticipants && (
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(event.currentParticipants / event.maxParticipants) * 100}%`,
-                      }}
-                    ></div>
+                  <div className="pt-6 border-t border-gray-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm text-gray-500 font-semibold">PARTICIPANTS</span>
+                      <span className="font-bold text-lg text-gray-900">
+                        {event.currentParticipants || 0}
+                        {event.maxParticipants && `/${event.maxParticipants}`}
+                      </span>
+                    </div>
+                    {event.maxParticipants && (
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${((event.currentParticipants || 0) / event.maxParticipants) * 100}%`,
+                          }}
+                        ></div>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
 
-              <div className="pt-6 border-t border-gray-200">
-                {isAuthenticated ? (
+              <div className={!isAccessDenied ? "pt-6 border-t border-gray-200" : ""}>
+                {isAccessDenied ? (
+                  // Access denied - show Join Group button
+                  <div className="space-y-4">
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 text-center">
+                      <Lock className="h-10 w-10 mx-auto mb-3 text-purple-600" />
+                      <p className="text-sm font-semibold text-gray-700 mb-1">Members Only Event</p>
+                      <p className="text-xs text-gray-600">Join the group to view full details and register</p>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/groups/${event.groupId}`)}
+                      className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                    >
+                      Join Group to Participate
+                    </button>
+                  </div>
+                ) : isAuthenticated ? (
                   isEventOrganiser ? (
                     // Organiser view - show delete button
                     <div className="space-y-3">

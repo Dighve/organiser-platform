@@ -26,6 +26,7 @@ public class EventService {
     private final EventRepository eventRepository;
     private final MemberRepository memberRepository;
     private final GroupRepository groupRepository;
+    private final GroupService groupService;
     
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
@@ -86,11 +87,24 @@ public class EventService {
     }
     
     @Transactional(readOnly = true)
-    @Cacheable(value = "events", key = "#id")
-    public EventDTO getEventById(Long id) {
+    @Cacheable(value = "events", key = "#id + '_' + #memberId")
+    public EventDTO getEventById(Long id, Long memberId) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
+        
+        // Check if user is a member of the group
+        // If not a member, return partial event data (title, date, organiser, activity only)
+        if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
+            return convertToPartialDTO(event);
+        }
+        
         return convertToDTO(event);
+    }
+    
+    // Backward compatibility method for public access
+    @Transactional(readOnly = true)
+    public EventDTO getEventById(Long id) {
+        return getEventById(id, null);
     }
     
     @Transactional(readOnly = true)
@@ -289,6 +303,70 @@ public class EventService {
                 .totalReviews(event.getTotalReviews() != null ? event.getTotalReviews() : 0)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
+                .build();
+    }
+    
+    /**
+     * Convert event to partial DTO with only basic information visible to non-members
+     * (title, date, organiser, activity type, group info, image)
+     */
+    private EventDTO convertToPartialDTO(Event event) {
+        if (event == null) {
+            return null;
+        }
+        
+        Group group = event.getGroup();
+        if (group == null) {
+            throw new IllegalStateException("Event must belong to a group");
+        }
+        
+        Member primaryOrganiser = group.getPrimaryOrganiser();
+        if (primaryOrganiser == null) {
+            throw new IllegalStateException("Group must have a primary organiser");
+        }
+        
+        Activity activity = group.getActivity();
+        if (activity == null) {
+            throw new IllegalStateException("Group must be associated with an activity");
+        }
+        
+        // Return DTO with only basic information - no sensitive details
+        return EventDTO.builder()
+                .id(event.getId())
+                .title(event.getTitle())
+                .organiserId(primaryOrganiser.getId())
+                .organiserName(primaryOrganiser.getDisplayName() != null ? primaryOrganiser.getDisplayName() : "")
+                .activityTypeId(activity.getId())
+                .activityTypeName(activity.getName())
+                .groupId(group.getId())
+                .groupName(group.getName())
+                .eventDate(event.getEventDate())
+                .imageUrl(event.getImageUrl())
+                .status(event.getStatus())
+                .createdAt(event.getCreatedAt())
+                // All other fields are null/empty for non-members
+                .description(null)
+                .endDate(null)
+                .registrationDeadline(null)
+                .location(null)
+                .latitude(null)
+                .longitude(null)
+                .maxParticipants(null)
+                .minParticipants(null)
+                .currentParticipants(0)
+                .participantIds(new HashSet<>())
+                .price(null)
+                .difficultyLevel(null)
+                .distanceKm(null)
+                .elevationGainM(null)
+                .estimatedDurationHours(null)
+                .additionalImages(new HashSet<>())
+                .requirements(new HashSet<>())
+                .includedItems(new HashSet<>())
+                .cancellationPolicy(null)
+                .averageRating(BigDecimal.ZERO)
+                .totalReviews(0)
+                .updatedAt(null)
                 .build();
     }
     

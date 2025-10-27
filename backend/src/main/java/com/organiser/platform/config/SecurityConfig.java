@@ -33,19 +33,25 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
+                        // Public endpoints - no authentication required
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/auth/**"),
-                                new AntPathRequestMatcher("/api/v1/events/**"),
+                                new AntPathRequestMatcher("/api/v1/events/public/**"),
+                                new AntPathRequestMatcher("/api/v1/events/*/comments", "GET"),
                                 new AntPathRequestMatcher("/api/v1/activities/**"),
-                                new AntPathRequestMatcher("/api/v1/groups/**"),
-                                new AntPathRequestMatcher("/api/v1/members/**"),
-                                new AntPathRequestMatcher("/actuator/**"),
+                                new AntPathRequestMatcher("/api/v1/groups/public"),
+                                new AntPathRequestMatcher("/api/v1/groups/*", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/members", "GET"),
+                                new AntPathRequestMatcher("/api/v1/actuator/**"),
                                 new AntPathRequestMatcher("/swagger-ui/**"),
                                 new AntPathRequestMatcher("/v3/api-docs/**"),
                                 new AntPathRequestMatcher("/h2-console/**")
                         ).permitAll()
+                        // Admin endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**")).hasRole("ADMIN")
+                        // Organiser endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/organiser/**")).hasAnyRole("ORGANISER", "ADMIN")
+                        // All other requests require authentication
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
