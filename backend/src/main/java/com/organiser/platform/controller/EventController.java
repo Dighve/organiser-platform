@@ -77,6 +77,16 @@ public class EventController {
         return ResponseEntity.ok(eventService.createEvent(request, userId));
     }
     
+    @PutMapping("/{id}")
+    public ResponseEntity<EventDTO> updateEvent(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateEventRequest request,
+            Authentication authentication
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(eventService.updateEvent(id, request, userId));
+    }
+    
     @PostMapping("/{id}/publish")
     public ResponseEntity<EventDTO> publishEvent(
             @PathVariable Long id,

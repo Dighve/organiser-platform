@@ -60,6 +60,8 @@ export const eventsAPI = {
   
   createEvent: (data) => api.post('/events', data),
   
+  updateEvent: (id, data) => api.put(`/events/${id}`, data),
+  
   publishEvent: (id) => api.post(`/events/${id}/publish`),
   
   joinEvent: (id) => api.post(`/events/${id}/join`),

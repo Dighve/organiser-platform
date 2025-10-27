@@ -86,6 +86,52 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    @Transactional
+    @CacheEvict(value = "events", allEntries = true)
+    public EventDTO updateEvent(Long eventId, CreateEventRequest request, Long organiserId) {
+        // Find the existing event
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        
+        // Verify that the user is the organiser of the group that owns this event
+        if (!event.getGroup().getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("You are not authorized to update this event");
+        }
+        
+        // Update all fields
+        event.setTitle(request.getTitle());
+        event.setDescription(request.getDescription());
+        event.setEventDate(request.getEventDate());
+        event.setEndDate(request.getEndDate());
+        event.setRegistrationDeadline(request.getRegistrationDeadline());
+        event.setLocation(request.getLocation());
+        event.setLatitude(request.getLatitude());
+        event.setLongitude(request.getLongitude());
+        event.setMaxParticipants(request.getMaxParticipants());
+        event.setMinParticipants(request.getMinParticipants());
+        event.setPrice(request.getPrice());
+        event.setDifficultyLevel(request.getDifficultyLevel());
+        event.setDistanceKm(request.getDistanceKm());
+        event.setElevationGainM(request.getElevationGainM());
+        event.setEstimatedDurationHours(request.getEstimatedDurationHours());
+        event.setCancellationPolicy(request.getCancellationPolicy());
+        event.setImageUrl(request.getImageUrl());
+        
+        // Update collections
+        if (request.getAdditionalImages() != null) {
+            event.setAdditionalImages(new HashSet<>(request.getAdditionalImages()));
+        }
+        if (request.getRequirements() != null) {
+            event.setRequirements(new HashSet<>(request.getRequirements()));
+        }
+        if (request.getIncludedItems() != null) {
+            event.setIncludedItems(new HashSet<>(request.getIncludedItems()));
+        }
+        
+        event = eventRepository.save(event);
+        return convertToDTO(event);
+    }
+    
     @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "#id + '_' + #memberId")
     public EventDTO getEventById(Long id, Long memberId) {

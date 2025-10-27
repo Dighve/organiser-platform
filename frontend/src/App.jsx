@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import VerifyMagicLinkPage from './pages/VerifyMagicLinkPage'
 import EventDetailPage from './pages/EventDetailPage'
 import CreateEventPage from './pages/CreateEventPage'
+import EditEventPage from './pages/EditEventPage'
 import MyGroupsPage from './pages/MyGroupsPage'
 import BrowseGroupsPage from './pages/BrowseGroupsPage'
 import CreateGroupPage from './pages/CreateGroupPage'
@@ -26,6 +27,14 @@ function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />
+        <Route
+          path="events/:id/edit"
+          element={
+            <PrivateRoute>
+              <EditEventPage />
+            </PrivateRoute>
+          }
+        />
         <Route
           path="create-event"
           element={

@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Calendar, MapPin, Users, DollarSign, Clock, TrendingUp, ArrowLeft, Trash2, Lock } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, TrendingUp, ArrowLeft, Trash2, Lock, Edit } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import { eventsAPI } from '../lib/api'
@@ -385,11 +385,18 @@ export default function EventDetailPage() {
                   </div>
                 ) : isAuthenticated ? (
                   isEventOrganiser ? (
-                    // Organiser view - show delete button
+                    // Organiser view - show edit and delete buttons
                     <div className="space-y-3">
                       <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
                         <p className="text-orange-700 font-semibold">👑 You're the organiser</p>
                       </div>
+                      <button
+                        onClick={() => navigate(`/events/${id}/edit`)}
+                        className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                      >
+                        <Edit className="h-5 w-5" />
+                        Edit Event
+                      </button>
                       <button
                         onClick={handleDelete}
                         disabled={deleteMutation.isLoading}
