@@ -1,26 +1,23 @@
 version: '3.8'
 
 services:
-  # MariaDB Database for local development
-  mariadb:
-    image: mariadb:11.2
-    container_name: hikehub-mariadb
+  # PostgreSQL Database for local development (matches production)
+  postgres:
+    image: postgres:16-alpine
+    container_name: hikehub-postgres
     environment:
-      MARIADB_DATABASE: organiser_platform
-      MARIADB_USER: organiser_user
-      MARIADB_PASSWORD: organiser_pass
-      MARIADB_ROOT_PASSWORD: root
-      MARIADB_CHARACTER_SET_SERVER: utf8mb4
-      MARIADB_COLLATION_SERVER: utf8mb4_unicode_ci
+      POSTGRES_USER: organiser_user
+      POSTGRES_PASSWORD: organiser_pass
+      POSTGRES_DB: organiser_platform
     ports:
-      - "3307:3306"
+      - "5433:5432"
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      test: ["CMD-SHELL", "pg_isready -U organiser_user -d organiser_platform"]
       interval: 10s
       timeout: 5s
       retries: 5
 
 volumes:
-  mariadb_data:
+  postgres_data:
