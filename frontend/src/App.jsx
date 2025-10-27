@@ -11,6 +11,7 @@ import BrowseGroupsPage from './pages/BrowseGroupsPage'
 import CreateGroupPage from './pages/CreateGroupPage'
 import GroupDetailPage from './pages/GroupDetailPage'
 import ProfilePage from './pages/ProfilePage'
+import HikingGradeFAQPage from './pages/HikingGradeFAQPage'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
@@ -42,6 +43,7 @@ function App() {
           }
         />
         <Route path="browse-groups" element={<BrowseGroupsPage />} />
+        <Route path="hiking-grade-faq" element={<HikingGradeFAQPage />} />
         <Route path="groups/:id" element={<GroupDetailPage />} />
         <Route
           path="groups/create"
