@@ -204,16 +204,30 @@ public class GroupService {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
         
-        return group.getSubscriptions().stream()
+        Long primaryOrganiserId = group.getPrimaryOrganiser().getId();
+        
+        // Query subscriptions directly from repository (avoids lazy loading issues)
+        List<Subscription> subscriptions = subscriptionRepository.findByGroupId(groupId);
+        
+        // Get all active subscriptions (including the organiser who should also have a subscription)
+        // Mark the primary organiser and sort them to appear first
+        return subscriptions.stream()
                 .filter(sub -> sub.getStatus() == Subscription.SubscriptionStatus.ACTIVE)
                 .map(subscription -> com.organiser.platform.dto.MemberDTO.builder()
                         .id(subscription.getMember().getId())
                         .email(subscription.getMember().getEmail())
                         .displayName(subscription.getMember().getDisplayName())
                         .profilePhotoUrl(subscription.getMember().getProfilePhotoUrl())
-                        .isOrganiser(subscription.getMember().getIsOrganiser())
+                        // Mark if this member is the primary organiser
+                        .isOrganiser(subscription.getMember().getId().equals(primaryOrganiserId))
                         .joinedAt(subscription.getSubscribedAt())
                         .build())
+                // Sort so organiser appears first, then by join date
+                .sorted((a, b) -> {
+                    if (Boolean.TRUE.equals(a.getIsOrganiser()) && !Boolean.TRUE.equals(b.getIsOrganiser())) return -1;
+                    if (!Boolean.TRUE.equals(a.getIsOrganiser()) && Boolean.TRUE.equals(b.getIsOrganiser())) return 1;
+                    return a.getJoinedAt().compareTo(b.getJoinedAt());
+                })
                 .collect(java.util.stream.Collectors.toList());
     }
 }

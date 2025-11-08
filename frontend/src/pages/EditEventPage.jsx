@@ -7,6 +7,7 @@ import { activityTypesAPI, eventsAPI } from '../lib/api'
 import toast from 'react-hot-toast'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import TagInput from '../components/TagInput'
+import MemberAutocomplete from '../components/MemberAutocomplete'
 
 const STEPS = {
   BASICS: 0,
@@ -470,6 +471,19 @@ export default function EditEventPage() {
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     placeholder="Full refund if cancelled 48 hours before..."
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Hosted by *</label>
+                  <MemberAutocomplete
+                    groupId={event?.groupId}
+                    value={watchedValues.hostName}
+                    onChange={(value) => setValue('hostName', value)}
+                    error={errors.hostName?.message}
+                  />
+                  <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
+                  {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
+                  <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>
                 </div>
               </div>
             )}

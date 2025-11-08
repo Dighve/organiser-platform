@@ -25,6 +25,7 @@ export default function GroupDetailPage() {
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
     enabled: isAuthenticated && user?.isOrganiser,
+    staleTime: 0, // Always fetch fresh data
   })
 
   // Fetch user's subscribed groups to check subscription status
@@ -32,6 +33,7 @@ export default function GroupDetailPage() {
     queryKey: ['myGroups'],
     queryFn: () => groupsAPI.getMyGroups(),
     enabled: isAuthenticated,
+    staleTime: 0, // Always fetch fresh data to show updated subscriptions
   })
 
   const organisedGroups = organisedGroupsData?.data || []
@@ -51,6 +53,7 @@ export default function GroupDetailPage() {
     queryKey: ['groupMembers', id],
     queryFn: () => groupsAPI.getGroupMembers(id),
     enabled: !!id,
+    staleTime: 0, // Always fetch fresh data to show updated member list
   })
 
   const groupEvents = eventsData?.data?.content || []
@@ -429,13 +432,6 @@ export default function GroupDetailPage() {
                             <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
                               <p className="text-sm text-green-700 font-semibold">✅ You're a member</p>
                             </div>
-                            <button
-                              onClick={() => navigate(`/create-event?groupId=${id}`)}
-                              className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
-                            >
-                              <Calendar className="h-5 w-5" />
-                              Create Event
-                            </button>
                             <button
                               onClick={handleUnsubscribe}
                               disabled={unsubscribeMutation.isLoading}

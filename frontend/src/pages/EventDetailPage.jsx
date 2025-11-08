@@ -104,8 +104,12 @@ export default function EventDetailPage() {
 
   const event = data?.data
   
+  // Check if current user is the event organiser
+  const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event.organiserId)
+  
   // Check if access is denied: either 403 error OR partial data (description is null but title exists)
-  const isAccessDenied = error?.response?.status === 403 || (event && event.title && !event.description)
+  // BUT organisers should never see access denied state
+  const isAccessDenied = !isEventOrganiser && (error?.response?.status === 403 || (event && event.title && !event.description))
 
   // If no event data at all (not even partial), show not found
   if (!event) {
@@ -127,9 +131,6 @@ export default function EventDetailPage() {
   }
 
   // Backend now returns partial data for non-members, so event always exists
-  // Check if current user is the event organiser
-  const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event.organiserId)
-  
   // Check if current user has joined the event
   const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
 
@@ -169,7 +170,7 @@ export default function EventDetailPage() {
             </div>
             <h1 className="text-5xl font-extrabold text-white mb-3 drop-shadow-2xl">{event.title}</h1>
             <div className="flex items-center text-white/90">
-              <span>Organized by <span className="font-bold">{event.organiserName}</span></span>
+              <span>Hosted by <span className="font-bold">{event.organiserName}</span></span>
             </div>
           </div>
         </div>
@@ -179,7 +180,7 @@ export default function EventDetailPage() {
           <div className="lg:col-span-2 space-y-6">
             {/* Description */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">About This Event</h2>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Details</h2>
               {isAccessDenied ? (
                 <div className="text-center py-12">
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4">
@@ -296,7 +297,7 @@ export default function EventDetailPage() {
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
                   <Users className="inline h-7 w-7 mr-2 mb-1" />
-                  Participants ({participantsData.data.length})
+                  Attendees ({participantsData.data.length})
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {participantsData.data.map((participant) => (
@@ -316,7 +317,7 @@ export default function EventDetailPage() {
                         </p>
                       </div>
                       {participant.isOrganiser && (
-                        <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Organiser</span>
+                        <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Host</span>
                       )}
                     </div>
                   ))}

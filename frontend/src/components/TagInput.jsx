@@ -67,10 +67,9 @@ export default function TagInput({ tags = [], onChange, placeholder = "Add a tag
       <p className="text-sm text-gray-500 mt-2">
         Type and press Enter to add, or click the + button. Press Backspace to remove.
       </p>
-      {tags.length === 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
           <p className="text-xs text-gray-500 w-full mb-1">Quick suggestions:</p>
-          {['Hiking boots', 'Water bottle', 'First aid kit', 'Map', 'Snacks'].map((suggestion) => (
+          {['Hiking boots', 'Water proof jacket', 'Head torch', 'Downloaded route', 'Snacks', 'Lunch'].map((suggestion) => (
             <button
               key={suggestion}
               type="button"
@@ -85,7 +84,6 @@ export default function TagInput({ tags = [], onChange, placeholder = "Add a tag
             </button>
           ))}
         </div>
-      )}
     </div>
   )
 }

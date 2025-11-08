@@ -83,6 +83,17 @@ public class EventService {
         }
         
         event = eventRepository.save(event);
+        
+        // Automatically add the organiser as a participant
+        EventParticipant organiserParticipant = EventParticipant.builder()
+                .event(event)
+                .member(organiser)
+                .status(EventParticipant.ParticipationStatus.CONFIRMED)
+                .registrationDate(LocalDateTime.now())
+                .build();
+        event.getParticipants().add(organiserParticipant);
+        event = eventRepository.save(event);
+        
         return convertToDTO(event);
     }
     
@@ -218,7 +229,7 @@ public class EventService {
         }
         
         if (event.getStatus() != Event.EventStatus.PUBLISHED) {
-            throw new RuntimeException("Event is not open for registration");
+            throw new RuntimeException(String.format("Event is not open for registration - %s", event.getStatus()));
         }
         
         // Create a new event participant
@@ -319,7 +330,9 @@ public class EventService {
                 .title(event.getTitle())
                 .description(event.getDescription())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null ? primaryOrganiser.getDisplayName() : "")
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
+                        ? primaryOrganiser.getDisplayName() 
+                        : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
                 .groupId(group.getId())
@@ -381,7 +394,9 @@ public class EventService {
                 .id(event.getId())
                 .title(event.getTitle())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null ? primaryOrganiser.getDisplayName() : "")
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
+                        ? primaryOrganiser.getDisplayName() 
+                        : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
                 .groupId(group.getId())
