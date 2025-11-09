@@ -6,13 +6,12 @@ COPY src ./src
 RUN gradle build -x test --no-daemon
 
 # Run stage
-FROM openjdk:17-slim
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 
 # Install curl for health check
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 # Add health check (uses PORT env var, defaults to 8080)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
