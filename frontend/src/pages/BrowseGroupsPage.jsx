@@ -371,13 +371,13 @@ function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscr
       <div className="relative h-48 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-40" />
         <img 
-          src={group.bannerImage || [
-            'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-            'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+          src={group.imageUrl || [
+            'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=600&h=300&fit=crop&q=80',
+            'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop&q=80'
           ][Number.parseInt(group.id) % 6]}
           alt={`${group.name} banner`}
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 mix-blend-overlay"

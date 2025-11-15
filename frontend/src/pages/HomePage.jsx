@@ -240,7 +240,7 @@ export default function HomePage() {
                     <div className="relative h-20 overflow-hidden cursor-pointer" onClick={() => navigate(`/groups/${group.id}`)}>
                       <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 opacity-90" />
                       <img 
-                        src={group.bannerImage || [
+                        src={group.imageUrl || [
                           'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
                           'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
                           'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',

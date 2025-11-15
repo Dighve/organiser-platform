@@ -207,12 +207,14 @@ export default function GroupDetailPage() {
           <div className="relative h-80 overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-60" />
             <img 
-              src={group.bannerImage || [
-                'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=400&fit=crop',
-                'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=400&fit=crop',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=400&fit=crop',
-                'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=400&fit=crop'
-              ][Number.parseInt(id) % 4]}
+              src={group.imageUrl || [
+                'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=400&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=400&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=400&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=400&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1200&h=400&fit=crop&q=80',
+                'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=400&fit=crop&q=80'
+              ][Number.parseInt(id) % 6]}
               alt={`${group.name} banner`}
               className="w-full h-full object-cover mix-blend-overlay"
             />
