@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
+import ImageUpload from '../components/ImageUpload'
 
 const STEPS = {
   BASICS: 0,
@@ -128,10 +129,16 @@ export default function CreateEventPage() {
     }
 
     try {
-      await eventsAPI.createEvent(payload)
+      // Create the event
+      const response = await eventsAPI.createEvent(payload)
+      const eventId = response.data.id
+      
+      // Automatically publish the event
+      await eventsAPI.publishEvent(eventId)
+      
       queryClient.invalidateQueries(['groupEvents', groupId])
       queryClient.invalidateQueries(['events'])
-      toast.success('🎉 Hike event created successfully!')
+      toast.success('🎉 Hike event created and published successfully!')
       navigate(`/groups/${groupId}`)
     } catch (error) {
       console.error('Error creating event:', error)
@@ -244,6 +251,21 @@ export default function CreateEventPage() {
           {errors.endTime && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.endTime.message}</p>}
           <p className="text-sm text-gray-500 mt-2">Approximate finish time</p>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="imageUrl" className="block text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+          <Upload className="h-5 w-5 text-purple-600" />
+          Featured Photo
+        </label>
+        <ImageUpload
+          value={watchedValues.imageUrl}
+          onChange={(url) => {
+            setValue('imageUrl', url)
+            updateFormData({ imageUrl: url })
+          }}
+          folder="event-photo"
+        />
       </div>
 
       <div>
@@ -466,20 +488,6 @@ export default function CreateEventPage() {
             placeholder="0.00" 
           />
           <p className="text-sm text-gray-500 mt-2">Leave as 0 if the hike is free</p>
-        </div>
-
-        <div>
-          <label className="block text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-            <Upload className="h-5 w-5 text-blue-600" />
-            Feature photo
-          </label>
-          <input 
-            {...register('imageUrl')} 
-            type="url" 
-            className="w-full px-4 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
-            placeholder="https://example.com/trail-photo.jpg" 
-          />
-          <p className="text-sm text-gray-500 mt-2">Add a beautiful photo of the trail or location (URL)</p>
         </div>
 
         <div>

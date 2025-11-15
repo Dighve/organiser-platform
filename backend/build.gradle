@@ -67,6 +67,9 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.12.0'
     implementation "org.modelmapper:modelmapper:${modelMapperVersion}"
     
+    // Cloudinary for image uploads
+    implementation 'com.cloudinary:cloudinary-http44:1.36.0'
+    
     // Lombok
     compileOnly "org.projectlombok:lombok:${lombokVersion}"
     annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
@@ -108,4 +111,12 @@ flyway {
 
 tasks.named('flywayMigrate') {
     dependsOn compileJava
+}
+
+bootRun {
+    environment(
+            "CLOUDINARY_CLOUD_NAME": "drdttgry4",
+            "CLOUDINARY_API_KEY": "478746114596374",
+            "CLOUDINARY_API_SECRET": "wXiHJlL_64SuSpyTUc7ajf8KdV4"
+    )
 }

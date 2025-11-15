@@ -36,7 +36,8 @@ public class SecurityConfig {
                         // Public endpoints - no authentication required
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/auth/**"),
-                                new AntPathRequestMatcher("/api/v1/events/public/**"),
+                                new AntPathRequestMatcher("/api/v1/events/**"),
+                                new AntPathRequestMatcher("/api/v1/files/**"),
                                 new AntPathRequestMatcher("/api/v1/events/*/comments", "GET"),
                                 new AntPathRequestMatcher("/api/v1/activities/**"),
                                 new AntPathRequestMatcher("/api/v1/groups/public"),
