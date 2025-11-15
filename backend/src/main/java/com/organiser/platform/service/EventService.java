@@ -436,13 +436,17 @@ public class EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
+        // Get the primary organiser of the group (who is the event organiser)
+        Long eventOrganiserId = event.getGroup().getPrimaryOrganiser().getId();
+        
         return event.getParticipants().stream()
                 .map(participant -> com.organiser.platform.dto.MemberDTO.builder()
                         .id(participant.getMember().getId())
                         .email(participant.getMember().getEmail())
                         .displayName(participant.getMember().getDisplayName())
                         .profilePhotoUrl(participant.getMember().getProfilePhotoUrl())
-                        .isOrganiser(participant.getMember().getIsOrganiser())
+                        // Check if this participant is the organiser of THIS event
+                        .isOrganiser(participant.getMember().getId().equals(eventOrganiserId))
                         .joinedAt(participant.getRegistrationDate())
                         .build())
                 .collect(Collectors.toList());
