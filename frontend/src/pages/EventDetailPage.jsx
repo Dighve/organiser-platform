@@ -299,14 +299,15 @@ export default function EventDetailPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {participantsData.data.map((participant) => (
                       <div 
-                        key={participant.id} 
-                        className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-shadow"
+                        key={participant.id}
+                        onClick={() => navigate(`/members/${participant.id}`)}
+                        className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1"
                       >
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 group-hover:scale-110 transition-transform">
                           {participant.displayName ? participant.displayName.charAt(0).toUpperCase() : participant.email.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate">
+                          <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
                             {participant.displayName || participant.email.split('@')[0]}
                           </p>
                           <p className="text-xs text-gray-500 truncate">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { groupsAPI, activityTypesAPI } from '../lib/api'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { ArrowLeft } from 'lucide-react'
 
@@ -13,21 +13,13 @@ export default function CreateGroupPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    activityId: '',
+    activityId: 1, // Hiking - the only activity type for HikeHub
     location: '',
     maxMembers: '',
     isPublic: true,
   })
   
   const [errors, setErrors] = useState({})
-  
-  // Fetch activities
-  const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
-    queryKey: ['activities'],
-    queryFn: () => activityTypesAPI.getAll(),
-  })
-  
-  const activities = activitiesData?.data || []
   
   // Create group mutation
   const createGroupMutation = useMutation({
@@ -63,10 +55,6 @@ export default function CreateGroupPage() {
       newErrors.name = 'Group name is required'
     }
     
-    if (!formData.activityId) {
-      newErrors.activityId = 'Activity is required'
-    }
-    
     if (formData.maxMembers && (isNaN(formData.maxMembers) || parseInt(formData.maxMembers) < 1)) {
       newErrors.maxMembers = 'Max members must be a positive number'
     }
@@ -86,7 +74,7 @@ export default function CreateGroupPage() {
     const groupData = {
       name: formData.name.trim(),
       description: formData.description.trim() || null,
-      activityId: parseInt(formData.activityId),
+      activityId: formData.activityId, // Always 1 for Hiking
       location: formData.location.trim() || null,
       maxMembers: formData.maxMembers ? parseInt(formData.maxMembers) : null,
       isPublic: formData.isPublic,
@@ -124,9 +112,10 @@ export default function CreateGroupPage() {
           Back to Home
         </button>
         
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">Create New Group</h1>
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">Create New Hiking Group</h1>
         
         <form onSubmit={handleSubmit} className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-2xl space-y-6">
+         
           {/* Group Name */}
           <div>
             <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -147,40 +136,7 @@ export default function CreateGroupPage() {
               </p>
             )}
           </div>
-          
-          {/* Activity */}
-          <div>
-            <label htmlFor="activityId" className="block text-sm font-semibold text-gray-700 mb-2">
-              🏞️ Activity Type <span className="text-red-500">*</span>
-            </label>
-            {activitiesLoading ? (
-              <div className="flex items-center gap-2 text-gray-500">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
-                <p>Loading activities...</p>
-              </div>
-            ) : (
-              <select
-                id="activityId"
-                name="activityId"
-                value={formData.activityId}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border-2 ${errors.activityId ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`}
-              >
-                <option value="">Select an activity</option>
-                {activities.map(activity => (
-                  <option key={activity.id} value={activity.id}>
-                    {activity.name}
-                  </option>
-                ))}
-              </select>
-            )}
-            {errors.activityId && (
-              <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-                <span>⚠️</span> {errors.activityId}
-              </p>
-            )}
-          </div>
-          
+      
           {/* Description */}
           <div>
             <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">

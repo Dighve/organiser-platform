@@ -249,82 +249,166 @@ export default function GroupDetailPage() {
               {/* Events Tab */}
               {activeTab === 'events' && (
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Events</h2>
-                {eventsLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
-                  </div>
-                ) : groupEvents.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {groupEvents.map(event => (
-                      <div
-                        key={event.id}
-                        className="group bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2"
-                        onClick={() => navigate(`/events/${event.id}`)}
-                        role="button"
-                        tabIndex={0}
-                        onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
-                      >
-                        {/* Event Image */}
-                        <div className="relative h-44 overflow-hidden">
-                          <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
-                          <img 
-                            src={event.imageUrl || [
-                              'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                              'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                              'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                              'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                              'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                              'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                            ][Number.parseInt(event.id) % 6]}
-                            alt={event.title} 
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                          />
-                          <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
-                            {event.difficultyLevel}
-                          </div>
-                        </div>
-                        {/* Event Content */}
-                        <div className="p-5">
-                          <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-1 group-hover:text-orange-600 transition-colors">{event.title}</h3>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <Calendar className="h-4 w-4 text-orange-500" />
-                              <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  {eventsLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+                    </div>
+                  ) : groupEvents.length > 0 ? (
+                    <div className="space-y-10">
+                      {/* Upcoming Events */}
+                      {(() => {
+                        const now = new Date()
+                        const upcomingEvents = groupEvents.filter(event => new Date(event.eventDate) >= now)
+                        return upcomingEvents.length > 0 && (
+                          <div>
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">
+                              Upcoming Events ({upcomingEvents.length})
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {upcomingEvents.map(event => (
+                                <div
+                                  key={event.id}
+                                  className="group bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2"
+                                  onClick={() => navigate(`/events/${event.id}`)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
+                                >
+                                  {/* Event Image */}
+                                  <div className="relative h-44 overflow-hidden">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
+                                    <img 
+                                      src={event.imageUrl || [
+                                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                                      ][Number.parseInt(event.id) % 6]}
+                                      alt={event.title} 
+                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                    />
+                                    <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
+                                      {event.difficultyLevel}
+                                    </div>
+                                  </div>
+                                  {/* Event Content */}
+                                  <div className="p-5">
+                                    <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-1 group-hover:text-orange-600 transition-colors">{event.title}</h3>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <Calendar className="h-4 w-4 text-orange-500" />
+                                        <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                                        <MapPin className="h-4 w-4 text-pink-500" />
+                                        <span className="truncate">{event.location}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
+                                        <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants}</span>
+                                      </div>
+                                      <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                              <MapPin className="h-4 w-4 text-pink-500" />
-                              <span className="truncate">{event.location}</span>
+                          </div>
+                        )
+                      })()}
+
+                      {/* Past Events */}
+                      {(() => {
+                        const now = new Date()
+                        const pastEvents = groupEvents.filter(event => new Date(event.eventDate) < now)
+                        return pastEvents.length > 0 && (
+                          <div>
+                            <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-600 to-gray-400 bg-clip-text text-transparent mb-6">
+                              Past Events ({pastEvents.length})
+                            </h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {pastEvents.map(event => (
+                                <div
+                                  key={event.id}
+                                  className="group bg-white/40 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg border border-gray-200 overflow-hidden cursor-pointer transition-all duration-300 opacity-75 hover:opacity-90"
+                                  onClick={() => navigate(`/events/${event.id}`)}
+                                  role="button"
+                                  tabIndex={0}
+                                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
+                                >
+                                  {/* Event Image */}
+                                  <div className="relative h-44 overflow-hidden">
+                                    <div className="absolute inset-0 bg-gray-500 opacity-30" />
+                                    <img 
+                                      src={event.imageUrl || [
+                                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                                      ][Number.parseInt(event.id) % 6]}
+                                      alt={event.title} 
+                                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
+                                    />
+                                    <div className="absolute top-3 left-3 px-3 py-1 bg-gray-600/90 backdrop-blur-sm rounded-full text-xs font-bold text-white shadow-lg">
+                                      ✓ Completed
+                                    </div>
+                                    <div className="absolute top-3 right-3 px-3 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-bold text-gray-600 shadow-lg">
+                                      {event.difficultyLevel}
+                                    </div>
+                                  </div>
+                                  {/* Event Content */}
+                                  <div className="p-5">
+                                    <h3 className="font-bold text-lg text-gray-700 mb-3 line-clamp-1 group-hover:text-gray-900 transition-colors">{event.title}</h3>
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                                        <Calendar className="h-4 w-4 text-gray-400" />
+                                        <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                      </div>
+                                      <div className="flex items-center gap-2 text-sm text-gray-500">
+                                        <MapPin className="h-4 w-4 text-gray-400" />
+                                        <span className="truncate">{event.location}</span>
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-200">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
+                                        <span className="text-sm text-gray-500 font-medium">{event.currentParticipants}/{event.maxParticipants}</span>
+                                      </div>
+                                      <svg className="w-5 h-5 text-gray-500 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                      </svg>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
                           </div>
-                          <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
-                              <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants}</span>
-                            </div>
-                            <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl border border-orange-100">
-                    <Calendar className="h-16 w-16 mx-auto text-orange-400 mb-4" />
-                    <p className="text-gray-600 text-lg mb-2">No events scheduled yet</p>
-                    <p className="text-gray-500 text-sm mb-6">Be the first to create an event for this group!</p>
-                    {(isSubscribed || isGroupOrganiser) && (
-                      <button
-                        onClick={() => navigate(`/create-event?groupId=${id}`)}
-                        className="py-3 px-8 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105"
-                      >
-                        ✨ Create First Event
-                      </button>
-                    )}
-                  </div>
-                )}
+                        )
+                      })()}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl border border-orange-100">
+                      <Calendar className="h-16 w-16 mx-auto text-orange-400 mb-4" />
+                      <p className="text-gray-600 text-lg mb-2">No events scheduled yet</p>
+                      <p className="text-gray-500 text-sm mb-6">Be the first to create an event for this group!</p>
+                      {(isSubscribed || isGroupOrganiser) && (
+                        <button
+                          onClick={() => navigate(`/create-event?groupId=${id}`)}
+                          className="py-3 px-8 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105"
+                        >
+                          ✨ Create First Event
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -440,13 +524,14 @@ export default function GroupDetailPage() {
                       {membersData.data.map((member) => (
                         <div 
                           key={member.id} 
-                          className="flex items-center space-x-4 p-4 bg-white/60 backdrop-blur-sm rounded-2xl hover:shadow-lg transition-shadow border border-gray-100"
+                          onClick={() => navigate(`/members/${member.id}`)}
+                          className="flex items-center space-x-4 p-4 bg-white/60 backdrop-blur-sm rounded-2xl hover:shadow-lg transition-all border border-gray-100 cursor-pointer group hover:-translate-y-1"
                         >
-                          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl flex-shrink-0">
+                          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
                             {member.displayName ? member.displayName.charAt(0).toUpperCase() : member.email.charAt(0).toUpperCase()}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-gray-900 text-lg truncate">
+                            <p className="font-bold text-gray-900 text-lg truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
                               {member.displayName || member.email.split('@')[0]}
                             </p>
                             <p className="text-sm text-gray-500 truncate">
@@ -485,7 +570,7 @@ export default function GroupDetailPage() {
                       {membersData.data.slice(0, 8).map((member) => (
                         <div
                           key={member.id}
-                          onClick={() => navigate(`/members/${member.id}`)}
+                          onClick={() => setActiveTab('members')}
                           className="cursor-pointer group relative"
                           title={member.displayName || member.email.split('@')[0]}
                         >
