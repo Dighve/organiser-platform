@@ -625,11 +625,6 @@ export default function CreateEventPage() {
                   <span className="font-semibold">Elevation:</span> {formData.elevationGainM} m
                 </div>
               )}
-              {formData.estimatedDurationHours && (
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <span className="font-semibold">Duration:</span> {formData.estimatedDurationHours} hrs
-                </div>
-              )}
               {formData.maxParticipants && (
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <span className="font-semibold">Max hikers:</span> {formData.maxParticipants}
@@ -662,13 +657,11 @@ export default function CreateEventPage() {
             )}
             {formData.imageUrl && (
               <div className="mt-4 bg-blue-50 p-3 rounded-lg">
-                <p className="font-semibold text-sm mb-1 flex items-center gap-2">
+                <p className="font-semibold text-sm mb-2 flex items-center gap-2">
                   <Upload className="h-4 w-4 text-blue-600" />
-                  Feature photo:
+                  Featured Photo:
                 </p>
-                <a href={formData.imageUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-sm ml-6 break-all">
-                  {formData.imageUrl}
-                </a>
+                <img src={formData.imageUrl} alt="Event preview" className="w-full h-40 object-cover rounded-lg" />
               </div>
             )}
           </div>

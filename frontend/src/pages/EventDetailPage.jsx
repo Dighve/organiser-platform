@@ -135,7 +135,8 @@ export default function EventDetailPage() {
   const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
 
   const formattedDate = format(new Date(event.eventDate), 'EEEE, MMMM dd, yyyy')
-  const formattedTime = format(new Date(event.eventDate), 'h:mm a')
+  const formattedStartTime = format(new Date(event.eventDate), 'h:mm a')
+  const formattedEndTime = event.endDate ? format(new Date(event.endDate), 'h:mm a') : null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -208,7 +209,9 @@ export default function EventDetailPage() {
                   <Calendar className="h-6 w-6 mr-4 mt-1 text-purple-600" />
                   <div>
                     <div className="font-bold text-gray-900">{formattedDate}</div>
-                    <div className="text-purple-600 font-semibold">{formattedTime}</div>
+                    <div className="text-purple-600 font-semibold">
+                      {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime}
+                    </div>
                   </div>
                 </div>
 

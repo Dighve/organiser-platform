@@ -8,6 +8,7 @@ import toast from 'react-hot-toast'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
+import ImageUpload from '../components/ImageUpload'
 
 const STEPS = {
   BASICS: 0,
@@ -306,15 +307,30 @@ export default function EditEventPage() {
                     />
                     {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime.message}</p>}
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">End Time *</label>
+                    <input
+                      type="time"
+                      {...register('endTime', { required: 'End time is required' })}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                    />
+                    {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime.message}</p>}
+                  </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Event Image URL</label>
-                  <input
-                    type="url"
-                    {...register('imageUrl')}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    placeholder="https://example.com/image.jpg"
+                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
+                    <Upload className="h-5 w-5 text-purple-600" />
+                    Featured Photo
+                  </label>
+                  <ImageUpload
+                    value={watchedValues.imageUrl}
+                    onChange={(url) => {
+                      setValue('imageUrl', url)
+                      updateFormData({ imageUrl: url })
+                    }}
+                    folder="event-photo"
                   />
                 </div>
               </div>
@@ -342,7 +358,12 @@ export default function EditEventPage() {
                   <input type="hidden" {...register('longitude')} />
                   {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>}
                 </div>
+              </div>
+            )}
 
+            {currentStep === STEPS.DETAILS && (
+              <div className="space-y-6">
+                {/* Difficulty Level */}
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Difficulty Level</label>
                   <div className="grid grid-cols-2 gap-3">
@@ -372,7 +393,8 @@ export default function EditEventPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Trail Statistics */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Distance (km)</label>
                     <input
@@ -393,23 +415,20 @@ export default function EditEventPage() {
                       placeholder="600"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Estimated Duration (hours)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      {...register('estimatedDurationHours')}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                      placeholder="4.5"
+                    />
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Estimated Duration (hours)</label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    {...register('estimatedDurationHours')}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    placeholder="4.5"
-                  />
-                </div>
-              </div>
-            )}
-
-            {currentStep === STEPS.DETAILS && (
-              <div className="space-y-6">
+                {/* Participant Limits */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Max Participants</label>
@@ -490,16 +509,159 @@ export default function EditEventPage() {
 
             {currentStep === STEPS.REVIEW && (
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
-                  <h3 className="font-bold text-xl mb-4 text-purple-900">Review Your Changes</h3>
-                  <div className="space-y-3 text-sm">
-                    <div><span className="font-semibold">Title:</span> {formData.title}</div>
-                    <div><span className="font-semibold">Date:</span> {formData.eventDate} at {formData.startTime}</div>
-                    <div><span className="font-semibold">Location:</span> {formData.location || 'Not set'}</div>
-                    <div><span className="font-semibold">Difficulty:</span> {formData.difficultyLevel || 'Not set'}</div>
-                    <div><span className="font-semibold">Price:</span> £{formData.price || '0.00'}</div>
+                <div className="text-center mb-8">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl mb-4 shadow-lg">
+                    <Check className="h-10 w-10 text-white" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Review your changes</h2>
+                  <p className="text-gray-600">Everything look good? You can edit any section before updating</p>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Basics */}
+                  <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="font-bold text-gray-900 text-xl flex items-center gap-2">
+                        <Mountain className="h-6 w-6 text-purple-600" />
+                        {formData.title || 'Untitled Event'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => goToStep(STEPS.BASICS)}
+                        className="py-2 px-4 bg-purple-100 text-purple-600 hover:bg-purple-200 rounded-lg font-semibold flex items-center gap-1 text-sm transition-all"
+                      >
+                        <Edit2 className="h-4 w-4" /> Edit
+                      </button>
+                    </div>
+                    <div className="space-y-2 text-gray-700">
+                      <p className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold">Date:</span> {formData.eventDate}
+                      </p>
+                      <p className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="font-semibold">Time:</span> {formData.startTime} - {formData.endTime}
+                      </p>
+                      {formData.description && (
+                        <p className="text-gray-600 mt-3 bg-gray-50 p-3 rounded-lg">{formData.description}</p>
+                      )}
+                      {formData.imageUrl && (
+                        <div className="mt-3 bg-blue-50 p-3 rounded-lg">
+                          <p className="font-semibold text-sm mb-2 flex items-center gap-2">
+                            <Upload className="h-4 w-4 text-blue-600" />
+                            Featured Photo:
+                          </p>
+                          <img src={formData.imageUrl} alt="Event preview" className="w-full h-40 object-cover rounded-lg" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Location */}
+                  <div className="bg-white rounded-2xl p-6 border-2 border-pink-200 shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                        <MapPin className="h-6 w-6 text-pink-600" />
+                        Location
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => goToStep(STEPS.LOCATION)}
+                        className="py-2 px-4 bg-pink-100 text-pink-600 hover:bg-pink-200 rounded-lg font-semibold flex items-center gap-1 text-sm transition-all"
+                      >
+                        <Edit2 className="h-4 w-4" /> Edit
+                      </button>
+                    </div>
+                    <p className="text-gray-700 font-medium">{formData.location || 'Not set'}</p>
+                    {formData.latitude && formData.longitude && (
+                      <p className="text-sm text-gray-500 mt-2">
+                        📍 {formData.latitude?.toFixed(6)}, {formData.longitude?.toFixed(6)}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Hike Details */}
+                  <div className="bg-white rounded-2xl p-6 border-2 border-green-200 shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                        <Compass className="h-6 w-6 text-green-600" />
+                        Hike details
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => goToStep(STEPS.DETAILS)}
+                        className="py-2 px-4 bg-green-100 text-green-600 hover:bg-green-200 rounded-lg font-semibold flex items-center gap-1 text-sm transition-all"
+                      >
+                        <Edit2 className="h-4 w-4" /> Edit
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {formData.difficultyLevel && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Difficulty:</span> {formData.difficultyLevel}
+                        </div>
+                      )}
+                      {formData.distanceKm && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Distance:</span> {formData.distanceKm} km
+                        </div>
+                      )}
+                      {formData.elevationGainM && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Elevation:</span> {formData.elevationGainM} m
+                        </div>
+                      )}
+                      {formData.estimatedDurationHours && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Duration:</span> {formData.estimatedDurationHours} hrs
+                        </div>
+                      )}
+                      {formData.minParticipants && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Min hikers:</span> {formData.minParticipants}
+                        </div>
+                      )}
+                      {formData.maxParticipants && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Max hikers:</span> {formData.maxParticipants}
+                        </div>
+                      )}
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <span className="font-semibold">Cost:</span> £{formData.price || 0}
+                      </div>
+                    </div>
                     {selectedRequirements.length > 0 && (
-                      <div><span className="font-semibold">Requirements:</span> {selectedRequirements.join(', ')}</div>
+                      <div className="mt-4 bg-purple-50 p-3 rounded-lg">
+                        <p className="font-semibold text-sm mb-2">Required gear:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedRequirements.map(req => (
+                            <span key={req} className="px-2 py-1 bg-white rounded-md text-xs font-medium text-gray-700 border border-purple-200">
+                              {req}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {formData.hostName && (
+                      <div className="mt-4 bg-indigo-50 p-3 rounded-lg">
+                        <p className="font-semibold text-sm mb-1 flex items-center gap-2">
+                          <UserPlus className="h-4 w-4 text-indigo-600" />
+                          Host/Guide:
+                        </p>
+                        <p className="text-gray-700 ml-6">{formData.hostName}</p>
+                      </div>
+                    )}
+                    {formData.includedItems && (
+                      <div className="mt-4 bg-green-50 p-3 rounded-lg">
+                        <p className="font-semibold text-sm mb-2">What's included:</p>
+                        <p className="text-gray-700 text-sm">{formData.includedItems}</p>
+                      </div>
+                    )}
+                    {formData.cancellationPolicy && (
+                      <div className="mt-4 bg-orange-50 p-3 rounded-lg">
+                        <p className="font-semibold text-sm mb-2">Cancellation policy:</p>
+                        <p className="text-gray-700 text-sm">{formData.cancellationPolicy}</p>
+                      </div>
                     )}
                   </div>
                 </div>
