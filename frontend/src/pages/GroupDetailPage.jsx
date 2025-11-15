@@ -10,7 +10,7 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
-  const [activeTab, setActiveTab] = React.useState('events')
+  const [activeTab, setActiveTab] = React.useState('about')
 
   // Fetch group details
   const { data: groupData, isLoading, error } = useQuery({
@@ -202,19 +202,6 @@ export default function GroupDetailPage() {
           <div className="mb-8 border-b border-gray-200">
             <div className="flex gap-8">
               <button
-                onClick={() => setActiveTab('events')}
-                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
-                  activeTab === 'events'
-                    ? 'text-purple-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                📅 Events
-                {activeTab === 'events' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-t"></div>
-                )}
-              </button>
-              <button
                 onClick={() => setActiveTab('about')}
                 className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
                   activeTab === 'about'
@@ -224,6 +211,19 @@ export default function GroupDetailPage() {
               >
                 📖 About
                 {activeTab === 'about' && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-t"></div>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('events')}
+                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
+                  activeTab === 'events'
+                    ? 'text-purple-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                📅 Events
+                {activeTab === 'events' && (
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-600 to-pink-600 rounded-t"></div>
                 )}
               </button>
@@ -332,28 +332,95 @@ export default function GroupDetailPage() {
               {activeTab === 'about' && (
                 <div>
                   <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">About This Group</h2>
-                  {/* Group Description Image */}
-                  <div className="mb-6 rounded-2xl overflow-hidden shadow-lg">
-                    <img 
-                      src={group.descriptionImage || [
-                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=800&h=400&fit=crop',
-                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=800&h=400&fit=crop',
-                        'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?w=800&h=400&fit=crop',
-                        'https://images.unsplash.com/photo-1501555088652-021faa106b9b?w=800&h=400&fit=crop'
-                      ][Number.parseInt(id) % 4]}
-                      alt={`${group.name} description`}
-                      className="w-full h-72 object-cover"
-                    />
-                  </div>
                   <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap mb-8">
                     {group.description || 'No description available.'}
                   </p>
                   {group.createdAt && (
-                    <div className="flex items-center gap-2 text-gray-500 text-sm pb-8 border-t border-gray-200 pt-8">
+                    <div className="flex items-center gap-2 text-gray-500 text-sm pb-8 border-t border-gray-200 pt-8 mb-8">
                       <Calendar className="h-4 w-4" />
                       <span>Created on {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   )}
+
+                  {/* Events Section */}
+                  <div className="mt-8">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Upcoming Events</h2>
+                    {eventsLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
+                      </div>
+                    ) : groupEvents.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {groupEvents.map(event => (
+                          <div
+                            key={event.id}
+                            className="group bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2"
+                            onClick={() => navigate(`/events/${event.id}`)}
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
+                          >
+                            {/* Event Image */}
+                            <div className="relative h-44 overflow-hidden">
+                              <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
+                              <img 
+                                src={event.imageUrl || [
+                                  'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                                  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+                                  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+                                  'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+                                  'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+                                  'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+                                ][Number.parseInt(event.id) % 6]}
+                                alt={event.title} 
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                              />
+                              <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
+                                {event.difficultyLevel}
+                              </div>
+                            </div>
+                            {/* Event Content */}
+                            <div className="p-5">
+                              <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-1 group-hover:text-orange-600 transition-colors">{event.title}</h3>
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <Calendar className="h-4 w-4 text-orange-500" />
+                                  <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-gray-600">
+                                  <MapPin className="h-4 w-4 text-pink-500" />
+                                  <span className="truncate">{event.location}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
+                                  <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants}</span>
+                                </div>
+                                <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                </svg>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-12 bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl border border-orange-100">
+                        <Calendar className="h-16 w-16 mx-auto text-orange-400 mb-4" />
+                        <p className="text-gray-600 text-lg mb-2">No events scheduled yet</p>
+                        <p className="text-gray-500 text-sm mb-6">Be the first to create an event for this group!</p>
+                        {(isSubscribed || isGroupOrganiser) && (
+                          <button
+                            onClick={() => navigate(`/create-event?groupId=${id}`)}
+                            className="py-3 px-8 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105"
+                          >
+                            ✨ Create First Event
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -404,7 +471,53 @@ export default function GroupDetailPage() {
             </div>
 
             {/* Sidebar */}
-            <div className="lg:col-span-1">
+            <div className="lg:col-span-1 space-y-6">
+              {/* Members Section - Only shown on About tab */}
+              {activeTab === 'about' && (
+                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                  <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Members ({membersData?.data?.length || 0})</h3>
+                  {membersLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                    </div>
+                  ) : membersData?.data && membersData.data.length > 0 ? (
+                    <div className="grid grid-cols-4 gap-3">
+                      {membersData.data.slice(0, 8).map((member) => (
+                        <div
+                          key={member.id}
+                          onClick={() => navigate(`/members/${member.id}`)}
+                          className="cursor-pointer group relative"
+                          title={member.displayName || member.email.split('@')[0]}
+                        >
+                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 group-hover:shadow-lg transition-all duration-200 border-2 border-white shadow-md">
+                            {member.displayName ? member.displayName.charAt(0).toUpperCase() : member.email.charAt(0).toUpperCase()}
+                          </div>
+                          {member.isOrganiser && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs border-2 border-white">
+                              👑
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="h-12 w-12 mx-auto text-purple-300 mb-2" />
+                      <p className="text-gray-500 text-sm">No members yet</p>
+                    </div>
+                  )}
+                  {membersData?.data && membersData.data.length > 8 && (
+                    <button
+                      onClick={() => setActiveTab('members')}
+                      className="w-full mt-4 py-2 px-4 text-sm bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/30 transition-all transform hover:scale-105"
+                    >
+                      See All ({membersData.data.length})
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Group Actions */}
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg">
                 <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Actions</h3>
                 

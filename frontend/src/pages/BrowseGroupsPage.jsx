@@ -10,7 +10,7 @@ export default function BrowseGroupsPage() {
   const { isAuthenticated, user } = useAuthStore()
   const queryClient = useQueryClient()
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('organiser')
+  const [activeTab, setActiveTab] = useState('explore')
   
   // Clear search when switching away from explore tab
   useEffect(() => {

@@ -289,35 +289,42 @@ export default function EventDetailPage() {
             )}
 
             {/* Participants */}
-            {!isAccessDenied && participantsData?.data && participantsData.data.length > 0 && (
+            {!isAccessDenied && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
                   <Users className="inline h-7 w-7 mr-2 mb-1" />
-                  Attendees ({participantsData.data.length})
+                  Attendees ({event.currentParticipants || 0}{event.maxParticipants ? `/${event.maxParticipants}` : ''})
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {participantsData.data.map((participant) => (
-                    <div 
-                      key={participant.id} 
-                      className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-shadow"
-                    >
-                      <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-                        {participant.displayName ? participant.displayName.charAt(0).toUpperCase() : participant.email.charAt(0).toUpperCase()}
+                {participantsData?.data && participantsData.data.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {participantsData.data.map((participant) => (
+                      <div 
+                        key={participant.id} 
+                        className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-md transition-shadow"
+                      >
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
+                          {participant.displayName ? participant.displayName.charAt(0).toUpperCase() : participant.email.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 truncate">
+                            {participant.displayName || participant.email.split('@')[0]}
+                          </p>
+                          <p className="text-xs text-gray-500 truncate">
+                            Joined {new Date(participant.joinedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        {participant.isOrganiser && (
+                          <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Host</span>
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 truncate">
-                          {participant.displayName || participant.email.split('@')[0]}
-                        </p>
-                        <p className="text-xs text-gray-500 truncate">
-                          Joined {new Date(participant.joinedAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      {participant.isOrganiser && (
-                        <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Host</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                    <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                    <p className="text-gray-600">No attendees yet. Be the first to join!</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -339,26 +346,6 @@ export default function EventDetailPage() {
                       </div>
                     ) : (
                       <div className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Free</div>
-                    )}
-                  </div>
-
-                  <div className="pt-6 border-t border-gray-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm text-gray-500 font-semibold">PARTICIPANTS</span>
-                      <span className="font-bold text-lg text-gray-900">
-                        {event.currentParticipants || 0}
-                        {event.maxParticipants && `/${event.maxParticipants}`}
-                      </span>
-                    </div>
-                    {event.maxParticipants && (
-                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 h-3 rounded-full transition-all duration-500"
-                          style={{
-                            width: `${((event.currentParticipants || 0) / event.maxParticipants) * 100}%`,
-                          }}
-                        ></div>
-                      </div>
                     )}
                   </div>
                 </>
@@ -488,6 +475,27 @@ export default function EventDetailPage() {
                       </div>
                     </button>
                     <p className="text-xs text-gray-500 text-center">📍 Click to open in Google Maps</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Group Information */}
+              {event.groupName && (
+                <div className="pt-6 border-t border-gray-200">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Users className="h-5 w-5 text-purple-600" />
+                      <h3 className="font-bold text-gray-900">Organized by</h3>
+                    </div>
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                      <p className="font-bold text-gray-900 mb-2">{event.groupName}</p>
+                      <button
+                        onClick={() => navigate(`/groups/${event.groupId}`)}
+                        className="w-full py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 text-sm"
+                      >
+                        View Group
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
