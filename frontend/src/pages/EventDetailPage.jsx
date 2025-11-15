@@ -229,13 +229,6 @@ export default function EventDetailPage() {
                 ) : (
                   /* Full details for members */
                   <>
-                    <div className="flex items-start p-4 bg-gradient-to-r from-pink-50 to-orange-50 rounded-xl">
-                      <MapPin className="h-6 w-6 mr-4 mt-1 text-pink-600" />
-                      <div>
-                        <div className="font-bold text-gray-900">{event.location}</div>
-                      </div>
-                    </div>
-
                     {event.difficultyLevel && (
                       <div className="flex items-start p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
                         <TrendingUp className="h-6 w-6 mr-4 mt-1 text-orange-600" />
@@ -454,6 +447,47 @@ export default function EventDetailPage() {
                   </div>
                 )}
               </div>
+
+              {/* Location Map Preview - Compact version in sidebar */}
+              {!isAccessDenied && event.location && (
+                <div className="pt-6 border-t border-gray-200">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 mb-3">
+                      <MapPin className="h-5 w-5 text-pink-600" />
+                      <h3 className="font-bold text-gray-900">Location</h3>
+                    </div>
+                    <p className="text-sm text-gray-700 mb-3">{event.location}</p>
+                    
+                    {/* Clickable Compact Map Preview */}
+                    <button
+                      onClick={() => {
+                        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`
+                        window.open(googleMapsUrl, '_blank')
+                      }}
+                      className="relative w-full h-40 rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02]"
+                    >
+                      {/* Static Map from Google Maps */}
+                      <img
+                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event.location)}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event.location)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
+                        alt={`Map of ${event.location}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback if map fails to load
+                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5DbGljayB0byBvcGVuIE1hcHM8L3RleHQ+PC9zdmc+'
+                        }}
+                      />
+                      {/* Overlay with icon */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transform scale-95 group-hover:scale-100 transition-transform duration-300">
+                          <MapPin className="h-4 w-4 text-pink-600" />
+                          <span className="font-semibold text-gray-900 text-sm">Open Maps</span>
+                        </div>
+                      </div>
+                    </button>
+                    <p className="text-xs text-gray-500 text-center">📍 Click to open in Google Maps</p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
