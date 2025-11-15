@@ -18,6 +18,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -39,6 +40,16 @@ public class GroupController {
                                             ) {
         Long userId = getUserIdFromAuth(authentication);
         return ResponseEntity.ok(groupService.createGroup(request, userId));
+    }
+    
+    @PutMapping("/{groupId}")
+    public ResponseEntity<GroupDTO> updateGroup(
+            @PathVariable Long groupId,
+            @Valid @RequestBody CreateGroupRequest request,
+            Authentication authentication
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(groupService.updateGroup(groupId, request, userId));
     }
 
     @GetMapping("/my-groups")

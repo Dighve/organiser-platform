@@ -121,6 +121,8 @@ export const groupsAPI = {
   
   createGroup: (data) => api.post('/groups', data),
   
+  updateGroup: (groupId, data) => api.put(`/groups/${groupId}`, data),
+  
   getGroupMembers: (groupId) => api.get(`/groups/${groupId}/members`),
 }
 

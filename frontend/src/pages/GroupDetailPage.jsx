@@ -1,9 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar } from 'lucide-react'
+import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X } from 'lucide-react'
+import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
+import ImageUpload from '../components/ImageUpload'
+import { toast } from 'react-hot-toast'
 
 export default function GroupDetailPage() {
   const { id } = useParams()
@@ -11,6 +14,15 @@ export default function GroupDetailPage() {
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
   const [activeTab, setActiveTab] = React.useState('about')
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    name: '',
+    description: '',
+    location: '',
+    imageUrl: '',
+    maxMembers: '',
+    isPublic: true,
+  })
 
   // Fetch group details
   const { data: groupData, isLoading, error } = useQuery({
@@ -87,6 +99,54 @@ export default function GroupDetailPage() {
       alert(error.response?.data?.message || 'Failed to leave group')
     },
   })
+
+  // Update group mutation
+  const updateGroupMutation = useMutation({
+    mutationFn: (data) => groupsAPI.updateGroup(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['group', id])
+      queryClient.invalidateQueries(['myGroups'])
+      queryClient.invalidateQueries(['myOrganisedGroups'])
+      setIsEditModalOpen(false)
+      toast.success('Group updated successfully!')
+    },
+    onError: (error) => {
+      console.error('Update group error:', error)
+      toast.error(error.response?.data?.message || 'Failed to update group')
+    },
+  })
+
+  // Open edit modal with current group data
+  const handleOpenEditModal = () => {
+    if (group) {
+      setEditFormData({
+        name: group.name || '',
+        description: group.description || '',
+        location: group.location || '',
+        imageUrl: group.imageUrl || '',
+        maxMembers: group.maxMembers || '',
+        isPublic: group.isPublic !== undefined ? group.isPublic : true,
+      })
+      setIsEditModalOpen(true)
+    }
+  }
+
+  // Handle edit form submission
+  const handleEditSubmit = (e) => {
+    e.preventDefault()
+    
+    const updateData = {
+      name: editFormData.name.trim(),
+      description: editFormData.description.trim() || null,
+      activityId: 1, // Hiking - always
+      location: editFormData.location.trim() || null,
+      imageUrl: editFormData.imageUrl || null,
+      maxMembers: editFormData.maxMembers ? parseInt(editFormData.maxMembers) : null,
+      isPublic: editFormData.isPublic,
+    }
+    
+    updateGroupMutation.mutate(updateData)
+  }
 
   const handleSubscribe = () => {
     if (!isAuthenticated) {
@@ -415,7 +475,18 @@ export default function GroupDetailPage() {
               {/* About Tab */}
               {activeTab === 'about' && (
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">About This Group</h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">About This Group</h2>
+                    {isGroupOrganiser && (
+                      <button
+                        onClick={handleOpenEditModal}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit Group
+                      </button>
+                    )}
+                  </div>
                   <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap mb-8">
                     {group.description || 'No description available.'}
                   </p>
@@ -677,6 +748,143 @@ export default function GroupDetailPage() {
         </div>
       </div>
       </div>
+
+      {/* Edit Group Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-t-3xl flex items-center justify-between">
+              <h2 className="text-2xl font-bold">Edit Group</h2>
+              <button
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
+              {/* Group Name */}
+              <div>
+                <label htmlFor="edit-name" className="block text-sm font-semibold text-gray-700 mb-2">
+                  🎯 Group Name *
+                </label>
+                <input
+                  type="text"
+                  id="edit-name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
+                  placeholder="e.g., Peak District Hikers"
+                  required
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label htmlFor="edit-description" className="block text-sm font-semibold text-gray-700 mb-2">
+                  📝 Description
+                </label>
+                <textarea
+                  id="edit-description"
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
+                  placeholder="Describe your group, its purpose, and what members can expect..."
+                />
+              </div>
+
+              {/* Cover Photo */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                  <Upload className="h-4 w-4 text-purple-600" />
+                  Cover Photo / Banner
+                </label>
+                <ImageUpload
+                  value={editFormData.imageUrl}
+                  onChange={(url) => {
+                    setEditFormData(prev => ({ ...prev, imageUrl: url }))
+                  }}
+                  folder="group-banner"
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  💡 Recommended size: 1200x400px
+                </p>
+              </div>
+
+              {/* Location */}
+              <div>
+                <label htmlFor="edit-location" className="block text-sm font-semibold text-gray-700 mb-2">
+                  📍 Location
+                </label>
+                <GooglePlacesAutocomplete
+                  value={editFormData.location}
+                  onChange={(value) => {
+                    setEditFormData(prev => ({ ...prev, location: value }))
+                  }}
+                  onPlaceSelect={(locationData) => {
+                    setEditFormData(prev => ({
+                      ...prev,
+                      location: locationData.address
+                    }))
+                  }}
+                  placeholder="e.g., Peak District, UK"
+                />
+              </div>
+
+              {/* Max Members */}
+              <div>
+                <label htmlFor="edit-maxMembers" className="block text-sm font-semibold text-gray-700 mb-2">
+                  👥 Maximum Members (Optional)
+                </label>
+                <input
+                  type="number"
+                  id="edit-maxMembers"
+                  value={editFormData.maxMembers}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, maxMembers: e.target.value }))}
+                  min="1"
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
+                  placeholder="Leave empty for unlimited"
+                />
+              </div>
+
+              {/* Is Public */}
+              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="edit-isPublic"
+                  checked={editFormData.isPublic}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
+                  className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
+                />
+                <label htmlFor="edit-isPublic" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                  🌍 Make this group public (visible to everyone)
+                </label>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
+                  disabled={updateGroupMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={updateGroupMutation.isPending}
+                >
+                  {updateGroupMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Upload } from 'lucide-react'
+import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
+import ImageUpload from '../components/ImageUpload'
 
 export default function CreateGroupPage() {
   const navigate = useNavigate()
@@ -15,6 +17,7 @@ export default function CreateGroupPage() {
     description: '',
     activityId: 1, // Hiking - the only activity type for HikeHub
     location: '',
+    imageUrl: '',
     maxMembers: '',
     isPublic: true,
   })
@@ -76,6 +79,7 @@ export default function CreateGroupPage() {
       description: formData.description.trim() || null,
       activityId: formData.activityId, // Always 1 for Hiking
       location: formData.location.trim() || null,
+      imageUrl: formData.imageUrl || null,
       maxMembers: formData.maxMembers ? parseInt(formData.maxMembers) : null,
       isPublic: formData.isPublic,
     }
@@ -153,18 +157,41 @@ export default function CreateGroupPage() {
             />
           </div>
           
+          {/* Cover Photo */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Upload className="h-4 w-4 text-purple-600" />
+              Cover Photo / Banner
+            </label>
+            <ImageUpload
+              value={formData.imageUrl}
+              onChange={(url) => {
+                setFormData(prev => ({ ...prev, imageUrl: url }))
+              }}
+              folder="group-banner"
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              💡 Add a beautiful cover photo to make your group stand out! Recommended size: 1200x400px
+            </p>
+          </div>
+          
           {/* Location */}
           <div>
             <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
               📍 Location
             </label>
-            <input
-              type="text"
-              id="location"
-              name="location"
+            <GooglePlacesAutocomplete
               value={formData.location}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
+              onChange={(value) => {
+                setFormData(prev => ({ ...prev, location: value }))
+              }}
+              onPlaceSelect={(locationData) => {
+                setFormData(prev => ({
+                  ...prev,
+                  location: locationData.address
+                }))
+              }}
+              error={errors.location}
               placeholder="e.g., Peak District, UK"
             />
           </div>

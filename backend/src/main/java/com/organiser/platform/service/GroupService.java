@@ -76,6 +76,56 @@ public class GroupService {
         return group;
     }
     
+    @Transactional
+    @CacheEvict(value = "groups", allEntries = true)
+    public GroupDTO updateGroup(Long groupId, CreateGroupRequest request, Long userId) {
+        // Find the group
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Check if user is the organiser
+        if (!group.getPrimaryOrganiser().getId().equals(userId)) {
+            throw new RuntimeException("Only the group organiser can update the group");
+        }
+        
+        // Update fields
+        if (request.getName() != null) {
+            group.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            group.setDescription(request.getDescription());
+        }
+        if (request.getImageUrl() != null) {
+            group.setImageUrl(request.getImageUrl());
+        }
+        if (request.getLocation() != null) {
+            group.setLocation(request.getLocation());
+        }
+        if (request.getMaxMembers() != null) {
+            group.setMaxMembers(request.getMaxMembers());
+        }
+        if (request.getIsPublic() != null) {
+            group.setIsPublic(request.getIsPublic());
+        }
+        
+        // Update activity if changed
+        if (request.getActivityId() != null && !group.getActivity().getId().equals(request.getActivityId())) {
+            Activity activity = activityRepository.findById(request.getActivityId())
+                    .orElseThrow(() -> new RuntimeException("Activity not found"));
+            group.setActivity(activity);
+        }
+        
+        // Save - updatedAt will be set automatically by @LastModifiedDate
+        group = groupRepository.save(group);
+        
+        int memberCount = (int) subscriptionRepository.countByGroupIdAndStatus(
+                group.getId(), 
+                Subscription.SubscriptionStatus.ACTIVE
+        );
+        
+        return GroupDTO.fromEntity(group, memberCount);
+    }
+    
     @Cacheable(value = "groups", key = "'user_' + #memberId")
     public List<GroupDTO> getUserSubscribedGroups(Long memberId) {
         List<Subscription> subscriptions = subscriptionRepository.findByMemberId(memberId);
