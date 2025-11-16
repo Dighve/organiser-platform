@@ -52,16 +52,26 @@ export default function EditEventPage() {
   useEffect(() => {
     if (event) {
       // Extract date and time from eventDate
-      const eventDate = new Date(event.eventDate)
-      const dateStr = eventDate.toISOString().split('T')[0]
-      const timeStr = eventDate.toTimeString().slice(0, 5)
+      const startDate = new Date(event.eventDate)
+      const startDateStr = startDate.toISOString().split('T')[0]
+      const startTimeStr = startDate.toTimeString().slice(0, 5)
+      
+      // Extract end date and time if exists
+      let endDateStr = ''
+      let endTimeStr = ''
+      if (event.endDate) {
+        const endDate = new Date(event.endDate)
+        endDateStr = endDate.toISOString().split('T')[0]
+        endTimeStr = endDate.toTimeString().slice(0, 5)
+      }
       
       const initialData = {
         title: event.title,
         description: event.description,
-        eventDate: dateStr,
-        startTime: timeStr,
-        endTime: event.endDate ? new Date(event.endDate).toTimeString().slice(0, 5) : '',
+        eventDate: startDateStr,
+        startTime: startTimeStr,
+        endDate: endDateStr,
+        endTime: endTimeStr,
         location: event.location,
         latitude: event.latitude,
         longitude: event.longitude,
@@ -144,7 +154,9 @@ export default function EditEventPage() {
       description: data.description,
       activityTypeId: 1, // Default to first activity type (Hiking)
       eventDate: data.eventDate ? new Date(data.eventDate + 'T' + (data.startTime || '00:00')).toISOString() : null,
-      endDate: data.eventDate && data.endTime ? new Date(data.eventDate + 'T' + data.endTime).toISOString() : null,
+      endDate: data.endDate && data.endTime 
+        ? new Date(data.endDate + 'T' + data.endTime).toISOString() 
+        : (data.eventDate && data.endTime ? new Date(data.eventDate + 'T' + data.endTime).toISOString() : null),
       location: data.location,
       latitude: data.latitude ? Number(data.latitude) : null,
       longitude: data.longitude ? Number(data.longitude) : null,
@@ -289,13 +301,23 @@ export default function EditEventPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Date *</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Start Date *</label>
                     <input
                       type="date"
-                      {...register('eventDate', { required: 'Date is required' })}
+                      {...register('eventDate', { required: 'Start date is required' })}
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     />
                     {errors.eventDate && <p className="text-red-500 text-sm mt-1">{errors.eventDate.message}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">End Date</label>
+                    <input
+                      type="date"
+                      {...register('endDate')}
+                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Leave empty for single-day events</p>
                   </div>
 
                   <div>
@@ -309,13 +331,13 @@ export default function EditEventPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">End Time *</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">End Time</label>
                     <input
                       type="time"
-                      {...register('endTime', { required: 'End time is required' })}
+                      {...register('endTime')}
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     />
-                    {errors.endTime && <p className="text-red-500 text-sm mt-1">{errors.endTime.message}</p>}
+                    <p className="text-xs text-gray-500 mt-1">Optional for single-day events</p>
                   </div>
                 </div>
 
@@ -536,12 +558,19 @@ export default function EditEventPage() {
                     <div className="space-y-2 text-gray-700">
                       <p className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-gray-500" />
-                        <span className="font-semibold">Date:</span> {formData.eventDate}
+                        <span className="font-semibold">Start:</span> {formData.eventDate} at {formData.startTime}
                       </p>
-                      <p className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-gray-500" />
-                        <span className="font-semibold">Time:</span> {formData.startTime} - {formData.endTime}
-                      </p>
+                      {formData.endDate ? (
+                        <p className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <span className="font-semibold">End:</span> {formData.endDate} {formData.endTime ? `at ${formData.endTime}` : ''}
+                        </p>
+                      ) : formData.endTime ? (
+                        <p className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-gray-500" />
+                          <span className="font-semibold">End Time:</span> {formData.endTime}
+                        </p>
+                      ) : null}
                       {formData.description && (
                         <p className="text-gray-600 mt-3 bg-gray-50 p-3 rounded-lg">{formData.description}</p>
                       )}

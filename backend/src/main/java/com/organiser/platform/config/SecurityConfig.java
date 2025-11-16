@@ -41,7 +41,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/*/comments", "GET"),
                                 new AntPathRequestMatcher("/api/v1/activities/**"),
                                 new AntPathRequestMatcher("/api/v1/groups/public"),
-                                new AntPathRequestMatcher("/api/v1/groups/*", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*"),
                                 new AntPathRequestMatcher("/api/v1/groups/*/members", "GET"),
                                 new AntPathRequestMatcher("/api/v1/groups/*/subscribe"),
                                 new AntPathRequestMatcher("/actuator/**"),
