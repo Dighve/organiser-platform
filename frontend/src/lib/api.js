@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useAuthStore } from '../store/authStore'
+import { useAuthStore, isTokenExpired } from '../store/authStore'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
@@ -10,13 +10,22 @@ const api = axios.create({
   },
 })
 
-// Request interceptor to add auth token
+// Request interceptor to add auth token and check expiration
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().token
+    const { token, logout } = useAuthStore.getState()
+    
+    // Check if token is expired before making the request
+    if (token && isTokenExpired(token)) {
+      logout('Your session has expired. Please log in again.')
+      return Promise.reject(new Error('Token expired'))
+    }
+    
+    // Add token to request if it exists
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    
     return config
   },
   (error) => {
@@ -24,14 +33,36 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle errors
+// Response interceptor to handle errors and token expiration
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const originalRequest = error.config
+    const { logout } = useAuthStore.getState()
+    
+    // Handle 401 Unauthorized responses
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout()
-      window.location.href = '/login'
+      // If this is not a retry attempt and we have a token
+      if (!originalRequest._retry) {
+        originalRequest._retry = true
+        
+        // If the token is expired, log the user out
+        const token = useAuthStore.getState().token
+        if (token && isTokenExpired(token)) {
+          logout('Your session has expired. Please log in again.')
+          // Redirect to login page with a return URL
+          window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+          return Promise.reject(error)
+        }
+        
+        // Here you could implement token refresh logic if needed
+        // For now, we'll just log out the user
+        logout('Your session has expired. Please log in again.')
+        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+      }
     }
+    
+    // For other errors, just reject with the error
     return Promise.reject(error)
   }
 )
