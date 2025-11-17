@@ -105,6 +105,13 @@ export default function CreateEventPage() {
       return
     }
     
+    // Validate location has coordinates
+    if (!data.latitude || !data.longitude) {
+      toast.error('⚠️ Please select a valid location from Google Maps with coordinates')
+      setCurrentStep(STEPS.LOCATION)
+      return
+    }
+    
     // Prevent double submission
     if (isSubmitting) {
       return
@@ -166,28 +173,30 @@ export default function CreateEventPage() {
     const progress = ((currentStep + 1) / Object.keys(STEPS).length) * 100
     
     return (
-      <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          {Object.keys(STEPS).map((_, index) => (
-            <div key={index} className="flex items-center flex-1">
-              <div className={`
-                flex items-center justify-center w-12 h-12 rounded-full font-bold text-sm
-                ${index <= currentStep 
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110' 
-                  : 'bg-gray-200 text-gray-500'}
-                transition-all duration-500 transform
-              `}>
-                {index < currentStep ? <Check className="h-6 w-6" /> : index + 1}
-              </div>
-              {index < Object.keys(STEPS).length - 1 && (
+      <div className="mb-10 px-8">
+        <div className="flex items-center justify-center mb-4">
+          <div className="flex items-center ml-16" style={{ maxWidth: '600px', width: '100%' }}>
+            {Object.keys(STEPS).map((_, index) => (
+              <div key={index} className="flex items-center flex-1">
                 <div className={`
-                  flex-1 h-2 mx-3 rounded-full
-                  ${index < currentStep ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-200'}
-                  transition-all duration-500
-                `} />
-              )}
-            </div>
-          ))}
+                  flex items-center justify-center w-12 h-12 rounded-full font-bold text-sm
+                  ${index <= currentStep 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110' 
+                    : 'bg-gray-200 text-gray-500'}
+                  transition-all duration-500 transform
+                `}>
+                  {index < currentStep ? <Check className="h-6 w-6" /> : index + 1}
+                </div>
+                {index < Object.keys(STEPS).length - 1 && (
+                  <div className={`
+                    flex-1 h-2 mx-3 rounded-full
+                    ${index < currentStep ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-200'}
+                    transition-all duration-500
+                  `} />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
         <p className="text-center text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
           Step {currentStep + 1} of {Object.keys(STEPS).length}: {STEP_TITLES[currentStep]}
@@ -420,6 +429,23 @@ export default function CreateEventPage() {
         </div>
       )}
 
+      {/* Warning if location not properly selected */}
+      {watchedValues.location && (!watchedValues.latitude || !watchedValues.longitude) && (
+        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="bg-yellow-500 rounded-full p-2">
+              <span className="text-white text-lg">⚠️</span>
+            </div>
+            <div>
+              <p className="text-yellow-800 font-bold">Please select a location from the dropdown</p>
+              <p className="text-yellow-700 text-sm mt-1">
+                Type and select a suggestion from Google Maps to set the exact coordinates
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between pt-4">
         <button 
           type="button" 
@@ -431,7 +457,7 @@ export default function CreateEventPage() {
         <button
           type="submit"
           className="py-4 px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
-          disabled={!watchedValues.location}
+          disabled={!watchedValues.location || !watchedValues.latitude || !watchedValues.longitude}
         >
           Continue <ArrowRight className="h-5 w-5" />
         </button>
@@ -692,7 +718,7 @@ export default function CreateEventPage() {
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                 <MapPin className="h-6 w-6 text-pink-600" />
-                Location
+                Hiking Location
               </h3>
               <button
                 type="button"
@@ -702,11 +728,33 @@ export default function CreateEventPage() {
                 <Edit2 className="h-4 w-4" /> Edit
               </button>
             </div>
-            <p className="text-gray-700 font-medium">{formData.location || 'Not set'}</p>
-            {formData.latitude && formData.longitude && (
-              <p className="text-sm text-gray-500 mt-2">
-                📍 {formData.latitude?.toFixed(6)}, {formData.longitude?.toFixed(6)}
-              </p>
+            
+            {formData.location && formData.latitude && formData.longitude ? (
+              <div className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-4 border-2 border-pink-200">
+                <div className="flex items-start gap-3">
+                  <div className="bg-pink-500 rounded-full p-2 mt-1">
+                    <MapPin className="h-5 w-5 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-900 font-bold text-lg">{formData.location}</p>
+                    <div className="mt-3 bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-pink-200">
+                      <p className="text-xs text-gray-600 font-semibold mb-1">GPS Coordinates:</p>
+                      <p className="text-sm text-gray-800 font-mono">
+                        📍 Lat: {formData.latitude?.toFixed(6)}, Long: {formData.longitude?.toFixed(6)}
+                      </p>
+                    </div>
+                    <p className="text-xs text-green-600 font-semibold mt-2 flex items-center gap-1">
+                      <Check className="h-3 w-3" /> Location verified via Google Maps
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                <p className="text-red-700 font-semibold flex items-center gap-2">
+                  <span>⚠️</span> Location not properly set - Please go back and select from Google Maps
+                </p>
+              </div>
             )}
           </div>
 
@@ -796,7 +844,8 @@ export default function CreateEventPage() {
             type="button" 
             className="py-4 px-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg rounded-xl hover:shadow-2xl hover:shadow-green-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2" 
             onClick={() => handleSubmit(onFinalSubmit)()}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !formData.latitude || !formData.longitude}
+            title={!formData.latitude || !formData.longitude ? 'Please select a valid location from Google Maps' : ''}
           >
             <Check className="h-6 w-6" /> {isSubmitting ? 'Publishing...' : 'Publish Hike Event'}
           </button>
