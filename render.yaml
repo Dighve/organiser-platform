@@ -46,7 +46,7 @@ services:
       - key: CLOUDINARY_API_SECRET
         sync: false  # Set manually in Render dashboard
     
-    healthCheckPath: /actuator/health
+    healthCheckPath: /api/v1/actuator/health
     autoDeploy: true
 
 databases:

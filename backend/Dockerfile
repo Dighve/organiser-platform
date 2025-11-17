@@ -25,7 +25,7 @@ RUN apk add --no-cache curl
 
 # Add health check (uses PORT env var, defaults to 8080)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:${PORT:-8080}/actuator/health || exit 1
+  CMD curl -f http://localhost:${PORT:-8080}/api/v1/actuator/health || exit 1
 
 # Expose port (Render will provide PORT env var)
 EXPOSE 8080
