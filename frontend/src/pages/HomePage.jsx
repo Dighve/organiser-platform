@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
@@ -42,6 +42,15 @@ export default function HomePage() {
   const organisedGroups = organisedGroupsData?.data || []
   const yourEvents = yourEventsData?.data?.content || []
   const allEvents = allEventsData?.data?.content || []
+  
+  // Filter discover events to exclude events already in user's events
+  const discoverEvents = useMemo(() => {
+    if (!isAuthenticated || yourEvents.length === 0) {
+      return allEvents
+    }
+    const yourEventIds = new Set(yourEvents.map(event => event.id))
+    return allEvents.filter(event => !yourEventIds.has(event.id))
+  }, [allEvents, yourEvents, isAuthenticated])
 
   // Smart tab selection: Only show organiser tab if user has organised groups
   useEffect(() => {
@@ -413,15 +422,15 @@ export default function HomePage() {
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">Discover Events</h2>
-            <span className="text-sm text-gray-500 font-medium">{allEvents.length} event{allEvents.length !== 1 ? 's' : ''}</span>
+            <span className="text-sm text-gray-500 font-medium">{discoverEvents.length} event{discoverEvents.length !== 1 ? 's' : ''}</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {allEventsLoading ? (
               <div className="col-span-full flex items-center justify-center py-12">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
               </div>
-            ) : allEvents.length > 0 ? (
-              allEvents.map(event => (
+            ) : discoverEvents.length > 0 ? (
+              discoverEvents.map(event => (
                 <div 
                   key={event.id} 
                   className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2"
