@@ -34,6 +34,7 @@ export default function HomePage() {
   const { data: allEventsData, isLoading: allEventsLoading } = useQuery({
     queryKey: ['allEvents'],
     queryFn: () => eventsAPI.getUpcomingEvents(0, 10),
+    refetchOnMount: false, // Use cached data if available
   })
   
   const memberGroups = groupsData?.data || []
