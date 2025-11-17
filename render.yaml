@@ -1,29 +1,57 @@
 services:
   - type: web
     name: hikehub-backend
-    env: java
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     region: oregon # Free tier available
     plan: free
-    buildCommand: cd backend && ./gradlew clean build -x test
-    startCommand: java -Dserver.port=$PORT -jar backend/build/libs/platform-1.0.0.jar
     envVars:
+      # Java memory settings
       - key: JAVA_TOOL_OPTIONS
         value: "-Xmx512m"
+      
+      # Database connection (auto-populated by Render)
       - key: DATABASE_URL
         fromDatabase:
           name: hikehub-db
           property: connectionString
+      
+      # JWT Secret (auto-generated or set manually in dashboard)
       - key: JWT_SECRET
         generateValue: true
-        # You can also set this manually in Render dashboard
+      
+      # Spring Profile
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+      
+      # Frontend URL (update after deploying frontend to Netlify)
+      - key: FRONTEND_URL
+        value: https://hikehub-poc.netlify.app
+      
+      # Email Configuration (Resend API)
+      - key: RESEND_API_KEY
+        sync: false  # Set manually in Render dashboard
+      
+      - key: EMAIL_FROM
+        value: onboarding@resend.dev
+      
+      # Cloudinary Configuration (set manually in Render dashboard)
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false  # Set manually in Render dashboard
+      
+      - key: CLOUDINARY_API_KEY
+        sync: false  # Set manually in Render dashboard
+      
+      - key: CLOUDINARY_API_SECRET
+        sync: false  # Set manually in Render dashboard
+    
     healthCheckPath: /actuator/health
     autoDeploy: true
 
 databases:
   - name: hikehub-db
     databaseName: hikehub
+    user: hikehub_user
     region: oregon
-    plan: free # 1GB storage, expires after 90 days (renewable)
-    # PostgreSQL 15 by default
+    plan: free # 90-day free trial

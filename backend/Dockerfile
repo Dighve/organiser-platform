@@ -1,8 +1,18 @@
 # Build stage
 FROM gradle:8.5-jdk17 AS build
 WORKDIR /app
-COPY build.gradle settings.gradle ./
+
+# Copy gradle wrapper and dependency files first for better caching
+COPY gradle ./gradle
+COPY gradlew gradlew.bat build.gradle settings.gradle ./
+
+# Download dependencies (cached layer)
+RUN gradle dependencies --no-daemon || true
+
+# Copy source code
 COPY src ./src
+
+# Build the application
 RUN gradle build -x test --no-daemon
 
 # Run stage
