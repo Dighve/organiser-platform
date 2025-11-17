@@ -24,10 +24,8 @@ CREATE INDEX IF NOT EXISTS idx_groups_primary_organiser_id ON groups(primary_org
 CREATE INDEX IF NOT EXISTS idx_groups_is_public ON groups(is_public);
 CREATE INDEX IF NOT EXISTS idx_groups_active ON groups(active);
 
--- Event comments indexes
-CREATE INDEX IF NOT EXISTS idx_event_comments_event_id ON event_comments(event_id);
-CREATE INDEX IF NOT EXISTS idx_event_comments_author_id ON event_comments(author_id);
+-- Event comments indexes (V5 already created idx_comment_event and idx_comment_member)
+-- No new indexes needed - already covered by V5
 
--- Event comment replies indexes
-CREATE INDEX IF NOT EXISTS idx_event_comment_replies_comment_id ON event_comment_replies(comment_id);
-CREATE INDEX IF NOT EXISTS idx_event_comment_replies_author_id ON event_comment_replies(author_id);
+-- Event comment replies indexes (V5 already created idx_reply_comment and idx_reply_member)
+-- No new indexes needed - already covered by V5

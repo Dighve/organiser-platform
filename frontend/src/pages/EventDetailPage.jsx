@@ -134,9 +134,19 @@ export default function EventDetailPage() {
   // Check if current user has joined the event
   const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
 
-  const formattedDate = format(new Date(event.eventDate), 'EEEE, MMMM dd, yyyy')
-  const formattedStartTime = format(new Date(event.eventDate), 'h:mm a')
-  const formattedEndTime = event.endDate ? format(new Date(event.endDate), 'h:mm a') : null
+  // Check if event spans multiple days
+  const startDate = new Date(event.eventDate)
+  const endDate = event.endDate ? new Date(event.endDate) : null
+  const isMultiDay = endDate && (
+    startDate.getFullYear() !== endDate.getFullYear() ||
+    startDate.getMonth() !== endDate.getMonth() ||
+    startDate.getDate() !== endDate.getDate()
+  )
+
+  const formattedStartDate = format(startDate, 'EEEE, MMMM dd, yyyy')
+  const formattedEndDate = endDate ? format(endDate, 'EEEE, MMMM dd, yyyy') : null
+  const formattedStartTime = format(startDate, 'h:mm a')
+  const formattedEndTime = endDate ? format(endDate, 'h:mm a') : null
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -208,10 +218,25 @@ export default function EventDetailPage() {
                 <div className="flex items-start p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
                   <Calendar className="h-6 w-6 mr-4 mt-1 text-purple-600" />
                   <div>
-                    <div className="font-bold text-gray-900">{formattedDate}</div>
-                    <div className="text-purple-600 font-semibold">
-                      {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime}
-                    </div>
+                    {isMultiDay ? (
+                      /* Multi-day event: Show date range */
+                      <>
+                        <div className="font-bold text-gray-900">
+                          {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+                        </div>
+                        <div className="text-purple-600 font-semibold text-sm mt-1">
+                          {formattedStartTime} to {formattedEndTime}
+                        </div>
+                      </>
+                    ) : (
+                      /* Single day event: Show date with time range */
+                      <>
+                        <div className="font-bold text-gray-900">{formattedStartDate}</div>
+                        <div className="text-purple-600 font-semibold">
+                          {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
