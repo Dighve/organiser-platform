@@ -1,13 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
 import { eventsAPI } from '../lib/api'
 import EventCard from '../components/EventCard'
 
 export default function EventsPage() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const urlSearch = searchParams.get('search') || ''
+  
   const [page, setPage] = useState(0)
-  const [searchKeyword, setSearchKeyword] = useState('')
-  const [searchInput, setSearchInput] = useState('')
+  const [searchKeyword, setSearchKeyword] = useState(urlSearch)
+  const [searchInput, setSearchInput] = useState(urlSearch)
+  
+  // Update search when URL params change
+  useEffect(() => {
+    const urlSearch = searchParams.get('search') || ''
+    setSearchKeyword(urlSearch)
+    setSearchInput(urlSearch)
+    setPage(0)
+  }, [searchParams])
 
   const { data, isLoading } = useQuery({
     queryKey: ['events', page, searchKeyword],
@@ -22,7 +34,18 @@ export default function EventsPage() {
 
   const handleSearch = (e) => {
     e.preventDefault()
-    setSearchKeyword(searchInput)
+    if (searchInput.trim()) {
+      setSearchParams({ search: searchInput.trim() })
+    } else {
+      setSearchParams({})
+    }
+    setPage(0)
+  }
+  
+  const handleClearSearch = () => {
+    setSearchInput('')
+    setSearchKeyword('')
+    setSearchParams({})
     setPage(0)
   }
 
@@ -40,14 +63,36 @@ export default function EventsPage() {
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Search events by name, location, or activity..."
+                placeholder="Search by title, location, difficulty, group, or organiser..."
                 className="w-full pl-14 pr-6 py-4 bg-white/60 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-lg shadow-lg"
               />
             </div>
             <button type="submit" className="py-4 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105">
               Search
             </button>
+            {searchKeyword && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="py-4 px-6 bg-white/60 backdrop-blur-sm text-gray-700 font-semibold rounded-xl hover:bg-white transition-all border border-gray-200 shadow-lg"
+              >
+                Clear
+              </button>
+            )}
           </form>
+          
+          {/* Search Results Message */}
+          {searchKeyword && (
+            <div className="mt-4 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-purple-200">
+              <p className="text-gray-700">
+                <span className="font-semibold">Searching for:</span>{' '}
+                <span className="text-purple-600 font-bold">"{searchKeyword}"</span>
+                {!isLoading && (
+                  <span className="ml-2 text-gray-600">- Found {events.length} event{events.length !== 1 ? 's' : ''}</span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Events Grid */}

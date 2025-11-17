@@ -166,30 +166,30 @@ export default function CreateEventPage() {
     const progress = ((currentStep + 1) / Object.keys(STEPS).length) * 100
     
     return (
-      <div className="mb-8">
+      <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           {Object.keys(STEPS).map((_, index) => (
             <div key={index} className="flex items-center flex-1">
               <div className={`
-                flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm
+                flex items-center justify-center w-12 h-12 rounded-full font-bold text-sm
                 ${index <= currentStep 
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' 
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110' 
                   : 'bg-gray-200 text-gray-500'}
-                transition-all duration-300
+                transition-all duration-500 transform
               `}>
-                {index < currentStep ? <Check className="h-5 w-5" /> : index + 1}
+                {index < currentStep ? <Check className="h-6 w-6" /> : index + 1}
               </div>
               {index < Object.keys(STEPS).length - 1 && (
                 <div className={`
-                  flex-1 h-1 mx-2
+                  flex-1 h-2 mx-3 rounded-full
                   ${index < currentStep ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-200'}
-                  transition-all duration-300
+                  transition-all duration-500
                 `} />
               )}
             </div>
           ))}
         </div>
-        <p className="text-center text-sm font-semibold text-gray-600">
+        <p className="text-center text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
           Step {currentStep + 1} of {Object.keys(STEPS).length}: {STEP_TITLES[currentStep]}
         </p>
       </div>
@@ -200,17 +200,19 @@ export default function CreateEventPage() {
 
   const renderBasicsStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl mb-4 shadow-lg">
-          <Mountain className="h-10 w-10 text-white" />
+      <div className="text-center mb-10 animate-fade-in">
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-3xl mb-6 shadow-2xl shadow-purple-500/30 hover:scale-105 transition-transform duration-300">
+          <Mountain className="h-12 w-12 text-white" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">What's your hike about?</h2>
-        <p className="text-gray-600">Give your hiking event a clear, descriptive name and date</p>
+        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 mb-3">
+          What's your hike about?
+        </h2>
+        <p className="text-gray-600 text-lg">Give your hiking event a clear, descriptive name and date</p>
       </div>
 
       <div>
         <label htmlFor="title" className="block text-base font-bold text-gray-900 mb-3">
-          <span className="">Title<span className="font-normal text-red-500">*</span></span>
+          Title <span className="text-red-500">*</span>
         </label>
         <input
           {...register('title', { required: 'Event title is required' })}
@@ -224,7 +226,7 @@ export default function CreateEventPage() {
 
       <div className="grid grid-cols-3 gap-4">
         <div>
-          <label htmlFor="eventDate" className="block text-base font-bold text-gray-900 mb-3">Date *</label>
+          <label htmlFor="eventDate" className="block text-base font-bold text-gray-900 mb-3">Date <span className="text-red-500">*</span></label>
           <input 
             {...register('eventDate', { required: 'Event date is required' })} 
             type="date" 
@@ -233,7 +235,7 @@ export default function CreateEventPage() {
           {errors.eventDate && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.eventDate.message}</p>}
         </div>
         <div>
-          <label htmlFor="startTime" className="block text-base font-bold text-gray-900 mb-3">Start time *</label>
+          <label htmlFor="startTime" className="block text-base font-bold text-gray-900 mb-3">Start time <span className="text-red-500">*</span></label>
           <input 
             {...register('startTime', { required: 'Start time is required' })} 
             type="time" 
@@ -252,14 +254,14 @@ export default function CreateEventPage() {
           {errors.endDate && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.endDate.message}</p>}
         </div>
         <div>
-          <label htmlFor="endTime" className="block text-base font-bold text-gray-900 mb-3">End time *</label>
+          <label htmlFor="endTime" className="block text-base font-bold text-gray-900 mb-3">End time</label>
           <input 
-            {...register('endTime', { required: 'End time is required' })} 
+            {...register('endTime')} 
             type="time" 
             className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
           />
           {errors.endTime && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.endTime.message}</p>}
-          <p className="text-sm text-gray-500 mt-2">Approximate finish time</p>
+          <p className="text-sm text-gray-500 mt-2">Approximate finish time (optional)</p>
         </div>
       </div>
 
@@ -294,7 +296,7 @@ export default function CreateEventPage() {
         <button
           type="submit"
           className="py-4 px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
-          disabled={!watchedValues.title || !watchedValues.eventDate || !watchedValues.startTime || !watchedValues.endTime}
+          disabled={!watchedValues.title || !watchedValues.eventDate || !watchedValues.startTime}
         >
           Continue <ArrowRight className="h-5 w-5" />
         </button>
@@ -306,17 +308,19 @@ export default function CreateEventPage() {
 
   const renderLocationStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-pink-500 to-orange-500 rounded-2xl mb-4 shadow-lg">
-          <MapPin className="h-10 w-10 text-white" />
+      <div className="text-center mb-10 animate-fade-in">
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-pink-500 via-orange-500 to-amber-400 rounded-3xl mb-6 shadow-2xl shadow-pink-500/30 hover:scale-105 transition-transform duration-300">
+          <MapPin className="h-12 w-12 text-white" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Where will you hike?</h2>
-        <p className="text-gray-600">Search for your hiking location using Google Maps</p>
+        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-orange-500 to-amber-500 mb-3">
+          Where will you hike?
+        </h2>
+        <p className="text-gray-600 text-lg">Search for your hiking location using Google Maps</p>
       </div>
 
       <div>
         <label htmlFor="location" className="block text-base font-bold text-gray-900 mb-3">
-          Hiking location *
+          Hiking location <span className="text-red-500">*</span>
         </label>
         <GooglePlacesAutocomplete
           value={watchedValues.location}
@@ -376,12 +380,14 @@ export default function CreateEventPage() {
 
   const renderDetailsStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-teal-500 rounded-2xl mb-4 shadow-lg">
-          <Compass className="h-10 w-10 text-white" />
+      <div className="text-center mb-10 animate-fade-in">
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-400 rounded-3xl mb-6 shadow-2xl shadow-green-500/30 hover:scale-105 transition-transform duration-300">
+          <Compass className="h-12 w-12 text-white" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Add hike details</h2>
-        <p className="text-gray-600">Help hikers prepare for your adventure</p>
+        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 mb-3">
+          Add hike details
+        </h2>
+        <p className="text-gray-600 text-lg">Help hikers prepare for your adventure</p>
       </div>
 
       {/* Difficulty Level */}
@@ -502,7 +508,7 @@ export default function CreateEventPage() {
 
         <div>
           <label htmlFor="hostName" className="block text-base font-bold text-gray-900 mb-3">
-            Hosted by *
+            Hosted by <span className="text-red-500">*</span>
           </label>
           <MemberAutocomplete
             groupId={groupId}
@@ -541,12 +547,14 @@ export default function CreateEventPage() {
     
     return (
       <div className="space-y-6">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl mb-4 shadow-lg">
-            <Check className="h-10 w-10 text-white" />
+        <div className="text-center mb-10 animate-fade-in">
+          <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-3xl mb-6 shadow-2xl shadow-emerald-500/30 hover:scale-105 transition-transform duration-300">
+            <Check className="h-12 w-12 text-white" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Review your hike</h2>
-          <p className="text-gray-600">Everything look good? You can edit any section before publishing</p>
+          <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 mb-3">
+            Review your hike
+          </h2>
+          <p className="text-gray-600 text-lg max-w-2xl mx-auto">Everything look good? You can edit any section before publishing your adventure!</p>
         </div>
 
         <div className="space-y-4">
@@ -716,18 +724,18 @@ export default function CreateEventPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+        <div className="mb-10 text-center">
+          <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-4 animate-fade-in">
             🏔️ Create a Hike Event
           </h1>
-          <p className="text-gray-600 text-lg">Plan an amazing hiking adventure for your group</p>
+          <p className="text-gray-600 text-xl font-medium">Plan an amazing hiking adventure for your group</p>
         </div>
         
         {renderProgressBar()}
         
-        <div className="bg-white/80 backdrop-blur-sm rounded-3xl p-8 border border-gray-200 shadow-2xl">
+        <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-10 border-2 border-white/50 shadow-2xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-shadow duration-300">
           {renderCurrentStep()}
         </div>
       </div>

@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import VerifyMagicLinkPage from './pages/VerifyMagicLinkPage'
+import EventsPage from './pages/EventsPage'
 import EventDetailPage from './pages/EventDetailPage'
 import CreateEventPage from './pages/CreateEventPage'
 import EditEventPage from './pages/EditEventPage'
@@ -27,6 +28,7 @@ function App() {
         <Route index element={<HomePage />} />  
         <Route path="login" element={<LoginPage />} />
         <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
+        <Route path="events" element={<EventsPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />
         <Route
           path="events/:id/edit"

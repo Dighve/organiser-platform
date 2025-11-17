@@ -54,6 +54,11 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
            "AND (LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+           "OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(e.location) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(e.difficultyLevel) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(e.group.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(e.group.primaryOrganiser.displayName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+           "OR LOWER(e.group.primaryOrganiser.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") LocalDateTime now, Pageable pageable);
 }

@@ -195,30 +195,30 @@ export default function EditEventPage() {
     const progress = ((currentStep + 1) / Object.keys(STEPS).length) * 100
     
     return (
-      <div className="mb-8">
+      <div className="mb-10">
         <div className="flex items-center justify-between mb-4">
           {Object.keys(STEPS).map((_, index) => (
             <div key={index} className="flex items-center flex-1">
               <div className={`
-                flex items-center justify-center w-10 h-10 rounded-full font-bold text-sm
+                flex items-center justify-center w-12 h-12 rounded-full font-bold text-sm
                 ${index <= currentStep 
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg' 
+                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110' 
                   : 'bg-gray-200 text-gray-500'}
-                transition-all duration-300
+                transition-all duration-500 transform
               `}>
-                {index < currentStep ? <Check className="h-5 w-5" /> : index + 1}
+                {index < currentStep ? <Check className="h-6 w-6" /> : index + 1}
               </div>
               {index < Object.keys(STEPS).length - 1 && (
                 <div className={`
-                  flex-1 h-1 mx-2
+                  flex-1 h-2 mx-3 rounded-full
                   ${index < currentStep ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-200'}
-                  transition-all duration-300
+                  transition-all duration-500
                 `} />
               )}
             </div>
           ))}
         </div>
-        <p className="text-center text-sm font-semibold text-gray-600">
+        <p className="text-center text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
           Step {currentStep + 1} of {Object.keys(STEPS).length}: {STEP_TITLES[currentStep]}
         </p>
       </div>
@@ -227,81 +227,96 @@ export default function EditEventPage() {
 
   if (eventLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
-        <div className="animate-pulse text-purple-600">Loading event...</div>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl mb-4 shadow-2xl animate-pulse">
+            <Edit2 className="h-10 w-10 text-white" />
+          </div>
+          <div className="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">Loading event...</div>
+        </div>
       </div>
     )
   }
 
   if (!event) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Event not found</h2>
-          <button onClick={() => navigate('/')} className="text-purple-600 hover:underline">Go back home</button>
+          <h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-4">Event not found</h2>
+          <button onClick={() => navigate('/')} className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-lg transition-all">Go back home</button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-10">
           <button
             onClick={() => navigate(`/events/${id}`)}
-            className="flex items-center text-gray-600 hover:text-purple-600 mb-4 font-semibold transition-colors"
+            className="flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors group"
           >
-            <ArrowLeft className="h-5 w-5 mr-2" />
+            <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
             Back to Event
           </button>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center">
-              <Edit2 className="h-6 w-6 text-white" />
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 via-pink-600 to-orange-500 mb-4 shadow-2xl shadow-purple-500/30 hover:scale-105 transition-transform duration-300">
+              <Edit2 className="h-10 w-10 text-white" />
             </div>
-            <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-3 animate-fade-in">
               Edit Event
             </h1>
+            <p className="text-gray-600 text-xl font-medium">Update your hiking adventure details</p>
           </div>
-          <p className="text-gray-600">Update your event details below</p>
         </div>
 
         {/* Progress Bar */}
         {renderProgressBar()}
 
         {/* Form */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/20">
+        <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-10 shadow-2xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-shadow duration-300 border-2 border-white/50">
           <form onSubmit={handleSubmit(currentStep === STEPS.REVIEW ? onFinalSubmit : onStepSubmit)}>
             
             {/* Step Content */}
             {currentStep === STEPS.BASICS && (
-              <div className="space-y-6">
+              <div className="space-y-8">
+                <div className="text-center mb-10 animate-fade-in">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 rounded-3xl mb-6 shadow-2xl shadow-purple-500/30 hover:scale-105 transition-transform duration-300">
+                    <Mountain className="h-12 w-12 text-white" />
+                  </div>
+                  <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 mb-3">
+                    Update the basics
+                  </h2>
+                  <p className="text-gray-600 text-lg">Edit your event title, description, and dates</p>
+                </div>
+                
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Event Title *</label>
+                  <label className="block text-base font-bold text-gray-900 mb-3">Event Title <span className="text-red-500">*</span></label>
                   <input
                     type="text"
                     {...register('title', { required: 'Title is required' })}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
+                    className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all"
                     placeholder="e.g., Morning Hike at Box Hill"
                   />
                   {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Description *</label>
+                  <label className="block text-base font-bold text-gray-900 mb-3">Description <span className="text-red-500">*</span></label>
                   <textarea
                     {...register('description', { required: 'Description is required' })}
                     rows={6}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    placeholder="Describe your hike..."
+                    className="w-full px-4 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all resize-none"
+                    placeholder="Describe your hike, meeting point, what to expect..."
                   />
                   {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Start Date *</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Start Date <span className="text-red-500">*</span></label>
                     <input
                       type="date"
                       {...register('eventDate', { required: 'Start date is required' })}
@@ -321,7 +336,7 @@ export default function EditEventPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Start Time *</label>
+                    <label className="block text-sm font-bold text-gray-700 mb-2">Start Time <span className="text-red-500">*</span></label>
                     <input
                       type="time"
                       {...register('startTime', { required: 'Start time is required' })}
@@ -337,7 +352,7 @@ export default function EditEventPage() {
                       {...register('endTime')}
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     />
-                    <p className="text-xs text-gray-500 mt-1">Optional for single-day events</p>
+                    <p className="text-xs text-gray-500 mt-1">Approximate finish time (optional)</p>
                   </div>
                 </div>
 
@@ -359,9 +374,19 @@ export default function EditEventPage() {
             )}
 
             {currentStep === STEPS.LOCATION && (
-              <div className="space-y-6">
+              <div className="space-y-8">
+                <div className="text-center mb-10 animate-fade-in">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-pink-500 via-orange-500 to-amber-400 rounded-3xl mb-6 shadow-2xl shadow-pink-500/30 hover:scale-105 transition-transform duration-300">
+                    <MapPin className="h-12 w-12 text-white" />
+                  </div>
+                  <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-orange-500 to-amber-500 mb-3">
+                    Update location
+                  </h2>
+                  <p className="text-gray-600 text-lg">Where will this hike take place?</p>
+                </div>
+                
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Location *</label>
+                  <label className="block text-base font-bold text-gray-900 mb-3">Hiking location <span className="text-red-500">*</span></label>
                   <GooglePlacesAutocomplete
                     onPlaceSelect={(place) => {
                       setValue('location', place.formatted_address)
@@ -384,10 +409,23 @@ export default function EditEventPage() {
             )}
 
             {currentStep === STEPS.DETAILS && (
-              <div className="space-y-6">
+              <div className="space-y-8">
+                <div className="text-center mb-10 animate-fade-in">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-400 rounded-3xl mb-6 shadow-2xl shadow-green-500/30 hover:scale-105 transition-transform duration-300">
+                    <Compass className="h-12 w-12 text-white" />
+                  </div>
+                  <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 mb-3">
+                    Update hike details
+                  </h2>
+                  <p className="text-gray-600 text-lg">Edit difficulty, trail stats, and requirements</p>
+                </div>
+                
                 {/* Difficulty Level */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Difficulty Level</label>
+                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-6 border-2 border-orange-200">
+                  <label className="block text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-orange-600" />
+                    Difficulty Level
+                  </label>
                   <div className="grid grid-cols-2 gap-3">
                     {DIFFICULTY_OPTIONS.map((option) => (
                       <label
@@ -515,7 +553,7 @@ export default function EditEventPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Hosted by *</label>
+                  <label className="block text-sm font-bold text-gray-700 mb-2">Hosted by <span className="text-red-500">*</span></label>
                   <MemberAutocomplete
                     groupId={event?.groupId}
                     value={watchedValues.hostName}
@@ -531,12 +569,14 @@ export default function EditEventPage() {
 
             {currentStep === STEPS.REVIEW && (
               <div className="space-y-6">
-                <div className="text-center mb-8">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-green-500 to-emerald-500 rounded-2xl mb-4 shadow-lg">
-                    <Check className="h-10 w-10 text-white" />
+                <div className="text-center mb-10 animate-fade-in">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 rounded-3xl mb-6 shadow-2xl shadow-emerald-500/30 hover:scale-105 transition-transform duration-300">
+                    <Check className="h-12 w-12 text-white" />
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-900 mb-2">Review your changes</h2>
-                  <p className="text-gray-600">Everything look good? You can edit any section before updating</p>
+                  <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 mb-3">
+                    Review your changes
+                  </h2>
+                  <p className="text-gray-600 text-lg max-w-2xl mx-auto">Everything look good? You can edit any section before updating</p>
                 </div>
 
                 <div className="space-y-4">
@@ -698,30 +738,34 @@ export default function EditEventPage() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t border-gray-200">
+            <div className="flex justify-between mt-8 pt-6 border-t-2 border-gray-100">
               {currentStep > STEPS.BASICS && (
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 hover:border-purple-500 hover:bg-purple-50 transition-all font-semibold"
+                  className="flex items-center gap-2 px-8 py-4 rounded-xl bg-gray-100 text-gray-700 font-bold text-lg hover:bg-gray-200 transition-all"
                 >
                   <ArrowLeft className="h-5 w-5" />
-                  Previous
+                  Back
                 </button>
               )}
               
               <button
                 type="submit"
-                className="ml-auto flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all font-bold"
+                className={`ml-auto flex items-center gap-2 px-10 py-4 rounded-xl text-white font-bold text-lg hover:shadow-xl transition-all transform hover:scale-105 ${
+                  currentStep === STEPS.REVIEW 
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:shadow-green-500/50' 
+                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:shadow-purple-500/50'
+                }`}
               >
                 {currentStep === STEPS.REVIEW ? (
                   <>
-                    <Check className="h-5 w-5" />
+                    <Check className="h-6 w-6" />
                     Update Event
                   </>
                 ) : (
                   <>
-                    Next
+                    Continue
                     <ArrowRight className="h-5 w-5" />
                   </>
                 )}

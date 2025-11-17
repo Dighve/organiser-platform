@@ -30,7 +30,7 @@ export default function Layout() {
   const handleSearch = (e) => {
     e.preventDefault()
     if (searchQuery.trim()) {
-      navigate(`/?search=${encodeURIComponent(searchQuery.trim())}`)
+      navigate(`/events?search=${encodeURIComponent(searchQuery.trim())}`)
       setSearchQuery('')
     }
   }
