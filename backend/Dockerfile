@@ -30,5 +30,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
 # Expose port (Render will provide PORT env var)
 EXPOSE 8080
 
-# Use shell form to allow environment variable substitution
-ENTRYPOINT java ${JAVA_TOOL_OPTIONS} -Dserver.port=${PORT:-8080} -jar app.jar
+# Use exec form with shell to properly expand environment variables
+# Bind to 0.0.0.0 to accept connections from outside the container
+ENTRYPOINT ["sh", "-c", "java ${JAVA_TOOL_OPTIONS} -Dserver.port=${PORT:-8080} -Dserver.address=0.0.0.0 -jar app.jar"]
