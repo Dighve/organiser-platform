@@ -76,15 +76,29 @@ export default function HomePage() {
         {heroBackground}
         <div className="relative z-10 max-w-5xl mx-auto px-4 py-20">
           <div className="inline-block mb-6 px-6 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-semibold text-sm border border-white/30">
-            🏔️ Your Adventure Starts Here
+            🌲 Your Outdoor Adventure Starts Here
           </div>
           <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white mb-6 drop-shadow-2xl leading-tight">
             Discover Amazing <br/>
-            <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">Hiking Events</span>
+            <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">Outdoor Events</span>
           </h1>
-          <p className="text-xl sm:text-2xl text-white/90 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
-            Join a community of adventurers. Find your next trail, connect with fellow hikers, and create unforgettable memories.
+          <p className="text-xl sm:text-2xl text-white/90 mb-8 max-w-2xl mx-auto font-light leading-relaxed">
+            Join a community of outdoor enthusiasts. Find your next adventure, connect with like-minded people, and create unforgettable memories.
           </p>
+          {/* Coming Soon Activities Banner */}
+          <div className="mb-8 max-w-3xl mx-auto">
+            <div className="bg-white/10 backdrop-blur-md border-2 border-white/30 rounded-2xl p-4">
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <span className="text-white/80 font-semibold text-sm">Currently:</span>
+                <span className="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-bold shadow-lg">🥾 Hiking</span>
+                <span className="text-white/60 text-sm">|</span>
+                <span className="text-white/80 font-semibold text-sm">Coming Soon:</span>
+                <span className="px-3 py-1.5 bg-white/20 text-white/70 rounded-full text-sm font-semibold">🏃 Running</span>
+                <span className="px-3 py-1.5 bg-white/20 text-white/70 rounded-full text-sm font-semibold">🧗 Climbing</span>
+                <span className="px-3 py-1.5 bg-white/20 text-white/70 rounded-full text-sm font-semibold">🏊 Swimming</span>
+              </div>
+            </div>
+          </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               className="group relative px-10 py-4 text-lg font-bold rounded-full shadow-2xl bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-orange-500/50 transform hover:scale-105 transition-all duration-300 overflow-hidden"
@@ -107,7 +121,7 @@ export default function HomePage() {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">1000+</div>
-              <div className="text-sm">Hikers</div>
+              <div className="text-sm">Members</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold">50+</div>

@@ -65,7 +65,7 @@ export default function Layout() {
                       <rect x="32.5" y="36" width="1" height="6" rx="0.5" fill="white" opacity="0.95" transform="rotate(-30 32.5 36)" />
                     </svg>
                   </div>
-                  <span className="text-2xl font-extrabold text-white drop-shadow-md hidden sm:block">HikeHub</span>
+                  <span className="text-2xl font-extrabold text-white drop-shadow-md hidden sm:block">OutMeets</span>
                 </div>
               </Link>
             </div>
@@ -78,7 +78,7 @@ export default function Layout() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search hiking events..."
+                    placeholder="Search events..."
                     className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white focus:border-white bg-white/20 backdrop-blur-md placeholder-white/70 text-white font-medium transition-all"
                   />
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
@@ -162,7 +162,7 @@ export default function Layout() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search hiking events..."
+                    placeholder="Search events..."
                     className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white bg-white/20 backdrop-blur-sm placeholder-white/70 text-white font-medium"
                   />
                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
@@ -236,10 +236,10 @@ export default function Layout() {
                 <polygon points="14,44 26,18 38,44" fill="#F59E0B" opacity="0.9" />
                 <polygon points="26,44 36,28 46,44" fill="#FDE68A" opacity="0.8" />
               </svg>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">HikeHub</span>
+              <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">OutMeets</span>
             </div>
             <div className="text-center text-gray-400">
-              <p className="text-sm">&copy; 2025 HikeHub. Your adventure starts here. All rights reserved.</p>
+              <p className="text-sm">&copy; 2025 OutMeets. Connect through outdoor adventures. All rights reserved.</p>
             </div>
           </div>
         </div>

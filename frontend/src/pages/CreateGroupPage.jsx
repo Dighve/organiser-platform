@@ -15,7 +15,7 @@ export default function CreateGroupPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    activityId: 1, // Hiking - the only activity type for HikeHub
+    activityId: 1, // Currently: Hiking (Running, Climbing, Swimming coming soon)
     location: '',
     imageUrl: '',
     maxMembers: '',
@@ -116,7 +116,22 @@ export default function CreateGroupPage() {
           Back to Home
         </button>
         
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">Create New Hiking Group</h1>
+        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">Create New Group</h1>
+        
+        {/* Coming Soon Activities Banner */}
+        <div className="mb-8">
+          <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 border-2 border-purple-200 rounded-2xl p-4">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <span className="text-gray-700 font-semibold text-sm">Currently:</span>
+              <span className="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-bold shadow-lg">🥾 Hiking</span>
+              <span className="text-gray-400 text-sm">|</span>
+              <span className="text-gray-700 font-semibold text-sm">Coming Soon:</span>
+              <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏃 Running</span>
+              <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🧗 Climbing</span>
+              <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏊 Swimming</span>
+            </div>
+          </div>
+        </div>
         
         <form onSubmit={handleSubmit} className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-2xl space-y-6">
          

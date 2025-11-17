@@ -730,7 +730,22 @@ export default function CreateEventPage() {
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-4 animate-fade-in">
             🏔️ Create a Hike Event
           </h1>
-          <p className="text-gray-600 text-xl font-medium">Plan an amazing hiking adventure for your group</p>
+          <p className="text-gray-600 text-xl font-medium mb-6">Plan an amazing hiking adventure for your group</p>
+          
+          {/* Coming Soon Activities Banner */}
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 border-2 border-purple-200 rounded-2xl p-4">
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <span className="text-gray-700 font-semibold text-sm">Currently:</span>
+                <span className="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-bold shadow-lg">🥾 Hiking</span>
+                <span className="text-gray-400 text-sm">|</span>
+                <span className="text-gray-700 font-semibold text-sm">Coming Soon:</span>
+                <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏃 Running</span>
+                <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🧗 Climbing</span>
+                <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏊 Swimming</span>
+              </div>
+            </div>
+          </div>
         </div>
         
         {renderProgressBar()}
