@@ -42,6 +42,7 @@ export default function EventDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['event', id])
       queryClient.invalidateQueries(['eventParticipants', id])
+      queryClient.invalidateQueries(['myEvents']) // Update home page "Your Events" section
       toast.success('Successfully joined the event!')
     },
     onError: (error) => {
@@ -54,6 +55,7 @@ export default function EventDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['event', id])
       queryClient.invalidateQueries(['eventParticipants', id])
+      queryClient.invalidateQueries(['myEvents']) // Update home page "Your Events" section
       toast.success('Successfully left the event')
     },
     onError: (error) => {

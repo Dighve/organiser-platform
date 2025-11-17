@@ -7,7 +7,8 @@ import { useAuthStore } from '../store/authStore'
 export default function HomePage() {
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()
-  const [activeGroupTab, setActiveGroupTab] = useState('organiser')
+  const [activeGroupTab, setActiveGroupTab] = useState('member')
+  const [hasInitializedTab, setHasInitializedTab] = useState(false)
   
   // Fetch user's subscribed groups (only if authenticated)
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
@@ -41,6 +42,18 @@ export default function HomePage() {
   const organisedGroups = organisedGroupsData?.data || []
   const yourEvents = yourEventsData?.data?.content || []
   const allEvents = allEventsData?.data?.content || []
+
+  // Smart tab selection: Only show organiser tab if user has organised groups
+  useEffect(() => {
+    if (!hasInitializedTab && !organisedGroupsLoading && user?.isOrganiser) {
+      // If organiser has groups, default to organiser tab
+      // If organiser has no groups, stay on member tab
+      if (organisedGroups.length > 0) {
+        setActiveGroupTab('organiser')
+      }
+      setHasInitializedTab(true)
+    }
+  }, [organisedGroupsLoading, organisedGroups.length, user?.isOrganiser, hasInitializedTab])
 
   // Check if user has already clicked discover before
   const [showDiscover, setShowDiscover] = useState(() => {
