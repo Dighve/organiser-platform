@@ -27,7 +27,7 @@ services:
       
       # Frontend URL (update after deploying frontend to Netlify)
       - key: FRONTEND_URL
-        value: https://hikehub-poc.netlify.app
+        value: https://www.outmeets.com
       
       # Email Configuration (Resend API)
       - key: RESEND_API_KEY
