@@ -7,12 +7,14 @@ import java.math.BigDecimal;
 import com.organiser.platform.repository.*;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,7 @@ public class EventService {
     private final MemberRepository memberRepository;
     private final GroupRepository groupRepository;
     private final GroupService groupService;
+    private final EventParticipantRepository eventParticipantRepository;
     
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
@@ -188,6 +191,39 @@ public class EventService {
     public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable) {
         return eventRepository.findByOrganiserId(organiserId, pageable)
                 .map(this::convertToDTO);
+    }
+    
+    @Transactional(readOnly = true)
+    public Page<EventDTO> getEventsByParticipant(Long memberId, Pageable pageable) {
+        // Get all event participations for this member
+        List<EventParticipant> participations = eventParticipantRepository.findByMemberId(memberId);
+        
+        // Extract event IDs
+        List<Long> eventIds = participations.stream()
+                .map(ep -> ep.getEvent().getId())
+                .collect(Collectors.toList());
+        
+        if (eventIds.isEmpty()) {
+            return Page.empty(pageable);
+        }
+        
+        // Get events by IDs
+        List<Event> events = eventRepository.findAllById(eventIds);
+        
+        // Sort by event date descending
+        events.sort((e1, e2) -> e2.getEventDate().compareTo(e1.getEventDate()));
+        
+        // Convert to DTOs
+        List<EventDTO> eventDTOs = events.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        
+        // Create pageable response
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), eventDTOs.size());
+        List<EventDTO> pageContent = eventDTOs.subList(start, end);
+        
+        return new PageImpl<>(pageContent, pageable, eventDTOs.size());
     }
     
     @Transactional(readOnly = true)

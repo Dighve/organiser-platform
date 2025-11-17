@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus } from 'lucide-react'
+import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Type, FileText, Image, Timer } from 'lucide-react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
@@ -211,63 +211,120 @@ export default function CreateEventPage() {
       </div>
 
       <div>
-        <label htmlFor="title" className="block text-base font-bold text-gray-900 mb-3">
-          Title <span className="text-red-500">*</span>
+        <label htmlFor="title" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
+            <Type className="h-4 w-4 text-white" />
+          </div>
+          Event Title <span className="text-red-500">*</span>
         </label>
-        <input
-          {...register('title', { required: 'Event title is required' })}
-          type="text"
-          className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all"
-          placeholder="e.g., Sunday Morning Hike in Peak District"
-        />
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+          <input
+            {...register('title', { required: 'Event title is required' })}
+            type="text"
+            className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-purple-300 bg-white"
+            placeholder="e.g., Sunday Morning Hike in Peak District"
+          />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-500">
+            <Mountain className="h-6 w-6" />
+          </div>
+        </div>
         {errors.title && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.title.message}</p>}
-        <p className="text-sm text-gray-500 mt-2">Choose a name that clearly describes your hike</p>
+        <p className="text-sm text-gray-500 mt-2 ml-1">💡 Choose a name that clearly describes your hike</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 gap-6">
         <div>
-          <label htmlFor="eventDate" className="block text-base font-bold text-gray-900 mb-3">Date <span className="text-red-500">*</span></label>
-          <input 
-            {...register('eventDate', { required: 'Event date is required' })} 
-            type="date" 
-            className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
-          />
+          <label htmlFor="eventDate" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-orange-500 shadow-lg">
+              <Calendar className="h-4 w-4 text-white" />
+            </div>
+            Event Date <span className="text-red-500">*</span>
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <input 
+              {...register('eventDate', { required: 'Event date is required' })} 
+              type="date" 
+              className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-pink-300 bg-white" 
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500">
+              <Calendar className="h-6 w-6" />
+            </div>
+          </div>
           {errors.eventDate && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.eventDate.message}</p>}
         </div>
         <div>
-          <label htmlFor="startTime" className="block text-base font-bold text-gray-900 mb-3">Start time <span className="text-red-500">*</span></label>
-          <input 
-            {...register('startTime', { required: 'Start time is required' })} 
-            type="time" 
-            className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
-          />
+          <label htmlFor="startTime" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg">
+              <Clock className="h-4 w-4 text-white" />
+            </div>
+            Start Time <span className="text-red-500">*</span>
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <input 
+              {...register('startTime', { required: 'Start time is required' })} 
+              type="time" 
+              className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-orange-300 bg-white" 
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500">
+              <Clock className="h-6 w-6" />
+            </div>
+          </div>
           {errors.startTime && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.startTime.message}</p>}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="mb-4">
-          <label htmlFor="endDate" className="block text-base font-bold text-gray-900 mb-3">End Date</label>
-          <input 
-            type="date" 
-            className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
-          />
+      <div className="grid grid-cols-2 gap-6">
+        <div>
+          <label htmlFor="endDate" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg">
+              <Calendar className="h-4 w-4 text-white" />
+            </div>
+            End Date
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <input 
+              {...register('endDate')} 
+              type="date" 
+              className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-indigo-300 bg-white" 
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500">
+              <Calendar className="h-6 w-6" />
+            </div>
+          </div>
           {errors.endDate && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.endDate.message}</p>}
+          <p className="text-sm text-gray-500 mt-2 ml-1">For multi-day hikes (optional)</p>
         </div>
         <div>
-          <label htmlFor="endTime" className="block text-base font-bold text-gray-900 mb-3">End time</label>
-          <input 
-            {...register('endTime')} 
-            type="time" 
-            className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
-          />
+          <label htmlFor="endTime" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
+              <Timer className="h-4 w-4 text-white" />
+            </div>
+            End Time
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <input 
+              {...register('endTime')} 
+              type="time" 
+              className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-blue-300 bg-white" 
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500">
+              <Timer className="h-6 w-6" />
+            </div>
+          </div>
           {errors.endTime && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.endTime.message}</p>}
-          <p className="text-sm text-gray-500 mt-2">Approximate finish time (optional)</p>
+          <p className="text-sm text-gray-500 mt-2 ml-1">Approximate finish time (optional)</p>
         </div>
       </div>
 
       <div>
-        <label htmlFor="imageUrl" className="block text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <Upload className="h-5 w-5 text-purple-600" />
+        <label htmlFor="imageUrl" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
+            <Image className="h-4 w-4 text-white" />
+          </div>
           Featured Photo
         </label>
         <ImageUpload
@@ -281,15 +338,21 @@ export default function CreateEventPage() {
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-base font-bold text-gray-900 mb-3">
-          Description
+        <label htmlFor="description" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg">
+            <FileText className="h-4 w-4 text-white" />
+          </div>
+          Event Description
         </label>
-        <textarea 
-          {...register('description')} 
-          className="w-full px-4 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all min-h-[120px] resize-none" 
-          placeholder="Describe your hike, meeting point, what to expect..."
-        />
-        <p className="text-sm text-gray-500 mt-2">Help hikers know what to expect on this adventure</p>
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+          <textarea 
+            {...register('description')} 
+            className="relative w-full px-6 py-5 text-base border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-cyan-300 bg-white min-h-[140px] resize-none" 
+            placeholder="Describe your hike, meeting point, what to expect..."
+          />
+        </div>
+        <p className="text-sm text-gray-500 mt-2 ml-1">💡 Help hikers know what to expect on this adventure</p>
       </div>
 
       <div className="flex justify-end pt-4">
@@ -429,49 +492,77 @@ export default function CreateEventPage() {
 
       {/* Hike Stats */}
       <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border-2 border-blue-200">
-        <h3 className="font-bold text-gray-900 text-lg mb-4 flex items-center gap-2">
+        <h3 className="font-bold text-gray-900 text-lg mb-5 flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-blue-600" />
-          Trail statistics
+          Trail Statistics (Optional)
         </h3>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Distance (km)</label>
-            <input 
-              {...register('distanceKm')} 
-              type="number" 
-              step="0.1" 
-              min="0" 
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium transition-all bg-white" 
-              placeholder="12.5" 
-            />
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 shadow-md">
+                <Compass className="h-3.5 w-3.5 text-white" />
+              </div>
+              Distance (km)
+            </label>
+            <div className="relative group">
+              <input 
+                {...register('distanceKm')} 
+                type="number" 
+                step="0.1" 
+                min="0" 
+                className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all bg-white shadow-sm hover:shadow-md hover:border-blue-300" 
+                placeholder="12.5" 
+              />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 font-bold text-sm">
+                KM
+              </div>
+            </div>
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Elevation gain (m)</label>
-            <input 
-              {...register('elevationGainM')} 
-              type="number" 
-              min="0" 
-              className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-medium transition-all bg-white" 
-              placeholder="500" 
-            />
+            <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-3">
+              <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 shadow-md">
+                <TrendingUp className="h-3.5 w-3.5 text-white" />
+              </div>
+              Elevation Gain (m)
+            </label>
+            <div className="relative group">
+              <input 
+                {...register('elevationGainM')} 
+                type="number" 
+                min="0" 
+                className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 font-medium transition-all bg-white shadow-sm hover:shadow-md hover:border-emerald-300" 
+                placeholder="500" 
+              />
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-sm">
+                M
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Group Size */}
       <div>
-        <label className="block text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
-          <Users className="h-5 w-5 text-purple-600" />
-          Max participants
+        <label className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
+            <Users className="h-4 w-4 text-white" />
+          </div>
+          Max Participants
         </label>
-        <input 
-          {...register('maxParticipants')} 
-          type="number" 
-          min="1" 
-          className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
-          placeholder="20" 
-        />
-        <p className="text-sm text-gray-500 mt-2">Leave blank for unlimited participants</p>
+        <div className="relative group">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+          <input 
+            {...register('maxParticipants')} 
+            type="number" 
+            min="1" 
+            className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-purple-300 bg-white" 
+            placeholder="20" 
+          />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-500">
+            <Users className="h-6 w-6" />
+          </div>
+        </div>
+        <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited participants</p>
       </div>
 
       {/* Required Gear */}
@@ -491,19 +582,27 @@ export default function CreateEventPage() {
       {/* Additional Info */}
       <div className="space-y-4">
         <div>
-          <label className="block text-base font-bold text-gray-900 mb-3">
-            <DollarSign className="inline h-5 w-5 text-green-600 mr-1" />
-            Cost per person (£)
+          <label className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg">
+              <DollarSign className="h-4 w-4 text-white" />
+            </div>
+            Cost per Person (£)
           </label>
-          <input 
-            {...register('price')} 
-            type="number" 
-            step="0.01" 
-            min="0" 
-            className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all" 
-            placeholder="0.00" 
-          />
-          <p className="text-sm text-gray-500 mt-2">Leave as 0 if the hike is free</p>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <input 
+              {...register('price')} 
+              type="number" 
+              step="0.01" 
+              min="0" 
+              className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-green-500/20 focus:border-green-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-green-300 bg-white" 
+              placeholder="0.00" 
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-green-500 font-bold text-xl">
+              £
+            </div>
+          </div>
+          <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave as 0 if the hike is free</p>
         </div>
 
         <div>

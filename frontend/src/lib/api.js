@@ -101,7 +101,12 @@ export const eventsAPI = {
   
   deleteEvent: (id) => api.delete(`/events/${id}`),
   
+  // Get events where user is a participant (joined events)
   getMyEvents: (page = 0, size = 20) =>
+    api.get(`/events/my-joined-events?page=${page}&size=${size}`),
+  
+  // Get events created by the organiser
+  getMyOrganisedEvents: (page = 0, size = 20) =>
     api.get(`/events/organiser/my-events?page=${page}&size=${size}`),
   
   getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),

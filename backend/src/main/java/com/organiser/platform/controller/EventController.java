@@ -135,6 +135,17 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable));
     }
     
+    @GetMapping("/my-joined-events")
+    public ResponseEntity<Page<EventDTO>> getMyJoinedEvents(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(eventService.getEventsByParticipant(userId, pageable));
+    }
+    
     @GetMapping("/public/{id}/participants")
     public ResponseEntity<?> getEventParticipants(@PathVariable Long id) {
         return ResponseEntity.ok(eventService.getEventParticipants(id));
