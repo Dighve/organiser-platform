@@ -25,9 +25,9 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
       
-      # Frontend URL (CORS configuration)
+      # Frontend URL (update after deploying frontend to Netlify)
       - key: FRONTEND_URL
-        value: https://www.outmeets.com
+        value: https://hikehub-poc.netlify.app
       
       # Email Configuration (Resend API)
       - key: RESEND_API_KEY

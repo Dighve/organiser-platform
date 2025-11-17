@@ -76,7 +76,7 @@ public class SecurityConfig {
                 "http://localhost:5173",
                 "https://organiser-platform.netlify.app",
                 "https://hikehub-poc.netlify.app",
-                "https://www.outmeets.com"  // FIXED: Removed trailing slash for exact match
+                "https://www.outmeets.com/"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));

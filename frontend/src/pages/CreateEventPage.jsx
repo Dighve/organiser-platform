@@ -39,6 +39,7 @@ export default function CreateEventPage() {
   const [currentStep, setCurrentStep] = useState(STEPS.BASICS)
   const [formData, setFormData] = useState({})
   const [selectedRequirements, setSelectedRequirements] = useState([])
+  const [isSubmitting, setIsSubmitting] = useState(false) // Prevent double submissions
   const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -104,6 +105,13 @@ export default function CreateEventPage() {
       return
     }
     
+    // Prevent double submission
+    if (isSubmitting) {
+      return
+    }
+    
+    setIsSubmitting(true)
+    
     const payload = {
       groupId: Number(groupId),
       title: data.title,
@@ -143,6 +151,8 @@ export default function CreateEventPage() {
     } catch (error) {
       console.error('Error creating event:', error)
       toast.error('Failed to create event. Please try again.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -677,10 +687,11 @@ export default function CreateEventPage() {
           </button>
           <button 
             type="button" 
-            className="py-4 px-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg rounded-xl hover:shadow-2xl hover:shadow-green-500/50 transition-all transform hover:scale-105 flex items-center gap-2" 
+            className="py-4 px-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg rounded-xl hover:shadow-2xl hover:shadow-green-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2" 
             onClick={() => handleSubmit(onFinalSubmit)()}
+            disabled={isSubmitting}
           >
-            <Check className="h-6 w-6" /> Publish Hike Event
+            <Check className="h-6 w-6" /> {isSubmitting ? 'Publishing...' : 'Publish Hike Event'}
           </button>
         </div>
       </div>

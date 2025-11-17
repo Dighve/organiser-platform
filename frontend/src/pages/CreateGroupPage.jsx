@@ -160,8 +160,8 @@ export default function CreateGroupPage() {
           {/* Cover Photo */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Upload className="h-4 w-4 text-purple-600" />
-              Cover Photo / Banner
+              <Upload className="h-5 w-5" />
+              {createGroupMutation.isLoading ? 'Creating...' : 'Create Group'} Photo / Banner
             </label>
             <ImageUpload
               value={formData.imageUrl}
@@ -254,7 +254,7 @@ export default function CreateGroupPage() {
             <button
               type="submit"
               disabled={createGroupMutation.isLoading}
-              className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
+              className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
             >
               {createGroupMutation.isLoading ? (
                 <>
