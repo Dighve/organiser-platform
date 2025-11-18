@@ -1,6 +1,7 @@
 # Backend (Java/Gradle)
 backend/.gradle/
 backend/build/
+backend/target/
 backend/out/
 backend/*.jar
 backend/*.war
