@@ -6,6 +6,7 @@ import { useAuthStore } from '../store/authStore'
 import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
+import ProfileAvatar from '../components/ProfileAvatar'
 import { toast } from 'react-hot-toast'
 
 export default function GroupDetailPage() {
@@ -600,9 +601,13 @@ export default function GroupDetailPage() {
                           onClick={() => navigate(`/members/${member.id}`)}
                           className="flex items-center space-x-4 p-4 bg-white/60 backdrop-blur-sm rounded-2xl hover:shadow-lg transition-all border border-gray-100 cursor-pointer group hover:-translate-y-1"
                         >
-                          <div className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl flex-shrink-0 group-hover:scale-110 transition-transform">
-                            {member.displayName ? member.displayName.charAt(0).toUpperCase() : member.email.charAt(0).toUpperCase()}
-                          </div>
+                          <ProfileAvatar 
+                            member={member} 
+                            size="lg" 
+                            className="group-hover:scale-110 transition-transform"
+                            showBadge={member.isOrganiser}
+                            badgeType="organiser"
+                          />
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-gray-900 text-lg truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
                               {member.displayName || member.email.split('@')[0]}
@@ -647,9 +652,13 @@ export default function GroupDetailPage() {
                           className="cursor-pointer group relative"
                           title={member.displayName || member.email.split('@')[0]}
                         >
-                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl group-hover:scale-110 group-hover:shadow-lg transition-all duration-200 border-2 border-white shadow-md">
-                            {member.displayName ? member.displayName.charAt(0).toUpperCase() : member.email.charAt(0).toUpperCase()}
-                          </div>
+                          <ProfileAvatar 
+                            member={member} 
+                            size="xl" 
+                            className="group-hover:scale-110 group-hover:shadow-lg transition-all duration-200 border-2 border-white shadow-md"
+                            showBadge={member.isOrganiser}
+                            badgeType="organiser"
+                          />
                           {member.isOrganiser && (
                             <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full flex items-center justify-center text-white text-xs border-2 border-white">
                               👑

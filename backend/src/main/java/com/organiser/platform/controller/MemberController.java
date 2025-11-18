@@ -1,7 +1,10 @@
 package com.organiser.platform.controller;
 
+import com.organiser.platform.dto.MemberDTO;
+import com.organiser.platform.dto.UpdateMemberProfileRequest;
 import com.organiser.platform.model.Member;
 import com.organiser.platform.service.MemberService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,10 +25,32 @@ public class MemberController {
     }
     
     @GetMapping("/me")
-    public ResponseEntity<Member> getCurrentMember(Authentication authentication) {
+    public ResponseEntity<MemberDTO> getCurrentMember(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
-        Member member = memberService.getMemberById(userId);
+        MemberDTO member = memberService.getMemberDTOById(userId);
         return ResponseEntity.ok(member);
+    }
+    
+    /**
+     * Get member details by ID (for member detail page)
+     * Returns DTO with email, display name, and profile photo
+     */
+    @GetMapping("/{memberId}")
+    public ResponseEntity<MemberDTO> getMemberById(@PathVariable Long memberId) {
+        MemberDTO member = memberService.getMemberDTOById(memberId);
+        return ResponseEntity.ok(member);
+    }
+    
+    /**
+     * Update current user's profile (display name, photo URL)
+     */
+    @PutMapping("/me")
+    public ResponseEntity<MemberDTO> updateProfile(
+            @Valid @RequestBody UpdateMemberProfileRequest request,
+            Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        MemberDTO updatedMember = memberService.updateMemberProfile(userId, request);
+        return ResponseEntity.ok(updatedMember);
     }
     
     private Long getUserIdFromAuth(Authentication authentication) {

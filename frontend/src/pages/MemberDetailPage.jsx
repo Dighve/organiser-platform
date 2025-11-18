@@ -1,25 +1,21 @@
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { groupsAPI, eventsAPI } from '../lib/api'
-import { ArrowLeft, Users, Calendar, MapPin, Mail } from 'lucide-react'
+import { membersAPI } from '../lib/api'
+import { ArrowLeft, Calendar } from 'lucide-react'
 
 export default function MemberDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
 
-  // For now, we'll fetch group members to find this member
-  // In a real app, you'd have a dedicated member API endpoint
-  const [memberInfo, setMemberInfo] = React.useState(null)
-  const [loading, setLoading] = React.useState(true)
+  // Fetch member details
+  const { data: member, isLoading, isError } = useQuery({
+    queryKey: ['member', id],
+    queryFn: () => membersAPI.getMemberById(id).then(res => res.data),
+    enabled: !!id,
+  })
 
-  React.useEffect(() => {
-    // This is a temporary solution - in production, you'd want a dedicated API endpoint
-    // For now, we'll show a placeholder page
-    setLoading(false)
-  }, [id])
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
         <div className="text-center">
@@ -28,6 +24,35 @@ export default function MemberDetailPage() {
         </div>
       </div>
     )
+  }
+
+  if (isError || !member) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Member Not Found</h2>
+          <p className="text-gray-600 mb-6">We couldn't find the member you're looking for.</p>
+          <button
+            onClick={() => navigate(-1)}
+            className="py-3 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Helper function to get initials
+  const getInitials = (name, email) => {
+    if (name && name.trim()) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    }
+    if (email) {
+      return email[0].toUpperCase()
+    }
+    return '?'
   }
 
   return (
@@ -52,55 +77,52 @@ export default function MemberDetailPage() {
           <div className="relative px-8 pb-8">
             {/* Profile Picture - Overlapping header */}
             <div className="flex justify-center -mt-20 mb-6">
-              <div className="h-40 w-40 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-6xl border-8 border-white shadow-2xl">
-                {id ? String(id).charAt(0).toUpperCase() : 'M'}
-              </div>
+              {member.profilePhotoUrl ? (
+                <img
+                  src={member.profilePhotoUrl}
+                  alt={member.displayName || member.email}
+                  className="h-40 w-40 rounded-full border-8 border-white shadow-2xl object-cover"
+                />
+              ) : (
+                <div className="h-40 w-40 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-6xl border-8 border-white shadow-2xl">
+                  {getInitials(member.displayName, member.email)}
+                </div>
+              )}
             </div>
 
             {/* Member Info */}
             <div className="text-center mb-8">
               <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
-                Member Profile
+                {member.displayName || 'OutMeets Member'}
               </h1>
-              <p className="text-gray-500 text-lg">Member ID: {id}</p>
+              {member.isOrganiser && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-pink-100 rounded-full border border-orange-200 mb-3">
+                  <span className="text-lg">💼</span>
+                  <span className="font-semibold text-orange-700">Organiser</span>
+                </div>
+              )}
             </div>
 
-            {/* Info Notice */}
-            <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-8 border border-purple-100 text-center">
-              <div className="text-5xl mb-4">🚧</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Coming Soon</h2>
-              <p className="text-gray-600 mb-6">
-                Member profile pages are currently under development. Soon you'll be able to view:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left max-w-2xl mx-auto">
-                <div className="flex items-start gap-3 bg-white/60 p-4 rounded-xl">
-                  <Users className="h-6 w-6 text-purple-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Member Details</h3>
-                    <p className="text-sm text-gray-600">Name, bio, and interests</p>
-                  </div>
+            {/* Member Details */}
+            <div className="max-w-2xl mx-auto space-y-6">
+              {/* Member Since */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100 text-center">
+                <div className="flex items-center justify-center gap-3 mb-3">
+                  <Calendar className="h-6 w-6 text-purple-600" />
+                  <h3 className="font-bold text-gray-900 text-lg">Member Since</h3>
                 </div>
-                <div className="flex items-start gap-3 bg-white/60 p-4 rounded-xl">
-                  <Calendar className="h-6 w-6 text-orange-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Events Attended</h3>
-                    <p className="text-sm text-gray-600">Past and upcoming events</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 bg-white/60 p-4 rounded-xl">
-                  <Users className="h-6 w-6 text-pink-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Group Memberships</h3>
-                    <p className="text-sm text-gray-600">Groups they've joined</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 bg-white/60 p-4 rounded-xl">
-                  <Mail className="h-6 w-6 text-blue-500 flex-shrink-0 mt-1" />
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Contact Options</h3>
-                    <p className="text-sm text-gray-600">Send messages to members</p>
-                  </div>
-                </div>
+                <p className="text-gray-700 text-2xl font-bold">
+                  {new Date(member.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+
+              {/* Additional Info Coming Soon */}
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 text-center">
+                <div className="text-4xl mb-3">🚀</div>
+                <h3 className="font-bold text-gray-900 text-lg mb-2">More Features Coming Soon!</h3>
+                <p className="text-gray-600 text-sm">
+                  We're working on adding activity history, group memberships, and more details to member profiles.
+                </p>
               </div>
             </div>
 
@@ -116,10 +138,6 @@ export default function MemberDetailPage() {
           </div>
         </div>
 
-        {/* Additional Note */}
-        <div className="mt-6 text-center text-gray-500 text-sm">
-          💡 Tip: In the meantime, you can view member information on the group members page
-        </div>
       </div>
     </div>
   )

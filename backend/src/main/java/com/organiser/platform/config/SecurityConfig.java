@@ -48,7 +48,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/actuator/**"),
                                 new AntPathRequestMatcher("/swagger-ui/**"),
                                 new AntPathRequestMatcher("/v3/api-docs/**"),
-                                new AntPathRequestMatcher("/h2-console/**")
+                                new AntPathRequestMatcher("/h2-console/**"),
+                                new AntPathRequestMatcher("/api/v1/files/**")
                         ).permitAll()
                         // Admin endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**")).hasRole("ADMIN")

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
@@ -26,13 +26,13 @@ export default function BrowseGroupsPage() {
   const { data: myGroupsData, isLoading: myGroupsLoading } = useQuery({
     queryKey: ['myGroups'],
     queryFn: () => groupsAPI.getMyGroups(),
-    enabled: isAuthenticated && activeTab === 'member',
+    enabled: isAuthenticated,
   })
   
   const { data: organisedData, isLoading: organisedLoading } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
-    enabled: isAuthenticated && user?.isOrganiser && activeTab === 'organiser',
+    enabled: isAuthenticated && user?.isOrganiser,
   })
   
   // Mutations
@@ -52,11 +52,43 @@ export default function BrowseGroupsPage() {
     },
   })
   
+  // Filter member groups to exclude groups in organiser tab
+  const filteredMemberGroups = useMemo(() => {
+    const memberGroups = myGroupsData?.data || []
+    const organisedGroups = organisedData?.data || []
+    
+    if (organisedGroups.length === 0) {
+      return memberGroups
+    }
+    
+    const organisedGroupIds = new Set(organisedGroups.map(group => group.id))
+    return memberGroups.filter(group => !organisedGroupIds.has(group.id))
+  }, [myGroupsData?.data, organisedData?.data])
+  
+  // Filter explore groups to exclude groups in both organiser and member tabs
+  const filteredExploreGroups = useMemo(() => {
+    const exploreGroups = data?.data || []
+    const memberGroups = myGroupsData?.data || []
+    const organisedGroups = organisedData?.data || []
+    
+    if (!isAuthenticated || (memberGroups.length === 0 && organisedGroups.length === 0)) {
+      return exploreGroups
+    }
+    
+    // Combine both organised and member group IDs
+    const excludeGroupIds = new Set([
+      ...organisedGroups.map(group => group.id),
+      ...memberGroups.map(group => group.id)
+    ])
+    
+    return exploreGroups.filter(group => !excludeGroupIds.has(group.id))
+  }, [data?.data, myGroupsData?.data, organisedData?.data, isAuthenticated])
+  
   // Get groups based on active tab
   const getTabGroups = () => {
     switch (activeTab) {
-      case 'explore': return data?.data || []
-      case 'member': return myGroupsData?.data || []
+      case 'explore': return filteredExploreGroups
+      case 'member': return filteredMemberGroups
       case 'organiser': return organisedData?.data || []
       default: return []
     }
@@ -208,27 +240,42 @@ export default function BrowseGroupsPage() {
           </TabContent>
         )}
         
-        {activeTab === 'explore' && (
-          <TabContent
-            loading={false}
-            groups={filteredGroups}
-            emptyMessage={searchQuery ? 'Try adjusting your search terms.' : 'Be the first to create a group!'}
-            emptyAction={isAuthenticated && !searchQuery ? () => navigate('/groups/create') : undefined}
-            emptyActionText="Create the First Group"
-            emptyIcon={<Plus className="h-5 w-5" />}
-          >
-            {filteredGroups.map(group => (
-              <GroupCard
-                key={group.id}
-                group={group}
-                mode="explore"
-                navigate={navigate}
-                onSubscribe={handleSubscribe}
-                isSubscribed={subscribedGroupIds.has(group.id)}
-              />
-            ))}
-          </TabContent>
-        )}
+        {activeTab === 'explore' && (() => {
+          const allGroups = data?.data || []
+          const hasGroupsButAllFiltered = allGroups.length > 0 && filteredGroups.length === 0
+          
+          return (
+            <TabContent
+              loading={false}
+              groups={filteredGroups}
+              emptyMessage={
+                searchQuery 
+                  ? 'Try adjusting your search terms.' 
+                  : hasGroupsButAllFiltered 
+                    ? "🎉 You've already joined all available groups!" 
+                    : 'Be the first to create a group!'
+              }
+              emptyAction={
+                isAuthenticated && !searchQuery && !hasGroupsButAllFiltered 
+                  ? () => navigate('/groups/create') 
+                  : undefined
+              }
+              emptyActionText="Create the First Group"
+              emptyIcon={<Plus className="h-5 w-5" />}
+            >
+              {filteredGroups.map(group => (
+                <GroupCard
+                  key={group.id}
+                  group={group}
+                  mode="explore"
+                  navigate={navigate}
+                  onSubscribe={handleSubscribe}
+                  isSubscribed={subscribedGroupIds.has(group.id)}
+                />
+              ))}
+            </TabContent>
+          )
+        })()}
       </div>
     </div>
   )

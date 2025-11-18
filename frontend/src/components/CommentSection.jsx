@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, X, Lock } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
-import { commentsAPI } from '../lib/api'
+import { commentsAPI, membersAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import ProfileAvatar from './ProfileAvatar'
 
 export default function CommentSection({ eventId }) {
   const queryClient = useQueryClient()
@@ -15,6 +16,13 @@ export default function CommentSection({ eventId }) {
   const [editingComment, setEditingComment] = useState(null)
   const [editingReply, setEditingReply] = useState(null)
   const [editContent, setEditContent] = useState('')
+
+  // Fetch current member data for avatar
+  const { data: currentMemberData } = useQuery({
+    queryKey: ['currentMember'],
+    queryFn: () => membersAPI.getCurrentMember().then(res => res.data),
+    enabled: isAuthenticated,
+  })
 
   // Fetch comments
   const { data: commentsData, isLoading, error: commentsError } = useQuery({
@@ -174,9 +182,7 @@ export default function CommentSection({ eventId }) {
       {isAuthenticated ? (
         <form onSubmit={handleCreateComment} className="mb-8">
           <div className="flex gap-3">
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-              {getUserInitial(user?.displayName || user?.email)}
-            </div>
+            <ProfileAvatar member={currentMemberData} size="md" />
             <div className="flex-1">
               <textarea
                 value={newComment}
@@ -243,9 +249,7 @@ export default function CommentSection({ eventId }) {
             <div key={comment.id} className="group">
               {/* Comment */}
               <div className="flex gap-3">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold flex-shrink-0">
-                  {getUserInitial(comment.memberName)}
-                </div>
+                <ProfileAvatar member={{ email: comment.memberEmail, displayName: comment.memberName, profilePhotoUrl: comment.memberProfilePhotoUrl }} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="bg-gradient-to-r from-purple-50/50 to-pink-50/50 rounded-xl p-4 border border-purple-100/50">
                     <div className="flex items-start justify-between gap-2 mb-2">

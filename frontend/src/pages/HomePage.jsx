@@ -43,6 +43,15 @@ export default function HomePage() {
   const yourEvents = yourEventsData?.data?.content || []
   const allEvents = allEventsData?.data?.content || []
   
+  // Filter member groups to exclude groups already in organiser tab
+  const filteredMemberGroups = useMemo(() => {
+    if (organisedGroups.length === 0) {
+      return memberGroups
+    }
+    const organisedGroupIds = new Set(organisedGroups.map(group => group.id))
+    return memberGroups.filter(group => !organisedGroupIds.has(group.id))
+  }, [memberGroups, organisedGroups])
+  
   // Filter discover events to exclude events already in user's events
   const discoverEvents = useMemo(() => {
     if (!isAuthenticated || yourEvents.length === 0) {
@@ -217,8 +226,8 @@ export default function HomePage() {
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
                 </div>
-              ) : memberGroups.length > 0 ? (
-                memberGroups.map(group => (
+              ) : filteredMemberGroups.length > 0 ? (
+                filteredMemberGroups.map(group => (
                   <div key={group.id} className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm hover:shadow-xl border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 cursor-pointer"
                     onClick={() => navigate(`/groups/${group.id}`)}>
                     {/* Group Banner */}

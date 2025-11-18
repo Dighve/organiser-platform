@@ -103,6 +103,46 @@ public class FileUploadController {
     }
 
     /**
+     * Upload a profile photo
+     * @param file The image file to upload
+     * @param authentication User authentication
+     * @return Response with the uploaded image URL
+     */
+    @PostMapping(value = "/upload/profile-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadProfilePhoto(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        try {
+            log.info("Received profile photo upload request: {} (size: {} bytes)", 
+                    file.getOriginalFilename(), file.getSize());
+
+            // Upload to Cloudinary in "profiles" folder
+            String imageUrl = fileUploadService.uploadImage(file, "hikehub/profiles");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("imageUrl", imageUrl);
+            response.put("message", "Profile photo uploaded successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (IOException e) {
+            log.error("Failed to upload profile photo", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            log.error("Unexpected error during profile photo upload", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "An unexpected error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
      * Delete an image
      * @param imageUrl The URL of the image to delete
      * @param authentication User authentication

@@ -167,6 +167,10 @@ export const membersAPI = {
   becomeOrganiser: () => api.post('/members/become-organiser'),
   
   getCurrentMember: () => api.get('/members/me'),
+  
+  getMemberById: (memberId) => api.get(`/members/${memberId}`),
+  
+  updateProfile: (data) => api.put('/members/me', data),
 }
 
 export default api

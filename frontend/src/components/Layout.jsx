@@ -1,15 +1,23 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Menu, X, User, LogOut, Search } from 'lucide-react'
+import { Menu, X, LogOut, Search } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../store/authStore'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import { membersAPI } from '../lib/api'
+import ProfileAvatar from './ProfileAvatar'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const { isAuthenticated, user, logout, updateUser } = useAuthStore()
   const navigate = useNavigate()
+
+  // Fetch current member data for profile photo
+  const { data: memberData } = useQuery({
+    queryKey: ['currentMember'],
+    queryFn: () => membersAPI.getCurrentMember().then(res => res.data),
+    enabled: isAuthenticated,
+  })
 
   const becomeOrganiserMutation = useMutation({
     mutationFn: membersAPI.becomeOrganiser,
@@ -93,9 +101,9 @@ export default function Layout() {
                   <div className="relative group z-[1000]">
                     {/* Invisible bridge to keep dropdown open */}
                     <div className="absolute right-0 top-full w-48 h-2 hidden group-hover:block"></div>
-                    <button className="flex items-center space-x-2 text-white/90 hover:text-white px-4 py-2 rounded-full text-sm font-semibold bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all border border-white/20">
-                      <User className="h-4 w-4" />
-                      <span>{user?.email}</span>
+                    <button className="flex items-center space-x-2 text-white/90 hover:text-white px-3 py-2 rounded-full text-sm font-semibold bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-all border border-white/20">
+                      <ProfileAvatar member={memberData} size="sm" className="border-2 border-white" />
+                      <span className="max-w-[120px] truncate">{memberData?.displayName || user?.email}</span>
                     </button>
                     <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-2xl py-2 hidden group-hover:block z-[1000] border border-gray-100">
                       <Link
