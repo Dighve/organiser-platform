@@ -1,5 +1,8 @@
 package com.organiser.platform.service;
 
+// ============================================================
+// IMPORTS
+// ============================================================
 import com.organiser.platform.dto.AuthResponse;
 import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.model.MagicLink;
@@ -16,21 +19,39 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+/**
+ * Service for handling passwordless authentication via magic links.
+ * 
+ * @author OutMeets Platform Team
+ */
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
     private final MemberRepository memberRepository;
     private final MagicLinkRepository magicLinkRepository;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final AvatarGenerator avatarGenerator;
     
+    // ============================================================
+    // CONSTANTS
+    // ============================================================
     private static final int MAGIC_LINK_EXPIRY_MINUTES = 15;
     
+    // ============================================================
+    // PUBLIC METHODS - Authentication
+    // ============================================================
+    
     /**
-     * Request a magic link to be sent to the email
-     * Creates user if doesn't exist
+     * Request a magic link to be sent to the email.
+     * Creates user if doesn't exist.
      */
     @Transactional
     public void requestMagicLink(MagicLinkRequest request) {
@@ -63,7 +84,7 @@ public class AuthService {
     }
     
     /**
-     * Verify magic link token and authenticate user
+     * Verify magic link token and authenticate user.
      */
     @Transactional
     public AuthResponse verifyMagicLink(String token) {
@@ -100,8 +121,12 @@ public class AuthService {
                 .build();
     }
     
+    // ============================================================
+    // PRIVATE METHODS - Member Creation
+    // ============================================================
+    
     /**
-     * Create a new member with auto-generated avatar
+     * Create a new member with auto-generated avatar.
      */
     private Member createNewMember(String email, MagicLinkRequest request) {
         String displayName = request.getDisplayName();
@@ -120,8 +145,12 @@ public class AuthService {
         return memberRepository.save(newMember);
     }
     
+    // ============================================================
+    // SCHEDULED TASKS - Cleanup
+    // ============================================================
+    
     /**
-     * Cleanup expired and used magic links every hour
+     * Cleanup expired and used magic links every hour.
      */
     @Scheduled(fixedRate = 3600000, initialDelay = 60000) // Run every hour, start after 1 minute
     @Transactional

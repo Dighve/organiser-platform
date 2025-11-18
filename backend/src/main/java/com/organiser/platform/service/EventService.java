@@ -1,5 +1,8 @@
 package com.organiser.platform.service;
 
+// ============================================================
+// IMPORTS
+// ============================================================
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
 import com.organiser.platform.model.*;
@@ -21,16 +24,36 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+/**
+ * Service for managing hiking events and event participation.
+ * Handles event creation, updates, publishing, and participant management.
+ * 
+ * @author OutMeets Platform Team
+ */
 @Service
 @RequiredArgsConstructor
 public class EventService {
     
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
     private final EventRepository eventRepository;
     private final MemberRepository memberRepository;
     private final GroupRepository groupRepository;
     private final GroupService groupService;
     private final EventParticipantRepository eventParticipantRepository;
     
+    // ============================================================
+    // PUBLIC METHODS - Event CRUD Operations
+    // ============================================================
+    
+    /**
+     * Create a new event for a group.
+     * Automatically adds the organiser as a confirmed participant.
+     */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public EventDTO createEvent(CreateEventRequest request, Long organiserId) {
@@ -100,6 +123,10 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    /**
+     * Update an existing event.
+     * Only the group organiser can update events.
+     */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public EventDTO updateEvent(Long eventId, CreateEventRequest request, Long organiserId) {
@@ -146,6 +173,10 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    /**
+     * Get event by ID with privacy controls.
+     * Non-members see only partial event data.
+     */
     @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "#id + '_' + #memberId")
     public EventDTO getEventById(Long id, Long memberId) {
@@ -161,12 +192,17 @@ public class EventService {
         return convertToDTO(event);
     }
     
-    // Backward compatibility method for public access
+    /**
+     * Get event by ID (backward compatibility - public access).
+     */
     @Transactional(readOnly = true)
     public EventDTO getEventById(Long id) {
         return getEventById(id, null);
     }
     
+    /**
+     * Get all upcoming published events.
+     */
     @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "'upcoming_' + #pageable.pageNumber")
     public Page<EventDTO> getUpcomingEvents(Pageable pageable) {
@@ -174,6 +210,13 @@ public class EventService {
                 .map(this::convertToDTO);
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Event Queries
+    // ============================================================
+    
+    /**
+     * Get upcoming events filtered by activity type.
+     */
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByActivity(Long activityId, Pageable pageable) {
         return eventRepository.findUpcomingEventsByActivityId(
@@ -181,18 +224,27 @@ public class EventService {
         ).map(this::convertToDTO);
     }
     
+    /**
+     * Search events by keyword (title, description, location, difficulty, group, organiser).
+     */
     @Transactional(readOnly = true)
     public Page<EventDTO> searchEvents(String keyword, Pageable pageable) {
         return eventRepository.searchEvents(keyword, LocalDateTime.now(), pageable)
                 .map(this::convertToDTO);
     }
     
+    /**
+     * Get all events organised by a specific member.
+     */
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable) {
         return eventRepository.findByOrganiserId(organiserId, pageable)
                 .map(this::convertToDTO);
     }
     
+    /**
+     * Get all events a member is participating in.
+     */
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByParticipant(Long memberId, Pageable pageable) {
         // Get all event participations for this member
@@ -226,6 +278,9 @@ public class EventService {
         return new PageImpl<>(pageContent, pageable, eventDTOs.size());
     }
     
+    /**
+     * Get all events for a specific group.
+     */
     @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "'group_' + #groupId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<EventDTO> getEventsByGroup(Long groupId, Pageable pageable) {
@@ -233,6 +288,14 @@ public class EventService {
                 .map(this::convertToDTO);
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Event Operations
+    // ============================================================
+    
+    /**
+     * Publish an event (change status from DRAFT to PUBLISHED).
+     * Only the group organiser can publish events.
+     */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public EventDTO publishEvent(Long eventId, Long organiserId) {
@@ -249,6 +312,10 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    /**
+     * Register a member for an event.
+     * Checks if event is full and updates status accordingly.
+     */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public EventDTO joinEvent(Long eventId, Long memberId) {
@@ -289,6 +356,10 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    /**
+     * Unregister a member from an event.
+     * Updates event status if it was previously full.
+     */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public EventDTO leaveEvent(Long eventId, Long memberId) {
@@ -313,6 +384,10 @@ public class EventService {
         return convertToDTO(event);
     }
     
+    /**
+     * Delete an event.
+     * Only the group organiser can delete events.
+     */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
     public void deleteEvent(Long eventId, Long organiserId) {
@@ -328,6 +403,13 @@ public class EventService {
         eventRepository.delete(event);
     }
     
+    // ============================================================
+    // PRIVATE METHODS - Data Conversion
+    // ============================================================
+    
+    /**
+     * Convert Event entity to full EventDTO (for group members).
+     */
     private EventDTO convertToDTO(Event event) {
         if (event == null) {
             return null;
@@ -402,8 +484,8 @@ public class EventService {
     }
     
     /**
-     * Convert event to partial DTO with only basic information visible to non-members
-     * (title, date, organiser, activity type, group info, image)
+     * Convert Event entity to partial EventDTO (for non-members).
+     * Only includes basic information: title, date, organiser, activity type, group info, image.
      */
     private EventDTO convertToPartialDTO(Event event) {
         if (event == null) {
@@ -467,6 +549,14 @@ public class EventService {
                 .build();
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Event Participants
+    // ============================================================
+    
+    /**
+     * Get all participants for an event.
+     * Marks the event organiser with isOrganiser flag.
+     */
     @Transactional(readOnly = true)
     public java.util.List<com.organiser.platform.dto.MemberDTO> getEventParticipants(Long eventId) {
         Event event = eventRepository.findById(eventId)

@@ -9,21 +9,129 @@ import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
 import { toast } from 'react-hot-toast'
 
+// ============================================
+// CONSTANTS - Default fallback images
+// ============================================
+const DEFAULT_GROUP_IMAGES = [
+  'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1200&h=400&fit=crop&q=80',
+  'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=400&fit=crop&q=80'
+]
+
+const DEFAULT_EVENT_IMAGES = [
+  'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
+  'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
+]
+
+// ============================================
+// REUSABLE EVENT CARD COMPONENT
+// Used for displaying events in both About and Events tabs
+// ============================================
+const EventCard = ({ event, isPast = false, onClick }) => {
+  // Use event's image or fallback to default based on event ID
+  const imageUrl = event.imageUrl || DEFAULT_EVENT_IMAGES[parseInt(event.id) % DEFAULT_EVENT_IMAGES.length]
+  
+  return (
+    <div
+      className={`group bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border overflow-hidden cursor-pointer transition-all duration-300 ${
+        isPast ? 'border-gray-200 opacity-75 hover:opacity-90' : 'border-gray-100 hover:-translate-y-2'
+      }`}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onClick()}
+    >
+      {/* Event Image */}
+      <div className="relative h-44 overflow-hidden">
+        <div className={`absolute inset-0 opacity-30 ${
+          isPast ? 'bg-gray-500' : 'bg-gradient-to-br from-orange-500 to-pink-500 opacity-20'
+        }`} />
+        <img 
+          src={imageUrl}
+          alt={event.title} 
+          className={`w-full h-full object-cover transition-all duration-500 ${
+            isPast ? 'grayscale group-hover:grayscale-0' : 'group-hover:scale-110'
+          }`}
+        />
+        {/* Completion badge for past events */}
+        {isPast && (
+          <div className="absolute top-3 left-3 px-3 py-1 bg-gray-600/90 backdrop-blur-sm rounded-full text-xs font-bold text-white shadow-lg">
+            ✓ Completed
+          </div>
+        )}
+        {/* Difficulty badge */}
+        <div className={`absolute top-3 right-3 px-3 py-1 backdrop-blur-sm rounded-full text-xs font-bold shadow-lg ${
+          isPast ? 'bg-white/80 text-gray-600' : 'bg-white/95 text-orange-600'
+        }`}>
+          {event.difficultyLevel}
+        </div>
+      </div>
+      
+      {/* Event Details */}
+      <div className="p-5">
+        <h3 className={`font-bold text-lg mb-3 line-clamp-1 transition-colors ${
+          isPast ? 'text-gray-700 group-hover:text-gray-900' : 'text-gray-900 group-hover:text-orange-600'
+        }`}>
+          {event.title}
+        </h3>
+        {/* Date and Location */}
+        <div className="space-y-2">
+          <div className={`flex items-center gap-2 text-sm ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
+            <Calendar className={`h-4 w-4 ${isPast ? 'text-gray-400' : 'text-orange-500'}`} />
+            <span className="font-medium">
+              {new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
+          </div>
+          <div className={`flex items-center gap-2 text-sm ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
+            <MapPin className={`h-4 w-4 ${isPast ? 'text-gray-400' : 'text-pink-500'}`} />
+            <span className="truncate">{event.location}</span>
+          </div>
+        </div>
+        {/* Participants count */}
+        <div className={`flex items-center justify-between pt-3 mt-3 border-t ${isPast ? 'border-gray-200' : 'border-gray-100'}`}>
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold ${
+              isPast ? 'bg-gradient-to-br from-gray-400 to-gray-500' : 'bg-gradient-to-br from-orange-400 to-pink-400'
+            }`}>
+              {event.currentParticipants}
+            </div>
+            <span className={`text-sm font-medium ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
+              {event.currentParticipants}/{event.maxParticipants}
+            </span>
+          </div>
+          <svg className={`w-5 h-5 group-hover:translate-x-1 transition-transform ${isPast ? 'text-gray-500' : 'text-orange-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 export default function GroupDetailPage() {
-  const { id } = useParams()
+  // ============================================
+  // HOOKS & ROUTING
+  // ============================================
+  const { id } = useParams() // Get group ID from URL
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
   const [searchParams] = useSearchParams()
-  const [activeTab, setActiveTab] = React.useState('about')
 
-  // Check URL parameter to set initial tab
-  useEffect(() => {
-    const tabParam = searchParams.get('tab')
-    if (tabParam === 'events' || tabParam === 'members') {
-      setActiveTab(tabParam)
-    }
-  }, [searchParams])
+  // ============================================
+  // LOCAL STATE
+  // ============================================
+  const [activeTab, setActiveTab] = useState('about') // Current tab: about, events, or members
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -34,68 +142,92 @@ export default function GroupDetailPage() {
     isPublic: true,
   })
 
-  // Fetch group details
+  // Set initial tab from URL parameter (e.g., ?tab=events)
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'events' || tabParam === 'members') {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
+
+  // ============================================
+  // DATA FETCHING - React Query hooks
+  // ============================================
+  
+  // 1. Fetch group details
   const { data: groupData, isLoading, error } = useQuery({
     queryKey: ['group', id],
     queryFn: () => groupsAPI.getGroupById(id),
   })
 
-  const group = groupData?.data
-
-  // Fetch user's organised groups to check if they're the organiser
+  // 2. Fetch user's organised groups (to check if user is the organiser)
   const { data: organisedGroupsData } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
     enabled: isAuthenticated && user?.isOrganiser,
-    staleTime: 0, // Always fetch fresh data
+    staleTime: 0,
   })
 
-  // Fetch user's subscribed groups to check subscription status
+  // 3. Fetch user's subscribed groups (to check if user is a member)
   const { data: subscribedGroupsData } = useQuery({
     queryKey: ['myGroups'],
     queryFn: () => groupsAPI.getMyGroups(),
     enabled: isAuthenticated,
-    staleTime: 0, // Always fetch fresh data to show updated subscriptions
+    staleTime: 0,
   })
 
-  const organisedGroups = organisedGroupsData?.data || []
-  const subscribedGroups = subscribedGroupsData?.data || []
-  const isGroupOrganiser = organisedGroups.some(g => g.id === Number.parseInt(id))
-  const isSubscribed = subscribedGroups.some(g => g.id === Number.parseInt(id))
-
-  // Fetch group events using the dedicated endpoint
+  // 4. Fetch all events for this group
   const { data: eventsData, isLoading: eventsLoading } = useQuery({
     queryKey: ['groupEvents', id],
     queryFn: () => eventsAPI.getEventsByGroup(id),
-    enabled: !!group,
+    enabled: !!groupData, // Only fetch after group data is loaded
   })
 
-  // Fetch group members
+  // 5. Fetch all members of this group
   const { data: membersData, isLoading: membersLoading } = useQuery({
     queryKey: ['groupMembers', id],
     queryFn: () => groupsAPI.getGroupMembers(id),
     enabled: !!id,
-    staleTime: 0, // Always fetch fresh data to show updated member list
+    staleTime: 0,
   })
 
+  // ============================================
+  // COMPUTED VALUES - Derived from fetched data
+  // ============================================
+  const group = groupData?.data
   const groupEvents = eventsData?.data?.content || []
+  const organisedGroups = organisedGroupsData?.data || []
+  const subscribedGroups = subscribedGroupsData?.data || []
+  
+  // Check user's relationship to this group
+  const isGroupOrganiser = organisedGroups.some(g => g.id === parseInt(id))
+  const isSubscribed = subscribedGroups.some(g => g.id === parseInt(id))
+  
+  // Split events into upcoming and past for easier rendering
+  const now = new Date()
+  const upcomingEvents = groupEvents.filter(event => new Date(event.eventDate) >= now)
+  const pastEvents = groupEvents.filter(event => new Date(event.eventDate) < now)
 
-  // Subscribe mutation
+  // ============================================
+  // MUTATIONS - API calls that change data
+  // ============================================
+  
+  // Join group (subscribe)
   const subscribeMutation = useMutation({
     mutationFn: () => groupsAPI.subscribeToGroup(id),
     onSuccess: () => {
+      // Refresh all affected data
       queryClient.invalidateQueries(['group', id])
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['groupEvents', id])
       queryClient.invalidateQueries(['groupMembers', id])
     },
     onError: (error) => {
-      console.error('Subscribe error:', error)
       alert(error.response?.data?.message || 'Failed to join group')
     },
   })
 
-  // Unsubscribe mutation
+  // Leave group (unsubscribe)
   const unsubscribeMutation = useMutation({
     mutationFn: () => groupsAPI.unsubscribeFromGroup(id),
     onSuccess: () => {
@@ -105,12 +237,11 @@ export default function GroupDetailPage() {
       queryClient.invalidateQueries(['groupMembers', id])
     },
     onError: (error) => {
-      console.error('Unsubscribe error:', error)
       alert(error.response?.data?.message || 'Failed to leave group')
     },
   })
 
-  // Update group mutation
+  // Update group details (organiser only)
   const updateGroupMutation = useMutation({
     mutationFn: (data) => groupsAPI.updateGroup(id, data),
     onSuccess: () => {
@@ -121,12 +252,15 @@ export default function GroupDetailPage() {
       toast.success('Group updated successfully!')
     },
     onError: (error) => {
-      console.error('Update group error:', error)
       toast.error(error.response?.data?.message || 'Failed to update group')
     },
   })
 
-  // Open edit modal with current group data
+  // ============================================
+  // EVENT HANDLERS
+  // ============================================
+  
+  // Open edit modal and populate with current group data
   const handleOpenEditModal = () => {
     if (group) {
       setEditFormData({
@@ -141,14 +275,14 @@ export default function GroupDetailPage() {
     }
   }
 
-  // Handle edit form submission
+  // Save edited group data
   const handleEditSubmit = (e) => {
     e.preventDefault()
     
     const updateData = {
       name: editFormData.name.trim(),
       description: editFormData.description.trim() || null,
-      activityId: 1, // Hiking - always
+      activityId: 1, // Always Hiking for now
       location: editFormData.location.trim() || null,
       imageUrl: editFormData.imageUrl || null,
       maxMembers: editFormData.maxMembers ? parseInt(editFormData.maxMembers) : null,
@@ -158,6 +292,7 @@ export default function GroupDetailPage() {
     updateGroupMutation.mutate(updateData)
   }
 
+  // Join group (redirect to login if not authenticated)
   const handleSubscribe = () => {
     if (!isAuthenticated) {
       navigate('/login')
@@ -166,11 +301,16 @@ export default function GroupDetailPage() {
     subscribeMutation.mutate()
   }
 
+  // Leave group (with confirmation dialog)
   const handleUnsubscribe = () => {
     if (confirm('Are you sure you want to leave this group?')) {
       unsubscribeMutation.mutate()
     }
   }
+
+  // ============================================
+  // LOADING & ERROR STATES
+  // ============================================
 
   if (isLoading) {
     return (
@@ -201,9 +341,13 @@ export default function GroupDetailPage() {
     )
   }
 
+  // ============================================
+  // RENDER - Main component JSX
+  // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Back button */}
         <button
           onClick={() => navigate(-1)}
           className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
@@ -213,21 +357,21 @@ export default function GroupDetailPage() {
         </button>
 
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Banner Image */}
+          {/* ============================================ */}
+          {/* HERO BANNER with group info */}
+          {/* ============================================ */}
           <div className="relative h-80 overflow-hidden">
+            {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-60" />
+            
+            {/* Banner image (custom or fallback) */}
             <img 
-              src={group.imageUrl || [
-                'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=400&fit=crop&q=80',
-                'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=400&fit=crop&q=80',
-                'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=400&fit=crop&q=80',
-                'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=400&fit=crop&q=80',
-                'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=1200&h=400&fit=crop&q=80',
-                'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=400&fit=crop&q=80'
-              ][Number.parseInt(id) % 6]}
+              src={group.imageUrl || DEFAULT_GROUP_IMAGES[parseInt(id) % DEFAULT_GROUP_IMAGES.length]}
               alt={`${group.name} banner`}
               className="w-full h-full object-cover mix-blend-overlay"
             />
+            
+            {/* Dark gradient from bottom */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
             
             {/* Header Content Overlay */}
@@ -318,7 +462,9 @@ export default function GroupDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              {/* Events Tab */}
+              {/* ============================================ */}
+              {/* EVENTS TAB - Show upcoming and past events */}
+              {/* ============================================ */}
               {activeTab === 'events' && (
                 <div>
                   {eventsLoading ? (
@@ -327,146 +473,46 @@ export default function GroupDetailPage() {
                     </div>
                   ) : groupEvents.length > 0 ? (
                     <div className="space-y-10">
-                      {/* Upcoming Events */}
-                      {(() => {
-                        const now = new Date()
-                        const upcomingEvents = groupEvents.filter(event => new Date(event.eventDate) >= now)
-                        return upcomingEvents.length > 0 && (
-                          <div>
-                            <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">
-                              Upcoming Events ({upcomingEvents.length})
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {upcomingEvents.map(event => (
-                                <div
-                                  key={event.id}
-                                  className="group bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2"
-                                  onClick={() => navigate(`/events/${event.id}`)}
-                                  role="button"
-                                  tabIndex={0}
-                                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
-                                >
-                                  {/* Event Image */}
-                                  <div className="relative h-44 overflow-hidden">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
-                                    <img 
-                                      src={event.imageUrl || [
-                                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                                      ][Number.parseInt(event.id) % 6]}
-                                      alt={event.title} 
-                                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                                    />
-                                    <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
-                                      {event.difficultyLevel}
-                                    </div>
-                                  </div>
-                                  {/* Event Content */}
-                                  <div className="p-5">
-                                    <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-1 group-hover:text-orange-600 transition-colors">{event.title}</h3>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                                        <Calendar className="h-4 w-4 text-orange-500" />
-                                        <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                                        <MapPin className="h-4 w-4 text-pink-500" />
-                                        <span className="truncate">{event.location}</span>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
-                                        <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants}</span>
-                                      </div>
-                                      <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                      </svg>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                      {/* Upcoming Events Section */}
+                      {upcomingEvents.length > 0 && (
+                        <div>
+                          <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">
+                            Upcoming Events ({upcomingEvents.length})
+                          </h2>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {upcomingEvents.map(event => (
+                              <EventCard
+                                key={event.id}
+                                event={event}
+                                isPast={false}
+                                onClick={() => navigate(`/events/${event.id}`)}
+                              />
+                            ))}
                           </div>
-                        )
-                      })()}
+                        </div>
+                      )}
 
-                      {/* Past Events */}
-                      {(() => {
-                        const now = new Date()
-                        const pastEvents = groupEvents.filter(event => new Date(event.eventDate) < now)
-                        return pastEvents.length > 0 && (
-                          <div>
-                            <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-600 to-gray-400 bg-clip-text text-transparent mb-6">
-                              Past Events ({pastEvents.length})
-                            </h2>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {pastEvents.map(event => (
-                                <div
-                                  key={event.id}
-                                  className="group bg-white/40 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg border border-gray-200 overflow-hidden cursor-pointer transition-all duration-300 opacity-75 hover:opacity-90"
-                                  onClick={() => navigate(`/events/${event.id}`)}
-                                  role="button"
-                                  tabIndex={0}
-                                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
-                                >
-                                  {/* Event Image */}
-                                  <div className="relative h-44 overflow-hidden">
-                                    <div className="absolute inset-0 bg-gray-500 opacity-30" />
-                                    <img 
-                                      src={event.imageUrl || [
-                                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                                      ][Number.parseInt(event.id) % 6]}
-                                      alt={event.title} 
-                                      className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" 
-                                    />
-                                    <div className="absolute top-3 left-3 px-3 py-1 bg-gray-600/90 backdrop-blur-sm rounded-full text-xs font-bold text-white shadow-lg">
-                                      ✓ Completed
-                                    </div>
-                                    <div className="absolute top-3 right-3 px-3 py-1 bg-white/80 backdrop-blur-sm rounded-full text-xs font-bold text-gray-600 shadow-lg">
-                                      {event.difficultyLevel}
-                                    </div>
-                                  </div>
-                                  {/* Event Content */}
-                                  <div className="p-5">
-                                    <h3 className="font-bold text-lg text-gray-700 mb-3 line-clamp-1 group-hover:text-gray-900 transition-colors">{event.title}</h3>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <Calendar className="h-4 w-4 text-gray-400" />
-                                        <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2 text-sm text-gray-500">
-                                        <MapPin className="h-4 w-4 text-gray-400" />
-                                        <span className="truncate">{event.location}</span>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-200">
-                                      <div className="flex items-center gap-2">
-                                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-400 to-gray-500 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
-                                        <span className="text-sm text-gray-500 font-medium">{event.currentParticipants}/{event.maxParticipants}</span>
-                                      </div>
-                                      <svg className="w-5 h-5 text-gray-500 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                      </svg>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                      {/* Past Events Section */}
+                      {pastEvents.length > 0 && (
+                        <div>
+                          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-600 to-gray-400 bg-clip-text text-transparent mb-6">
+                            Past Events ({pastEvents.length})
+                          </h2>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {pastEvents.map(event => (
+                              <EventCard
+                                key={event.id}
+                                event={event}
+                                isPast={true}
+                                onClick={() => navigate(`/events/${event.id}`)}
+                              />
+                            ))}
                           </div>
-                        )
-                      })()}
+                        </div>
+                      )}
                     </div>
                   ) : (
+                    /* No events empty state */
                     <div className="text-center py-12 bg-gradient-to-br from-orange-50 to-pink-50 rounded-2xl border border-orange-100">
                       <Calendar className="h-16 w-16 mx-auto text-orange-400 mb-4" />
                       <p className="text-gray-600 text-lg mb-2">No events scheduled yet</p>
@@ -484,9 +530,12 @@ export default function GroupDetailPage() {
                 </div>
               )}
 
-              {/* About Tab */}
+              {/* ============================================ */}
+              {/* ABOUT TAB - Group description and upcoming events */}
+              {/* ============================================ */}
               {activeTab === 'about' && (
                 <div>
+                  {/* Group description header with edit button (organiser only) */}
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">About This Group</h2>
                     {isGroupOrganiser && (
@@ -499,9 +548,13 @@ export default function GroupDetailPage() {
                       </button>
                     )}
                   </div>
+                  
+                  {/* Group description text */}
                   <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap mb-8">
                     {group.description || 'No description available.'}
                   </p>
+                  
+                  {/* Group creation date */}
                   {group.createdAt && (
                     <div className="flex items-center gap-2 text-gray-500 text-sm pb-8 border-t border-gray-200 pt-8 mb-8">
                       <Calendar className="h-4 w-4" />
@@ -509,67 +562,22 @@ export default function GroupDetailPage() {
                     </div>
                   )}
 
-                  {/* Events Section */}
+                  {/* Upcoming Events Preview (About tab only shows upcoming events) */}
                   <div className="mt-8">
                     <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Upcoming Events</h2>
                     {eventsLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
                       </div>
-                    ) : groupEvents.length > 0 ? (
+                    ) : upcomingEvents.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {groupEvents.map(event => (
-                          <div
+                        {upcomingEvents.map(event => (
+                          <EventCard
                             key={event.id}
-                            className="group bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2"
+                            event={event}
+                            isPast={false}
                             onClick={() => navigate(`/events/${event.id}`)}
-                            role="button"
-                            tabIndex={0}
-                            onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
-                          >
-                            {/* Event Image */}
-                            <div className="relative h-44 overflow-hidden">
-                              <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
-                              <img 
-                                src={event.imageUrl || [
-                                  'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                                  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                                  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                                  'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                                  'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                                  'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                                ][Number.parseInt(event.id) % 6]}
-                                alt={event.title} 
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                              />
-                              <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
-                                {event.difficultyLevel}
-                              </div>
-                            </div>
-                            {/* Event Content */}
-                            <div className="p-5">
-                              <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-1 group-hover:text-orange-600 transition-colors">{event.title}</h3>
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <Calendar className="h-4 w-4 text-orange-500" />
-                                  <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <MapPin className="h-4 w-4 text-pink-500" />
-                                  <span className="truncate">{event.location}</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between pt-3 mt-3 border-t border-gray-100">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
-                                  <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants}</span>
-                                </div>
-                                <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                </svg>
-                              </div>
-                            </div>
-                          </div>
+                          />
                         ))}
                       </div>
                     ) : (
@@ -591,18 +599,22 @@ export default function GroupDetailPage() {
                 </div>
               )}
 
-              {/* Members Tab */}
+              {/* ============================================ */}
+              {/* MEMBERS TAB - Full list of group members */}
+              {/* ============================================ */}
               {activeTab === 'members' && (
                 <div>
                   <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">
                     <Users className="inline h-8 w-8 mr-2 mb-1" />
                     Group Members ({membersData?.data?.length || 0})
                   </h2>
+                  
                   {membersLoading ? (
                     <div className="flex items-center justify-center py-12">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
                     </div>
                   ) : membersData?.data && membersData.data.length > 0 ? (
+                    /* Member cards grid - Click to view member profile */
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {membersData.data.map((member) => (
                         <div 
@@ -632,6 +644,7 @@ export default function GroupDetailPage() {
                       ))}
                     </div>
                   ) : (
+                    /* Empty state - No members */
                     <div className="text-center py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
                       <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                       <p className="text-gray-600">No members yet. Be the first to join this group!</p>
@@ -641,9 +654,11 @@ export default function GroupDetailPage() {
               )}
             </div>
 
-            {/* Sidebar */}
+            {/* ============================================ */}
+            {/* SIDEBAR - Member preview and actions */}
+            {/* ============================================ */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Members Section - Only shown on About tab */}
+              {/* Members Preview (shown only on About tab) */}
               {activeTab === 'about' && (
                 <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                   <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Members ({membersData?.data?.length || 0})</h3>
@@ -692,14 +707,14 @@ export default function GroupDetailPage() {
                 </div>
               )}
 
-              {/* Group Actions */}
+              {/* Group Actions Card - Sticky sidebar with action buttons */}
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg">
                 <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Actions</h3>
                 
                 {isAuthenticated ? (
                   <div className="space-y-3">
                     {isGroupOrganiser ? (
-                      // Show Create Event button for organizers
+                      /* ORGANISER VIEW - Show Create Event button */
                       <>
                         <div className="mb-4 p-3 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
                           <p className="text-sm text-orange-700 font-semibold">👑 You're the organiser</p>
@@ -713,9 +728,10 @@ export default function GroupDetailPage() {
                         </button>
                       </>
                     ) : (
-                      // Show View Events and Leave buttons for members
+                      /* MEMBER/NON-MEMBER VIEW */
                       <>
                         {isSubscribed ? (
+                          /* Already a member - Show View Events and Leave buttons */
                           <>
                             <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
                               <p className="text-sm text-green-700 font-semibold">✅ You're a member</p>
@@ -736,6 +752,7 @@ export default function GroupDetailPage() {
                             </button>
                           </>
                         ) : (
+                          /* Not a member - Show Join button */
                           <button
                             onClick={handleSubscribe}
                             disabled={subscribeMutation.isLoading}
@@ -749,6 +766,7 @@ export default function GroupDetailPage() {
                     )}
                   </div>
                 ) : (
+                  /* NOT AUTHENTICATED - Show login prompt */
                   <div className="space-y-3">
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 mb-4">
                       <p className="text-sm text-gray-600">🔐 Login to join this group and participate in events</p>
@@ -762,6 +780,7 @@ export default function GroupDetailPage() {
                   </div>
                 )}
 
+                {/* Organiser information */}
                 {group.primaryOrganiserName && (
                   <div className="mt-6 pt-6 border-t border-gray-200">
                     <h4 className="text-sm font-semibold text-gray-500 mb-2">ORGANISED BY</h4>
@@ -775,7 +794,10 @@ export default function GroupDetailPage() {
       </div>
       </div>
 
-      {/* Edit Group Modal */}
+      {/* ============================================ */}
+      {/* EDIT GROUP MODAL - Organiser only */}
+      {/* Allows organiser to update group details */}
+      {/* ============================================ */}
       {isEditModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">

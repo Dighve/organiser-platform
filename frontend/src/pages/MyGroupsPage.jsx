@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -5,12 +8,26 @@ import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { Users, Plus, Calendar } from 'lucide-react'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function MyGroupsPage() {
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
   const navigate = useNavigate()
-  const { isAuthenticated, user } = useAuthStore()
-  const queryClient = useQueryClient()
+  const { isAuthenticated, user } = useAuthStore()  // Global auth state
+  const queryClient = useQueryClient()  // React Query cache
+  
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
   // Default to 'organiser' tab if user is organiser, otherwise 'subscribed'
   const [activeTab, setActiveTab] = useState(user?.isOrganiser ? 'organiser' : 'subscribed')
+  
+  // ============================================================
+  // DATA FETCHING - Queries
+  // ============================================================
   
   // Fetch user's subscribed groups
   const { data, isLoading, error } = useQuery({
@@ -19,14 +36,18 @@ export default function MyGroupsPage() {
     enabled: isAuthenticated,
   })
   
-  // Fetch user's organised groups
+  // Fetch user's organised groups (only if organiser)
   const { data: organisedData, isLoading: organisedLoading, error: organisedError } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
     enabled: isAuthenticated && user?.isOrganiser,
   })
   
-  // Unsubscribe mutation
+  // ============================================================
+  // DATA FETCHING - Mutations
+  // ============================================================
+  
+  // Unsubscribe from a group
   const unsubscribeMutation = useMutation({
     mutationFn: (groupId) => groupsAPI.unsubscribeFromGroup(groupId),
     onSuccess: () => {
@@ -34,9 +55,15 @@ export default function MyGroupsPage() {
     },
   })
   
-  const groups = data?.data || []
-  const organisedGroups = organisedData?.data || []
+  // ============================================================
+  // DERIVED STATE
+  // ============================================================
+  const groups = data?.data || []  // Subscribed groups
+  const organisedGroups = organisedData?.data || []  // Organised groups
   
+  // ============================================================
+  // UNAUTHENTICATED STATE
+  // ============================================================
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
@@ -55,6 +82,9 @@ export default function MyGroupsPage() {
     )
   }
   
+  // ============================================================
+  // LOADING STATE
+  // ============================================================
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -69,6 +99,9 @@ export default function MyGroupsPage() {
     )
   }
   
+  // ============================================================
+  // ERROR STATE
+  // ============================================================
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -83,9 +116,14 @@ export default function MyGroupsPage() {
     )
   }
   
+  // ============================================================
+  // MAIN RENDER
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* ========== PAGE HEADER ========== */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 My Groups</h1>
           <div className="flex gap-3">
@@ -101,7 +139,7 @@ export default function MyGroupsPage() {
           </div>
         </div>
         
-        {/* Tabs */}
+        {/* ========== TAB NAVIGATION ========== */}
         <div className="mb-8">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 inline-flex gap-2 border border-gray-100 shadow-lg">
             {user?.isOrganiser && (
@@ -129,7 +167,9 @@ export default function MyGroupsPage() {
           </div>
         </div>
       
-      {/* Subscribed Groups Tab */}
+      {/* ========== TAB CONTENT ========== */}
+      
+      {/* SUBSCRIBED GROUPS TAB - Groups user is a member of */}
       {activeTab === 'subscribed' && (
         <>
           {isLoading ? (
@@ -248,8 +288,8 @@ export default function MyGroupsPage() {
         </>
       )}
       
-        {/* Organiser Tab */}
-        {activeTab === 'organiser' && user?.isOrganiser && (
+      {/* ORGANISER TAB - Groups user created and manages */}
+      {activeTab === 'organiser' && user?.isOrganiser && (
           <>
             {organisedLoading ? (
               <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-lg text-center">

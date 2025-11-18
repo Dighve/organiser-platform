@@ -1,5 +1,8 @@
 package com.organiser.platform.service;
 
+// ============================================================
+// IMPORTS
+// ============================================================
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import lombok.RequiredArgsConstructor;
@@ -12,18 +15,38 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+/**
+ * Service for uploading and managing files in Cloudinary.
+ * Handles image uploads, validation, and deletion.
+ * 
+ * @author OutMeets Platform Team
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class FileUploadService {
 
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
     private final Cloudinary cloudinary;
 
+    // ============================================================
+    // CONSTANTS
+    // ============================================================
     private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
     private static final String[] ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"};
 
+    // ============================================================
+    // PUBLIC METHODS - Image Upload
+    // ============================================================
+    
     /**
-     * Upload an image file to Cloudinary
+     * Upload an image file to Cloudinary.
+     * 
      * @param file The multipart file to upload
      * @param folder The folder in Cloudinary where the image will be stored
      * @return The public URL of the uploaded image
@@ -61,7 +84,8 @@ public class FileUploadService {
     }
 
     /**
-     * Delete an image from Cloudinary
+     * Delete an image from Cloudinary.
+     * 
      * @param imageUrl The URL of the image to delete
      */
     public void deleteImage(String imageUrl) {
@@ -78,8 +102,12 @@ public class FileUploadService {
         }
     }
 
+    // ============================================================
+    // PRIVATE METHODS - File Validation
+    // ============================================================
+    
     /**
-     * Validate uploaded file
+     * Validate uploaded file for size, type, and name.
      */
     private void validateFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
@@ -102,7 +130,7 @@ public class FileUploadService {
     }
 
     /**
-     * Get file extension from filename
+     * Get file extension from filename.
      */
     private String getFileExtension(String filename) {
         if (filename == null || !filename.contains(".")) {
@@ -112,7 +140,7 @@ public class FileUploadService {
     }
 
     /**
-     * Check if file extension is allowed
+     * Check if file extension is allowed.
      */
     private boolean isValidExtension(String extension) {
         for (String allowed : ALLOWED_EXTENSIONS) {
@@ -123,8 +151,12 @@ public class FileUploadService {
         return false;
     }
 
+    // ============================================================
+    // PRIVATE METHODS - URL Processing
+    // ============================================================
+    
     /**
-     * Extract public ID from Cloudinary URL
+     * Extract public ID from Cloudinary URL.
      * Example: https://res.cloudinary.com/demo/image/upload/v1234567890/folder/image.jpg
      * Returns: folder/image
      */

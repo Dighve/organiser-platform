@@ -1,5 +1,8 @@
 package com.organiser.platform.service;
 
+// ============================================================
+// IMPORTS
+// ============================================================
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,11 +15,22 @@ import org.springframework.web.client.RestTemplate;
 import java.util.HashMap;
 import java.util.Map;
 
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+/**
+ * Service for sending transactional emails via Resend API.
+ * 
+ * @author OutMeets Platform Team
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
     
+    // ============================================================
+    // CONFIGURATION PROPERTIES
+    // ============================================================
     @Value("${app.frontend-url:http://localhost:3000}")
     private String frontendUrl;
     
@@ -26,11 +40,18 @@ public class EmailService {
     @Value("${resend.api-key:}")
     private String resendApiKey;
     
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
     private final RestTemplate restTemplate = new RestTemplate();
     
+    // ============================================================
+    // PUBLIC METHODS - Email Sending
+    // ============================================================
+    
     /**
-     * Send magic link email to user
-     * Uses Resend API if configured, otherwise logs to console
+     * Send magic link email to user.
+     * Uses Resend API if configured, otherwise logs to console.
      */
     public void sendMagicLink(String email, String token) {
         String magicLink = frontendUrl + "/auth/verify?token=" + token;
@@ -59,8 +80,12 @@ public class EmailService {
         }
     }
     
+    // ============================================================
+    // PRIVATE METHODS - API Integration
+    // ============================================================
+    
     /**
-     * Send email via Resend API
+     * Send email via Resend API.
      */
     private void sendEmailViaResend(String toEmail, String magicLink) {
         HttpHeaders headers = new HttpHeaders();
@@ -82,8 +107,12 @@ public class EmailService {
         );
     }
     
+    // ============================================================
+    // PRIVATE METHODS - Email Content
+    // ============================================================
+    
     /**
-     * Build HTML email content for magic link
+     * Build HTML email content for magic link.
      */
     private String buildEmailContent(String magicLink) {
         return """

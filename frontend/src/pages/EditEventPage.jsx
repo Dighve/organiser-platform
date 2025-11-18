@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus } from 'lucide-react'
@@ -10,13 +13,19 @@ import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+// Step navigation configuration for multi-step edit form
 const STEPS = {
-  BASICS: 0,
-  LOCATION: 1,
-  DETAILS: 2,
-  REVIEW: 3
+  BASICS: 0,      // Event title, date, time, description
+  LOCATION: 1,    // Google Places location with coordinates
+  DETAILS: 2,     // Difficulty, stats, requirements, pricing
+  REVIEW: 3       // Final review before updating
 }
 
+// Step titles displayed in progress bar
 const STEP_TITLES = {
   [STEPS.BASICS]: 'Update the basics',
   [STEPS.LOCATION]: 'Update location',
@@ -24,6 +33,7 @@ const STEP_TITLES = {
   [STEPS.REVIEW]: 'Review your changes'
 }
 
+// Difficulty level options with visual indicators
 const DIFFICULTY_OPTIONS = [
   { value: 'BEGINNER', label: 'Beginner', description: 'Easy trails, minimal elevation', icon: '🟢' },
   { value: 'INTERMEDIATE', label: 'Intermediate', description: 'Moderate trails, some elevation', icon: '🟡' },
@@ -31,16 +41,32 @@ const DIFFICULTY_OPTIONS = [
   { value: 'EXPERT', label: 'Expert', description: 'Very challenging, technical terrain', icon: '🔴' }
 ]
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function EditEventPage() {
-  const [currentStep, setCurrentStep] = useState(STEPS.BASICS)
-  const [formData, setFormData] = useState({})
-  const [selectedRequirements, setSelectedRequirements] = useState([])
-  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { id } = useParams()
+  const { id } = useParams()  // Event ID from URL
+  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
   
-  // Fetch the existing event
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
+  const [currentStep, setCurrentStep] = useState(STEPS.BASICS)        // Current step in multi-step form
+  const [formData, setFormData] = useState({})                        // Accumulated form data across steps
+  const [selectedRequirements, setSelectedRequirements] = useState([])  // Custom gear requirements tags
+  
+  const watchedValues = watch()  // Watch all form field values for real-time updates
+  
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
+  
+  // Fetch the existing event data to populate form
   const { data: eventData, isLoading: eventLoading } = useQuery({
     queryKey: ['event', id],
     queryFn: () => eventsAPI.getEventById(id),
@@ -48,7 +74,19 @@ export default function EditEventPage() {
   
   const event = eventData?.data
   
-  // Pre-fill form with existing event data
+  // Fetch activity types (currently only Hiking is active)
+  const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
+    queryKey: ['activities'],
+    queryFn: () => activityTypesAPI.getAll(),
+  })
+  
+  const activities = activitiesData?.data || []
+  
+  // ============================================================
+  // EFFECTS
+  // ============================================================
+  
+  // Pre-fill form with existing event data when loaded
   useEffect(() => {
     if (event) {
       // Extract date and time from eventDate
@@ -97,43 +135,42 @@ export default function EditEventPage() {
     }
   }, [event, setValue])
   
-  // Fetch activities
-  const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
-    queryKey: ['activities'],
-    queryFn: () => activityTypesAPI.getAll(),
-  })
-  
-  const activities = activitiesData?.data || []
-  const watchedValues = watch()
-
-  // Load saved form data into form fields
+  // Load saved form data into form fields when navigating between steps
   useEffect(() => {
     Object.keys(formData).forEach(key => {
       setValue(key, formData[key])
     })
   }, [currentStep, formData, setValue])
 
+  // ============================================================
+  // HELPER FUNCTIONS
+  // ============================================================
+  
+  // Update accumulated form data with new step data
   const updateFormData = (stepData) => {
     setFormData(prev => ({ ...prev, ...stepData }))
   }
 
+  // Navigate to next step in form
   const nextStep = () => {
     if (currentStep < STEPS.REVIEW) {
       setCurrentStep(prev => prev + 1)
     }
   }
 
+  // Navigate to previous step in form
   const prevStep = () => {
     if (currentStep > STEPS.BASICS) {
       setCurrentStep(prev => prev - 1)
     }
   }
-
-  const onStepSubmit = (data) => {
-    updateFormData(data)
-    nextStep()
+  
+  // Jump directly to a specific step (used in review mode)
+  const goToStep = (step) => {
+    setCurrentStep(step)
   }
 
+  // Toggle gear requirement selection
   const toggleRequirement = (req) => {
     setSelectedRequirements(prev => 
       prev.includes(req) 
@@ -142,6 +179,17 @@ export default function EditEventPage() {
     )
   }
 
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Handle submission of individual step (save data and proceed to next)
+  const onStepSubmit = (data) => {
+    updateFormData(data)
+    nextStep()
+  }
+
+  // Handle final form submission (update event)
   const onFinalSubmit = async (data) => {
     if (!event?.groupId) {
       toast.error('Event group information is missing')
@@ -187,10 +235,11 @@ export default function EditEventPage() {
     }
   }
 
-  const goToStep = (step) => {
-    setCurrentStep(step)
-  }
-
+  // ============================================================
+  // RENDER FUNCTIONS
+  // ============================================================
+  
+  // PROGRESS BAR - Visual indicator of current step
   const renderProgressBar = () => {
     const progress = ((currentStep + 1) / Object.keys(STEPS).length) * 100
     
@@ -225,6 +274,9 @@ export default function EditEventPage() {
     )
   }
 
+  // ============================================================
+  // LOADING STATE
+  // ============================================================
   if (eventLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
@@ -238,6 +290,9 @@ export default function EditEventPage() {
     )
   }
 
+  // ============================================================
+  // ERROR STATE - Event not found
+  // ============================================================
   if (!event) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center">
@@ -249,6 +304,9 @@ export default function EditEventPage() {
     )
   }
 
+  // ============================================================
+  // MAIN COMPONENT RETURN
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
@@ -279,7 +337,7 @@ export default function EditEventPage() {
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-10 shadow-2xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-shadow duration-300 border-2 border-white/50">
           <form onSubmit={handleSubmit(currentStep === STEPS.REVIEW ? onFinalSubmit : onStepSubmit)}>
             
-            {/* Step Content */}
+            {/* ========== STEP 1: BASICS ========== */}
             {currentStep === STEPS.BASICS && (
               <div className="space-y-8">
                 <div className="text-center mb-10 animate-fade-in">
@@ -373,6 +431,7 @@ export default function EditEventPage() {
               </div>
             )}
 
+            {/* ========== STEP 2: LOCATION ========== */}
             {currentStep === STEPS.LOCATION && (
               <div className="space-y-8">
                 <div className="text-center mb-10 animate-fade-in">
@@ -408,6 +467,7 @@ export default function EditEventPage() {
               </div>
             )}
 
+            {/* ========== STEP 3: DETAILS ========== */}
             {currentStep === STEPS.DETAILS && (
               <div className="space-y-8">
                 <div className="text-center mb-10 animate-fade-in">
@@ -418,10 +478,10 @@ export default function EditEventPage() {
                     Update hike details
                   </h2>
                   <p className="text-gray-600 text-lg">Edit difficulty, trail stats, and requirements</p>
-                </div>
-                
-                {/* Difficulty Level */}
-                <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-6 border-2 border-orange-200">
+              </div>
+              
+              {/* ========== DIFFICULTY LEVEL ========== */}
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-6 border-2 border-orange-200">
                   <label className="block text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
                     <Activity className="h-5 w-5 text-orange-600" />
                     Difficulty Level
@@ -451,10 +511,10 @@ export default function EditEventPage() {
                       </label>
                     ))}
                   </div>
-                </div>
+              </div>
 
-                {/* Trail Statistics */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* ========== TRAIL STATISTICS ========== */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Distance (km)</label>
                     <input
@@ -486,10 +546,10 @@ export default function EditEventPage() {
                       placeholder="4.5"
                     />
                   </div>
-                </div>
+              </div>
 
-                {/* Participant Limits */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* ========== PARTICIPANT LIMITS & PRICING ========== */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Max Participants</label>
                     <input
@@ -520,9 +580,9 @@ export default function EditEventPage() {
                       placeholder="0.00"
                     />
                   </div>
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Requirements</label>
                   <TagInput
                     tags={selectedRequirements}
@@ -530,9 +590,9 @@ export default function EditEventPage() {
                     placeholder="Add requirement..."
                     suggestions={['Hiking boots', 'Water bottle', 'Backpack', 'Rain jacket', 'First aid kit']}
                   />
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Included Items (comma-separated)</label>
                   <input
                     type="text"
@@ -540,9 +600,9 @@ export default function EditEventPage() {
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     placeholder="Guide, Snacks, Maps"
                   />
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Cancellation Policy</label>
                   <textarea
                     {...register('cancellationPolicy')}
@@ -550,9 +610,9 @@ export default function EditEventPage() {
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     placeholder="Full refund if cancelled 48 hours before..."
                   />
-                </div>
+              </div>
 
-                <div>
+              <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Hosted by <span className="text-red-500">*</span></label>
                   <MemberAutocomplete
                     groupId={event?.groupId}
@@ -563,10 +623,11 @@ export default function EditEventPage() {
                   <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
                   {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
                   <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>
-                </div>
               </div>
+            </div>
             )}
 
+            {/* ========== STEP 4: REVIEW ========== */}
             {currentStep === STEPS.REVIEW && (
               <div className="space-y-6">
                 <div className="text-center mb-10 animate-fade-in">
@@ -580,8 +641,8 @@ export default function EditEventPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {/* Basics */}
-                  <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 shadow-sm">
+                {/* ========== REVIEW: BASICS SECTION ========== */}
+                <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="font-bold text-gray-900 text-xl flex items-center gap-2">
                         <Mountain className="h-6 w-6 text-purple-600" />
@@ -626,8 +687,8 @@ export default function EditEventPage() {
                     </div>
                   </div>
 
-                  {/* Location */}
-                  <div className="bg-white rounded-2xl p-6 border-2 border-pink-200 shadow-sm">
+                {/* ========== REVIEW: LOCATION SECTION ========== */}
+                <div className="bg-white rounded-2xl p-6 border-2 border-pink-200 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                         <MapPin className="h-6 w-6 text-pink-600" />
@@ -649,8 +710,8 @@ export default function EditEventPage() {
                     )}
                   </div>
 
-                  {/* Hike Details */}
-                  <div className="bg-white rounded-2xl p-6 border-2 border-green-200 shadow-sm">
+                {/* ========== REVIEW: HIKE DETAILS SECTION ========== */}
+                <div className="bg-white rounded-2xl p-6 border-2 border-green-200 shadow-sm">
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
                         <Compass className="h-6 w-6 text-green-600" />

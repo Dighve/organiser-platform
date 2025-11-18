@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Type, FileText, Image, Timer } from 'lucide-react'
@@ -10,13 +13,19 @@ import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 
+// ============================================================
+// CONSTANTS
+// ============================================================
+
+// Step navigation configuration for multi-step form
 const STEPS = {
-  BASICS: 0,
-  LOCATION: 1,
-  DETAILS: 2,
-  REVIEW: 3
+  BASICS: 0,      // Event title, date, time, description
+  LOCATION: 1,    // Google Places location with coordinates
+  DETAILS: 2,     // Difficulty, stats, requirements, pricing
+  REVIEW: 3       // Final review before publishing
 }
 
+// Step titles displayed in progress bar
 const STEP_TITLES = {
   [STEPS.BASICS]: 'Start with the basics',
   [STEPS.LOCATION]: 'Where will you hike?',
@@ -24,6 +33,7 @@ const STEP_TITLES = {
   [STEPS.REVIEW]: 'Review your event'
 }
 
+// Difficulty level options with visual indicators
 const DIFFICULTY_OPTIONS = [
   { value: 'BEGINNER', label: 'Beginner', description: 'Easy trails, minimal elevation', icon: '🟢' },
   { value: 'INTERMEDIATE', label: 'Intermediate', description: 'Moderate trails, some elevation', icon: '🟡' },
@@ -31,22 +41,34 @@ const DIFFICULTY_OPTIONS = [
   { value: 'EXPERT', label: 'Expert', description: 'Very challenging, technical terrain', icon: '🔴' }
 ]
 
-// Removed HIKING_REQUIREMENTS - now using custom tag input
-// CHUNK 1: Component Function and State
-// Copy this after the HIKING_REQUIREMENTS array (after line 43)
-
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function CreateEventPage() {
-  const [currentStep, setCurrentStep] = useState(STEPS.BASICS)
-  const [formData, setFormData] = useState({})
-  const [selectedRequirements, setSelectedRequirements] = useState([])
-  const [isSubmitting, setIsSubmitting] = useState(false) // Prevent double submissions
-  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const [searchParams] = useSearchParams()
   const groupId = searchParams.get('groupId')
+  const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
   
-  // Redirect if no groupId is provided
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
+  const [currentStep, setCurrentStep] = useState(STEPS.BASICS)        // Current step in multi-step form
+  const [formData, setFormData] = useState({})                        // Accumulated form data across steps
+  const [selectedRequirements, setSelectedRequirements] = useState([])  // Custom gear requirements tags
+  const [isSubmitting, setIsSubmitting] = useState(false)             // Prevent double form submissions
+  
+  const watchedValues = watch()  // Watch all form field values for real-time validation
+  
+  // ============================================================
+  // EFFECTS
+  // ============================================================
+  
+  // Redirect if no groupId is provided (events must belong to a group)
   useEffect(() => {
     if (!groupId) {
       toast.error('Events must be created for a specific group')
@@ -54,43 +76,54 @@ export default function CreateEventPage() {
     }
   }, [groupId, navigate])
   
-  // Fetch activities
+  // Load saved form data into form fields when navigating between steps
+  useEffect(() => {
+    Object.keys(formData).forEach(key => {
+      setValue(key, formData[key])
+    })
+  }, [currentStep, formData, setValue])
+  
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
+  
+  // Fetch activity types (currently only Hiking is active)
   const { data: activitiesData, isLoading: activitiesLoading } = useQuery({
     queryKey: ['activities'],
     queryFn: () => activityTypesAPI.getAll(),
   })
   
   const activities = activitiesData?.data || []
-  const watchedValues = watch()
 
-  // Load saved form data into form fields
-  useEffect(() => {
-    Object.keys(formData).forEach(key => {
-      setValue(key, formData[key])
-    })
-  }, [currentStep, formData, setValue])
-
+  // ============================================================
+  // HELPER FUNCTIONS
+  // ============================================================
+  
+  // Update accumulated form data with new step data
   const updateFormData = (stepData) => {
     setFormData(prev => ({ ...prev, ...stepData }))
   }
 
+  // Navigate to next step in form
   const nextStep = () => {
     if (currentStep < STEPS.REVIEW) {
       setCurrentStep(prev => prev + 1)
     }
   }
 
+  // Navigate to previous step in form
   const prevStep = () => {
     if (currentStep > STEPS.BASICS) {
       setCurrentStep(prev => prev - 1)
     }
   }
-
-  const onStepSubmit = (data) => {
-    updateFormData(data)
-    nextStep()
+  
+  // Jump directly to a specific step (used in review mode)
+  const goToStep = (step) => {
+    setCurrentStep(step)
   }
 
+  // Toggle gear requirement selection
   const toggleRequirement = (req) => {
     setSelectedRequirements(prev => 
       prev.includes(req) 
@@ -99,6 +132,17 @@ export default function CreateEventPage() {
     )
   }
 
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Handle submission of individual step (save data and proceed to next)
+  const onStepSubmit = (data) => {
+    updateFormData(data)
+    nextStep()
+  }
+
+  // Handle final form submission (create and publish event)
   const onFinalSubmit = async (data) => {
     if (!groupId) {
       toast.error('Group ID is required to create an event')
@@ -163,12 +207,11 @@ export default function CreateEventPage() {
     }
   }
 
-  const goToStep = (step) => {
-    setCurrentStep(step)
-  }
-// CHUNK 2: Progress Bar
-// Copy this after the goToStep function
-
+  // ============================================================
+  // RENDER FUNCTIONS - Multi-Step Form UI
+  // ============================================================
+  
+  // PROGRESS BAR - Visual indicator of current step
   const renderProgressBar = () => {
     const progress = ((currentStep + 1) / Object.keys(STEPS).length) * 100
     
@@ -204,9 +247,8 @@ export default function CreateEventPage() {
       </div>
     )
   }
-// CHUNK 3: Basics Step
-// Copy this after the renderProgressBar function
 
+  // STEP 1: BASICS - Event title, date, time, description, and featured photo
   const renderBasicsStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
       <div className="text-center mb-10 animate-fade-in">
@@ -375,9 +417,8 @@ export default function CreateEventPage() {
       </div>
     </form>
   )
-// CHUNK 4: Location Step (with Google Maps)
-// Copy this after the renderBasicsStep function
 
+  // STEP 2: LOCATION - Google Places Autocomplete with coordinates validation
   const renderLocationStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
       <div className="text-center mb-10 animate-fade-in">
@@ -464,9 +505,8 @@ export default function CreateEventPage() {
       </div>
     </form>
   )
-// CHUNK 5: Details Step Part 1 (Difficulty & Trail Stats)
-// Copy this after the renderLocationStep function
 
+  // STEP 3: DETAILS - Difficulty, trail stats, participants, gear, and pricing
   const renderDetailsStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
       <div className="text-center mb-10 animate-fade-in">
@@ -479,7 +519,7 @@ export default function CreateEventPage() {
         <p className="text-gray-600 text-lg">Help hikers prepare for your adventure</p>
       </div>
 
-      {/* Difficulty Level */}
+      {/* ========== DIFFICULTY LEVEL ========== */}
       <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-6 border-2 border-orange-200">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
@@ -516,7 +556,7 @@ export default function CreateEventPage() {
         </div>
       </div>
 
-      {/* Hike Stats */}
+      {/* ========== TRAIL STATISTICS (Optional) ========== */}
       <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border-2 border-blue-200">
         <h3 className="font-bold text-gray-900 text-lg mb-5 flex items-center gap-2">
           <TrendingUp className="h-5 w-5 text-blue-600" />
@@ -567,7 +607,7 @@ export default function CreateEventPage() {
         </div>
       </div>
 
-      {/* Group Size */}
+      {/* ========== MAX PARTICIPANTS ========== */}
       <div>
         <label className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 shadow-lg">
@@ -591,7 +631,7 @@ export default function CreateEventPage() {
         <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited participants</p>
       </div>
 
-      {/* Required Gear */}
+      {/* ========== REQUIRED GEAR (Custom Tags) ========== */}
       <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
         <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
           <Mountain className="h-5 w-5 text-purple-600" />
@@ -605,7 +645,7 @@ export default function CreateEventPage() {
         />
       </div>
 
-      {/* Additional Info */}
+      {/* ========== ADDITIONAL INFO: Cost & Host ========== */}
       <div className="space-y-4">
         <div>
           <label className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
@@ -664,9 +704,8 @@ export default function CreateEventPage() {
       </div>
     </form>
   )
-// CHUNK 7: Review Step Part 1
-// Copy this after the renderDetailsStep function
 
+  // STEP 4: REVIEW - Final review of all entered data before publishing
   const renderReviewStep = () => {
     const difficultyOption = DIFFICULTY_OPTIONS.find(opt => opt.value === formData.difficultyLevel)
     
@@ -683,7 +722,7 @@ export default function CreateEventPage() {
         </div>
 
         <div className="space-y-4">
-          {/* Basics */}
+          {/* ========== REVIEW: BASICS SECTION ========== */}
           <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-gray-900 text-xl flex items-center gap-2">
@@ -713,7 +752,7 @@ export default function CreateEventPage() {
             </div>
           </div>
 
-          {/* Location */}
+          {/* ========== REVIEW: LOCATION SECTION ========== */}
           <div className="bg-white rounded-2xl p-6 border-2 border-pink-200 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
@@ -758,8 +797,7 @@ export default function CreateEventPage() {
             )}
           </div>
 
-
-          {/* Hike Details */}
+          {/* ========== REVIEW: HIKE DETAILS SECTION ========== */}
           <div className="bg-white rounded-2xl p-6 border-2 border-green-200 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
@@ -853,9 +891,10 @@ export default function CreateEventPage() {
       </div>
     )
   }
-// CHUNK 9: Final - Step Renderer & Main Component Return
-// Copy this after the renderReviewStep function to complete the component
 
+  // ============================================================
+  // STEP ROUTER - Determines which step to render based on currentStep state
+  // ============================================================
   const renderCurrentStep = () => {
     switch (currentStep) {
       case STEPS.BASICS:
@@ -871,6 +910,9 @@ export default function CreateEventPage() {
     }
   }
 
+  // ============================================================
+  // MAIN COMPONENT RETURN
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -5,37 +8,61 @@ import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { Users, Search, Plus, Calendar } from 'lucide-react'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function BrowseGroupsPage() {
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
   const navigate = useNavigate()
-  const { isAuthenticated, user } = useAuthStore()
-  const queryClient = useQueryClient()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [activeTab, setActiveTab] = useState('explore')
+  const { isAuthenticated, user } = useAuthStore()  // Global auth state
+  const queryClient = useQueryClient()  // React Query cache
+  
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
+  const [searchQuery, setSearchQuery] = useState('')  // Search input for explore tab
+  const [activeTab, setActiveTab] = useState('explore')  // Current tab: 'explore', 'member', or 'organiser'
+  
+  // ============================================================
+  // EFFECTS
+  // ============================================================
   
   // Clear search when switching away from explore tab
   useEffect(() => {
     if (activeTab !== 'explore') setSearchQuery('')
   }, [activeTab])
   
-  // Fetch groups data
+  // ============================================================
+  // DATA FETCHING - Queries
+  // ============================================================
+  
+  // Fetch all public groups for exploration
   const { data, isLoading, error } = useQuery({
     queryKey: ['publicGroups'],
     queryFn: () => groupsAPI.getAllPublicGroups(),
   })
   
+  // Fetch user's subscribed groups (only if authenticated)
   const { data: myGroupsData, isLoading: myGroupsLoading } = useQuery({
     queryKey: ['myGroups'],
     queryFn: () => groupsAPI.getMyGroups(),
     enabled: isAuthenticated,
   })
   
+  // Fetch user's organised groups (only if organiser)
   const { data: organisedData, isLoading: organisedLoading } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
     enabled: isAuthenticated && user?.isOrganiser,
   })
   
-  // Mutations
+  // ============================================================
+  // DATA FETCHING - Mutations
+  // ============================================================
+  
+  // Subscribe to a group
   const subscribeMutation = useMutation({
     mutationFn: (groupId) => groupsAPI.subscribeToGroup(groupId),
     onSuccess: () => {
@@ -44,6 +71,7 @@ export default function BrowseGroupsPage() {
     },
   })
   
+  // Unsubscribe from a group
   const unsubscribeMutation = useMutation({
     mutationFn: (groupId) => groupsAPI.unsubscribeFromGroup(groupId),
     onSuccess: () => {
@@ -52,7 +80,11 @@ export default function BrowseGroupsPage() {
     },
   })
   
-  // Filter member groups to exclude groups in organiser tab
+  // ============================================================
+  // DERIVED STATE - Filtered Groups
+  // ============================================================
+  
+  // Filter member groups to exclude groups already in organiser tab (avoid duplicates)
   const filteredMemberGroups = useMemo(() => {
     const memberGroups = myGroupsData?.data || []
     const organisedGroups = organisedData?.data || []
@@ -65,7 +97,7 @@ export default function BrowseGroupsPage() {
     return memberGroups.filter(group => !organisedGroupIds.has(group.id))
   }, [myGroupsData?.data, organisedData?.data])
   
-  // Filter explore groups to exclude groups in both organiser and member tabs
+  // Filter explore groups to exclude groups already joined/organised (avoid duplicates)
   const filteredExploreGroups = useMemo(() => {
     const exploreGroups = data?.data || []
     const memberGroups = myGroupsData?.data || []
@@ -84,7 +116,11 @@ export default function BrowseGroupsPage() {
     return exploreGroups.filter(group => !excludeGroupIds.has(group.id))
   }, [data?.data, myGroupsData?.data, organisedData?.data, isAuthenticated])
   
-  // Get groups based on active tab
+  // ============================================================
+  // HELPER FUNCTIONS
+  // ============================================================
+  
+  // Get groups for the currently active tab
   const getTabGroups = () => {
     switch (activeTab) {
       case 'explore': return filteredExploreGroups
@@ -94,7 +130,7 @@ export default function BrowseGroupsPage() {
     }
   }
   
-  // Apply search filter (only in explore tab)
+  // Apply search filter to groups (only active in explore tab)
   const getFilteredGroups = () => {
     const groups = getTabGroups()
     if (activeTab === 'explore' && searchQuery) {
@@ -107,25 +143,38 @@ export default function BrowseGroupsPage() {
     return groups
   }
   
+  // Final filtered groups after applying search and tab filters
   const filteredGroups = getFilteredGroups()
+  
+  // Set of subscribed group IDs for quick lookup
   const subscribedGroupIds = new Set((myGroupsData?.data || []).map(g => g.id))
   
-  // Handlers
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Handle subscribe to group (redirect to login if not authenticated)
   const handleSubscribe = (groupId) => {
     if (!isAuthenticated) return navigate('/login')
     subscribeMutation.mutate(groupId)
   }
   
+  // Handle unsubscribe from group (with confirmation)
   const handleUnsubscribe = (groupId) => {
     if (confirm('Are you sure you want to leave this group?')) {
       unsubscribeMutation.mutate(groupId)
     }
   }
   
-  // Loading & Error states
+  // ============================================================
+  // LOADING & ERROR STATES
+  // ============================================================
   if (isLoading) return <LoadingState />
   if (error) return <ErrorState error={error.message} />
   
+  // ============================================================
+  // MAIN RENDER
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -142,7 +191,7 @@ export default function BrowseGroupsPage() {
           )}
         </div>
         
-        {/* Tabs */}
+        {/* ========== TAB NAVIGATION ========== */}
         <div className="mb-8">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 inline-flex gap-2 border border-gray-100 shadow-lg">
             {user?.isOrganiser && (
@@ -183,7 +232,7 @@ export default function BrowseGroupsPage() {
           </div>
         </div>
         
-        {/* Search Bar - Only for Explore Tab */}
+        {/* ========== SEARCH BAR (Explore Tab Only) ========== */}
         {activeTab === 'explore' && (
           <div className="mb-8">
             <div className="relative">
@@ -199,7 +248,9 @@ export default function BrowseGroupsPage() {
           </div>
         )}
       
-        {/* Tab Content */}
+        {/* ========== TAB CONTENT ========== */}
+        
+        {/* MEMBER TAB - User's subscribed groups */}
         {activeTab === 'member' && (
           <TabContent
             loading={myGroupsLoading}
@@ -220,6 +271,7 @@ export default function BrowseGroupsPage() {
           </TabContent>
         )}
         
+        {/* ORGANISER TAB - User's managed groups */}
         {activeTab === 'organiser' && user?.isOrganiser && (
           <TabContent
             loading={organisedLoading}
@@ -240,6 +292,7 @@ export default function BrowseGroupsPage() {
           </TabContent>
         )}
         
+        {/* EXPLORE TAB - Discover new groups */}
         {activeTab === 'explore' && (() => {
           const allGroups = data?.data || []
           const hasGroupsButAllFiltered = allGroups.length > 0 && filteredGroups.length === 0
@@ -281,7 +334,11 @@ export default function BrowseGroupsPage() {
   )
 }
 
-// Helper Components
+// ============================================================
+// HELPER COMPONENTS
+// ============================================================
+
+// LOADING STATE - Full page loading spinner
 function LoadingState() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -297,6 +354,7 @@ function LoadingState() {
   )
 }
 
+// ERROR STATE - Full page error display
 function ErrorState({ error }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -310,6 +368,7 @@ function ErrorState({ error }) {
   )
 }
 
+// TAB CONTENT WRAPPER - Handles loading, empty states, and grid layout
 function TabContent({ loading, groups, emptyMessage, emptyAction, emptyActionText, emptyIcon, children }) {
   if (loading) {
     return (
@@ -341,9 +400,12 @@ function TabContent({ loading, groups, emptyMessage, emptyAction, emptyActionTex
   return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{children}</div>
 }
 
+// GROUP CARD - Reusable card component with mode-specific actions
+// Modes: 'explore' (join), 'member' (view/leave), 'organiser' (create event/view)
 function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscribed }) {
+  // Render action buttons based on card mode
   const renderActions = () => {
-    const stopPropagation = (e) => e.stopPropagation()
+    const stopPropagation = (e) => e.stopPropagation()  // Prevent card click when clicking buttons
     
     switch (mode) {
       case 'member':

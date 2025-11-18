@@ -1,14 +1,37 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function HomePage() {
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
   const navigate = useNavigate()
-  const { isAuthenticated, user } = useAuthStore()
-  const [activeGroupTab, setActiveGroupTab] = useState('member')
-  const [hasInitializedTab, setHasInitializedTab] = useState(false)
+  const { isAuthenticated, user } = useAuthStore()  // Global auth state
+  
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
+  const [activeGroupTab, setActiveGroupTab] = useState('member')  // Tab selection: 'member' or 'organiser'
+  const [hasInitializedTab, setHasInitializedTab] = useState(false)  // Track if tab has been auto-selected
+  
+  // Check if user has already clicked discover before (localStorage)
+  const [showDiscover, setShowDiscover] = useState(() => {
+    const hasDiscovered = localStorage.getItem('hasDiscovered')
+    return hasDiscovered !== 'true'
+  })
+  
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
   
   // Fetch user's subscribed groups (only if authenticated)
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
@@ -31,19 +54,24 @@ export default function HomePage() {
     enabled: isAuthenticated,
   })
   
-  // Fetch all public events
+  // Fetch all public events for discovery
   const { data: allEventsData, isLoading: allEventsLoading } = useQuery({
     queryKey: ['allEvents'],
     queryFn: () => eventsAPI.getUpcomingEvents(0, 10),
     refetchOnMount: false, // Use cached data if available
   })
   
+  // ============================================================
+  // DERIVED STATE
+  // ============================================================
+  
+  // Extract data from API responses
   const memberGroups = groupsData?.data || []
   const organisedGroups = organisedGroupsData?.data || []
   const yourEvents = yourEventsData?.data?.content || []
   const allEvents = allEventsData?.data?.content || []
   
-  // Filter member groups to exclude groups already in organiser tab
+  // Filter member groups to exclude groups already in organiser tab (avoid duplicates)
   const filteredMemberGroups = useMemo(() => {
     if (organisedGroups.length === 0) {
       return memberGroups
@@ -52,7 +80,7 @@ export default function HomePage() {
     return memberGroups.filter(group => !organisedGroupIds.has(group.id))
   }, [memberGroups, organisedGroups])
   
-  // Filter discover events to exclude events already in user's events
+  // Filter discover events to exclude events already in user's events (avoid duplicates)
   const discoverEvents = useMemo(() => {
     if (!isAuthenticated || yourEvents.length === 0) {
       return allEvents
@@ -61,7 +89,11 @@ export default function HomePage() {
     return allEvents.filter(event => !yourEventIds.has(event.id))
   }, [allEvents, yourEvents, isAuthenticated])
 
-  // Smart tab selection: Only show organiser tab if user has organised groups
+  // ============================================================
+  // EFFECTS
+  // ============================================================
+  
+  // Smart tab selection: Auto-select organiser tab if user has organised groups
   useEffect(() => {
     if (!hasInitializedTab && !organisedGroupsLoading && user?.isOrganiser) {
       // If organiser has groups, default to organiser tab
@@ -73,19 +105,21 @@ export default function HomePage() {
     }
   }, [organisedGroupsLoading, organisedGroups.length, user?.isOrganiser, hasInitializedTab])
 
-  // Check if user has already clicked discover before
-  const [showDiscover, setShowDiscover] = useState(() => {
-    const hasDiscovered = localStorage.getItem('hasDiscovered')
-    return hasDiscovered !== 'true'
-  })
-
-  // Handle discover button click
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Handle discover button click (save to localStorage and show dashboard)
   const handleDiscoverClick = () => {
     localStorage.setItem('hasDiscovered', 'true')
     setShowDiscover(false)
   }
 
-  // Modern hero background with animated gradient
+  // ============================================================
+  // RENDER HELPERS
+  // ============================================================
+  
+  // HERO BACKGROUND - Animated gradient with floating shapes
   const heroBackground = (
     <div className="absolute inset-0 -z-10 w-full h-full overflow-hidden">
       {/* Animated gradient background */}
@@ -101,6 +135,9 @@ export default function HomePage() {
     </div>
   )
 
+  // ============================================================
+  // HERO VIEW - First-time visitor landing page
+  // ============================================================
   if (showDiscover) {
     return (
       <div className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden">
@@ -170,10 +207,13 @@ export default function HomePage() {
     )
   }
 
-  // Discover view: groups/events layout with modern background
+  // ============================================================
+  // DASHBOARD VIEW - Main home page with groups and events
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-8 py-10">
-      {/* Left: Your Groups */}
+      
+      {/* ========== LEFT SIDEBAR: YOUR GROUPS ========== */}
       <div className="w-full lg:w-1/4">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Groups</h2>
@@ -219,7 +259,7 @@ export default function HomePage() {
         )}
         
         <div className="space-y-3">
-          {/* Member Tab */}
+          {/* ========== MEMBER TAB - Subscribed Groups ========== */}
           {activeGroupTab === 'member' && (
             <>
               {groupsLoading ? (
@@ -272,7 +312,7 @@ export default function HomePage() {
             </>
           )}
           
-          {/* Organiser Tab */}
+          {/* ========== ORGANISER TAB - Managed Groups ========== */}
           {activeGroupTab === 'organiser' && user?.isOrganiser && (
             <>
               {organisedGroupsLoading ? (
@@ -346,8 +386,10 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* Right: Events */}
+      {/* ========== RIGHT CONTENT: EVENTS ========== */}
       <div className="w-full lg:w-3/4 flex flex-col gap-12">
+        
+        {/* ========== YOUR EVENTS SECTION ========== */}
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Events</h2>
@@ -428,6 +470,8 @@ export default function HomePage() {
             )}
           </div>
         </div>
+        
+        {/* ========== DISCOVER EVENTS SECTION ========== */}
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">Discover Events</h2>

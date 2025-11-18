@@ -1,20 +1,51 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { membersAPI } from '../lib/api'
 import { ArrowLeft, Calendar } from 'lucide-react'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function MemberDetailPage() {
-  const { id } = useParams()
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
+  const { id } = useParams()  // Get member ID from URL
   const navigate = useNavigate()
 
-  // Fetch member details
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
+  
+  // Fetch member details by ID
   const { data: member, isLoading, isError } = useQuery({
     queryKey: ['member', id],
     queryFn: () => membersAPI.getMemberById(id).then(res => res.data),
     enabled: !!id,
   })
 
+  // ============================================================
+  // HELPER FUNCTIONS
+  // ============================================================
+  
+  // Generate initials from name or email for avatar fallback
+  const getInitials = (name, email) => {
+    if (name && name.trim()) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    }
+    if (email) {
+      return email[0].toUpperCase()
+    }
+    return '?'
+  }
+
+  // ============================================================
+  // LOADING STATE
+  // ============================================================
   if (isLoading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
@@ -26,6 +57,9 @@ export default function MemberDetailPage() {
     )
   }
 
+  // ============================================================
+  // ERROR STATE
+  // ============================================================
   if (isError || !member) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
@@ -44,20 +78,14 @@ export default function MemberDetailPage() {
     )
   }
 
-  // Helper function to get initials
-  const getInitials = (name, email) => {
-    if (name && name.trim()) {
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-    }
-    if (email) {
-      return email[0].toUpperCase()
-    }
-    return '?'
-  }
-
+  // ============================================================
+  // MAIN RENDER
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* ========== BACK BUTTON ========== */}
         <button
           onClick={() => navigate(-1)}
           className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
@@ -66,16 +94,18 @@ export default function MemberDetailPage() {
           Back
         </button>
 
-        {/* Member Profile Card */}
+        {/* ========== MEMBER PROFILE CARD ========== */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Header with gradient */}
+          
+          {/* GRADIENT BANNER */}
           <div className="relative h-48 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500">
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
           </div>
 
-          {/* Profile Content */}
+          {/* ========== PROFILE CONTENT ========== */}
           <div className="relative px-8 pb-8">
-            {/* Profile Picture - Overlapping header */}
+            
+            {/* PROFILE PICTURE - Overlaps gradient banner */}
             <div className="flex justify-center -mt-20 mb-6">
               {member.profilePhotoUrl ? (
                 <img
@@ -90,7 +120,7 @@ export default function MemberDetailPage() {
               )}
             </div>
 
-            {/* Member Info */}
+            {/* ========== MEMBER INFO ========== */}
             <div className="text-center mb-8">
               <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
                 {member.displayName || 'OutMeets Member'}
@@ -103,7 +133,7 @@ export default function MemberDetailPage() {
               )}
             </div>
 
-            {/* Member Details */}
+            {/* ========== MEMBER DETAILS ========== */}
             <div className="max-w-2xl mx-auto space-y-6">
               {/* Member Since */}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100 text-center">
@@ -126,7 +156,7 @@ export default function MemberDetailPage() {
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* ========== ACTION BUTTONS ========== */}
             <div className="mt-8 flex gap-4 justify-center">
               <button
                 onClick={() => navigate(-1)}

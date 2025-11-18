@@ -1,22 +1,41 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function MyEventsPage() {
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated } = useAuthStore()  // Global auth state
   
-  // Fetch user's events
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
+  
+  // Fetch all events user is registered for
   const { data, isLoading, error } = useQuery({
     queryKey: ['myEvents'],
     queryFn: () => eventsAPI.getMyEvents(0, 50),
     enabled: isAuthenticated,
   })
   
-  const events = data?.data?.content || []
+  // ============================================================
+  // DERIVED STATE
+  // ============================================================
+  const events = data?.data?.content || []  // Extract events from paginated response
   
+  // ============================================================
+  // UNAUTHENTICATED STATE
+  // ============================================================
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
@@ -35,6 +54,9 @@ export default function MyEventsPage() {
     )
   }
   
+  // ============================================================
+  // LOADING STATE
+  // ============================================================
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -49,6 +71,9 @@ export default function MyEventsPage() {
     )
   }
   
+  // ============================================================
+  // ERROR STATE
+  // ============================================================
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
@@ -63,9 +88,14 @@ export default function MyEventsPage() {
     )
   }
   
+  // ============================================================
+  // MAIN RENDER
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* ========== PAGE HEADER ========== */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">🎪 My Events</h1>
           <button
@@ -76,14 +106,17 @@ export default function MyEventsPage() {
           </button>
         </div>
         
+        {/* ========== EVENT LIST ========== */}
         {events.length === 0 ? (
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-16 text-center border border-gray-100 shadow-lg">
+            {/* EMPTY STATE - No events registered */}
             <div className="text-6xl mb-4">🎉</div>
             <h3 className="text-2xl font-bold text-gray-900 mb-3">No Events Yet</h3>
             <p className="text-gray-600">Create your first event to get started!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* EVENT GRID - Display all registered events */}
             {events.map(event => (
               <div
                 key={event.id}

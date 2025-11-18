@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
@@ -6,20 +9,38 @@ import ImageUpload from '../components/ImageUpload'
 import toast from 'react-hot-toast'
 import { Camera, Edit2, Save, X } from 'lucide-react'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function ProfilePage() {
-  const { user } = useAuthStore()
-  const queryClient = useQueryClient()
-  const [isEditing, setIsEditing] = useState(false)
-  const [displayName, setDisplayName] = useState('')
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState('')
+  // ============================================================
+  // HOOKS & STATE
+  // ============================================================
+  const { user } = useAuthStore()  // Global auth state
+  const queryClient = useQueryClient()  // React Query cache
+  
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
+  const [isEditing, setIsEditing] = useState(false)  // Edit mode toggle
+  const [displayName, setDisplayName] = useState('')  // Editable display name
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState('')  // Editable profile photo URL
 
-  // Fetch current member data
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
+  
+  // Fetch current user's member data
   const { data: memberData, isLoading } = useQuery({
     queryKey: ['currentMember'],
     queryFn: () => membersAPI.getCurrentMember().then(res => res.data),
   })
 
-  // Initialize state when memberData loads
+  // ============================================================
+  // EFFECTS
+  // ============================================================
+  
+  // Sync local state with fetched member data
   useEffect(() => {
     if (memberData) {
       setDisplayName(memberData.displayName || '')
@@ -27,7 +48,11 @@ export default function ProfilePage() {
     }
   }, [memberData])
 
-  // Update profile mutation
+  // ============================================================
+  // MUTATIONS
+  // ============================================================
+  
+  // Update profile mutation (display name and photo)
   const updateProfileMutation = useMutation({
     mutationFn: (data) => membersAPI.updateProfile(data),
     onSuccess: () => {
@@ -41,6 +66,11 @@ export default function ProfilePage() {
     },
   })
 
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Save profile changes
   const handleSave = () => {
     updateProfileMutation.mutate({
       displayName: displayName || null,
@@ -48,13 +78,18 @@ export default function ProfilePage() {
     })
   }
 
+  // Cancel editing and reset to original values
   const handleCancel = () => {
     setDisplayName(memberData?.displayName || '')
     setProfilePhotoUrl(memberData?.profilePhotoUrl || '')
     setIsEditing(false)
   }
 
-  // Helper function to get initials
+  // ============================================================
+  // HELPER FUNCTIONS
+  // ============================================================
+  
+  // Generate initials from name or email for avatar fallback
   const getInitials = (name, email) => {
     if (name && name.trim()) {
       return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
@@ -65,6 +100,9 @@ export default function ProfilePage() {
     return '?'
   }
 
+  // ============================================================
+  // LOADING STATE
+  // ============================================================
   if (isLoading) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
@@ -76,6 +114,9 @@ export default function ProfilePage() {
     )
   }
 
+  // ============================================================
+  // ERROR STATE
+  // ============================================================
   if (!memberData) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
@@ -88,10 +129,14 @@ export default function ProfilePage() {
     )
   }
 
+  // ============================================================
+  // MAIN RENDER
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        
+        {/* ========== PAGE HEADER ========== */}
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👤 My Profile</h1>
           {!isEditing && (
@@ -105,15 +150,18 @@ export default function ProfilePage() {
           )}
         </div>
         
+        {/* ========== PROFILE CARD ========== */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          {/* Header gradient */}
+          
+          {/* GRADIENT BANNER */}
           <div className="relative h-32 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500">
             <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
           </div>
 
-          {/* Profile Content */}
+          {/* ========== PROFILE CONTENT ========== */}
           <div className="relative px-8 pb-8">
-            {/* Profile Picture - Overlapping header */}
+            
+            {/* PROFILE PICTURE - Overlaps gradient banner */}
             <div className="flex justify-center -mt-16 mb-6">
               <div className="relative">
                 {profilePhotoUrl ? (
@@ -135,7 +183,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Member Info */}
+            {/* ========== MEMBER INFO ========== */}
             <div className="text-center mb-8">
               {isEditing ? (
                 <input
@@ -158,7 +206,7 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Edit Mode: Photo Upload */}
+            {/* ========== EDIT MODE: PHOTO UPLOAD ========== */}
             {isEditing && (
               <div className="mb-8 max-w-2xl mx-auto">
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
@@ -175,7 +223,7 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Action Buttons in Edit Mode */}
+            {/* ========== EDIT MODE: ACTION BUTTONS ========== */}
             {isEditing && (
               <div className="flex gap-4 justify-center mb-8">
                 <button
@@ -197,7 +245,7 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Profile Details */}
+            {/* ========== PROFILE DETAILS (Read-Only) ========== */}
             <div className="max-w-2xl mx-auto space-y-6">
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
                 <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">

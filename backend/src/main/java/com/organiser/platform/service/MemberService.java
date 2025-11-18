@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 package com.organiser.platform.service;
 
 import com.organiser.platform.dto.MemberDTO;
@@ -10,13 +13,32 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class MemberService {
     
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
+    
     private final MemberRepository memberRepository;
     
+    // ============================================================
+    // PUBLIC MEMBER OPERATIONS
+    // ============================================================
+    
+    /**
+     * Promote a member to organiser status.
+     *
+     * @param memberId The ID of the member to promote
+     * @return The updated Member entity
+     * @throws RuntimeException if member not found or already an organiser
+     */
     @Transactional
     public Member promoteToOrganiser(Long memberId) {
         Member member = memberRepository.findById(memberId)
@@ -30,21 +52,41 @@ public class MemberService {
         return memberRepository.save(member);
     }
     
+    /**
+     * Get member by ID.
+     *
+     * @param memberId The ID of the member to retrieve
+     * @return The Member entity
+     * @throws RuntimeException if member not found
+     */
     public Member getMemberById(Long memberId) {
         return memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
     }
     
     /**
-     * Get member details as DTO (for public display)
+     * Get member details as DTO (for public display).
+     *
+     * @param memberId The ID of the member to retrieve
+     * @return MemberDTO containing public member information
+     * @throws RuntimeException if member not found
      */
     public MemberDTO getMemberDTOById(Long memberId) {
         Member member = getMemberById(memberId);
         return convertToDTO(member);
     }
     
+    // ============================================================
+    // PUBLIC PROFILE UPDATE OPERATIONS
+    // ============================================================
+    
     /**
-     * Update member profile (display name, profile photo)
+     * Update member profile (display name, profile photo).
+     *
+     * @param memberId The ID of the member to update
+     * @param request The update request containing new profile data
+     * @return MemberDTO containing updated member information
+     * @throws RuntimeException if member not found
      */
     @Transactional
     @CacheEvict(value = {"members", "groups", "events"}, allEntries = true)
@@ -72,7 +114,12 @@ public class MemberService {
     }
     
     /**
-     * Update profile photo only
+     * Update profile photo only.
+     *
+     * @param memberId The ID of the member to update
+     * @param photoUrl The new profile photo URL
+     * @return MemberDTO containing updated member information
+     * @throws RuntimeException if member not found
      */
     @Transactional
     @CacheEvict(value = {"members", "groups", "events"}, allEntries = true)
@@ -88,8 +135,15 @@ public class MemberService {
         return convertToDTO(updatedMember);
     }
     
+    // ============================================================
+    // PRIVATE DATA CONVERSION METHODS
+    // ============================================================
+    
     /**
-     * Convert Member entity to DTO
+     * Convert Member entity to DTO.
+     *
+     * @param member The Member entity to convert
+     * @return MemberDTO containing member information
      */
     private MemberDTO convertToDTO(Member member) {
         return MemberDTO.builder()

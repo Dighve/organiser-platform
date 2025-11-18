@@ -1,5 +1,8 @@
 package com.organiser.platform.service;
 
+// ============================================================
+// IMPORTS
+// ============================================================
 import com.organiser.platform.dto.CommentDTO;
 import com.organiser.platform.dto.CreateCommentRequest;
 import com.organiser.platform.dto.CreateReplyRequest;
@@ -19,19 +22,35 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+/**
+ * Service for managing event comments and replies.
+ * Enforces group membership privacy for comment access.
+ * 
+ * @author OutMeets Platform Team
+ */
 @Service
 @RequiredArgsConstructor
 public class EventCommentService {
     
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
     private final EventCommentRepository commentRepository;
     private final EventCommentReplyRepository replyRepository;
     private final EventRepository eventRepository;
     private final MemberRepository memberRepository;
     private final GroupService groupService;
     
+    // ============================================================
+    // PUBLIC METHODS - Comment Operations
+    // ============================================================
+    
     /**
-     * Get all comments for an event with their replies
-     * Requires group membership to view
+     * Get all comments for an event with their replies.
+     * Requires group membership to view.
      */
     @Transactional(readOnly = true)
     public List<CommentDTO> getEventComments(Long eventId, Long memberId) {
@@ -50,8 +69,8 @@ public class EventCommentService {
     }
     
     /**
-     * Create a new comment on an event
-     * Requires group membership
+     * Create a new comment on an event.
+     * Requires group membership.
      */
     @Transactional
     public CommentDTO createComment(Long eventId, CreateCommentRequest request, Long memberId) {
@@ -78,7 +97,8 @@ public class EventCommentService {
     }
     
     /**
-     * Update an existing comment
+     * Update an existing comment.
+     * Only the comment author can update it.
      */
     @Transactional
     public CommentDTO updateComment(Long commentId, CreateCommentRequest request, Long memberId) {
@@ -98,7 +118,8 @@ public class EventCommentService {
     }
     
     /**
-     * Delete a comment
+     * Delete a comment.
+     * Only the comment author can delete it.
      */
     @Transactional
     public void deleteComment(Long commentId, Long memberId) {
@@ -113,8 +134,12 @@ public class EventCommentService {
         commentRepository.delete(comment);
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Reply Operations
+    // ============================================================
+    
     /**
-     * Create a reply to a comment
+     * Create a reply to a comment.
      */
     @Transactional
     public ReplyDTO createReply(Long commentId, CreateReplyRequest request, Long memberId) {
@@ -136,7 +161,8 @@ public class EventCommentService {
     }
     
     /**
-     * Update a reply
+     * Update a reply.
+     * Only the reply author can update it.
      */
     @Transactional
     public ReplyDTO updateReply(Long replyId, CreateReplyRequest request, Long memberId) {
@@ -156,7 +182,8 @@ public class EventCommentService {
     }
     
     /**
-     * Delete a reply
+     * Delete a reply.
+     * Only the reply author can delete it.
      */
     @Transactional
     public void deleteReply(Long replyId, Long memberId) {
@@ -171,8 +198,12 @@ public class EventCommentService {
         replyRepository.delete(reply);
     }
     
+    // ============================================================
+    // PRIVATE METHODS - Data Conversion
+    // ============================================================
+    
     /**
-     * Convert EventComment entity to CommentDTO
+     * Convert EventComment entity to CommentDTO.
      */
     private CommentDTO convertToDTO(EventComment comment) {
         List<ReplyDTO> replies = comment.getReplies().stream()
@@ -198,7 +229,7 @@ public class EventCommentService {
     }
     
     /**
-     * Convert EventCommentReply entity to ReplyDTO
+     * Convert EventCommentReply entity to ReplyDTO.
      */
     private ReplyDTO convertReplyToDTO(EventCommentReply reply) {
         return ReplyDTO.builder()

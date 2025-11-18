@@ -1,5 +1,8 @@
 package com.organiser.platform.service;
 
+// ============================================================
+// IMPORTS
+// ============================================================
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.CreateGroupRequest;
 import com.organiser.platform.dto.EventDTO;
@@ -29,15 +32,35 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+// ============================================================
+// SERVICE CLASS
+// ============================================================
+/**
+ * Service for managing groups and group memberships.
+ * Handles group CRUD, subscriptions, and member management.
+ * 
+ * @author OutMeets Platform Team
+ */
 @Service
 @RequiredArgsConstructor
 public class GroupService {
     
+    // ============================================================
+    // DEPENDENCIES
+    // ============================================================
     private final GroupRepository groupRepository;
     private final MemberRepository memberRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final com.organiser.platform.repository.ActivityRepository activityRepository;
     
+    // ============================================================
+    // PUBLIC METHODS - Group CRUD Operations
+    // ============================================================
+    
+    /**
+     * Create a new group.
+     * Automatically subscribes the organiser to the group.
+     */
     @Transactional
     @CacheEvict(value = "groups", allEntries = true)
     public Group createGroup(CreateGroupRequest request, Long organiserId) {
@@ -76,6 +99,10 @@ public class GroupService {
         return group;
     }
     
+    /**
+     * Update an existing group.
+     * Only the group organiser can update the group.
+     */
     @Transactional
     @CacheEvict(value = "groups", allEntries = true)
     public GroupDTO updateGroup(Long groupId, CreateGroupRequest request, Long userId) {
@@ -126,6 +153,13 @@ public class GroupService {
         return GroupDTO.fromEntity(group, memberCount);
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Group Queries
+    // ============================================================
+    
+    /**
+     * Get all groups a user is subscribed to.
+     */
     @Cacheable(value = "groups", key = "'user_' + #memberId")
     public List<GroupDTO> getUserSubscribedGroups(Long memberId) {
         List<Subscription> subscriptions = subscriptionRepository.findByMemberId(memberId);
@@ -143,6 +177,9 @@ public class GroupService {
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Get all groups organised by a specific user.
+     */
     @Cacheable(value = "groups", key = "'organiser_' + #memberId")
     public List<GroupDTO> getUserOrganisedGroups(Long memberId) {
         List<Group> groups = groupRepository.findByPrimaryOrganiserId(memberId);
@@ -158,6 +195,9 @@ public class GroupService {
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Get all public and active groups.
+     */
     @Cacheable(value = "groups", key = "'public'")
     public List<GroupDTO> getAllPublicGroups() {
         List<Group> groups = groupRepository.findByIsPublicTrueAndActiveTrue();
@@ -173,6 +213,9 @@ public class GroupService {
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Get group by ID with member count.
+     */
     @Cacheable(value = "groups", key = "'group_' + #groupId")
     public GroupDTO getGroupById(Long groupId) {
         Group group = groupRepository.findById(groupId)
@@ -186,6 +229,14 @@ public class GroupService {
         return GroupDTO.fromEntity(group, memberCount);
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Subscription Management
+    // ============================================================
+    
+    /**
+     * Subscribe a member to a group.
+     * Creates new subscription or reactivates existing one.
+     */
     @Transactional
     @CacheEvict(value = "groups", allEntries = true)
     public void subscribeToGroup(Long groupId, Long memberId) {
@@ -219,6 +270,10 @@ public class GroupService {
         }
     }
     
+    /**
+     * Unsubscribe a member from a group.
+     * Sets subscription status to INACTIVE.
+     */
     @Transactional
     @CacheEvict(value = "groups", allEntries = true)
     public void unsubscribeFromGroup(Long groupId, Long memberId) {
@@ -230,8 +285,13 @@ public class GroupService {
         subscriptionRepository.save(subscription);
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Access Control
+    // ============================================================
+    
     /**
-     * Check if a member is subscribed to a group (for access control)
+     * Check if a member has access to a group.
+     * Returns true if member is the organiser OR has active subscription.
      */
     public boolean isMemberOfGroup(Long memberId, Long groupId) {
         if (memberId == null || groupId == null) {
@@ -249,6 +309,14 @@ public class GroupService {
         return subscription.isPresent() && subscription.get().getStatus() == Subscription.SubscriptionStatus.ACTIVE;
     }
     
+    // ============================================================
+    // PUBLIC METHODS - Group Members
+    // ============================================================
+    
+    /**
+     * Get all active members of a group.
+     * Organiser is marked and sorted first.
+     */
     @Transactional(readOnly = true)
     public java.util.List<com.organiser.platform.dto.MemberDTO> getGroupMembers(Long groupId) {
         Group group = groupRepository.findById(groupId)

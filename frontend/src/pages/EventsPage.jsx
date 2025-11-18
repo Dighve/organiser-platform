@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
@@ -5,15 +8,28 @@ import { Search } from 'lucide-react'
 import { eventsAPI } from '../lib/api'
 import EventCard from '../components/EventCard'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function EventsPage() {
-  const [searchParams, setSearchParams] = useSearchParams()
-  const urlSearch = searchParams.get('search') || ''
+  // ============================================================
+  // HOOKS & URL PARAMS
+  // ============================================================
+  const [searchParams, setSearchParams] = useSearchParams()  // URL query parameters
+  const urlSearch = searchParams.get('search') || ''  // Get search from URL
   
-  const [page, setPage] = useState(0)
-  const [searchKeyword, setSearchKeyword] = useState(urlSearch)
-  const [searchInput, setSearchInput] = useState(urlSearch)
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
+  const [page, setPage] = useState(0)  // Current pagination page (0-indexed)
+  const [searchKeyword, setSearchKeyword] = useState(urlSearch)  // Active search query for API
+  const [searchInput, setSearchInput] = useState(urlSearch)  // Search input field value
   
-  // Update search when URL params change
+  // ============================================================
+  // EFFECTS
+  // ============================================================
+  
+  // Sync local state with URL parameters (enables shareable search URLs)
   useEffect(() => {
     const urlSearch = searchParams.get('search') || ''
     setSearchKeyword(urlSearch)
@@ -21,6 +37,11 @@ export default function EventsPage() {
     setPage(0)
   }, [searchParams])
 
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
+  
+  // Fetch events - either search results or all upcoming events
   const { data, isLoading } = useQuery({
     queryKey: ['events', page, searchKeyword],
     queryFn: () => 
@@ -29,9 +50,17 @@ export default function EventsPage() {
         : eventsAPI.getUpcomingEvents(page, 20),
   })
 
-  const events = data?.data?.content || []
-  const totalPages = data?.data?.totalPages || 0
+  // ============================================================
+  // DERIVED STATE
+  // ============================================================
+  const events = data?.data?.content || []  // Extract events array from paginated response
+  const totalPages = data?.data?.totalPages || 0  // Total pages for pagination
 
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Handle search form submission
   const handleSearch = (e) => {
     e.preventDefault()
     if (searchInput.trim()) {
@@ -42,6 +71,7 @@ export default function EventsPage() {
     setPage(0)
   }
   
+  // Clear search and reset to all events
   const handleClearSearch = () => {
     setSearchInput('')
     setSearchKeyword('')
@@ -49,13 +79,16 @@ export default function EventsPage() {
     setPage(0)
   }
 
+  // ============================================================
+  // MAIN RENDER
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">🎉 Browse Events</h1>
           
-          {/* Search Bar */}
+          {/* ========== SEARCH BAR ========== */}
           <form onSubmit={handleSearch} className="flex gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
@@ -81,7 +114,7 @@ export default function EventsPage() {
             )}
           </form>
           
-          {/* Search Results Message */}
+          {/* ========== SEARCH RESULTS MESSAGE ========== */}
           {searchKeyword && (
             <div className="mt-4 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-purple-200">
               <p className="text-gray-700">
@@ -95,7 +128,9 @@ export default function EventsPage() {
           )}
         </div>
 
-        {/* Events Grid */}
+        {/* ========== EVENTS GRID ========== */}
+        
+        {/* LOADING STATE - Skeleton cards */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -114,7 +149,7 @@ export default function EventsPage() {
               ))}
             </div>
 
-            {/* Pagination */}
+            {/* ========== PAGINATION ========== */}
             {totalPages > 1 && (
               <div className="mt-10 flex justify-center items-center gap-3">
                 <button

@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
@@ -6,15 +9,33 @@ import toast from 'react-hot-toast'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function LoginPage() {
-  const [isLoading, setIsLoading] = useState(false)
-  const [emailSent, setEmailSent] = useState(false)
+  // ============================================================
+  // HOOKS & STATE
+  // ============================================================
   const navigate = useNavigate()
-  const { setPendingEmail } = useAuthStore()
-  const { register, handleSubmit, formState: { errors }, watch } = useForm()
+  const { setPendingEmail } = useAuthStore()  // Global auth state
+  const { register, handleSubmit, formState: { errors }, watch } = useForm()  // React Hook Form
+  
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
+  const [isLoading, setIsLoading] = useState(false)  // Loading state for API request
+  const [emailSent, setEmailSent] = useState(false)  // Success state after magic link sent
 
-  const email = watch('email')
+  // ============================================================
+  // FORM WATCHERS
+  // ============================================================
+  const email = watch('email')  // Watch email field for display in success state
 
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Handle magic link request submission
   const onSubmit = async (data) => {
     setIsLoading(true)
     try {
@@ -33,6 +54,9 @@ export default function LoginPage() {
     }
   }
 
+  // ============================================================
+  // SUCCESS STATE - Email sent confirmation
+  // ============================================================
   if (emailSent) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
@@ -80,6 +104,9 @@ export default function LoginPage() {
     )
   }
 
+  // ============================================================
+  // MAIN RENDER - Login form
+  // ============================================================
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
       {/* Decorative background elements */}

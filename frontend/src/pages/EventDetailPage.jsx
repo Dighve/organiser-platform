@@ -8,23 +8,45 @@ import toast from 'react-hot-toast'
 import CommentSection from '../components/CommentSection'
 import ProfileAvatar from '../components/ProfileAvatar'
 
+// ============================================
+// CONSTANTS - Default fallback images
+// ============================================
+const DEFAULT_EVENT_IMAGES = [
+  'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=1200&h=600&fit=crop',
+  'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=600&fit=crop'
+]
+
+// ============================================
+// MAIN COMPONENT
+// ============================================
 export default function EventDetailPage() {
+  // ============================================
+  // HOOKS & ROUTING
+  // ============================================
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
 
+  // ============================================
+  // DATA FETCHING - React Query hooks
+  // ============================================
+  
+  // 1. Fetch event details (with 403 handling for members-only events)
   const { data, isLoading, error } = useQuery({
     queryKey: ['event', id],
     queryFn: () => eventsAPI.getEventById(id),
     retry: (failureCount, error) => {
-      // Don't retry on 403 errors (access denied)
+      // Don't retry on 403 errors (non-member trying to access)
       if (error?.response?.status === 403) {
         return false
       }
       return failureCount < 2
     },
-    // Don't throw error on 403 - we want to show partial view
     onError: (error) => {
       if (error?.response?.status !== 403) {
         console.error('Error loading event:', error)
@@ -32,18 +54,24 @@ export default function EventDetailPage() {
     },
   })
 
+  // 2. Fetch event participants/attendees
   const { data: participantsData } = useQuery({
     queryKey: ['eventParticipants', id],
     queryFn: () => eventsAPI.getEventParticipants(id),
     enabled: !!id,
   })
 
+  // ============================================
+  // MUTATIONS - API calls that change data
+  // ============================================
+  
+  // Join event (register for event)
   const joinMutation = useMutation({
     mutationFn: () => eventsAPI.joinEvent(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['event', id])
       queryClient.invalidateQueries(['eventParticipants', id])
-      queryClient.invalidateQueries(['myEvents']) // Update home page "Your Events" section
+      queryClient.invalidateQueries(['myEvents'])
       toast.success('Successfully joined the event!')
     },
     onError: (error) => {
@@ -51,12 +79,13 @@ export default function EventDetailPage() {
     },
   })
 
+  // Leave event (unregister from event)
   const leaveMutation = useMutation({
     mutationFn: () => eventsAPI.leaveEvent(id),
     onSuccess: () => {
       queryClient.invalidateQueries(['event', id])
       queryClient.invalidateQueries(['eventParticipants', id])
-      queryClient.invalidateQueries(['myEvents']) // Update home page "Your Events" section
+      queryClient.invalidateQueries(['myEvents'])
       toast.success('Successfully left the event')
     },
     onError: (error) => {
@@ -64,10 +93,10 @@ export default function EventDetailPage() {
     },
   })
 
+  // Delete event (organiser only)
   const deleteMutation = useMutation({
     mutationFn: () => eventsAPI.deleteEvent(id),
     onSuccess: () => {
-      // Invalidate queries to refresh event lists
       queryClient.invalidateQueries(['events'])
       if (event?.groupId) {
         queryClient.invalidateQueries(['groupEvents', event.groupId.toString()])
@@ -80,11 +109,20 @@ export default function EventDetailPage() {
     },
   })
 
+  // ============================================
+  // EVENT HANDLERS
+  // ============================================
+  
+  // Delete event with confirmation
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
       deleteMutation.mutate()
     }
   }
+
+  // ============================================
+  // LOADING STATE
+  // ============================================
 
   if (isLoading) {
     return (
@@ -105,16 +143,36 @@ export default function EventDetailPage() {
     )
   }
 
+  // ============================================
+  // COMPUTED VALUES - Derived from fetched data
+  // ============================================
   const event = data?.data
   
-  // Check if current user is the event organiser
+  // Check user's relationship to this event
   const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event.organiserId)
+  const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
   
-  // Check if access is denied: either 403 error OR partial data (description is null but title exists)
-  // BUT organisers should never see access denied state
-  const isAccessDenied = !isEventOrganiser && (error?.response?.status === 403 || (event && event.title && !event.description))
+  // Check if access is denied (non-member trying to view members-only event)
+  // Organisers always have access
+  const isAccessDenied = !isEventOrganiser && (
+    error?.response?.status === 403 || 
+    (event && event.title && !event.description)
+  )
 
-  // If no event data at all (not even partial), show not found
+  // Calculate if event is multi-day
+  const startDate = event ? new Date(event.eventDate) : null
+  const endDate = event?.endDate ? new Date(event.endDate) : null
+  const isMultiDay = startDate && endDate && (
+    startDate.getFullYear() !== endDate.getFullYear() ||
+    startDate.getMonth() !== endDate.getMonth() ||
+    startDate.getDate() !== endDate.getDate()
+  )
+
+  // ============================================
+  // ERROR STATES
+  // ============================================
+  
+  // Event not found
   if (!event) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
@@ -133,24 +191,15 @@ export default function EventDetailPage() {
     )
   }
 
-  // Backend now returns partial data for non-members, so event always exists
-  // Check if current user has joined the event
-  const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
-
-  // Check if event spans multiple days
-  const startDate = new Date(event.eventDate)
-  const endDate = event.endDate ? new Date(event.endDate) : null
-  const isMultiDay = endDate && (
-    startDate.getFullYear() !== endDate.getFullYear() ||
-    startDate.getMonth() !== endDate.getMonth() ||
-    startDate.getDate() !== endDate.getDate()
-  )
-
-  const formattedStartDate = format(startDate, 'EEEE, MMMM dd, yyyy')
+  // Format dates for display
+  const formattedStartDate = startDate ? format(startDate, 'EEEE, MMMM dd, yyyy') : ''
   const formattedEndDate = endDate ? format(endDate, 'EEEE, MMMM dd, yyyy') : null
-  const formattedStartTime = format(startDate, 'h:mm a')
+  const formattedStartTime = startDate ? format(startDate, 'h:mm a') : ''
   const formattedEndTime = endDate ? format(endDate, 'h:mm a') : null
 
+  // ============================================
+  // RENDER - Main component JSX
+  // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -162,22 +211,21 @@ export default function EventDetailPage() {
           Back
         </button>
 
-        {/* Event Image */}
+        {/* ============================================ */}
+        {/* HERO IMAGE with event title and organiser */}
+        {/* ============================================ */}
         <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gray-200 mb-8 shadow-2xl">
+          {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-30" />
+          
+          {/* Event image (custom or fallback) */}
           <img 
-            src={event.imageUrl || [
-              'https://images.unsplash.com/photo-1551632811-561732d1e306?w=1200&h=600&fit=crop',
-              'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1200&h=600&fit=crop',
-              'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=600&fit=crop',
-              'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=1200&h=600&fit=crop',
-              'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=1200&h=600&fit=crop',
-              'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=1200&h=600&fit=crop'
-            ][Number.parseInt(id) % 6]}
+            src={event.imageUrl || DEFAULT_EVENT_IMAGES[parseInt(id) % DEFAULT_EVENT_IMAGES.length]}
             alt={event.title} 
             className="w-full h-full object-cover mix-blend-overlay" 
           />
-          {/* Overlay info on image */}
+          
+          {/* Overlay with event info */}
           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
             <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white font-semibold text-sm mb-3">
               {event.activityTypeName}
@@ -190,9 +238,11 @@ export default function EventDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Content */}
+          {/* ============================================ */}
+          {/* MAIN CONTENT - Event details, participants, comments */}
+          {/* ============================================ */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Description */}
+            {/* Event Description (members only) */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Details</h2>
               {isAccessDenied ? (
@@ -213,7 +263,7 @@ export default function EventDetailPage() {
               )}
             </div>
 
-            {/* Event Details */}
+            {/* Event Details (date/time always visible, rest members only) */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Event Details</h2>
               <div className="space-y-5">
@@ -286,7 +336,7 @@ export default function EventDetailPage() {
               </div>
             </div>
 
-            {/* Requirements */}
+            {/* Requirements Section (members only) */}
             {!isAccessDenied && event.requirements && event.requirements.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">⚠️ Requirements</h2>
@@ -301,7 +351,7 @@ export default function EventDetailPage() {
               </div>
             )}
 
-            {/* Included Items */}
+            {/* Included Items Section (members only) */}
             {!isAccessDenied && event.includedItems && event.includedItems.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">✨ What's Included</h2>
@@ -316,7 +366,7 @@ export default function EventDetailPage() {
               </div>
             )}
 
-            {/* Participants */}
+            {/* Attendees/Participants Section (members only) */}
             {!isAccessDenied && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
@@ -359,11 +409,13 @@ export default function EventDetailPage() {
               </div>
             )}
 
-            {/* Comment Section */}
+            {/* Comments Section (members only - handled by CommentSection component) */}
             <CommentSection eventId={id} />
           </div>
 
-          {/* Sidebar */}
+          {/* ============================================ */}
+          {/* SIDEBAR - Price, actions, location, group info */}
+          {/* ============================================ */}
           <div className="lg:col-span-1">
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg space-y-6">
               {!isAccessDenied && (
@@ -382,9 +434,10 @@ export default function EventDetailPage() {
                 </>
               )}
 
+              {/* Action Buttons Section - Varies based on user status */}
               <div className={!isAccessDenied ? "pt-6 border-t border-gray-200" : ""}>
                 {isAccessDenied ? (
-                  // Access denied - show Join Group button
+                  /* NON-MEMBER VIEW - Show Join Group button */
                   <div className="space-y-4">
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 text-center">
                       <Lock className="h-10 w-10 mx-auto mb-3 text-purple-600" />
@@ -400,7 +453,7 @@ export default function EventDetailPage() {
                   </div>
                 ) : isAuthenticated ? (
                   isEventOrganiser ? (
-                    // Organiser view - show edit and delete buttons
+                    /* ORGANISER VIEW - Show Edit and Delete buttons */
                     <div className="space-y-3">
                       <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
                         <p className="text-orange-700 font-semibold">👑 You're the organiser</p>
@@ -422,7 +475,7 @@ export default function EventDetailPage() {
                       </button>
                     </div>
                   ) : hasJoined ? (
-                    // User has joined - show leave button and status
+                    /* REGISTERED USER VIEW - Show Leave button */
                     <div className="space-y-3">
                       <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                         <p className="text-green-700 font-semibold text-center">✅ You're registered!</p>
@@ -436,7 +489,7 @@ export default function EventDetailPage() {
                       </button>
                     </div>
                   ) : (
-                    // User hasn't joined - show join button
+                    /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
                     <button
                       onClick={() => joinMutation.mutate()}
                       disabled={event.status === 'FULL' || joinMutation.isLoading}
@@ -447,6 +500,7 @@ export default function EventDetailPage() {
                     </button>
                   )
                 ) : (
+                  /* NOT AUTHENTICATED - Show login prompt */
                   <div className="space-y-3">
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
                       <p className="text-sm text-gray-600">🔐 Login to join this event</p>
@@ -469,7 +523,7 @@ export default function EventDetailPage() {
                 )}
               </div>
 
-              {/* Location Map Preview - Compact version in sidebar */}
+              {/* Location Map Section (members only) */}
               {!isAccessDenied && event.location && (
                 <div className="pt-6 border-t border-gray-200">
                   <div className="space-y-3">
@@ -510,7 +564,7 @@ export default function EventDetailPage() {
                 </div>
               )}
 
-              {/* Group Information */}
+              {/* Group Information Section */}
               {event.groupName && (
                 <div className="pt-6 border-t border-gray-200">
                   <div className="space-y-3">

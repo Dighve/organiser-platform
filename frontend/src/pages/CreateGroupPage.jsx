@@ -1,3 +1,6 @@
+// ============================================================
+// IMPORTS
+// ============================================================
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
@@ -7,11 +10,20 @@ import { ArrowLeft, Upload } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 
+// ============================================================
+// MAIN COMPONENT
+// ============================================================
 export default function CreateGroupPage() {
+  // ============================================================
+  // HOOKS & ROUTING
+  // ============================================================
   const navigate = useNavigate()
-  const { isAuthenticated } = useAuthStore()
-  const queryClient = useQueryClient()
+  const { isAuthenticated } = useAuthStore()  // Global auth state
+  const queryClient = useQueryClient()  // React Query cache
   
+  // ============================================================
+  // LOCAL STATE
+  // ============================================================
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -22,7 +34,11 @@ export default function CreateGroupPage() {
     isPublic: true,
   })
   
-  const [errors, setErrors] = useState({})
+  const [errors, setErrors] = useState({})  // Form validation errors
+  
+  // ============================================================
+  // MUTATIONS
+  // ============================================================
   
   // Create group mutation
   const createGroupMutation = useMutation({
@@ -39,6 +55,11 @@ export default function CreateGroupPage() {
     },
   })
   
+  // ============================================================
+  // EVENT HANDLERS
+  // ============================================================
+  
+  // Handle form field changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({
@@ -51,6 +72,11 @@ export default function CreateGroupPage() {
     }
   }
   
+  // ============================================================
+  // VALIDATION
+  // ============================================================
+  
+  // Validate form data before submission
   const validate = () => {
     const newErrors = {}
     
@@ -66,6 +92,7 @@ export default function CreateGroupPage() {
     return Object.keys(newErrors).length === 0
   }
   
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault()
     
@@ -87,6 +114,9 @@ export default function CreateGroupPage() {
     createGroupMutation.mutate(groupData)
   }
   
+  // ============================================================
+  // UNAUTHENTICATED STATE
+  // ============================================================
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
@@ -105,9 +135,14 @@ export default function CreateGroupPage() {
     )
   }
   
+  // ============================================================
+  // MAIN RENDER
+  // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* ========== BACK BUTTON ========== */}
         <button
           onClick={() => navigate('/')}
           className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
@@ -116,9 +151,10 @@ export default function CreateGroupPage() {
           Back to Home
         </button>
         
+        {/* ========== PAGE HEADER ========== */}
         <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">Create New Group</h1>
         
-        {/* Coming Soon Activities Banner */}
+        {/* ========== COMING SOON ACTIVITIES BANNER ========== */}
         <div className="mb-8">
           <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 border-2 border-purple-200 rounded-2xl p-4">
             <div className="flex items-center justify-center gap-3 flex-wrap">
@@ -133,9 +169,10 @@ export default function CreateGroupPage() {
           </div>
         </div>
         
+        {/* ========== CREATE GROUP FORM ========== */}
         <form onSubmit={handleSubmit} className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-2xl space-y-6">
          
-          {/* Group Name */}
+          {/* GROUP NAME FIELD (Required) */}
           <div>
             <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
               🎯 Group Name <span className="text-red-500">*</span>
@@ -156,7 +193,7 @@ export default function CreateGroupPage() {
             )}
           </div>
       
-          {/* Description */}
+          {/* DESCRIPTION FIELD (Optional) */}
           <div>
             <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
               📝 Description
@@ -172,7 +209,7 @@ export default function CreateGroupPage() {
             />
           </div>
           
-          {/* Cover Photo */}
+          {/* COVER PHOTO / BANNER FIELD (Optional) */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
               <Upload className="h-5 w-5" />
@@ -190,7 +227,7 @@ export default function CreateGroupPage() {
             </p>
           </div>
           
-          {/* Location */}
+          {/* LOCATION FIELD (Optional) - Google Places Autocomplete */}
           <div>
             <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
               📍 Location
@@ -211,7 +248,7 @@ export default function CreateGroupPage() {
             />
           </div>
           
-          {/* Max Members */}
+          {/* MAX MEMBERS FIELD (Optional) */}
           <div>
             <label htmlFor="maxMembers" className="block text-sm font-semibold text-gray-700 mb-2">
               👥 Maximum Members (Optional)
@@ -233,7 +270,7 @@ export default function CreateGroupPage() {
             )}
           </div>
           
-          {/* Is Public */}
+          {/* PUBLIC VISIBILITY CHECKBOX */}
           <div className="flex items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
             <input
               type="checkbox"
@@ -248,7 +285,7 @@ export default function CreateGroupPage() {
             </label>
           </div>
           
-          {/* Error Message */}
+          {/* ERROR MESSAGE (Submit errors) */}
           {errors.submit && (
             <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
               <p className="text-sm text-red-600 font-semibold flex items-center gap-2">
@@ -257,7 +294,7 @@ export default function CreateGroupPage() {
             </div>
           )}
           
-          {/* Submit Buttons */}
+          {/* ACTION BUTTONS */}
           <div className="flex gap-4 pt-6">
             <button
               type="button"
