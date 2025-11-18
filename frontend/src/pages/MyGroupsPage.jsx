@@ -89,7 +89,7 @@ export default function MyGroupsPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 My Groups</h1>
           <div className="flex gap-3">
-            {user?.isOrganiser && activeTab === 'organiser' && (
+            {user?.isOrganiser && (
               <button
                 onClick={() => navigate('/groups/create')}
                 className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
@@ -103,11 +103,11 @@ export default function MyGroupsPage() {
         
         {/* Tabs */}
         <div className="mb-8">
-          <div className="inline-flex bg-white/60 backdrop-blur-sm rounded-2xl p-2 shadow-lg border border-gray-100">
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 inline-flex gap-2 border border-gray-100 shadow-lg">
             {user?.isOrganiser && (
               <button
                 onClick={() => setActiveTab('organiser')}
-                className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                   activeTab === 'organiser'
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-gray-600 hover:text-gray-900'
@@ -118,7 +118,7 @@ export default function MyGroupsPage() {
             )}
             <button
               onClick={() => setActiveTab('subscribed')}
-              className={`px-8 py-3 rounded-xl font-semibold transition-all ${
+              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
                 activeTab === 'subscribed'
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
@@ -204,22 +204,38 @@ export default function MyGroupsPage() {
                   )}
                 </div>
                 
-                <div className="flex gap-2">
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/groups/${group.id}?tab=events`)
+                      }}
+                      className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+                    >
+                      <Calendar className="h-4 w-4" />
+                      View Events
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/groups/${group.id}`)
+                      }}
+                      className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+                    >
+                      <Users className="h-4 w-4" />
+                      View Group
+                    </button>
+                  </div>
                   <button
-                    onClick={() => navigate(`/create-event?groupId=${group.id}`)}
-                    className="flex-1 btn btn-primary btn-sm"
-                  >
-                    <Calendar className="h-4 w-4 mr-1" />
-                    Create Event
-                  </button>
-                  <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       if (window.confirm('Are you sure you want to leave this group?')) {
                         unsubscribeMutation.mutate(group.id)
                       }
                     }}
                     disabled={unsubscribeMutation.isLoading}
-                    className="btn btn-outline btn-sm text-red-600 border-red-600 hover:bg-red-50"
+                    className="w-full py-2 px-4 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 border border-red-200 transition-all disabled:opacity-50"
                   >
                     Leave
                   </button>
@@ -258,6 +274,7 @@ export default function MyGroupsPage() {
                 {organisedGroups.map(group => (
                   <div
                     key={group.id}
+                    onClick={() => navigate(`/groups/${group.id}`)}
                     className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer transform hover:scale-105 border border-gray-100"
                   >
                     {/* Group Banner */}
@@ -310,17 +327,24 @@ export default function MyGroupsPage() {
                     
                       <div className="flex gap-2">
                         <button
-                          onClick={() => navigate(`/create-event?groupId=${group.id}`)}
-                          className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-1"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/create-event?groupId=${group.id}`)
+                          }}
+                          className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
                         >
                           <Calendar className="h-4 w-4" />
                           Create Event
                         </button>
                         <button
-                          onClick={() => navigate(`/groups/${group.id}`)}
-                          className="py-2 px-4 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            navigate(`/groups/${group.id}`)
+                          }}
+                          className="py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
                         >
-                          View
+                          <Users className="h-4 w-4" />
+                          View Group
                         </button>
                       </div>
                     </div>

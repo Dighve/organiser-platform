@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -14,7 +14,16 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
+  const [searchParams] = useSearchParams()
   const [activeTab, setActiveTab] = React.useState('about')
+
+  // Check URL parameter to set initial tab
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'events' || tabParam === 'members') {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editFormData, setEditFormData] = useState({
     name: '',
@@ -599,7 +608,7 @@ export default function GroupDetailPage() {
                         <div 
                           key={member.id} 
                           onClick={() => navigate(`/members/${member.id}`)}
-                          className="flex items-center space-x-4 p-4 bg-white/60 backdrop-blur-sm rounded-2xl hover:shadow-lg transition-all border border-gray-100 cursor-pointer group hover:-translate-y-1"
+                          className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1"
                         >
                           <ProfileAvatar 
                             member={member} 
@@ -609,24 +618,23 @@ export default function GroupDetailPage() {
                             badgeType="organiser"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-gray-900 text-lg truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
+                            <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
                               {member.displayName || member.email.split('@')[0]}
                             </p>
-                            <p className="text-sm text-gray-500 truncate">
+                            <p className="text-xs text-gray-500 truncate">
                               Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                             </p>
                           </div>
                           {member.isOrganiser && (
-                            <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-3 py-1 rounded-full font-semibold">Organiser</span>
+                            <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Organiser</span>
                           )}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-12 text-center border border-purple-100">
-                      <Users className="h-16 w-16 mx-auto text-purple-400 mb-4" />
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">No Members Yet</h3>
-                      <p className="text-gray-600 mb-6">Be the first to join this group!</p>
+                    <div className="text-center py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                      <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                      <p className="text-gray-600">No members yet. Be the first to join this group!</p>
                     </div>
                   )}
                 </div>
@@ -705,13 +713,20 @@ export default function GroupDetailPage() {
                         </button>
                       </>
                     ) : (
-                      // Show Join/Leave buttons for non-organizers
+                      // Show View Events and Leave buttons for members
                       <>
                         {isSubscribed ? (
                           <>
                             <div className="mb-4 p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-100">
                               <p className="text-sm text-green-700 font-semibold">✅ You're a member</p>
                             </div>
+                            <button
+                              onClick={() => setActiveTab('events')}
+                              className="w-full py-3 px-6 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2 mb-3"
+                            >
+                              <Calendar className="h-5 w-5" />
+                              View Events
+                            </button>
                             <button
                               onClick={handleUnsubscribe}
                               disabled={unsubscribeMutation.isLoading}

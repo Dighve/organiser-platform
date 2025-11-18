@@ -131,10 +131,10 @@ export default function BrowseGroupsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Discover Groups</h1>
-          {user?.isOrganiser && activeTab === 'organiser' && (
+          {user?.isOrganiser && (
             <button
               onClick={() => navigate('/groups/create')}
-              className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
+              className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
             >
               <Plus className="h-5 w-5" />
               Create Group
@@ -148,31 +148,31 @@ export default function BrowseGroupsPage() {
             {user?.isOrganiser && (
               <button
                 onClick={() => setActiveTab('organiser')}
-                className={`px-6 py-3 font-bold rounded-xl transition-all ${
+                className={`px-6 py-3 font-semibold rounded-xl transition-all ${
                   activeTab === 'organiser'
-                    ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-lg'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                👑 Organiser
+                💼 Organiser
               </button>
             )}
             {isAuthenticated && (
               <button
                 onClick={() => setActiveTab('member')}
-                className={`px-6 py-3 font-bold rounded-xl transition-all ${
+                className={`px-6 py-3 font-semibold rounded-xl transition-all ${
                   activeTab === 'member'
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
-                ✅ Member
+                🌟 Member
               </button>
             )}
             
             <button
               onClick={() => setActiveTab('explore')}
-              className={`px-6 py-3 font-bold rounded-xl transition-all ${
+              className={`px-6 py-3 font-semibold rounded-xl transition-all ${
                 activeTab === 'explore'
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
@@ -348,16 +348,26 @@ function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscr
     switch (mode) {
       case 'member':
         return (
-          <div className="flex gap-2" onClick={stopPropagation}>
-            <button
-              onClick={() => navigate(`/groups/${group.id}`)}
-              className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all text-sm"
-            >
-              View Group
-            </button>
+          <div className="space-y-2" onClick={stopPropagation}>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate(`/groups/${group.id}?tab=events`)}
+                className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+              >
+                <Calendar className="h-4 w-4" />
+                View Events
+              </button>
+              <button
+                onClick={() => navigate(`/groups/${group.id}`)}
+                className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+              >
+                <Users className="h-4 w-4" />
+                View Group
+              </button>
+            </div>
             <button
               onClick={() => onUnsubscribe(group.id)}
-              className="py-2 px-4 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 transition-all text-sm"
+              className="w-full py-2 px-4 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 border border-red-200 transition-all"
             >
               Leave
             </button>
@@ -369,16 +379,17 @@ function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscr
           <div className="flex gap-2" onClick={stopPropagation}>
             <button
               onClick={() => navigate(`/create-event?groupId=${group.id}`)}
-              className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all text-sm flex items-center justify-center gap-1"
+              className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
             >
               <Calendar className="h-4 w-4" />
-              Event
+              Create Event
             </button>
             <button
               onClick={() => navigate(`/groups/${group.id}`)}
-              className="py-2 px-4 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all text-sm"
+              className="py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
             >
-              Manage
+              <Users className="h-4 w-4" />
+              View Group
             </button>
           </div>
         )
