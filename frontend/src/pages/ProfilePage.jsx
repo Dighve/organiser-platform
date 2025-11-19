@@ -1,13 +1,16 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { membersAPI } from '../lib/api'
-import ImageUpload from '../components/ImageUpload'
+import ImagePositionModal from '../components/ImagePositionModal'
 import toast from 'react-hot-toast'
-import { Camera, Edit2, Save, X } from 'lucide-react'
+import { Camera, Edit2, Save, X, Loader2 } from 'lucide-react'
+import axios from 'axios'
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
 // ============================================================
 // MAIN COMPONENT
@@ -25,6 +28,11 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false)  // Edit mode toggle
   const [displayName, setDisplayName] = useState('')  // Editable display name
   const [profilePhotoUrl, setProfilePhotoUrl] = useState('')  // Editable profile photo URL
+  const [uploading, setUploading] = useState(false)  // Upload in progress
+  const [showPositionModal, setShowPositionModal] = useState(false)  // Show image position modal
+  const [tempImageUrl, setTempImageUrl] = useState('')  // Temporary image for positioning
+  const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 })  // Image focus position
+  const fileInputRef = useRef(null)  // File input reference
 
   // ============================================================
   // DATA FETCHING
@@ -45,6 +53,16 @@ export default function ProfilePage() {
     if (memberData) {
       setDisplayName(memberData.displayName || '')
       setProfilePhotoUrl(memberData.profilePhotoUrl || '')
+      // Parse imagePosition from JSON string or default to center
+      if (memberData.imagePosition) {
+        try {
+          setImagePosition(JSON.parse(memberData.imagePosition))
+        } catch (e) {
+          setImagePosition({ x: 50, y: 50 })
+        }
+      } else {
+        setImagePosition({ x: 50, y: 50 })
+      }
     }
   }, [memberData])
 
@@ -75,6 +93,7 @@ export default function ProfilePage() {
     updateProfileMutation.mutate({
       displayName: displayName || null,
       profilePhotoUrl: profilePhotoUrl || null,
+      imagePosition: JSON.stringify(imagePosition), // Send as JSON string
     })
   }
 
@@ -82,7 +101,92 @@ export default function ProfilePage() {
   const handleCancel = () => {
     setDisplayName(memberData?.displayName || '')
     setProfilePhotoUrl(memberData?.profilePhotoUrl || '')
+    // Parse imagePosition from JSON string or default to center
+    if (memberData?.imagePosition) {
+      try {
+        setImagePosition(JSON.parse(memberData.imagePosition))
+      } catch (e) {
+        setImagePosition({ x: 50, y: 50 })
+      }
+    } else {
+      setImagePosition({ x: 50, y: 50 })
+    }
     setIsEditing(false)
+  }
+
+  // Trigger file input when camera icon is clicked
+  const handleCameraClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  // Handle file selection
+  const handleFileSelect = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if (!validTypes.includes(file.type)) {
+      toast.error('Please select a valid image file (JPG, PNG, GIF, or WebP)')
+      return
+    }
+
+    // Validate file size (10MB max)
+    const maxSize = 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      toast.error('Image size must be less than 10MB')
+      return
+    }
+
+    // Upload image
+    await uploadImage(file)
+  }
+
+  // Upload image to backend
+  const uploadImage = async (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    setUploading(true)
+    
+    try {
+      const token = localStorage.getItem('token')
+      const response = await axios.post(
+        `${API_URL}/files/upload/profile-photo`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': token ? `Bearer ${token}` : ''
+          }
+        }
+      )
+
+      if (response.data.success && response.data.imageUrl) {
+        setTempImageUrl(response.data.imageUrl)
+        setShowPositionModal(true)
+        toast.success('Image uploaded! Now adjust the position.')
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error(error.response?.data?.error || 'Failed to upload image. Please try again.')
+    } finally {
+      setUploading(false)
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  // Save image position and update profile
+  const handleSavePosition = (position) => {
+    setImagePosition(position)
+    setProfilePhotoUrl(tempImageUrl)
+    setShowPositionModal(false)
+    toast.success('Photo position saved! Click "Save Changes" to update your profile.')
   }
 
   // ============================================================
@@ -150,35 +254,52 @@ export default function ProfilePage() {
           )}
         </div>
         
+        {/* Hidden file input */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+
         {/* ========== PROFILE CARD ========== */}
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
-          
-          {/* GRADIENT BANNER */}
-          <div className="relative h-32 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
-          </div>
-
           {/* ========== PROFILE CONTENT ========== */}
-          <div className="relative px-8 pb-8">
+          <div className="px-8 py-12">
             
-            {/* PROFILE PICTURE - Overlaps gradient banner */}
-            <div className="flex justify-center -mt-16 mb-6">
-              <div className="relative">
+            {/* PROFILE PICTURE */}
+            <div className="flex justify-center mb-6">
+              <div className="relative group">
                 {profilePhotoUrl ? (
                   <img
                     src={profilePhotoUrl}
                     alt={displayName || memberData?.email}
-                    className="h-32 w-32 rounded-full border-8 border-white shadow-2xl object-cover"
+                    className="h-40 w-40 rounded-full border-8 border-white shadow-2xl object-cover"
+                    style={{
+                      objectPosition: `${imagePosition.x}% ${imagePosition.y}%`
+                    }}
                   />
                 ) : (
-                  <div className="h-32 w-32 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-5xl border-8 border-white shadow-2xl">
+                  <div className="h-40 w-40 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-6xl border-8 border-white shadow-2xl">
                     {getInitials(displayName || memberData?.displayName, memberData?.email)}
                   </div>
                 )}
+                
+                {/* Camera Button - Always visible in edit mode */}
                 {isEditing && (
-                  <div className="absolute bottom-0 right-0 bg-purple-600 p-2 rounded-full border-4 border-white shadow-lg">
-                    <Camera className="h-5 w-5 text-white" />
-                  </div>
+                  <button
+                    onClick={handleCameraClick}
+                    disabled={uploading}
+                    className="absolute bottom-2 right-2 bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-full border-4 border-white shadow-lg hover:shadow-xl transition-all transform hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed group-hover:scale-110"
+                    title="Upload new photo"
+                  >
+                    {uploading ? (
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
+                    ) : (
+                      <Camera className="h-6 w-6 text-white" />
+                    )}
+                  </button>
                 )}
               </div>
             </div>
@@ -206,22 +327,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* ========== EDIT MODE: PHOTO UPLOAD ========== */}
-            {isEditing && (
-              <div className="mb-8 max-w-2xl mx-auto">
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-100">
-                  <label className="block text-sm font-bold text-gray-700 mb-4 flex items-center gap-2">
-                    <Camera className="h-5 w-5 text-purple-600" />
-                    Profile Photo
-                  </label>
-                  <ImageUpload
-                    value={profilePhotoUrl}
-                    onChange={setProfilePhotoUrl}
-                    folder="profile-photo"
-                  />
-                </div>
-              </div>
-            )}
 
             {/* ========== EDIT MODE: ACTION BUTTONS ========== */}
             {isEditing && (
@@ -270,6 +375,15 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* ========== IMAGE POSITION MODAL ========== */}
+        {showPositionModal && tempImageUrl && (
+          <ImagePositionModal
+            imageUrl={tempImageUrl}
+            onSave={handleSavePosition}
+            onClose={() => setShowPositionModal(false)}
+          />
+        )}
       </div>
     </div>
   )

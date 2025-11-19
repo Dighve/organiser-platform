@@ -107,6 +107,12 @@ public class MemberService {
             log.info("Updated profile photo URL");
         }
         
+        // Update image position if provided
+        if (request.getImagePosition() != null) {
+            member.setImagePosition(request.getImagePosition());
+            log.info("Updated image position");
+        }
+        
         Member updatedMember = memberRepository.save(member);
         log.info("Profile updated successfully for member: {}", memberId);
         
@@ -151,6 +157,7 @@ public class MemberService {
                 .email(member.getEmail())
                 .displayName(member.getDisplayName())
                 .profilePhotoUrl(member.getProfilePhotoUrl())
+                .imagePosition(member.getImagePosition())
                 .isOrganiser(member.getIsOrganiser())
                 .build();
     }

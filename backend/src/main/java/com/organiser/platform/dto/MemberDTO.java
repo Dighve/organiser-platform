@@ -16,6 +16,7 @@ public class MemberDTO {
     private String email;
     private String displayName;
     private String profilePhotoUrl;
+    private String imagePosition; // JSON string: {"x": 50, "y": 50}
     private Boolean isOrganiser;
     private LocalDateTime joinedAt; // For event participants: registrationDate, for group members: subscription date
 }

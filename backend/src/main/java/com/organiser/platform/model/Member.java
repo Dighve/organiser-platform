@@ -41,6 +41,9 @@ public class Member {
     @Column(name = "profile_photo_url", length = 500)
     private String profilePhotoUrl;
     
+    @Column(name = "image_position", length = 100)
+    private String imagePosition;  // JSON string: {"x": 50, "y": 50}
+    
     @Builder.Default
     @Column(nullable = false)
     private Boolean verified = false;

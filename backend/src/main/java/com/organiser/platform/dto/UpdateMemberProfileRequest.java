@@ -15,4 +15,7 @@ public class UpdateMemberProfileRequest {
     
     @Size(max = 500, message = "Profile photo URL must be at most 500 characters")
     private String profilePhotoUrl;
+    
+    @Size(max = 100, message = "Image position must be at most 100 characters")
+    private String imagePosition;  // JSON string: {"x": 50, "y": 50}
 }
