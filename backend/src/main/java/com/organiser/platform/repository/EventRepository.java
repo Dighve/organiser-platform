@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,13 +30,13 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Page<Event> findByGroupId(@Param("groupId") Long groupId, Pageable pageable);
     
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now ORDER BY e.eventDate ASC")
-    Page<Event> findUpcomingEvents(@Param("now") LocalDateTime now, Pageable pageable);
+    Page<Event> findUpcomingEvents(@Param("now") Instant now, Pageable pageable);
     
     // Get upcoming events by activity through group relationship
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
            "AND e.group.activity.id = :activityId ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEventsByActivityId(
-        @Param("now") LocalDateTime now,
+        @Param("now") Instant now,
         @Param("activityId") Long activityId,
         Pageable pageable
     );
@@ -44,7 +44,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
            "AND LOWER(e.location) LIKE LOWER(CONCAT('%', :location, '%')) ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEventsByLocation(
-        @Param("now") LocalDateTime now,
+        @Param("now") Instant now,
         @Param("location") String location,
         Pageable pageable
     );
@@ -60,5 +60,5 @@ public interface EventRepository extends JpaRepository<Event, Long> {
            "OR LOWER(e.group.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.group.primaryOrganiser.displayName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.group.primaryOrganiser.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
-    Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") LocalDateTime now, Pageable pageable);
+    Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") Instant now, Pageable pageable);
 }

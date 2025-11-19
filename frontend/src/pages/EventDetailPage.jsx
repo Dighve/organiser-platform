@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2 } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -108,6 +108,24 @@ export default function EventDetailPage() {
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to leave event')
+    },
+  })
+
+  // Publish event (organiser only) - Change status from DRAFT to PUBLISHED
+  const publishMutation = useMutation({
+    mutationFn: () => eventsAPI.publishEvent(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries(['event', id])
+      await queryClient.invalidateQueries(['events'])
+      await queryClient.invalidateQueries(['allEvents'])
+      if (event?.groupId) {
+        queryClient.invalidateQueries(['groupEvents', event.groupId.toString()])
+      }
+      await queryClient.refetchQueries(['event', id])
+      toast.success('🎉 Event published successfully!')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to publish event')
     },
   })
 
@@ -501,10 +519,28 @@ export default function EventDetailPage() {
                     <div className="space-y-3">
                       <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
                         <p className="text-orange-700 font-semibold">👑 You're the organiser</p>
+                        <p className="text-xs text-gray-600 mt-1">Status: <span className="font-mono font-bold">{event.status || 'UNKNOWN'}</span></p>
                       </div>
                       {!isPastEvent ? (
-                        /* FUTURE EVENT - Show Edit button */
+                        /* FUTURE EVENT - Show Publish (if DRAFT), Edit and Delete buttons */
                         <>
+                          {event.status === 'DRAFT' && (
+                            <div className="space-y-3">
+                              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
+                                <p className="text-sm text-yellow-800 text-center">
+                                  ⚠️ This event is in <span className="font-bold">DRAFT</span> mode. Publish it to make it visible in discover!
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => publishMutation.mutate()}
+                                disabled={publishMutation.isLoading}
+                                className="w-full py-3 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-green-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                              >
+                                <Eye className="h-5 w-5" />
+                                {publishMutation.isLoading ? 'Publishing...' : 'Publish Event'}
+                              </button>
+                            </div>
+                          )}
                           <button
                             onClick={() => navigate(`/events/${id}/edit`)}
                             className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"

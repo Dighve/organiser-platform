@@ -22,6 +22,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 // ============================================================
@@ -206,7 +207,7 @@ public class EventService {
     @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "'upcoming_' + #pageable.pageNumber")
     public Page<EventDTO> getUpcomingEvents(Pageable pageable) {
-        return eventRepository.findUpcomingEvents(LocalDateTime.now(), pageable)
+        return eventRepository.findUpcomingEvents(Instant.now(), pageable)
                 .map(this::convertToDTO);
     }
     
@@ -220,7 +221,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByActivity(Long activityId, Pageable pageable) {
         return eventRepository.findUpcomingEventsByActivityId(
-                LocalDateTime.now(), activityId, pageable
+                Instant.now(), activityId, pageable
         ).map(this::convertToDTO);
     }
     
@@ -229,7 +230,7 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public Page<EventDTO> searchEvents(String keyword, Pageable pageable) {
-        return eventRepository.searchEvents(keyword, LocalDateTime.now(), pageable)
+        return eventRepository.searchEvents(keyword, Instant.now(), pageable)
                 .map(this::convertToDTO);
     }
     
