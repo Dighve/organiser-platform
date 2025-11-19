@@ -34,7 +34,7 @@ services:
         sync: false  # Set manually in Render dashboard
       
       - key: EMAIL_FROM
-        value: onboarding@resend.dev
+        value: no-reply@outmeets.com
       
       # Cloudinary Configuration (set manually in Render dashboard)
       - key: CLOUDINARY_CLOUD_NAME

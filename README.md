@@ -55,11 +55,26 @@ OutMeets is a beautiful web application designed for organizing and discovering 
 ### Prerequisites
 - Java 17+
 - Node.js 18+
-- PostgreSQL 14+
+- PostgreSQL 14+ (or Docker for running PostgreSQL in a container)
 
 ### Backend Setup
 
-1. **Install PostgreSQL** (if not already installed):
+**Option 1: Using Docker Compose (Recommended for quick setup)**
+
+1. **Start PostgreSQL with Docker**:
+```bash
+docker-compose up -d postgres
+```
+
+2. **Run the backend**:
+```bash
+cd backend
+./gradlew bootRun
+```
+
+**Option 2: Using Native PostgreSQL**
+
+1. **Install PostgreSQL**:
 ```bash
 # macOS (using Homebrew)
 brew install postgresql@14

@@ -2,7 +2,33 @@
 
 ## Quick Start
 
-### 1. Ensure PostgreSQL is Running
+### Option A: Using Docker Compose (Recommended)
+
+#### 1. Start PostgreSQL Database
+```bash
+# Start PostgreSQL container
+docker-compose up -d postgres
+
+# Verify it's running
+docker-compose ps
+
+# Check logs if needed
+docker-compose logs postgres
+```
+
+#### 2. Start the Backend Application
+```bash
+cd backend
+./gradlew bootRun
+```
+
+The application will start on **http://localhost:8080**
+
+---
+
+### Option B: Using Native PostgreSQL
+
+#### 1. Ensure PostgreSQL is Running
 ```bash
 # Check if PostgreSQL is running
 psql --version
@@ -16,7 +42,7 @@ brew services start postgresql@14
 psql -U organiser_user -d organiser_platform -c "SELECT version();"
 ```
 
-### 2. Start the Backend Application
+#### 2. Start the Backend Application
 ```bash
 cd backend
 ./gradlew bootRun
@@ -68,6 +94,18 @@ lsof -ti:8080 | xargs kill -9
 ```
 
 ### Database Connection Issues
+
+**If using Docker Compose:**
+```bash
+# Restart the container
+docker-compose restart postgres
+
+# Or recreate with fresh data
+docker-compose down -v
+docker-compose up -d postgres
+```
+
+**If using native PostgreSQL:**
 ```bash
 # Check PostgreSQL is running
 brew services list | grep postgresql
@@ -128,6 +166,17 @@ http://localhost:8080/api
 Press `Ctrl+C` in the terminal running `./gradlew bootRun`
 
 ### Stop Database
+
+**If using Docker Compose:**
+```bash
+# Stop the container
+docker-compose down
+
+# Stop and remove data
+docker-compose down -v
+```
+
+**If using native PostgreSQL:**
 ```bash
 # Stop PostgreSQL service (if using Homebrew)
 brew services stop postgresql@14

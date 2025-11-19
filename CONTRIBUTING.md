@@ -19,9 +19,11 @@ cd hikehub
 
 2. **Set up backend**
 ```bash
+# Start PostgreSQL (Docker Compose recommended)
+docker-compose up -d postgres
+
 cd backend
 ./gradlew build
-# Ensure PostgreSQL is running (brew services start postgresql@14)
 ./gradlew bootRun              # Start backend
 ```
 
