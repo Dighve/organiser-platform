@@ -2,16 +2,18 @@
 
 ## Quick Start
 
-### 1. Start Docker and Database
+### 1. Ensure PostgreSQL is Running
 ```bash
-# Open Docker Desktop (or run this command)
-open -a Docker
+# Check if PostgreSQL is running
+psql --version
 
-# Start PostgreSQL database
-docker-compose up -d postgres
+# Start PostgreSQL (if using Homebrew)
+brew services start postgresql@14
 
-# Verify database is running
-docker ps
+# Or if using PostgreSQL.app, just launch the app
+
+# Verify connection
+psql -U organiser_user -d organiser_platform -c "SELECT version();"
 ```
 
 ### 2. Start the Backend Application
@@ -67,12 +69,19 @@ lsof -ti:8080 | xargs kill -9
 
 ### Database Connection Issues
 ```bash
-# Stop and recreate database with fresh credentials
-docker-compose down -v
-docker-compose up -d
+# Check PostgreSQL is running
+brew services list | grep postgresql
 
-# Wait for database to be healthy
-sleep 10 && docker ps
+# Restart PostgreSQL if needed
+brew services restart postgresql@14
+
+# Verify database exists
+psql postgres -c "\l" | grep organiser_platform
+
+# Recreate database if needed
+psql postgres -c "DROP DATABASE IF EXISTS organiser_platform;"
+psql postgres -c "CREATE DATABASE organiser_platform;"
+psql postgres -c "GRANT ALL PRIVILEGES ON DATABASE organiser_platform TO organiser_user;"
 ```
 
 ### Check Running Processes
@@ -120,12 +129,10 @@ Press `Ctrl+C` in the terminal running `./gradlew bootRun`
 
 ### Stop Database
 ```bash
-docker-compose down
-```
+# Stop PostgreSQL service (if using Homebrew)
+brew services stop postgresql@14
 
-### Stop Everything (including volumes)
-```bash
-docker-compose down -v
+# Or if using PostgreSQL.app, just quit the app
 ```
 
 ## What Was Fixed
@@ -133,7 +140,7 @@ docker-compose down -v
 1. ✅ Added default `dev` profile in `application.properties`
 2. ✅ Added default values for environment variables (DATABASE_URL, JWT_SECRET)
 3. ✅ Configured PostgreSQL for local development
-4. ✅ Started Docker and PostgreSQL database
+4. ✅ Installed and started PostgreSQL database
 5. ✅ Killed conflicting process on port 8080
 6. ✅ Started application successfully
 

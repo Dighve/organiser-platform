@@ -59,13 +59,25 @@ OutMeets is a beautiful web application designed for organizing and discovering 
 
 ### Backend Setup
 
-1. **Start the database** (using Docker):
+1. **Install PostgreSQL** (if not already installed):
 ```bash
-cd backend
-docker-compose up -d postgres
+# macOS (using Homebrew)
+brew install postgresql@14
+brew services start postgresql@14
+
+# Or use PostgreSQL.app: https://postgresapp.com/
 ```
 
-2. **Run the backend**:
+2. **Create the database**:
+```bash
+psql postgres
+CREATE DATABASE organiser_platform;
+CREATE USER organiser_user WITH PASSWORD 'organiser_pass';
+GRANT ALL PRIVILEGES ON DATABASE organiser_platform TO organiser_user;
+\q
+```
+
+3. **Run the backend**:
 ```bash
 cd backend
 ./gradlew bootRun

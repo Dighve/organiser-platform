@@ -21,7 +21,7 @@ cd hikehub
 ```bash
 cd backend
 ./gradlew build
-docker-compose up -d mariadb  # Start database
+# Ensure PostgreSQL is running (brew services start postgresql@14)
 ./gradlew bootRun              # Start backend
 ```
 
