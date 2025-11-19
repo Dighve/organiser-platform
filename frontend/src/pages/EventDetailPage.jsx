@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
@@ -41,6 +42,8 @@ export default function EventDetailPage() {
     queryKey: ['event', id],
     queryFn: () => eventsAPI.getEventById(id),
     staleTime: 0, // Always refetch to ensure membership changes are reflected immediately
+    refetchOnMount: 'always', // Always refetch when component mounts (e.g., after joining group)
+    refetchOnWindowFocus: true, // Refetch when window regains focus
     retry: (failureCount, error) => {
       // Don't retry on 403 errors (non-member trying to access)
       if (error?.response?.status === 403) {
@@ -109,6 +112,14 @@ export default function EventDetailPage() {
       toast.error(error.response?.data?.message || 'Failed to delete event')
     },
   })
+
+  // Force refetch when navigating back to this page (e.g., after joining group)
+  useEffect(() => {
+    if (isAuthenticated && id) {
+      // Invalidate and refetch event data to get updated membership status
+      queryClient.invalidateQueries(['event', id])
+    }
+  }, [id, isAuthenticated, queryClient])
 
   // ============================================
   // EVENT HANDLERS

@@ -871,10 +871,6 @@ export default function GroupDetailPage() {
                   📍 Location
                 </label>
                 <GooglePlacesAutocomplete
-                  value={editFormData.location}
-                  onChange={(value) => {
-                    setEditFormData(prev => ({ ...prev, location: value }))
-                  }}
                   onPlaceSelect={(locationData) => {
                     setEditFormData(prev => ({
                       ...prev,

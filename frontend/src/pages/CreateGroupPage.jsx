@@ -233,10 +233,6 @@ export default function CreateGroupPage() {
               📍 Location
             </label>
             <GooglePlacesAutocomplete
-              value={formData.location}
-              onChange={(value) => {
-                setFormData(prev => ({ ...prev, location: value }))
-              }}
               onPlaceSelect={(locationData) => {
                 setFormData(prev => ({
                   ...prev,

@@ -238,7 +238,7 @@ public class GroupService {
      * Creates new subscription or reactivates existing one.
      */
     @Transactional
-    @CacheEvict(value = "groups", allEntries = true)
+    @CacheEvict(value = {"groups", "events"}, allEntries = true)
     public void subscribeToGroup(Long groupId, Long memberId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
@@ -275,7 +275,7 @@ public class GroupService {
      * Sets subscription status to INACTIVE.
      */
     @Transactional
-    @CacheEvict(value = "groups", allEntries = true)
+    @CacheEvict(value = {"groups", "events"}, allEntries = true)
     public void unsubscribeFromGroup(Long groupId, Long memberId) {
         Subscription subscription = subscriptionRepository.findByMemberIdAndGroupId(memberId, groupId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));

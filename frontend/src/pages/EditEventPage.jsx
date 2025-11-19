@@ -443,8 +443,6 @@ export default function EditEventPage() {
                 <div>
                   <label className="block text-base font-bold text-gray-900 mb-3">Hiking location <span className="text-red-500">*</span></label>
                   <GooglePlacesAutocomplete
-                    value={watchedValues.location}
-                    onChange={(value) => setValue('location', value, { shouldValidate: false })}
                     onPlaceSelect={(locationData) => {
                       setValue('location', locationData.address, { shouldValidate: true })
                       setValue('latitude', locationData.latitude)

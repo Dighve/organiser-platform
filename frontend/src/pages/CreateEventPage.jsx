@@ -138,6 +138,17 @@ export default function CreateEventPage() {
   
   // Handle submission of individual step (save data and proceed to next)
   const onStepSubmit = (data) => {
+    // Validate location step has coordinates before proceeding
+    if (currentStep === STEPS.LOCATION) {
+      if (!data.latitude || !data.longitude) {
+        toast.error('⚠️ Please select a location from the dropdown to set coordinates', {
+          duration: 4000,
+          icon: '📍'
+        })
+        return  // Don't proceed to next step
+      }
+    }
+    
     updateFormData(data)
     nextStep()
   }
@@ -436,9 +447,8 @@ export default function CreateEventPage() {
           Hiking location <span className="text-red-500">*</span>
         </label>
         <GooglePlacesAutocomplete
-          value={watchedValues.location}
-          onChange={(value) => setValue('location', value, { shouldValidate: false })}
           onPlaceSelect={(locationData) => {
+            // Only update when user selects from dropdown (not while typing)
             setValue('location', locationData.address, { shouldValidate: true })
             setValue('latitude', locationData.latitude)
             setValue('longitude', locationData.longitude)
@@ -451,6 +461,8 @@ export default function CreateEventPage() {
           error={errors.location?.message}
         />
         <input type="hidden" {...register('location', { required: 'Location is required' })} />
+        <input type="hidden" {...register('latitude')} />
+        <input type="hidden" {...register('longitude')} />
       </div>
 
       {watchedValues.latitude && watchedValues.longitude && (
@@ -470,23 +482,6 @@ export default function CreateEventPage() {
         </div>
       )}
 
-      {/* Warning if location not properly selected */}
-      {watchedValues.location && (!watchedValues.latitude || !watchedValues.longitude) && (
-        <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4">
-          <div className="flex items-start gap-3">
-            <div className="bg-yellow-500 rounded-full p-2">
-              <span className="text-white text-lg">⚠️</span>
-            </div>
-            <div>
-              <p className="text-yellow-800 font-bold">Please select a location from the dropdown</p>
-              <p className="text-yellow-700 text-sm mt-1">
-                Type and select a suggestion from Google Maps to set the exact coordinates
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className="flex justify-between pt-4">
         <button 
           type="button" 
@@ -497,8 +492,7 @@ export default function CreateEventPage() {
         </button>
         <button
           type="submit"
-          className="py-4 px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
-          disabled={!watchedValues.location || !watchedValues.latitude || !watchedValues.longitude}
+          className="py-4 px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
         >
           Continue <ArrowRight className="h-5 w-5" />
         </button>

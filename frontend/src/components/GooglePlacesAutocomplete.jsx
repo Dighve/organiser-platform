@@ -20,8 +20,9 @@ export default function GooglePlacesAutocomplete({
     libraries,
   })
 
+  // Set initial value only once
   useEffect(() => {
-    if (value !== undefined) {
+    if (value !== undefined && inputValue === '') {
       setInputValue(value)
     }
   }, [value])
@@ -48,14 +49,12 @@ export default function GooglePlacesAutocomplete({
           name: place.name,
         }
 
+        // Update internal input state to show selected address
         setInputValue(locationData.address)
         
+        // Only call onPlaceSelect - this will update hidden fields with validated data
         if (onPlaceSelect) {
           onPlaceSelect(locationData)
-        }
-        
-        if (onChange) {
-          onChange(locationData.address)
         }
       }
     })
@@ -72,9 +71,7 @@ export default function GooglePlacesAutocomplete({
   const handleInputChange = (e) => {
     const newValue = e.target.value
     setInputValue(newValue)
-    if (onChange) {
-      onChange(newValue)
-    }
+    // Don't call onChange while typing - only onPlaceSelect matters
   }
 
   if (loadError) {
