@@ -197,7 +197,10 @@ export default function EditEventPage() {
       title: data.title,
       description: data.description,
       activityTypeId: 1, // Default to first activity type (Hiking)
-      eventDate: data.eventDate ? new Date(data.eventDate + 'T' + (data.startTime || '00:00')).toISOString() : null,
+      // Send as UTC ISO string for proper timezone handling
+      eventDate: data.eventDate && data.startTime 
+        ? new Date(data.eventDate + 'T' + data.startTime).toISOString() 
+        : null,
       endDate: data.endDate && data.endTime 
         ? new Date(data.endDate + 'T' + data.endTime).toISOString() 
         : (data.eventDate && data.endTime ? new Date(data.eventDate + 'T' + data.endTime).toISOString() : null),

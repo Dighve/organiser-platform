@@ -7,6 +7,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -24,9 +25,9 @@ public class EventDTO {
     private String activityTypeName;
     private Long groupId;
     private String groupName;
-    private LocalDateTime eventDate;
-    private LocalDateTime endDate;
-    private LocalDateTime registrationDeadline;
+    private Instant eventDate;  // UTC timestamp for proper timezone handling
+    private Instant endDate;  // UTC timestamp
+    private Instant registrationDeadline;  // UTC timestamp
     private String location;
     private BigDecimal latitude;
     private BigDecimal longitude;

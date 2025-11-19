@@ -12,6 +12,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -68,13 +69,13 @@ public class Event {
     private Set<Member> eventOrganisers = new HashSet<>();
     
     @Column(name = "event_date", nullable = false)
-    private LocalDateTime eventDate;
+    private Instant eventDate;  // Changed to Instant for proper UTC handling
     
     @Column(name = "end_date")
-    private LocalDateTime endDate;
+    private Instant endDate;
     
     @Column(name = "registration_deadline")
-    private LocalDateTime registrationDeadline;
+    private Instant registrationDeadline;
     
     @Column(nullable = false, length = 200)
     private String location;

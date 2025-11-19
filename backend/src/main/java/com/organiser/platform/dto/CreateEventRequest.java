@@ -8,7 +8,7 @@ import jakarta.validation.constraints.Positive;
 import lombok.Data;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Set;
 
 @Data
@@ -27,10 +27,10 @@ public class CreateEventRequest {
     
     @NotNull(message = "Event date is required")
     @Future(message = "Event date must be in the future")
-    private LocalDateTime eventDate;
+    private Instant eventDate;  // Changed to Instant for proper UTC handling
     
-    private LocalDateTime endDate;
-    private LocalDateTime registrationDeadline;
+    private Instant endDate;
+    private Instant registrationDeadline;
     
     @NotBlank(message = "Location is required")
     private String location;

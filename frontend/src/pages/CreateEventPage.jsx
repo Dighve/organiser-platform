@@ -128,8 +128,38 @@ export default function CreateEventPage() {
   const [selectedRequirements, setSelectedRequirements] = useState([])  // Custom gear requirements tags
   const [isSubmitting, setIsSubmitting] = useState(false)             // Prevent double form submissions
   
-  const watchedValues = watch()  // Watch all form field values for real-time validation
+  // Calculate minimum time allowed based on selected date
+  const getMinimumTime = (selectedDate) => {
+    if (!selectedDate) return null
+    
+    const today = new Date().toISOString().split('T')[0]
+    if (selectedDate !== today) return null // No restriction for future dates
+    
+    // For today, minimum time is current time + 2 minutes (buffer)
+    const now = new Date()
+    now.setMinutes(now.getMinutes() + 2) // Add 2-minute buffer
+    
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    return `${hours}:${minutes}`
+  }
   
+  // Watch individual fields for validation and conditional rendering
+  const watchedTitle = watch('title')
+  const watchedEventDate = watch('eventDate')
+  const watchedStartTime = watch('startTime')
+  const watchedImageUrl = watch('imageUrl')
+  const watchedLocation = watch('location')
+  const watchedLatitude = watch('latitude')
+  const watchedLongitude = watch('longitude')
+  const watchedHostName = watch('hostName')
+  const selectedDate = watch('eventDate')
+  const selectedEndDate = watch('endDate')
+  const minimumTime = getMinimumTime(selectedDate)
+  const minimumEndTime = getMinimumTime(selectedEndDate)
+  const isToday = selectedDate === new Date().toISOString().split('T')[0]
+  const isEndDateToday = selectedEndDate === new Date().toISOString().split('T')[0]
+
   // ============================================================
   // EFFECTS
   // ============================================================
@@ -239,6 +269,25 @@ export default function CreateEventPage() {
       return
     }
     
+    // Validate event date is in the future (with 1 minute buffer for server processing)
+    const eventDateTime = new Date(data.eventDate + 'T' + (data.startTime || '00:00'))
+    const now = new Date()
+    const oneMinuteFromNow = new Date(now.getTime() + 60000) // Add 1 minute buffer
+    
+    if (eventDateTime <= oneMinuteFromNow) {
+      const minutesFromNow = Math.ceil((eventDateTime - now) / 60000)
+      const message = minutesFromNow <= 0 
+        ? '⚠️ Event date and time must be in the future. Please select a later time.'
+        : `⚠️ Event time is too soon. Please select a time at least 1 minute from now.`
+      
+      toast.error(message, {
+        duration: 5000,
+        icon: '📅'
+      })
+      setCurrentStep(STEPS.BASICS)
+      return
+    }
+    
     // Prevent double submission
     if (isSubmitting) {
       return
@@ -251,14 +300,19 @@ export default function CreateEventPage() {
       title: data.title,
       description: data.description,
       activityTypeId: 1, // Default to first activity type (Hiking)
-      eventDate: data.eventDate ? new Date(data.eventDate + 'T' + (data.startTime || '00:00')).toISOString() : null,
-      endDate: data.eventDate && data.endTime ? new Date(data.eventDate + 'T' + data.endTime).toISOString() : null,
+      // Send as UTC ISO string for proper timezone handling
+      eventDate: data.eventDate && data.startTime 
+        ? new Date(data.eventDate + 'T' + data.startTime).toISOString() 
+        : null,
+      endDate: data.endDate && data.endTime 
+        ? new Date(data.endDate + 'T' + data.endTime).toISOString() 
+        : null,
       location: data.location,
       latitude: data.latitude ? Number(data.latitude) : null,
       longitude: data.longitude ? Number(data.longitude) : null,
       maxParticipants: data.maxParticipants ? Number(data.maxParticipants) : null,
       minParticipants: data.minParticipants ? Number(data.minParticipants) : 1,
-      cost: data.price ? Number(data.price) : 0,
+      price: data.price ? Number(data.price) : 0,  // Fixed: 'cost' -> 'price' to match backend
       difficultyLevel: data.difficultyLevel || null,
       distanceKm: data.distanceKm ? Number(data.distanceKm) : null,
       elevationGainM: data.elevationGainM ? Number(data.elevationGainM) : null,
@@ -269,6 +323,12 @@ export default function CreateEventPage() {
       includedItems: data.includedItems ? data.includedItems.split(',').map(s => s.trim()).filter(Boolean) : [],
       cancellationPolicy: data.cancellationPolicy || null
     }
+
+    // Debug logging
+    console.log('📅 Event Creation Debug:')
+    console.log('Current time:', new Date().toISOString())
+    console.log('Event date (payload):', payload.eventDate)
+    console.log('Form data - date:', data.eventDate, 'time:', data.startTime)
 
     try {
       // Create the event
@@ -399,8 +459,17 @@ export default function CreateEventPage() {
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
             <input 
-              {...register('startTime', { required: 'Start time is required' })} 
+              {...register('startTime', { 
+                required: 'Start time is required',
+                validate: (value) => {
+                  if (isToday && minimumTime && value < minimumTime) {
+                    return `Please select a time after ${minimumTime} (event must be in the future)`
+                  }
+                  return true
+                }
+              })} 
               type="time" 
+              min={minimumTime || undefined}
               className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-orange-300 bg-white" 
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500">
@@ -442,8 +511,17 @@ export default function CreateEventPage() {
           <div className="relative group">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
             <input 
-              {...register('endTime')} 
+              {...register('endTime', {
+                validate: (value) => {
+                  if (!value) return true // Optional field
+                  if (isEndDateToday && minimumEndTime && value < minimumEndTime) {
+                    return `Please select a time after ${minimumEndTime}`
+                  }
+                  return true
+                }
+              })} 
               type="time" 
+              min={minimumEndTime || undefined}
               className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-blue-300 bg-white" 
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500">
@@ -463,7 +541,7 @@ export default function CreateEventPage() {
           Featured Photo
         </label>
         <ImageUpload
-          value={watchedValues.imageUrl}
+          value={watchedImageUrl}
           onChange={(url) => {
             setValue('imageUrl', url)
             updateFormData({ imageUrl: url })
@@ -494,7 +572,7 @@ export default function CreateEventPage() {
         <button
           type="submit"
           className="py-4 px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
-          disabled={!watchedValues.title || !watchedValues.eventDate || !watchedValues.startTime}
+          disabled={!watchedTitle || !watchedEventDate || !watchedStartTime}
         >
           Continue <ArrowRight className="h-5 w-5" />
         </button>
@@ -538,17 +616,17 @@ export default function CreateEventPage() {
         <input type="hidden" {...register('longitude')} />
       </div>
 
-      {watchedValues.latitude && watchedValues.longitude && (
+      {watchedLatitude && watchedLongitude && (
         <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
           <div className="flex items-start gap-3">
             <div className="bg-green-500 rounded-full p-2">
-              <Check className="h-5 w-5 text-white" />
+              <Check className="h-6 w-6 text-white" />
             </div>
             <div>
               <p className="text-green-800 font-bold text-lg">Location selected</p>
-              <p className="text-green-700 mt-1">{watchedValues.location}</p>
+              <p className="text-green-700 mt-1">{watchedLocation}</p>
               <p className="text-sm text-green-600 mt-2">
-                📍 {watchedValues.latitude?.toFixed(6)}, {watchedValues.longitude?.toFixed(6)}
+                📍 {watchedLatitude?.toFixed(6)}, {watchedLongitude?.toFixed(6)}
               </p>
             </div>
           </div>
@@ -744,7 +822,7 @@ export default function CreateEventPage() {
           </label>
           <MemberAutocomplete
             groupId={groupId}
-            value={watchedValues.hostName}
+            value={watchedHostName}
             onChange={(value) => setValue('hostName', value)}
             error={errors.hostName?.message}
           />

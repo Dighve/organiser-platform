@@ -206,11 +206,15 @@ export default function EventDetailPage() {
     )
   }
 
-  // Format dates for display
+  // Format dates for display (with timezone support)
   const formattedStartDate = startDate ? format(startDate, 'EEEE, MMMM dd, yyyy') : ''
   const formattedEndDate = endDate ? format(endDate, 'EEEE, MMMM dd, yyyy') : null
   const formattedStartTime = startDate ? format(startDate, 'h:mm a') : ''
   const formattedEndTime = endDate ? format(endDate, 'h:mm a') : null
+  
+  // Get user's timezone for display
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone
+  const timezoneAbbr = startDate ? new Date(startDate).toLocaleTimeString('en-US', { timeZoneName: 'short' }).split(' ').pop() : ''
 
   // ============================================
   // RENDER - Main component JSX
@@ -293,7 +297,7 @@ export default function EventDetailPage() {
                           {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
                         </div>
                         <div className="text-purple-600 font-semibold text-sm mt-1">
-                          {formattedStartTime} to {formattedEndTime}
+                          {formattedStartTime} to {formattedEndTime} {timezoneAbbr}
                         </div>
                       </>
                     ) : (
@@ -301,7 +305,7 @@ export default function EventDetailPage() {
                       <>
                         <div className="font-bold text-gray-900">{formattedStartDate}</div>
                         <div className="text-purple-600 font-semibold">
-                          {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime}
+                          {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime} {timezoneAbbr}
                         </div>
                       </>
                     )}
