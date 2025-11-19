@@ -114,15 +114,11 @@ export default function EditEventPage() {
         latitude: event.latitude,
         longitude: event.longitude,
         maxParticipants: event.maxParticipants,
-        minParticipants: event.minParticipants,
         price: event.price,
         difficultyLevel: event.difficultyLevel,
         distanceKm: event.distanceKm,
         elevationGainM: event.elevationGainM,
-        estimatedDurationHours: event.estimatedDurationHours,
-        imageUrl: event.imageUrl,
-        includedItems: event.includedItems?.join(', ') || '',
-        cancellationPolicy: event.cancellationPolicy
+        imageUrl: event.imageUrl
       }
       
       setFormData(initialData)
@@ -209,17 +205,17 @@ export default function EditEventPage() {
       latitude: data.latitude ? Number(data.latitude) : null,
       longitude: data.longitude ? Number(data.longitude) : null,
       maxParticipants: data.maxParticipants ? Number(data.maxParticipants) : null,
-      minParticipants: data.minParticipants ? Number(data.minParticipants) : 1,
+      minParticipants: 1,
       price: data.price ? Number(data.price) : 0,
       difficultyLevel: data.difficultyLevel || null,
       distanceKm: data.distanceKm ? Number(data.distanceKm) : null,
       elevationGainM: data.elevationGainM ? Number(data.elevationGainM) : null,
-      estimatedDurationHours: data.estimatedDurationHours ? Number(data.estimatedDurationHours) : null,
+      estimatedDurationHours: null,
       imageUrl: data.imageUrl || null,
       additionalImages: [],
       requirements: selectedRequirements,
-      includedItems: data.includedItems ? data.includedItems.split(',').map(s => s.trim()).filter(Boolean) : [],
-      cancellationPolicy: data.cancellationPolicy || null
+      includedItems: [],
+      cancellationPolicy: null
     }
 
     try {
@@ -447,22 +443,23 @@ export default function EditEventPage() {
                 <div>
                   <label className="block text-base font-bold text-gray-900 mb-3">Hiking location <span className="text-red-500">*</span></label>
                   <GooglePlacesAutocomplete
-                    onPlaceSelect={(place) => {
-                      setValue('location', place.formatted_address)
-                      setValue('latitude', place.geometry.location.lat())
-                      setValue('longitude', place.geometry.location.lng())
+                    value={watchedValues.location}
+                    onChange={(value) => setValue('location', value, { shouldValidate: false })}
+                    onPlaceSelect={(locationData) => {
+                      setValue('location', locationData.address, { shouldValidate: true })
+                      setValue('latitude', locationData.latitude)
+                      setValue('longitude', locationData.longitude)
                       updateFormData({
-                        location: place.formatted_address,
-                        latitude: place.geometry.location.lat(),
-                        longitude: place.geometry.location.lng()
+                        location: locationData.address,
+                        latitude: locationData.latitude,
+                        longitude: locationData.longitude
                       })
                     }}
-                    defaultValue={formData.location}
+                    error={errors.location?.message}
                   />
                   <input type="hidden" {...register('location', { required: 'Location is required' })} />
                   <input type="hidden" {...register('latitude')} />
                   <input type="hidden" {...register('longitude')} />
-                  {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location.message}</p>}
                 </div>
               </div>
             )}
@@ -513,8 +510,13 @@ export default function EditEventPage() {
                   </div>
               </div>
 
-              {/* ========== TRAIL STATISTICS ========== */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* ========== TRAIL STATISTICS (Optional) ========== */}
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border-2 border-blue-200">
+                <h3 className="font-bold text-gray-900 text-lg mb-5 flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  Trail Statistics (Optional)
+                </h3>
+                <div className="grid grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-gray-700 mb-2">Distance (km)</label>
                     <input
@@ -535,83 +537,49 @@ export default function EditEventPage() {
                       placeholder="600"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Estimated Duration (hours)</label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      {...register('estimatedDurationHours')}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                      placeholder="4.5"
-                    />
-                  </div>
+                </div>
               </div>
 
-              {/* ========== PARTICIPANT LIMITS & PRICING ========== */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Max Participants</label>
-                    <input
-                      type="number"
-                      {...register('maxParticipants')}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                      placeholder="20"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Min Participants</label>
-                    <input
-                      type="number"
-                      {...register('minParticipants')}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                      placeholder="5"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Price (£)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      {...register('price')}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                      placeholder="0.00"
-                    />
-                  </div>
-              </div>
-
+              {/* ========== MAX PARTICIPANTS ========== */}
               <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Requirements</label>
-                  <TagInput
-                    tags={selectedRequirements}
-                    onTagsChange={setSelectedRequirements}
-                    placeholder="Add requirement..."
-                    suggestions={['Hiking boots', 'Water bottle', 'Backpack', 'Rain jacket', 'First aid kit']}
-                  />
+                <label className="block text-base font-bold text-gray-900 mb-3">Max Participants</label>
+                <input
+                  type="number"
+                  {...register('maxParticipants')}
+                  className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all text-lg"
+                  placeholder="20"
+                />
+                <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited participants</p>
               </div>
 
+              {/* ========== REQUIRED GEAR (Custom Tags) ========== */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
+                <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
+                  <Mountain className="h-5 w-5 text-purple-600" />
+                  Required gear
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">Add custom gear requirements for your hike</p>
+                <TagInput
+                  tags={selectedRequirements}
+                  onChange={setSelectedRequirements}
+                  placeholder="Type gear item and press Enter (e.g., Hiking boots, Water bottle...)"
+                />
+              </div>
+
+              {/* ========== COST PER PERSON ========== */}
               <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Included Items (comma-separated)</label>
-                  <input
-                    type="text"
-                    {...register('includedItems')}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    placeholder="Guide, Snacks, Maps"
-                  />
+                <label className="block text-base font-bold text-gray-900 mb-3">Cost per Person (£)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  {...register('price')}
+                  className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all text-lg"
+                  placeholder="0.00"
+                />
+                <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave as 0 if the hike is free</p>
               </div>
 
-              <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Cancellation Policy</label>
-                  <textarea
-                    {...register('cancellationPolicy')}
-                    rows={3}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    placeholder="Full refund if cancelled 48 hours before..."
-                  />
-              </div>
-
+              {/* ========== HOSTED BY ========== */}
               <div>
                   <label className="block text-sm font-bold text-gray-700 mb-2">Hosted by <span className="text-red-500">*</span></label>
                   <MemberAutocomplete
@@ -741,16 +709,6 @@ export default function EditEventPage() {
                           <span className="font-semibold">Elevation:</span> {formData.elevationGainM} m
                         </div>
                       )}
-                      {formData.estimatedDurationHours && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold">Duration:</span> {formData.estimatedDurationHours} hrs
-                        </div>
-                      )}
-                      {formData.minParticipants && (
-                        <div className="bg-gray-50 p-3 rounded-lg">
-                          <span className="font-semibold">Min hikers:</span> {formData.minParticipants}
-                        </div>
-                      )}
                       {formData.maxParticipants && (
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <span className="font-semibold">Max hikers:</span> {formData.maxParticipants}
@@ -779,18 +737,6 @@ export default function EditEventPage() {
                           Host/Guide:
                         </p>
                         <p className="text-gray-700 ml-6">{formData.hostName}</p>
-                      </div>
-                    )}
-                    {formData.includedItems && (
-                      <div className="mt-4 bg-green-50 p-3 rounded-lg">
-                        <p className="font-semibold text-sm mb-2">What's included:</p>
-                        <p className="text-gray-700 text-sm">{formData.includedItems}</p>
-                      </div>
-                    )}
-                    {formData.cancellationPolicy && (
-                      <div className="mt-4 bg-orange-50 p-3 rounded-lg">
-                        <p className="font-semibold text-sm mb-2">Cancellation policy:</p>
-                        <p className="text-gray-700 text-sm">{formData.cancellationPolicy}</p>
                       </div>
                     )}
                   </div>

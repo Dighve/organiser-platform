@@ -437,9 +437,9 @@ export default function CreateEventPage() {
         </label>
         <GooglePlacesAutocomplete
           value={watchedValues.location}
-          onChange={(value) => setValue('location', value)}
+          onChange={(value) => setValue('location', value, { shouldValidate: false })}
           onPlaceSelect={(locationData) => {
-            setValue('location', locationData.address)
+            setValue('location', locationData.address, { shouldValidate: true })
             setValue('latitude', locationData.latitude)
             setValue('longitude', locationData.longitude)
             updateFormData({
@@ -738,14 +738,24 @@ export default function CreateEventPage() {
               </button>
             </div>
             <div className="space-y-2 text-gray-700">
+              {/* Start Date and Time */}
               <p className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-gray-500" />
-                <span className="font-semibold">Date:</span> {formData.eventDate}
+                <span className="font-semibold">Start:</span> 
+                {formData.eventDate}
+                {formData.startTime && ` at ${formData.startTime}`}
               </p>
-              <p className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-gray-500" />
-                <span className="font-semibold">Time:</span> {formData.startTime} - {formData.endTime}
-              </p>
+              
+              {/* End Date and Time (if provided) */}
+              {(formData.endDate || formData.endTime) && (
+                <p className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className="font-semibold">End:</span> 
+                  {formData.endDate ? formData.endDate : formData.eventDate}
+                  {formData.endTime && ` at ${formData.endTime}`}
+                </p>
+              )}
+              
               {formData.description && (
                 <p className="text-gray-600 mt-3 bg-gray-50 p-3 rounded-lg">{formData.description}</p>
               )}

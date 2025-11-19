@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Upload, X, Image as ImageIcon, Loader2, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import axios from 'axios'
@@ -9,6 +9,11 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(value || null)
   const fileInputRef = useRef(null)
+
+  // Sync preview with value prop changes (for edit mode)
+  useEffect(() => {
+    setPreview(value || null)
+  }, [value])
 
   const handleFileSelect = async (e) => {
     const file = e.target.files?.[0]

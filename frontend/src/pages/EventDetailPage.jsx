@@ -324,10 +324,21 @@ export default function EventDetailPage() {
                       <div className="flex items-start p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
                         <Clock className="h-6 w-6 mr-4 mt-1 text-green-600" />
                         <div>
+                          <div className="text-sm text-gray-600">Distance</div>
                           <div className="font-bold text-gray-900">{event.distanceKm} km</div>
                           {event.estimatedDurationHours && (
-                            <div className="text-gray-600">Duration: ~{event.estimatedDurationHours} hours</div>
+                            <div className="text-sm text-gray-600 mt-1">Duration: ~{event.estimatedDurationHours} hours</div>
                           )}
+                        </div>
+                      </div>
+                    )}
+
+                    {event.elevationGainM && (
+                      <div className="flex items-start p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl">
+                        <ArrowUp className="h-6 w-6 mr-4 mt-1 text-blue-600" />
+                        <div>
+                          <div className="text-sm text-gray-600">Elevation Gain</div>
+                          <div className="font-bold text-gray-900">{event.elevationGainM} m</div>
                         </div>
                       </div>
                     )}
