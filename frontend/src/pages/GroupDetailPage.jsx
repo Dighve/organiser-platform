@@ -221,6 +221,8 @@ export default function GroupDetailPage() {
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['groupEvents', id])
       queryClient.invalidateQueries(['groupMembers', id])
+      // Invalidate all event queries so cached event pages refetch with new membership
+      queryClient.invalidateQueries({ queryKey: ['event'], refetchType: 'all' })
     },
     onError: (error) => {
       alert(error.response?.data?.message || 'Failed to join group')
@@ -235,6 +237,8 @@ export default function GroupDetailPage() {
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['groupEvents', id])
       queryClient.invalidateQueries(['groupMembers', id])
+      // Invalidate all event queries so cached event pages refetch with new membership
+      queryClient.invalidateQueries({ queryKey: ['event'], refetchType: 'all' })
     },
     onError: (error) => {
       alert(error.response?.data?.message || 'Failed to leave group')

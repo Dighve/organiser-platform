@@ -40,6 +40,7 @@ export default function EventDetailPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['event', id],
     queryFn: () => eventsAPI.getEventById(id),
+    staleTime: 0, // Always refetch to ensure membership changes are reflected immediately
     retry: (failureCount, error) => {
       // Don't retry on 403 errors (non-member trying to access)
       if (error?.response?.status === 403) {
