@@ -367,13 +367,14 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
         // Find the participant record for this member and event
-        EventParticipant participant = event.getParticipants().stream()
-                .filter(p -> p.getMember().getId().equals(memberId))
-                .findFirst()
+        EventParticipant participant = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId)
                 .orElseThrow(() -> new RuntimeException("Member is not registered for this event"));
         
-        // Remove the participant
+        // Remove the participant from event's collection
         event.getParticipants().remove(participant);
+        
+        // Explicitly delete the participant from database
+        eventParticipantRepository.delete(participant);
         
         // If the event was full, change status back to PUBLISHED to allow new registrations
         if (event.getStatus() == Event.EventStatus.FULL) {

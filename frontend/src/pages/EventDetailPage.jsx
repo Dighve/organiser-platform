@@ -72,10 +72,17 @@ export default function EventDetailPage() {
   // Join event (register for event)
   const joinMutation = useMutation({
     mutationFn: () => eventsAPI.joinEvent(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['event', id])
-      queryClient.invalidateQueries(['eventParticipants', id])
-      queryClient.invalidateQueries(['myEvents'])
+    onSuccess: async () => {
+      // Invalidate queries
+      await queryClient.invalidateQueries(['event', id])
+      await queryClient.invalidateQueries(['eventParticipants', id])
+      await queryClient.invalidateQueries(['myEvents'])
+      await queryClient.invalidateQueries(['allEvents'])
+      await queryClient.invalidateQueries(['events'])
+      
+      // Force immediate refetch to update button state
+      await queryClient.refetchQueries(['event', id])
+      
       toast.success('Successfully joined the event!')
     },
     onError: (error) => {
@@ -86,10 +93,17 @@ export default function EventDetailPage() {
   // Leave event (unregister from event)
   const leaveMutation = useMutation({
     mutationFn: () => eventsAPI.leaveEvent(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['event', id])
-      queryClient.invalidateQueries(['eventParticipants', id])
-      queryClient.invalidateQueries(['myEvents'])
+    onSuccess: async () => {
+      // Invalidate queries
+      await queryClient.invalidateQueries(['event', id])
+      await queryClient.invalidateQueries(['eventParticipants', id])
+      await queryClient.invalidateQueries(['myEvents'])
+      await queryClient.invalidateQueries(['allEvents'])
+      await queryClient.invalidateQueries(['events'])
+      
+      // Force immediate refetch to update button state
+      await queryClient.refetchQueries(['event', id])
+      
       toast.success('Successfully left the event')
     },
     onError: (error) => {
