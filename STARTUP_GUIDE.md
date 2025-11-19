@@ -1,4 +1,4 @@
-# HikeHub Backend Startup Guide
+# OutMeets Backend Startup Guide
 
 ## Quick Start
 
@@ -7,8 +7,8 @@
 # Open Docker Desktop (or run this command)
 open -a Docker
 
-# Start MariaDB database
-docker-compose up -d
+# Start PostgreSQL database
+docker-compose up -d postgres
 
 # Verify database is running
 docker ps
@@ -88,7 +88,7 @@ ps aux | grep '[j]ava.*boot'
 
 ### Active Profile
 The application uses the `dev` profile by default (configured in `application.properties`):
-- Database: MariaDB on localhost:3307
+- Database: PostgreSQL on localhost:5432
 - JWT Secret: Development key
 - Server Port: 8080
 
@@ -96,7 +96,7 @@ The application uses the `dev` profile by default (configured in `application.pr
 - Database: `organiser_platform`
 - User: `organiser_user`
 - Password: `organiser_pass`
-- Port: 3307 (mapped from container's 3306)
+- Port: 5432
 
 ## API Documentation
 
@@ -132,14 +132,14 @@ docker-compose down -v
 
 1. ✅ Added default `dev` profile in `application.properties`
 2. ✅ Added default values for environment variables (DATABASE_URL, JWT_SECRET)
-3. ✅ Removed duplicate PostgreSQL migration files
-4. ✅ Started Docker and MariaDB database
+3. ✅ Configured PostgreSQL for local development
+4. ✅ Started Docker and PostgreSQL database
 5. ✅ Killed conflicting process on port 8080
 6. ✅ Started application successfully
 
 ## Application Status
 
-- ✅ **Database**: MariaDB running and connected
+- ✅ **Database**: PostgreSQL running and connected
 - ✅ **Backend**: Spring Boot application running on port 8080
 - ✅ **Flyway**: All 4 migrations applied successfully
 - ✅ **Hibernate**: JPA initialized

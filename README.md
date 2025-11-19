@@ -1,8 +1,8 @@
-# 🏔️ HikeHub
+# 🏔️ OutMeets
 
 **A modern, vibrant event management platform for outdoor activities and community building.**
 
-HikeHub is a beautiful web application designed for organizing and discovering outdoor activities like hiking, cycling, and group adventures. Built with modern technologies and a stunning Meetup-inspired UI.
+OutMeets is a beautiful web application designed for organizing and discovering outdoor activities like hiking, running, climbing, and swimming. Built with modern technologies and a stunning Meetup-inspired UI.
 
 ## ✨ Features
 
@@ -33,8 +33,7 @@ HikeHub is a beautiful web application designed for organizing and discovering o
 ### Backend
 - **Spring Boot** 3.1.5
 - **Java** 17
-- **PostgreSQL** (Production)
-- **MariaDB** (Local Development)
+- **PostgreSQL** (Local & Production)
 - **Gradle** build tool
 - **Flyway** database migrations
 
@@ -56,14 +55,14 @@ HikeHub is a beautiful web application designed for organizing and discovering o
 ### Prerequisites
 - Java 17+
 - Node.js 18+
-- MariaDB or PostgreSQL
+- PostgreSQL 14+
 
 ### Backend Setup
 
 1. **Start the database** (using Docker):
 ```bash
 cd backend
-docker-compose up -d mariadb
+docker-compose up -d postgres
 ```
 
 2. **Run the backend**:
@@ -242,4 +241,4 @@ MIT License - feel free to use this project for your own communities!
 
 ---
 
-**Happy Hiking! 🥾🏔️**
+**Happy Adventuring! 🥾🏔️**
