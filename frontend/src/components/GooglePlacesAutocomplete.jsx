@@ -42,15 +42,25 @@ export default function GooglePlacesAutocomplete({
       const place = autocompleteInstance.getPlace()
 
       if (place.geometry) {
+        // Create a better display value by combining name and formatted_address
+        // If name is different from formatted_address, show both
+        let displayValue = place.formatted_address || place.name
+        if (place.name && place.formatted_address && 
+            !place.formatted_address.toLowerCase().startsWith(place.name.toLowerCase())) {
+          displayValue = `${place.name}, ${place.formatted_address}`
+        } else if (place.name && !place.formatted_address) {
+          displayValue = place.name
+        }
+
         const locationData = {
-          address: place.formatted_address || place.name,
+          address: displayValue,
           latitude: place.geometry.location.lat(),
           longitude: place.geometry.location.lng(),
           name: place.name,
         }
 
         // Update internal input state to show selected address
-        setInputValue(locationData.address)
+        setInputValue(displayValue)
         
         // Only call onPlaceSelect - this will update hidden fields with validated data
         if (onPlaceSelect) {
