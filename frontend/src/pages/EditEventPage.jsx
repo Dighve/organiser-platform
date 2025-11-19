@@ -3,7 +3,7 @@
 // ============================================================
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus } from 'lucide-react'
+import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
@@ -60,7 +60,18 @@ export default function EditEventPage() {
   const [formData, setFormData] = useState({})                        // Accumulated form data across steps
   const [selectedRequirements, setSelectedRequirements] = useState([])  // Custom gear requirements tags
   
-  const watchedValues = watch()  // Watch all form field values for real-time updates
+  // Watch individual fields for validation and conditional rendering
+  const watchedTitle = watch('title')
+  const watchedEventDate = watch('eventDate')
+  const watchedStartTime = watch('startTime')
+  const watchedImageUrl = watch('imageUrl')
+  const watchedLocation = watch('location')
+  const watchedLatitude = watch('latitude')
+  const watchedLongitude = watch('longitude')
+  const watchedHostName = watch('hostName')
+  const watchedDifficultyLevel = watch('difficultyLevel')
+  const selectedDate = watch('eventDate')
+  const selectedEndDate = watch('endDate')
   
   // ============================================================
   // DATA FETCHING
@@ -114,11 +125,12 @@ export default function EditEventPage() {
         latitude: event.latitude,
         longitude: event.longitude,
         maxParticipants: event.maxParticipants,
-        price: event.price,
+        price: event.price || 0,
         difficultyLevel: event.difficultyLevel,
         distanceKm: event.distanceKm,
         elevationGainM: event.elevationGainM,
-        imageUrl: event.imageUrl
+        imageUrl: event.imageUrl,
+        hostName: event.organiserName || ''  // Pre-fill host name
       }
       
       setFormData(initialData)
@@ -419,85 +431,155 @@ export default function EditEventPage() {
                   <p className="text-gray-600 text-lg">Edit your event title, description, and dates</p>
                 </div>
                 
+                {/* Event Title */}
                 <div>
-                  <label className="block text-base font-bold text-gray-900 mb-3">Event Title <span className="text-red-500">*</span></label>
-                  <input
-                    type="text"
-                    {...register('title', { required: 'Title is required' })}
-                    className="w-full px-4 py-4 text-lg border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all"
-                    placeholder="e.g., Morning Hike at Box Hill"
-                  />
-                  {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
+                  <label htmlFor="title" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-600 shadow-lg">
+                      <Mountain className="h-4 w-4 text-white" />
+                    </div>
+                    Event Title <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                    <input
+                      {...register('title', { required: 'Title is required' })}
+                      type="text"
+                      className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-purple-300 bg-white"
+                      placeholder="e.g., Morning Hike at Box Hill"
+                    />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-purple-500">
+                      <Mountain className="h-6 w-6" />
+                    </div>
+                  </div>
+                  {errors.title && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.title.message}</p>}
                 </div>
 
-                <div>
-                  <label className="block text-base font-bold text-gray-900 mb-3">Description <span className="text-red-500">*</span></label>
-                  <textarea
-                    {...register('description', { required: 'Description is required' })}
-                    rows={6}
-                    className="w-full px-4 py-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 font-medium transition-all resize-none"
-                    placeholder="Describe your hike, meeting point, what to expect..."
-                  />
-                  {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description.message}</p>}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Date & Time Fields */}
+                <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Start Date <span className="text-red-500">*</span></label>
-                    <input
-                      type="date"
-                      min={new Date().toISOString().split('T')[0]}
-                      {...register('eventDate', { required: 'Start date is required' })}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    />
-                    {errors.eventDate && <p className="text-red-500 text-sm mt-1">{errors.eventDate.message}</p>}
+                    <label htmlFor="eventDate" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-orange-500 shadow-lg">
+                        <Calendar className="h-4 w-4 text-white" />
+                      </div>
+                      Event Date <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                      <input
+                        {...register('eventDate', { required: 'Event date is required' })}
+                        type="date"
+                        min={new Date().toISOString().split('T')[0]}
+                        className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-pink-300 bg-white"
+                      />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500">
+                        <Calendar className="h-6 w-6" />
+                      </div>
+                    </div>
+                    {errors.eventDate && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.eventDate.message}</p>}
                   </div>
-
                   <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">End Date</label>
-                    <input
-                      type="date"
-                      min={new Date().toISOString().split('T')[0]}
-                      {...register('endDate')}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Leave empty for single-day events</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">Start Time <span className="text-red-500">*</span></label>
-                    <input
-                      type="time"
-                      {...register('startTime', { required: 'Start time is required' })}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    />
-                    {errors.startTime && <p className="text-red-500 text-sm mt-1">{errors.startTime.message}</p>}
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-gray-700 mb-2">End Time</label>
-                    <input
-                      type="time"
-                      {...register('endTime')}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Approximate finish time (optional)</p>
+                    <label htmlFor="startTime" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg">
+                        <Clock className="h-4 w-4 text-white" />
+                      </div>
+                      Start Time <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                      <input
+                        {...register('startTime', { required: 'Start time is required' })}
+                        type="time"
+                        className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-orange-300 bg-white"
+                      />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500">
+                        <Clock className="h-6 w-6" />
+                      </div>
+                    </div>
+                    {errors.startTime && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.startTime.message}</p>}
                   </div>
                 </div>
+                
+                {/* End Date & Time (Optional) */}
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="endDate" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg">
+                        <Calendar className="h-4 w-4 text-white" />
+                      </div>
+                      End Date
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                      <input
+                        {...register('endDate')}
+                        type="date"
+                        min={selectedDate || new Date().toISOString().split('T')[0]}
+                        className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-indigo-300 bg-white"
+                      />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-500">
+                        <Calendar className="h-6 w-6" />
+                      </div>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-2 ml-1">For multi-day hikes (optional)</p>
+                  </div>
 
+                  <div>
+                    <label htmlFor="endTime" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                      <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
+                        <Timer className="h-4 w-4 text-white" />
+                      </div>
+                      End Time
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                      <input
+                        {...register('endTime')}
+                        type="time"
+                        className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-blue-300 bg-white"
+                      />
+                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500">
+                        <Timer className="h-6 w-6" />
+                      </div>
+                    </div>
+                    {errors.endTime && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.endTime.message}</p>}
+                    <p className="text-sm text-gray-500 mt-2 ml-1">Approximate finish time (optional)</p>
+                  </div>
+                </div>
+
+                {/* Featured Photo */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center gap-2">
-                    <Upload className="h-5 w-5 text-purple-600" />
+                  <label htmlFor="imageUrl" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
+                      <Image className="h-4 w-4 text-white" />
+                    </div>
                     Featured Photo
                   </label>
                   <ImageUpload
-                    value={watchedValues.imageUrl}
+                    value={watchedImageUrl}
                     onChange={(url) => {
                       setValue('imageUrl', url)
                       updateFormData({ imageUrl: url })
                     }}
                     folder="event-photo"
                   />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-500 shadow-lg">
+                      <Info className="h-4 w-4 text-white" />
+                    </div>
+                    About This Event
+                  </label>
+                  <div className="relative group">
+                    <textarea
+                      {...register('description')}
+                      className="relative w-full px-6 py-5 text-base border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-cyan-300 bg-white min-h-[140px] resize-none"
+                      placeholder="Describe your hike, meeting point, what to expect..."
+                    />
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2 ml-1">💡 Help hikers know what to expect on this adventure</p>
                 </div>
               </div>
             )}
@@ -516,8 +598,15 @@ export default function EditEventPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-base font-bold text-gray-900 mb-3">Hiking location <span className="text-red-500">*</span></label>
+                  <label htmlFor="location" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-orange-500 shadow-lg">
+                      <MapPin className="h-4 w-4 text-white" />
+                    </div>
+                    Hiking location <span className="text-red-500">*</span>
+                  </label>
                   <GooglePlacesAutocomplete
+                    value={watchedLocation}
+                    onChange={(value) => setValue('location', value)}
                     onPlaceSelect={(locationData) => {
                       setValue('location', locationData.address, { shouldValidate: true })
                       setValue('latitude', locationData.latitude)
@@ -534,6 +623,23 @@ export default function EditEventPage() {
                   <input type="hidden" {...register('latitude')} />
                   <input type="hidden" {...register('longitude')} />
                 </div>
+
+                {watchedLatitude && watchedLongitude && (
+                  <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
+                    <div className="flex items-start gap-3">
+                      <div className="bg-green-500 rounded-full p-2">
+                        <Check className="h-6 w-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-green-800 font-bold text-lg">Location selected</p>
+                        <p className="text-green-700 mt-1">{watchedLocation}</p>
+                        <p className="text-sm text-green-600 mt-2">
+                          📍 {watchedLatitude?.toFixed(6)}, {watchedLongitude?.toFixed(6)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -562,7 +668,7 @@ export default function EditEventPage() {
                         key={option.value}
                         className={`
                           relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all
-                          ${watchedValues.difficultyLevel === option.value
+                          ${watchedDifficultyLevel === option.value
                             ? 'border-purple-500 bg-purple-50'
                             : 'border-gray-200 hover:border-purple-300'}
                         `}
@@ -615,20 +721,31 @@ export default function EditEventPage() {
 
               {/* ========== MAX PARTICIPANTS ========== */}
               <div>
-                <label className="block text-base font-bold text-gray-900 mb-3">Max Participants</label>
-                <input
-                  type="number"
-                  {...register('maxParticipants')}
-                  className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all text-lg"
-                  placeholder="20"
-                />
+                <label htmlFor="maxParticipants" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-cyan-500 shadow-lg">
+                    <Users className="h-4 w-4 text-white" />
+                  </div>
+                  Max Participants
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-teal-500 to-cyan-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                  <input
+                    {...register('maxParticipants')}
+                    type="number"
+                    className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-teal-500/20 focus:border-teal-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-teal-300 bg-white"
+                    placeholder="20"
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-teal-500">
+                    <Users className="h-6 w-6" />
+                  </div>
+                </div>
                 <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited participants</p>
               </div>
 
               {/* ========== REQUIRED GEAR (Custom Tags) ========== */}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
                 <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
-                  <Mountain className="h-5 w-5 text-purple-600" />
+                  <Backpack className="h-5 w-5 text-purple-600" />
                   Required gear
                 </h3>
                 <p className="text-sm text-gray-600 mb-4">Add custom gear requirements for your hike</p>
@@ -641,29 +758,43 @@ export default function EditEventPage() {
 
               {/* ========== COST PER PERSON ========== */}
               <div>
-                <label className="block text-base font-bold text-gray-900 mb-3">Cost per Person (£)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  {...register('price')}
-                  className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all text-lg"
-                  placeholder="0.00"
-                />
+                <label htmlFor="price" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
+                    <DollarSign className="h-4 w-4 text-white" />
+                  </div>
+                  Cost per Person (£)
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                  <input
+                    {...register('price')}
+                    type="number"
+                    step="0.01"
+                    className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-amber-300 bg-white"
+                    placeholder="0.00"
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-500">
+                    <DollarSign className="h-6 w-6" />
+                  </div>
+                </div>
                 <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave as 0 if the hike is free</p>
               </div>
 
               {/* ========== HOSTED BY ========== */}
-              <div>
-                  <label className="block text-sm font-bold text-gray-700 mb-2">Hosted by <span className="text-red-500">*</span></label>
-                  <MemberAutocomplete
-                    groupId={event?.groupId}
-                    value={watchedValues.hostName}
-                    onChange={(value) => setValue('hostName', value)}
-                    error={errors.hostName?.message}
-                  />
-                  <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
-                  {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
-                  <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>
+              <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-6 border-2 border-indigo-200">
+                <label htmlFor="hostName" className="block text-base font-bold text-gray-900 mb-3 flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-indigo-600" />
+                  Hosted by <span className="text-red-500">*</span>
+                </label>
+                <MemberAutocomplete
+                  groupId={event?.groupId}
+                  value={watchedHostName}
+                  onChange={(value) => setValue('hostName', value)}
+                  error={errors.hostName?.message}
+                />
+                <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
+                {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
+                <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>
               </div>
             </div>
             )}
