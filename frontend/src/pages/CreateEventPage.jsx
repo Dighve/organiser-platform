@@ -25,6 +25,68 @@ const STEPS = {
   REVIEW: 3       // Final review before publishing
 }
 
+// ============================================================
+// HELPER FUNCTIONS - Date/Time Defaults
+// ============================================================
+
+/**
+ * Get smart default date and time for new events
+ * Similar to Meetup.com behavior:
+ * - Default date: Today
+ * - Default time: 2-3 hours from now, rounded to next hour
+ * - Example: Current time 16:52 → Default 19:00
+ */
+const getDefaultDateTime = () => {
+  const now = new Date()
+  
+  // Default date: Today in YYYY-MM-DD format
+  const year = now.getFullYear()
+  const month = String(now.getMonth() + 1).padStart(2, '0')
+  const day = String(now.getDate()).padStart(2, '0')
+  const defaultDate = `${year}-${month}-${day}`
+  
+  // Default time: 2-3 hours from now, rounded up to next hour
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+  
+  // Add 2 hours and round up to next hour if there are any minutes
+  let defaultHour = currentHour + 2
+  if (currentMinute > 0) {
+    defaultHour += 1  // Round up to next full hour
+  }
+  
+  // Handle overflow past midnight
+  if (defaultHour >= 24) {
+    defaultHour = 23
+  }
+  
+  const defaultTime = `${String(defaultHour).padStart(2, '0')}:00`
+  
+  return { defaultDate, defaultTime }
+}
+
+/**
+ * Get minimum allowed time for today's events
+ * Should be at least 1 hour from now
+ */
+const getMinimumTime = () => {
+  const now = new Date()
+  const currentHour = now.getHours()
+  const currentMinute = now.getMinutes()
+  
+  // Minimum time: Next hour from now
+  let minHour = currentHour + 1
+  if (currentMinute === 0) {
+    minHour = currentHour  // If exactly on the hour, current hour is fine
+  }
+  
+  if (minHour >= 24) {
+    minHour = 23
+  }
+  
+  return `${String(minHour).padStart(2, '0')}:00`
+}
+
 // Step titles displayed in progress bar
 const STEP_TITLES = {
   [STEPS.BASICS]: 'Start with the basics',
@@ -58,7 +120,11 @@ export default function CreateEventPage() {
   // LOCAL STATE
   // ============================================================
   const [currentStep, setCurrentStep] = useState(STEPS.BASICS)        // Current step in multi-step form
-  const [formData, setFormData] = useState({})                        // Accumulated form data across steps
+  const { defaultDate, defaultTime } = getDefaultDateTime()
+  const [formData, setFormData] = useState({
+    eventDate: defaultDate,
+    startTime: defaultTime
+  })                        // Accumulated form data across steps with smart defaults
   const [selectedRequirements, setSelectedRequirements] = useState([])  // Custom gear requirements tags
   const [isSubmitting, setIsSubmitting] = useState(false)             // Prevent double form submissions
   
@@ -82,6 +148,12 @@ export default function CreateEventPage() {
       setValue(key, formData[key])
     })
   }, [currentStep, formData, setValue])
+  
+  // Set default date and time on component mount
+  useEffect(() => {
+    setValue('eventDate', defaultDate)
+    setValue('startTime', defaultTime)
+  }, [defaultDate, defaultTime, setValue])
   
   // ============================================================
   // DATA FETCHING
@@ -308,6 +380,7 @@ export default function CreateEventPage() {
             <input 
               {...register('eventDate', { required: 'Event date is required' })} 
               type="date" 
+              min={new Date().toISOString().split('T')[0]}
               className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-pink-300 bg-white" 
             />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500">

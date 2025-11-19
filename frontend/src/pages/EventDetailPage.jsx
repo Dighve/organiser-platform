@@ -164,6 +164,9 @@ export default function EventDetailPage() {
   const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event.organiserId)
   const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
   
+  // Check if event is in the past
+  const isPastEvent = event ? new Date(event.eventDate) < new Date() : false
+  
   // Check if access is denied (non-member trying to view members-only event)
   // Organisers always have access
   const isAccessDenied = !isEventOrganiser && (
@@ -481,21 +484,37 @@ export default function EventDetailPage() {
                       <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
                         <p className="text-orange-700 font-semibold">👑 You're the organiser</p>
                       </div>
-                      <button
-                        onClick={() => navigate(`/events/${id}/edit`)}
-                        className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
-                      >
-                        <Edit className="h-5 w-5" />
-                        Edit Event
-                      </button>
-                      <button
-                        onClick={handleDelete}
-                        disabled={deleteMutation.isLoading}
-                        className="w-full py-3 px-6 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-red-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        <Trash2 className="h-5 w-5" />
-                        {deleteMutation.isLoading ? 'Deleting...' : 'Delete Event'}
-                      </button>
+                      {!isPastEvent ? (
+                        /* FUTURE EVENT - Show Edit button */
+                        <>
+                          <button
+                            onClick={() => navigate(`/events/${id}/edit`)}
+                            className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                          >
+                            <Edit className="h-5 w-5" />
+                            Edit Event
+                          </button>
+                          <button
+                            onClick={handleDelete}
+                            disabled={deleteMutation.isLoading}
+                            className="w-full py-3 px-6 bg-gradient-to-r from-red-600 to-red-700 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-red-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                          >
+                            <Trash2 className="h-5 w-5" />
+                            {deleteMutation.isLoading ? 'Deleting...' : 'Delete Event'}
+                          </button>
+                        </>
+                      ) : (
+                        /* PAST EVENT - Show locked message */
+                        <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
+                          <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+                            <Clock className="h-5 w-5" />
+                            <p className="font-semibold">Event Has Ended</p>
+                          </div>
+                          <p className="text-sm text-gray-500 text-center">
+                            Past events cannot be edited to preserve event history.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : hasJoined ? (
                     /* REGISTERED USER VIEW - Show Leave button */

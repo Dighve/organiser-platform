@@ -301,6 +301,76 @@ export default function EditEventPage() {
   }
 
   // ============================================================
+  // PAST EVENT CHECK - Cannot edit past events
+  // ============================================================
+  const eventDate = new Date(event.eventDate)
+  const now = new Date()
+  const isPastEvent = eventDate < now
+
+  if (isPastEvent) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center px-4">
+        <div className="max-w-2xl w-full">
+          <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-10 shadow-2xl shadow-orange-500/10 border-2 border-orange-200">
+            <div className="text-center">
+              {/* Warning Icon */}
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-orange-400 to-red-500 rounded-full mb-6 shadow-2xl shadow-orange-500/30">
+                <Clock className="h-12 w-12 text-white" />
+              </div>
+              
+              {/* Title */}
+              <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-red-600 mb-4">
+                Cannot Edit Past Event
+              </h2>
+              
+              {/* Message */}
+              <p className="text-gray-700 text-lg mb-3 leading-relaxed">
+                This event has already taken place and cannot be edited.
+              </p>
+              <p className="text-gray-600 text-base mb-8">
+                Past events are locked to preserve event history and maintain data integrity.
+              </p>
+              
+              {/* Event Info */}
+              <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-2xl p-6 mb-8 border-2 border-orange-200">
+                <h3 className="font-bold text-gray-900 text-xl mb-3">{event.title}</h3>
+                <div className="flex items-center justify-center gap-2 text-gray-700">
+                  <Clock className="h-5 w-5 text-orange-600" />
+                  <span className="font-medium">
+                    {new Date(event.eventDate).toLocaleDateString('en-GB', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => navigate(`/events/${id}`)}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                  View Event Details
+                </button>
+                <button
+                  onClick={() => navigate(`/groups/${event.groupId}`)}
+                  className="px-8 py-4 bg-white text-gray-700 border-2 border-gray-300 rounded-xl font-bold hover:border-purple-500 hover:text-purple-600 transition-all"
+                >
+                  Back to Group
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
   // MAIN COMPONENT RETURN
   // ============================================================
   return (
@@ -373,6 +443,7 @@ export default function EditEventPage() {
                     <label className="block text-sm font-bold text-gray-700 mb-2">Start Date <span className="text-red-500">*</span></label>
                     <input
                       type="date"
+                      min={new Date().toISOString().split('T')[0]}
                       {...register('eventDate', { required: 'Start date is required' })}
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     />
@@ -383,6 +454,7 @@ export default function EditEventPage() {
                     <label className="block text-sm font-bold text-gray-700 mb-2">End Date</label>
                     <input
                       type="date"
+                      min={new Date().toISOString().split('T')[0]}
                       {...register('endDate')}
                       className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-500/20 transition-all"
                     />
