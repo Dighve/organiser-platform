@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Type, FileText, Image, Timer } from 'lucide-react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
 import toast from 'react-hot-toast'
@@ -112,8 +112,11 @@ export default function CreateEventPage() {
   // ============================================================
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const groupId = searchParams.get('groupId')
+  const copyFromId = searchParams.get('copyFrom')
+  const copiedEventData = location.state?.eventData
   const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
   
   // ============================================================
@@ -184,6 +187,54 @@ export default function CreateEventPage() {
     setValue('eventDate', defaultDate)
     setValue('startTime', defaultTime)
   }, [defaultDate, defaultTime, setValue])
+  
+  // Pre-fill form when copying an event
+  useEffect(() => {
+    if (copiedEventData && copyFromId) {
+      // Show info toast
+      toast.success('📋 Event copied! Update the date and make any changes needed.', { duration: 5000 })
+      
+      // Pre-fill all fields except dates (user needs to set new dates)
+      const updatedFormData = {
+        ...formData,
+        title: copiedEventData.title ? `${copiedEventData.title} (Copy)` : '',
+        description: copiedEventData.description || '',
+        location: copiedEventData.location || '',
+        latitude: copiedEventData.latitude || '',
+        longitude: copiedEventData.longitude || '',
+        difficultyLevel: copiedEventData.difficultyLevel || '',
+        distanceKm: copiedEventData.distanceKm || '',
+        elevationGainM: copiedEventData.elevationGainM || '',
+        estimatedDurationHours: copiedEventData.estimatedDurationHours || '',
+        maxParticipants: copiedEventData.maxParticipants || '',
+        costPerPerson: copiedEventData.costPerPerson || 0,
+        cancellationPolicy: copiedEventData.cancellationPolicy || '',
+        imageUrl: copiedEventData.imageUrl || '',
+        hostName: copiedEventData.hostName || '',
+        eventDate: defaultDate, // Use default date for new event
+        startTime: defaultTime  // Use default time for new event
+      }
+      
+      setFormData(updatedFormData)
+      
+      // Set required gear tags if available
+      if (copiedEventData.requiredGear) {
+        try {
+          const gearArray = typeof copiedEventData.requiredGear === 'string' 
+            ? JSON.parse(copiedEventData.requiredGear) 
+            : copiedEventData.requiredGear
+          setSelectedRequirements(Array.isArray(gearArray) ? gearArray : [])
+        } catch (e) {
+          console.error('Error parsing required gear:', e)
+        }
+      }
+      
+      // Set form values
+      Object.keys(updatedFormData).forEach(key => {
+        setValue(key, updatedFormData[key])
+      })
+    }
+  }, [copiedEventData, copyFromId, setValue, defaultDate, defaultTime])
   
   // ============================================================
   // DATA FETCHING

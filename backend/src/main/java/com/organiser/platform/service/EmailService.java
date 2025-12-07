@@ -52,11 +52,23 @@ public class EmailService {
     /**
      * Send magic link email to user.
      * Uses Resend API if configured, otherwise logs to console.
+     * Includes optional redirect URL for cross-browser support.
      */
-    public void sendMagicLink(String email, String token) {
+    public void sendMagicLink(String email, String token, String redirectUrl) {
+        // Build magic link with optional redirect parameter
         String magicLink = frontendUrl + "/auth/verify?token=" + token;
+        if (redirectUrl != null && !redirectUrl.isEmpty()) {
+            // URL-encode the redirect parameter to handle special characters
+            try {
+                String encodedRedirect = java.net.URLEncoder.encode(redirectUrl, "UTF-8");
+                magicLink += "&redirect=" + encodedRedirect;
+            } catch (Exception e) {
+                log.warn("Failed to encode redirect URL: {}", redirectUrl, e);
+                // Continue without redirect parameter
+            }
+        }
         
-        log.info("Sending magic link to: {}", email);
+        log.info("Sending magic link to: {} (with redirect: {})", email, redirectUrl != null);
         
         if (resendApiKey == null || resendApiKey.isEmpty()) {
             // Development mode - just log the magic link

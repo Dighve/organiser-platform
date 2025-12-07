@@ -12,4 +12,6 @@ public class MagicLinkRequest {
     private String email;
     
     private String displayName;  // Optional display name (can be pseudonym)
+    
+    private String redirectUrl;  // Optional URL to redirect to after verification (e.g., /events/123?action=join)
 }

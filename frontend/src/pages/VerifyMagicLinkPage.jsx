@@ -8,11 +8,13 @@ export default function VerifyMagicLinkPage() {
   const [searchParams] = useSearchParams()
   const [status, setStatus] = useState('verifying') // verifying, success, error
   const [error, setError] = useState('')
+  const [savedReturnUrl, setSavedReturnUrl] = useState(null)
   const navigate = useNavigate()
-  const { login } = useAuthStore()
+  const { login, clearReturnUrl } = useAuthStore()
 
   useEffect(() => {
     const token = searchParams.get('token')
+    const redirectParam = searchParams.get('redirect') // Read from URL (cross-browser)
     
     if (!token) {
       setStatus('error')
@@ -20,21 +22,34 @@ export default function VerifyMagicLinkPage() {
       return
     }
 
-    verifyToken(token)
+    verifyToken(token, redirectParam)
   }, [searchParams])
 
-  const verifyToken = async (token) => {
+  const verifyToken = async (token, redirectParam) => {
     try {
       const response = await authAPI.verifyMagicLink(token)
       const { token: jwtToken, userId, email, role, isOrganiser } = response.data
       
       login({ id: userId, userId, email, role, isOrganiser }, jwtToken)
+      
+      // Priority: URL param (cross-browser) > localStorage (same browser)
+      const urlRedirect = redirectParam ? decodeURIComponent(redirectParam) : null
+      const storeRedirect = useAuthStore.getState().returnUrl
+      const finalRedirect = urlRedirect || storeRedirect
+      
+      setSavedReturnUrl(finalRedirect) // Save for display
+      
       setStatus('success')
       
-      // Redirect after 2 seconds
+      // Redirect after 1 second to the saved return URL or homepage
       setTimeout(() => {
-        navigate('/')
-      }, 2000)
+        const redirectTo = finalRedirect || '/'
+        
+        console.log('Redirecting to:', redirectTo, '(from URL param:', !!urlRedirect, ', from store:', !!storeRedirect, ')') // Debug log
+        
+        clearReturnUrl() // Clear the return URL after using it
+        navigate(redirectTo, { replace: true }) // Use replace to avoid back button issues
+      }, 1000)
     } catch (error) {
       setStatus('error')
       setError(error.response?.data?.message || 'Invalid or expired magic link')
@@ -76,10 +91,12 @@ export default function VerifyMagicLinkPage() {
             <h2 className="mt-8 text-3xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
               Successfully signed in!
             </h2>
-            <p className="mt-4 text-gray-700 text-lg">Redirecting you to the homepage...</p>
+            <p className="mt-4 text-gray-700 text-lg">
+              {savedReturnUrl ? 'Completing your action...' : 'Redirecting you to the homepage...'}
+            </p>
             <div className="mt-6 p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-100">
               <p className="text-sm text-gray-600">
-                ✨ Welcome to HikeHub!
+                {savedReturnUrl ? '🎉 You\'ll be automatically joined to the event!' : '✨ Welcome to OutMeets!'}
               </p>
             </div>
           </div>

@@ -79,8 +79,8 @@ public class AuthService {
         
         magicLinkRepository.save(magicLink);
         
-        // Send magic link via email
-        emailService.sendMagicLink(email, token);
+        // Send magic link via email (include redirect URL for cross-browser support)
+        emailService.sendMagicLink(email, token, request.getRedirectUrl());
     }
     
     /**

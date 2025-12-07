@@ -7,12 +7,12 @@ After deploying with Blueprint, add these environment variables in the Render da
 ### 🔐 Cloudinary (REQUIRED for image uploads)
 
 ```bash
-CLOUDINARY_CLOUD_NAME=drdttgry4
-CLOUDINARY_API_KEY=478746114596374
-CLOUDINARY_API_SECRET=wXiHJlL_64SuSpyTUc7ajf8KdV4
+CLOUDINARY_CLOUD_NAME=xyz
+CLOUDINARY_API_KEY=678..
+CLOUDINARY_API_SECRET=w3456..
 ```
 
-**Where to add:**
+**Where to add:**xs
 1. Render Dashboard → hikehub-backend service
 2. Environment tab → Add Environment Variable
 3. Add each variable above
@@ -92,19 +92,19 @@ VITE_GOOGLE_MAPS_API_KEY=<your-google-maps-api-key>
 **Variable 1:**
 ```
 Key: CLOUDINARY_CLOUD_NAME
-Value: drdttgry4
+Value: xyz
 ```
 
 **Variable 2:**
 ```
 Key: CLOUDINARY_API_KEY
-Value: 478746114596374
+Value: 678...
 ```
 
 **Variable 3:**
 ```
 Key: CLOUDINARY_API_SECRET
-Value: wXiHJlL_64SuSpyTUc7ajf8KdV4
+Value: w898899...
 ```
 
 **Variable 4 (if needed):**
@@ -120,7 +120,7 @@ Value: <your-key>
 **Variable 1:**
 ```
 Key: VITE_API_URL
-Value: https://hikehub-backend.onrender.com
+Value: https://hikehub-backend.xyz.com
 ```
 
 **Variable 2 (if using Google Maps):**

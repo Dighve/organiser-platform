@@ -13,6 +13,7 @@ import com.organiser.platform.model.EventParticipant;
 import com.organiser.platform.model.Group;
 import com.organiser.platform.model.Member;
 import com.organiser.platform.repository.EventRepository;
+import com.organiser.platform.repository.EventParticipantRepository;
 import com.organiser.platform.repository.GroupRepository;
 import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.repository.SubscriptionRepository;
@@ -52,6 +53,8 @@ public class GroupService {
     private final MemberRepository memberRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final com.organiser.platform.repository.ActivityRepository activityRepository;
+    private final EventRepository eventRepository;
+    private final EventParticipantRepository eventParticipantRepository;
     
     // ============================================================
     // PUBLIC METHODS - Group CRUD Operations
@@ -273,6 +276,7 @@ public class GroupService {
     /**
      * Unsubscribe a member from a group.
      * Sets subscription status to INACTIVE.
+     * MEETUP.COM PATTERN: Also removes member from all group events.
      */
     @Transactional
     @CacheEvict(value = {"groups", "events"}, allEntries = true)
@@ -280,9 +284,37 @@ public class GroupService {
         Subscription subscription = subscriptionRepository.findByMemberIdAndGroupId(memberId, groupId)
                 .orElseThrow(() -> new RuntimeException("Subscription not found"));
         
+        // Set subscription to inactive
         subscription.setStatus(Subscription.SubscriptionStatus.INACTIVE);
         subscription.setUnsubscribedAt(LocalDateTime.now());
         subscriptionRepository.save(subscription);
+        
+        // MEETUP.COM PATTERN: Remove member from all events in this group
+        // When you leave a group, you're automatically removed from all its events
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Find all events in this group
+        List<Event> groupEvents = eventRepository.findAllByGroupId(groupId);
+        
+        // Remove member from each event they're registered for
+        for (Event event : groupEvents) {
+            Optional<EventParticipant> participant = eventParticipantRepository
+                    .findByEventIdAndMemberId(event.getId(), memberId);
+            
+            if (participant.isPresent()) {
+                // Remove participant from event
+                event.getParticipants().remove(participant.get());
+                eventParticipantRepository.delete(participant.get());
+                
+                // If event was full, change status back to PUBLISHED
+                if (event.getStatus() == Event.EventStatus.FULL) {
+                    event.setStatus(Event.EventStatus.PUBLISHED);
+                }
+                
+                eventRepository.save(event);
+            }
+        }
     }
     
     // ============================================================

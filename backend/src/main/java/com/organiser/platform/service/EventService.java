@@ -326,6 +326,12 @@ public class EventService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
         
+        // CHECK IF ALREADY REGISTERED (prevent duplicate registrations)
+        boolean alreadyRegistered = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId).isPresent();
+        if (alreadyRegistered) {
+            throw new RuntimeException("You are already registered for this event");
+        }
+        
         // Check if the event is full
         if (event.getMaxParticipants() != null && 
             event.getParticipants().size() >= event.getMaxParticipants()) {
@@ -334,6 +340,22 @@ public class EventService {
         
         if (event.getStatus() != Event.EventStatus.PUBLISHED) {
             throw new RuntimeException(String.format("Event is not open for registration - %s", event.getStatus()));
+        }
+        
+        // AUTOMATIC GROUP SUBSCRIPTION (Meetup.com pattern)
+        // When joining an event, automatically subscribe to the group if not already a member
+        if (event.getGroup() != null) {
+            try {
+                // Check if user is already a member of the group
+                boolean isMember = groupService.isMemberOfGroup(memberId, event.getGroup().getId());
+                if (!isMember) {
+                    // Auto-subscribe to group (this will create ACTIVE subscription)
+                    groupService.subscribeToGroup(event.getGroup().getId(), memberId);
+                }
+            } catch (Exception e) {
+                // Log but don't fail the event join if group subscription fails
+                System.err.println("Warning: Failed to auto-subscribe to group: " + e.getMessage());
+            }
         }
         
         // Create a new event participant

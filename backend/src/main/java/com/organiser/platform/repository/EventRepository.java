@@ -29,6 +29,10 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.group.id = :groupId ORDER BY e.eventDate ASC")
     Page<Event> findByGroupId(@Param("groupId") Long groupId, Pageable pageable);
     
+    // Get all events by group (non-paginated) - for internal operations like unsubscribe
+    @Query("SELECT e FROM Event e WHERE e.group.id = :groupId ORDER BY e.eventDate ASC")
+    List<Event> findAllByGroupId(@Param("groupId") Long groupId);
+    
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEvents(@Param("now") Instant now, Pageable pageable);
     

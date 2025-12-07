@@ -21,6 +21,7 @@ export const useAuthStore = create(
       tokenExpiry: null,
       isAuthenticated: false,
       pendingEmail: null,
+      returnUrl: null, // URL to redirect to after login
       
       login: (userData, token) => {
         let tokenExpiry = null
@@ -73,6 +74,14 @@ export const useAuthStore = create(
         set({ pendingEmail: email })
       },
       
+      setReturnUrl: (url) => {
+        set({ returnUrl: url })
+      },
+      
+      clearReturnUrl: () => {
+        set({ returnUrl: null })
+      },
+      
       updateUser: (userData) => {
         set((state) => ({
           user: { ...state.user, ...userData },
@@ -93,6 +102,7 @@ export const useAuthStore = create(
         token: state.token,
         tokenExpiry: state.tokenExpiry,
         isAuthenticated: state.isAuthenticated,
+        returnUrl: state.returnUrl, // Persist return URL across page reloads
       }),
     }
   )

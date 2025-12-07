@@ -1,13 +1,14 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import CommentSection from '../components/CommentSection'
 import ProfileAvatar from '../components/ProfileAvatar'
+import LoginModal from '../components/LoginModal'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -31,7 +32,8 @@ export default function EventDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user, setReturnUrl } = useAuthStore()
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -69,24 +71,42 @@ export default function EventDetailPage() {
   // MUTATIONS - API calls that change data
   // ============================================
   
-  // Join event (register for event)
+  // Handle join button click - check authentication first
+  const handleJoinClick = () => {
+    if (!isAuthenticated) {
+      // Store current URL with action parameter so we can auto-join after login
+      setReturnUrl(`/events/${id}?action=join`)
+      setIsLoginModalOpen(true)
+      return
+    }
+    joinMutation.mutate()
+  }
+
+  // Join event (register for event + auto-join group - Meetup.com pattern)
   const joinMutation = useMutation({
     mutationFn: () => eventsAPI.joinEvent(id),
     onSuccess: async () => {
-      // Invalidate queries
+      // Invalidate queries (including group membership)
       await queryClient.invalidateQueries(['event', id])
       await queryClient.invalidateQueries(['eventParticipants', id])
       await queryClient.invalidateQueries(['myEvents'])
       await queryClient.invalidateQueries(['allEvents'])
       await queryClient.invalidateQueries(['events'])
+      await queryClient.invalidateQueries(['myGroups']) // Refresh group membership
       
-      // Force immediate refetch to update button state
+      // Force immediate refetch to update button state and unlock content
       await queryClient.refetchQueries(['event', id])
       
-      toast.success('Successfully joined the event!')
+      toast.success('🎉 Joined event and group successfully!')
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to join event')
+      // Check if error is due to authentication
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        setIsLoginModalOpen(true)
+        toast.error('Please sign in to join this event')
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to join event')
+      }
     },
   })
 
@@ -145,7 +165,7 @@ export default function EventDetailPage() {
     },
   })
 
-  // Force refetch when navigating back to this page (e.g., after joining group)
+  // Force refetch when navigating back to this page
   useEffect(() => {
     if (isAuthenticated && id) {
       // Invalidate and refetch event data to get updated membership status
@@ -164,6 +184,56 @@ export default function EventDetailPage() {
     }
   }
 
+  // Copy event - Navigate to create page with pre-filled data
+  const handleCopyEvent = () => {
+    // Encode event data as URL parameters
+    const eventData = {
+      title: event.title,
+      description: event.description,
+      location: event.location,
+      latitude: event.latitude,
+      longitude: event.longitude,
+      difficultyLevel: event.difficultyLevel,
+      distanceKm: event.distanceKm,
+      elevationGainM: event.elevationGainM,
+      estimatedDurationHours: event.estimatedDurationHours,
+      maxParticipants: event.maxParticipants,
+      costPerPerson: event.costPerPerson,
+      requiredGear: event.requiredGear,
+      includedItems: event.includedItems,
+      cancellationPolicy: event.cancellationPolicy,
+      imageUrl: event.imageUrl,
+      hostName: event.hostName,
+      groupId: event.groupId
+    }
+    
+    // Navigate to create event page with groupId and copyFrom parameters
+    // This ensures the event belongs to the same group
+    navigate(`/create-event?groupId=${event.groupId}&copyFrom=${id}`, { state: { eventData } })
+    toast.success('Event copied! Update the date and details as needed.')
+  }
+
+  // ============================================
+  // AUTO-JOIN AFTER LOGIN - Meetup.com pattern
+  // ============================================
+  
+  // Check URL for action=join parameter and auto-join if user just logged in
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const action = urlParams.get('action')
+    
+    if (action === 'join' && isAuthenticated && !joinMutation.isLoading) {
+      // User just logged in and wants to join the event
+      // Remove the action parameter from URL
+      urlParams.delete('action')
+      const newUrl = `${window.location.pathname}${urlParams.toString() ? '?' + urlParams.toString() : ''}`
+      window.history.replaceState({}, '', newUrl)
+      
+      // Auto-join the event
+      joinMutation.mutate()
+    }
+  }, [isAuthenticated, id])
+
   // ============================================
   // LOADING STATE
   // ============================================
@@ -181,6 +251,13 @@ export default function EventDetailPage() {
               <div className="h-4 bg-gray-200 rounded-lg"></div>
               <div className="h-4 bg-gray-200 rounded-lg w-5/6"></div>
             </div>
+          </div>
+
+          {/* ============================================ */}
+          {/* COMMENTS - Positioned after sidebar on mobile */}
+          {/* ============================================ */}
+          <div className="order-2 lg:order-3 lg:col-span-2">
+            <CommentSection eventId={id} />
           </div>
         </div>
       </div>
@@ -288,11 +365,72 @@ export default function EventDetailPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* ============================================ */}
+        {/* MOBILE STICKY ACTION BAR - Bottom of screen */}
+        {/* ============================================ */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t-2 border-gray-200 shadow-2xl p-4">
+          {isAccessDenied ? (
+            <button
+              onClick={handleJoinClick}
+              disabled={joinMutation.isLoading}
+              className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <Users className="h-5 w-5" />
+              {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
+            </button>
+          ) : isAuthenticated ? (
+            isEventOrganiser ? (
+              !isPastEvent ? (
+                <button
+                  onClick={() => navigate(`/events/${id}/edit`)}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Edit className="h-5 w-5" />
+                  Edit Event
+                </button>
+              ) : (
+                <button
+                  onClick={handleCopyEvent}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+                >
+                  <Copy className="h-5 w-5" />
+                  Copy Event
+                </button>
+              )
+            ) : hasJoined ? (
+              <button
+                onClick={() => leaveMutation.mutate()}
+                disabled={leaveMutation.isLoading}
+                className="w-full py-4 px-6 bg-gray-100 text-gray-700 font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50"
+              >
+                {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
+              </button>
+            ) : (
+              <button
+                onClick={handleJoinClick}
+                disabled={event.status === 'FULL' || joinMutation.isLoading}
+                className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                <Users className="h-5 w-5" />
+                {joinMutation.isLoading ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
+              </button>
+            )
+          ) : (
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <LogIn className="h-5 w-5" />
+              Login to Join
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-24 lg:pb-0">
           {/* ============================================ */}
-          {/* MAIN CONTENT - Event details, participants, comments */}
+          {/* MAIN CONTENT - Event details, participants */}
           {/* ============================================ */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="order-1 lg:order-1 lg:col-span-2 space-y-6">
             {/* Event Description (members only) */}
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
               <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Details</h2>
@@ -301,12 +439,14 @@ export default function EventDetailPage() {
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4">
                     <Lock className="h-8 w-8 text-purple-600" />
                   </div>
-                  <p className="text-gray-600 mb-4">Only shown to members</p>
+                  <p className="text-gray-600 mb-4">Join event to unlock details</p>
                   <button
-                    onClick={() => navigate(`/groups/${event.groupId}`)}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                    onClick={handleJoinClick}
+                    disabled={joinMutation.isLoading}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
                   >
-                    Join Group
+                    <Users className="h-4 w-4" />
+                    {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
                   </button>
                 </div>
               ) : (
@@ -350,12 +490,14 @@ export default function EventDetailPage() {
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4">
                       <Lock className="h-8 w-8 text-purple-600" />
                     </div>
-                    <p className="text-gray-600 mb-4">Location and other details only shown to members</p>
+                    <p className="text-gray-600 mb-4">Join event to unlock location and details</p>
                     <button
-                      onClick={() => navigate(`/groups/${event.groupId}`)}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                      onClick={handleJoinClick}
+                      disabled={joinMutation.isLoading}
+                      className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
                     >
-                      Join Group
+                      <Users className="h-4 w-4" />
+                      {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
                     </button>
                   </div>
                 ) : (
@@ -471,14 +613,12 @@ export default function EventDetailPage() {
               </div>
             )}
 
-            {/* Comments Section (members only - handled by CommentSection component) */}
-            <CommentSection eventId={id} />
           </div>
 
           {/* ============================================ */}
           {/* SIDEBAR - Price, actions, location, group info */}
           {/* ============================================ */}
-          <div className="lg:col-span-1">
+          <div className="order-3 lg:order-2 lg:col-span-1">
             <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg space-y-6">
               {!isAccessDenied && (
                 <>
@@ -503,14 +643,16 @@ export default function EventDetailPage() {
                   <div className="space-y-4">
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 text-center">
                       <Lock className="h-10 w-10 mx-auto mb-3 text-purple-600" />
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Members Only Event</p>
-                      <p className="text-xs text-gray-600">Join the group to view full details and register</p>
+                      <p className="text-sm font-semibold text-gray-700 mb-1">Join to Unlock</p>
+                      <p className="text-xs text-gray-600">Register for this event to view full details</p>
                     </div>
                     <button
-                      onClick={() => navigate(`/groups/${event.groupId}`)}
-                      className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105"
+                      onClick={handleJoinClick}
+                      disabled={joinMutation.isLoading}
+                      className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
                     >
-                      Join Group to Participate
+                      <Users className="h-5 w-5" />
+                      {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
                     </button>
                   </div>
                 ) : isAuthenticated ? (
@@ -558,15 +700,24 @@ export default function EventDetailPage() {
                           </button>
                         </>
                       ) : (
-                        /* PAST EVENT - Show locked message */
-                        <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
-                          <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
-                            <Clock className="h-5 w-5" />
-                            <p className="font-semibold">Event Has Ended</p>
+                        /* PAST EVENT - Show Copy Event button */
+                        <div className="space-y-3">
+                          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
+                            <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+                              <Clock className="h-5 w-5" />
+                              <p className="font-semibold">Event Has Ended</p>
+                            </div>
+                            <p className="text-sm text-gray-500 text-center">
+                              Past events cannot be edited to preserve event history.
+                            </p>
                           </div>
-                          <p className="text-sm text-gray-500 text-center">
-                            Past events cannot be edited to preserve event history.
-                          </p>
+                          <button
+                            onClick={handleCopyEvent}
+                            className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                          >
+                            <Copy className="h-5 w-5" />
+                            Copy Event for Future Date
+                          </button>
                         </div>
                       )}
                     </div>
@@ -587,7 +738,7 @@ export default function EventDetailPage() {
                   ) : (
                     /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
                     <button
-                      onClick={() => joinMutation.mutate()}
+                      onClick={handleJoinClick}
                       disabled={event.status === 'FULL' || joinMutation.isLoading}
                       className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
                     >
@@ -683,7 +834,25 @@ export default function EventDetailPage() {
             </div>
           </div>
         </div>
+
+        {/* ============================================ */}
+        {/* COMMENTS SECTION - Full width below main content */}
+        {/* ============================================ */}
+        <div className="mt-8 pb-24 lg:pb-0">
+          <CommentSection eventId={id} />
+        </div>
       </div>
+
+      {/* ============================================ */}
+      {/* LOGIN MODAL - Opens when unauthenticated user tries to join */}
+      {/* ============================================ */}
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSuccess={() => {
+          toast.success('Check your email for the magic link!')
+        }}
+      />
     </div>
   )
 }

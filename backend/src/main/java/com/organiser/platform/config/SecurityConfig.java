@@ -75,6 +75,7 @@ public class SecurityConfig {
                 "http://localhost:3003",
                 "http://127.0.0.1:3002",
                 "http://localhost:5173",
+                "http://192.168.0.114:3000",
                 "https://organiser-platform.netlify.app",
                 "https://hikehub-poc.netlify.app",
                 "https://www.outmeets.com/"

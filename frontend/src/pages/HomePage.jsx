@@ -58,7 +58,9 @@ export default function HomePage() {
   const { data: allEventsData, isLoading: allEventsLoading } = useQuery({
     queryKey: ['allEvents'],
     queryFn: () => eventsAPI.getUpcomingEvents(0, 10),
-    refetchOnMount: true, // Always refetch to show newly published events
+    refetchOnMount: 'always', // Always refetch to show newly published events
+    refetchOnWindowFocus: true, // Refetch when window regains focus (helps with mobile)
+    staleTime: 0, // Consider data stale immediately (no caching)
   })
   
   // ============================================================
@@ -68,8 +70,20 @@ export default function HomePage() {
   // Extract data from API responses
   const memberGroups = groupsData?.data || []
   const organisedGroups = organisedGroupsData?.data || []
-  const yourEvents = yourEventsData?.data?.content || []
+  const yourEventsRaw = yourEventsData?.data?.content || []
   const allEvents = allEventsData?.data?.content || []
+  
+  // Filter to show only upcoming events in "Your Events"
+  const yourEvents = useMemo(() => {
+    const now = new Date()
+    // Reset time to start of day for consistent date comparison across devices
+    now.setHours(0, 0, 0, 0)
+    return yourEventsRaw.filter(event => {
+      const eventDate = new Date(event.eventDate)
+      eventDate.setHours(0, 0, 0, 0)
+      return eventDate >= now
+    })
+  }, [yourEventsRaw])
   
   // Filter member groups to exclude groups already in organiser tab (avoid duplicates)
   const filteredMemberGroups = useMemo(() => {
