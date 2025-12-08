@@ -1,0 +1,24 @@
+# Development Environment Configuration
+# Copy this file to application-dev.properties and fill in your values
+
+# Database Configuration
+spring.datasource.url=jdbc:mariadb://localhost:3306/organiser_platform
+spring.datasource.username=root
+spring.datasource.password=your_password
+
+# JWT Configuration
+jwt.secret=your_jwt_secret_key_minimum_256_bits_for_HS512_algorithm
+jwt.expiration=86400000
+
+# Email Configuration (Resend)
+resend.api-key=your_resend_api_key
+app.email.from=onboarding@resend.dev
+
+# Google OAuth Configuration
+spring.security.oauth2.client.registration.google.client-id=your_google_client_id
+spring.security.oauth2.client.registration.google.client-secret=your_google_client_secret
+
+# Cloudinary Configuration (for image uploads)
+cloudinary.cloud-name=your_cloudinary_cloud_name
+cloudinary.api-key=your_cloudinary_api_key
+cloudinary.api-secret=your_cloudinary_api_secret
