@@ -273,13 +273,6 @@ export default function EventDetailPage() {
               <div className="h-4 bg-gray-200 rounded-lg w-5/6"></div>
             </div>
           </div>
-
-          {/* ============================================ */}
-          {/* COMMENTS - Positioned after sidebar on mobile */}
-          {/* ============================================ */}
-          <div className="order-2 lg:order-3 lg:col-span-2">
-            <CommentSection eventId={id} />
-          </div>
         </div>
       </div>
     )
@@ -368,11 +361,18 @@ export default function EventDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-30" />
           
           {/* Event image (custom or fallback) */}
-          <img 
-            src={event.imageUrl || DEFAULT_EVENT_IMAGES[parseInt(id) % DEFAULT_EVENT_IMAGES.length]}
-            alt={event.title} 
-            className="w-full h-full object-cover mix-blend-overlay" 
-          />
+          {event.imageUrl ? (
+            <img 
+              src={event.imageUrl}
+              alt={event.title} 
+              className="w-full h-full object-cover mix-blend-overlay"
+              loading="eager"
+              decoding="async"
+              onError={(e) => {
+                e.target.style.display = 'none'
+              }}
+            />
+          ) : null}
           
           {/* Overlay with event info */}
           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
@@ -457,9 +457,13 @@ export default function EventDetailPage() {
               <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Details</h2>
               {isAccessDenied ? (
                 <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4">
+                  <button 
+                    onClick={handleJoinClick}
+                    className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4 hover:from-purple-200 hover:to-pink-200 transition-all cursor-pointer transform hover:scale-110"
+                    title="Click to login and join"
+                  >
                     <Lock className="h-8 w-8 text-purple-600" />
-                  </div>
+                  </button>
                   <p className="text-gray-600 mb-4">Join event to unlock details</p>
                   <button
                     onClick={handleJoinClick}
@@ -508,9 +512,13 @@ export default function EventDetailPage() {
                 {isAccessDenied ? (
                   /* Locked state for other details */
                   <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl">
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4">
+                    <button 
+                      onClick={handleJoinClick}
+                      className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4 hover:from-purple-200 hover:to-pink-200 transition-all cursor-pointer transform hover:scale-110"
+                      title="Click to login and join"
+                    >
                       <Lock className="h-8 w-8 text-purple-600" />
-                    </div>
+                    </button>
                     <p className="text-gray-600 mb-4">Join event to unlock location and details</p>
                     <button
                       onClick={handleJoinClick}
@@ -662,11 +670,15 @@ export default function EventDetailPage() {
                 {isAccessDenied ? (
                   /* NON-MEMBER VIEW - Show Join Group button */
                   <div className="space-y-4">
-                    <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 text-center">
+                    <button 
+                      onClick={handleJoinClick}
+                      className="w-full p-4 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 rounded-xl border border-purple-100 text-center transition-all cursor-pointer transform hover:scale-105"
+                      title="Click to login and join"
+                    >
                       <Lock className="h-10 w-10 mx-auto mb-3 text-purple-600" />
                       <p className="text-sm font-semibold text-gray-700 mb-1">Join to Unlock</p>
                       <p className="text-xs text-gray-600">Register for this event to view full details</p>
-                    </div>
+                    </button>
                     <button
                       onClick={handleJoinClick}
                       disabled={joinMutation.isLoading}
@@ -704,6 +716,12 @@ export default function EventDetailPage() {
                               </button>
                             </div>
                           )}
+                          
+                          {/* Add to Calendar Button for Organiser */}
+                          {calendarData && (
+                            <AddToCalendar calendarData={calendarData} />
+                          )}
+                          
                           <button
                             onClick={() => navigate(`/events/${id}/edit`)}
                             className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
@@ -820,9 +838,10 @@ export default function EventDetailPage() {
                         src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event.location)}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event.location)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
                         alt={`Map of ${event.location}`}
                         className="w-full h-full object-cover"
+                        loading="lazy"
+                        decoding="async"
                         onError={(e) => {
-                          // Fallback if map fails to load
-                          e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5DbGljayB0byBvcGVuIE1hcHM8L3RleHQ+PC9zdmc+'
+                          e.target.style.opacity = '0'
                         }}
                       />
                       {/* Overlay with icon */}
@@ -863,11 +882,13 @@ export default function EventDetailPage() {
         </div>
 
         {/* ============================================ */}
-        {/* COMMENTS SECTION - Full width below main content */}
+        {/* COMMENTS SECTION - Full width below main content (members only) */}
         {/* ============================================ */}
-        <div className="mt-8 pb-24 lg:pb-0">
-          <CommentSection eventId={id} />
-        </div>
+        {!isAccessDenied && (
+          <div className="mt-8 pb-24 lg:pb-0">
+            <CommentSection eventId={id} />
+          </div>
+        )}
       </div>
 
       {/* ============================================ */}

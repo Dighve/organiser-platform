@@ -50,6 +50,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'  // Google OAuth2
+    implementation 'org.springframework.boot:spring-boot-starter-cache'  // Caching support
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'  // High-performance in-memory cache
     
     // Database - Flyway migrations
     implementation "org.flywaydb:flyway-core:${flywayVersion}"

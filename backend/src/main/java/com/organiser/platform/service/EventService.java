@@ -57,7 +57,7 @@ public class EventService {
      * Automatically adds the organiser as a confirmed participant.
      */
     @Transactional
-    @CacheEvict(value = "events", allEntries = true)
+    @CacheEvict(value = "upcomingEvents", allEntries = true)
     public EventDTO createEvent(CreateEventRequest request, Long organiserId) {
         // Find the member (organiser)
         Member organiser = memberRepository.findById(organiserId)
@@ -204,9 +204,10 @@ public class EventService {
     
     /**
      * Get all upcoming published events.
+     * Cached for 5 minutes to improve performance.
      */
     @Transactional(readOnly = true)
-    @Cacheable(value = "events", key = "'upcoming_' + #pageable.pageNumber")
+    @Cacheable(value = "upcomingEvents", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<EventDTO> getUpcomingEvents(Pageable pageable) {
         return eventRepository.findUpcomingEvents(Instant.now(), pageable)
                 .map(this::convertToDTO);

@@ -287,18 +287,18 @@ export default function HomePage() {
                     {/* Group Banner */}
                     <div className="relative h-20 overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 opacity-90" />
-                      <img 
-                        src={group.bannerImage || [
-                          'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                        ][Number.parseInt(group.id) % 6]}
-                        alt={`${group.name} banner`}
-                        className="w-full h-full object-cover mix-blend-overlay group-hover:scale-110 transition-transform duration-300"
-                      />
+                      {group.bannerImage ? (
+                        <img 
+                          src={group.bannerImage}
+                          alt={`${group.name} banner`}
+                          className="w-full h-full object-cover mix-blend-overlay group-hover:scale-110 transition-transform duration-300"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                          }}
+                        />
+                      ) : null}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-900 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all mb-2">
@@ -339,18 +339,18 @@ export default function HomePage() {
                     {/* Group Banner */}
                     <div className="relative h-20 overflow-hidden cursor-pointer" onClick={() => navigate(`/groups/${group.id}`)}>
                       <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-pink-500 opacity-90" />
-                      <img 
-                        src={group.imageUrl || [
-                          'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                          'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                        ][Number.parseInt(group.id) % 6]}
-                        alt={`${group.name} banner`}
-                        className="w-full h-full object-cover mix-blend-overlay group-hover:scale-110 transition-transform duration-300"
-                      />
+                      {group.imageUrl ? (
+                        <img 
+                          src={group.imageUrl}
+                          alt={`${group.name} banner`}
+                          className="w-full h-full object-cover mix-blend-overlay group-hover:scale-110 transition-transform duration-300"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            e.target.style.display = 'none'
+                          }}
+                        />
+                      ) : null}
                       <div className="absolute top-2 right-2 px-2 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600">ORGANISER</div>
                     </div>
                     <div className="p-4">
@@ -427,18 +427,18 @@ export default function HomePage() {
                   {/* Event Image */}
                   <div className="relative w-full h-48 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-20" />
-                    <img 
-                      src={event.imageUrl || [
-                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                      ][Number.parseInt(event.id) % 6]}
-                      alt={event.title} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                    />
+                    {event.imageUrl ? (
+                      <img 
+                        src={event.imageUrl}
+                        alt={event.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    ) : null}
                     <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-purple-600 shadow-lg">
                       {event.difficultyLevel}
                     </div>
@@ -509,18 +509,18 @@ export default function HomePage() {
                   {/* Event Image */}
                   <div className="relative w-full h-48 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
-                    <img 
-                      src={event.imageUrl || [
-                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?w=600&h=300&fit=crop',
-                        'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop'
-                      ][Number.parseInt(event.id) % 6]}
-                      alt={event.title} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                    />
+                    {event.imageUrl ? (
+                      <img 
+                        src={event.imageUrl}
+                        alt={event.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        loading="lazy"
+                        decoding="async"
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                        }}
+                      />
+                    ) : null}
                     <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
                       {event.difficultyLevel}
                     </div>

@@ -148,8 +148,16 @@ export default function Layout() {
                 </button>
               )}
             </div>
-            {/* Mobile menu button */}
-            <div className="md:hidden flex items-center">
+            {/* Mobile menu button and login */}
+            <div className="md:hidden flex items-center gap-3">
+              {!isAuthenticated && (
+                <button
+                  onClick={() => setLoginModalOpen(true)}
+                  className="bg-white text-purple-600 hover:bg-white/90 px-4 py-2 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                >
+                  Login
+                </button>
+              )}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="text-white hover:text-white/80 transition-colors"
