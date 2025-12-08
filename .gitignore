@@ -10,6 +10,7 @@ backend/.idea/
 backend/*.iml
 backend/*.iws
 backend/.DS_Store
+backend/src/main/resources/application-dev.properties
 
 # Frontend (Node/React)
 frontend/node_modules/
@@ -59,3 +60,4 @@ secrets/
 *.pem
 *.key
 *.crt
+
