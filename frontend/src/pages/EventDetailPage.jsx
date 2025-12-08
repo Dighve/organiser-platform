@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -39,6 +39,7 @@ export default function EventDetailPage() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
   const [heroImageError, setHeroImageError] = useState(false)
   const [heroImageLoaded, setHeroImageLoaded] = useState(false)
+  const [isJoiningFlow, setIsJoiningFlow] = useState(false) // Track entire join flow until modal opens
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -95,6 +96,7 @@ export default function EventDetailPage() {
       setIsLoginModalOpen(true)
       return
     }
+    setIsJoiningFlow(true) // Start joining flow - show loader until modal opens
     joinMutation.mutate()
   }
 
@@ -114,11 +116,13 @@ export default function EventDetailPage() {
       // Force immediate refetch to update button state and unlock content
       await queryClient.refetchQueries(['event', id])
       
-      // Show calendar modal immediately after successful join
+      // Show calendar modal - loader will hide when modal opens
       // No toast needed - modal itself is the success indicator
       setIsCalendarModalOpen(true)
+      // Note: isJoiningFlow will be set to false when modal opens (see useEffect below)
     },
     onError: (error) => {
+      setIsJoiningFlow(false) // Stop joining flow on error
       // Check if error is due to authentication
       if (error.response?.status === 401 || error.response?.status === 403) {
         setIsLoginModalOpen(true)
@@ -249,9 +253,17 @@ export default function EventDetailPage() {
       window.history.replaceState({}, '', newUrl)
       
       // Auto-join the event
+      setIsJoiningFlow(true) // Start joining flow for auto-join
       joinMutation.mutate()
     }
   }, [isAuthenticated, id])
+
+  // Hide loader when calendar modal opens
+  useEffect(() => {
+    if (isCalendarModalOpen) {
+      setIsJoiningFlow(false)
+    }
+  }, [isCalendarModalOpen])
 
   // ============================================
   // LOADING STATE
@@ -342,8 +354,8 @@ export default function EventDetailPage() {
   // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
-      {/* Loading overlay while joining event */}
-      {joinMutation.isLoading && (
+      {/* Loading overlay while joining event - stays visible until calendar modal opens */}
+      {isJoiningFlow && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm mx-4 text-center">
             <div className="w-16 h-16 mx-auto mb-4 relative">
@@ -351,7 +363,7 @@ export default function EventDetailPage() {
               <div className="absolute inset-0 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Joining Event...</h3>
-            <p className="text-gray-600">Please wait while we register you for this event</p>
+            <p className="text-gray-600">Please wait while we prepare your calendar</p>
           </div>
         </div>
       )}
@@ -443,8 +455,13 @@ export default function EventDetailPage() {
               <button
                 onClick={() => leaveMutation.mutate()}
                 disabled={leaveMutation.isLoading}
-                className="w-full py-4 px-6 bg-gray-100 text-gray-700 font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                className={`w-full py-4 px-6 font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  leaveMutation.isLoading 
+                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95'
+                }`}
               >
+                {leaveMutation.isLoading && <Loader className="h-5 w-5 animate-spin" />}
                 {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
               </button>
             ) : (
@@ -796,8 +813,13 @@ export default function EventDetailPage() {
                       <button
                         onClick={() => leaveMutation.mutate()}
                         disabled={leaveMutation.isLoading}
-                        className="w-full py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all disabled:opacity-50"
+                        className={`w-full py-3 px-6 font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
+                          leaveMutation.isLoading 
+                            ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white' 
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        }`}
                       >
+                        {leaveMutation.isLoading && <Loader className="h-4 w-4 animate-spin" />}
                         {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
                       </button>
                     </div>
