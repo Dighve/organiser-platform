@@ -31,14 +31,25 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
     }
   }, [isAuthenticated, isOpen, onClose, onSuccess, reset])
 
-  // Google OAuth login with custom button
+  // Google OAuth login with custom button - using access token
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       setIsLoading(true)
       try {
+        // Use access token to get user info from Google
+        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+          headers: {
+            Authorization: `Bearer ${tokenResponse.access_token}`,
+          },
+        })
+        
+        const userInfo = await userInfoResponse.json()
+        
+        // Send user info to backend (backend will create/update user)
         const response = await authAPI.authenticateWithGoogle({
-          idToken: tokenResponse.access_token,
-          redirectUrl: returnUrl
+          idToken: tokenResponse.access_token, // Send access token
+          redirectUrl: returnUrl,
+          userInfo: userInfo // Send user info directly
         })
         
         const { token, userId, email, role, isOrganiser } = response.data
@@ -51,6 +62,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
           onSuccess()
         }
       } catch (error) {
+        console.error('Google OAuth error:', error)
         toast.error(error.response?.data?.message || 'Google sign-in failed. Please try again.')
       } finally {
         setIsLoading(false)

@@ -1,10 +1,7 @@
 package com.organiser.platform.service;
 
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
-import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.gson.GsonFactory;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.organiser.platform.dto.AuthResponse;
 import com.organiser.platform.dto.GoogleAuthRequest;
 import com.organiser.platform.model.Member;
@@ -16,7 +13,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Collections;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 /**
  * Service for handling Google OAuth2 authentication.
@@ -34,32 +34,38 @@ public class GoogleOAuth2Service {
     private String googleClientId;
     
     /**
-     * Authenticate user with Google ID token.
+     * Authenticate user with Google access token.
      * Creates user if doesn't exist, updates if exists.
      */
     @Transactional
     public AuthResponse authenticateWithGoogle(GoogleAuthRequest request) {
         try {
-            // Verify Google ID token
-            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
-                    new NetHttpTransport(), 
-                    GsonFactory.getDefaultInstance())
-                    .setAudience(Collections.singletonList(googleClientId))
+            // Verify access token by calling Google's userinfo endpoint
+            String accessToken = request.getIdToken(); // Frontend sends access_token in idToken field
+            
+            // Call Google's userinfo API to verify token and get user data
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest httpRequest = HttpRequest.newBuilder()
+                    .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
+                    .header("Authorization", "Bearer " + accessToken)
+                    .GET()
                     .build();
             
-            GoogleIdToken idToken = verifier.verify(request.getIdToken());
+            HttpResponse<String> httpResponse = client.send(httpRequest, 
+                    HttpResponse.BodyHandlers.ofString());
             
-            if (idToken == null) {
-                throw new RuntimeException("Invalid Google ID token");
+            if (httpResponse.statusCode() != 200) {
+                throw new RuntimeException("Invalid Google access token");
             }
             
-            Payload payload = idToken.getPayload();
+            // Parse user info from Google
+            JsonObject userInfo = JsonParser.parseString(httpResponse.body()).getAsJsonObject();
             
-            // Extract user information from Google
-            String email = payload.getEmail();
-            String name = (String) payload.get("name");
-            String pictureUrl = (String) payload.get("picture");
-            Boolean emailVerified = payload.getEmailVerified();
+            // Extract user information
+            String email = userInfo.get("email").getAsString();
+            String name = userInfo.has("name") ? userInfo.get("name").getAsString() : email;
+            String pictureUrl = userInfo.has("picture") ? userInfo.get("picture").getAsString() : null;
+            Boolean emailVerified = userInfo.has("email_verified") ? userInfo.get("email_verified").getAsBoolean() : true;
             
             if (!emailVerified) {
                 throw new RuntimeException("Email not verified by Google");
