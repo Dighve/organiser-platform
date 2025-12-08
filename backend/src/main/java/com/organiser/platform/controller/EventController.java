@@ -1,5 +1,6 @@
 package com.organiser.platform.controller;
 
+import com.organiser.platform.dto.CalendarEventDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
 import com.organiser.platform.service.EventService;
@@ -149,6 +150,15 @@ public class EventController {
     @GetMapping("/public/{id}/participants")
     public ResponseEntity<?> getEventParticipants(@PathVariable Long id) {
         return ResponseEntity.ok(eventService.getEventParticipants(id));
+    }
+    
+    @GetMapping("/public/{id}/calendar")
+    public ResponseEntity<CalendarEventDTO> getCalendarData(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long memberId = authentication != null ? getUserIdFromAuth(authentication) : null;
+        return ResponseEntity.ok(eventService.getCalendarData(id, memberId));
     }
     
     private Long getUserIdFromAuth(Authentication authentication) {

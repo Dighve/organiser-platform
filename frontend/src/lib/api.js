@@ -111,6 +111,8 @@ export const eventsAPI = {
     api.get(`/events/organiser/my-events?page=${page}&size=${size}`),
   
   getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),
+  
+  getCalendarData: (id) => api.get(`/events/public/${id}/calendar`),
 }
 
 // Comments API

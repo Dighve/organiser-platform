@@ -9,6 +9,8 @@ import toast from 'react-hot-toast'
 import CommentSection from '../components/CommentSection'
 import ProfileAvatar from '../components/ProfileAvatar'
 import LoginModal from '../components/LoginModal'
+import AddToCalendar from '../components/AddToCalendar'
+import AddToCalendarModal from '../components/AddToCalendarModal'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -34,6 +36,7 @@ export default function EventDetailPage() {
   const queryClient = useQueryClient()
   const { isAuthenticated, user, setReturnUrl } = useAuthStore()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -67,6 +70,17 @@ export default function EventDetailPage() {
     enabled: !!id,
   })
 
+  // 3. Fetch calendar data for "Add to Calendar" feature
+  // Note: We fetch for all authenticated users, but only show button if they've joined
+  // The enabled flag will prevent the query from running for unauthenticated users
+  const { data: calendarData } = useQuery({
+    queryKey: ['eventCalendar', id],
+    queryFn: () => eventsAPI.getCalendarData(id),
+    enabled: !!id && isAuthenticated,
+    retry: false, // Don't retry if user hasn't joined (will get 403)
+    select: (response) => response.data,
+  })
+
   // ============================================
   // MUTATIONS - API calls that change data
   // ============================================
@@ -86,9 +100,13 @@ export default function EventDetailPage() {
   const joinMutation = useMutation({
     mutationFn: () => eventsAPI.joinEvent(id),
     onSuccess: async () => {
+      // Show success toast
+      toast.success('🎉 Joined event and group successfully!')
+      
       // Invalidate queries (including group membership)
       await queryClient.invalidateQueries(['event', id])
       await queryClient.invalidateQueries(['eventParticipants', id])
+      await queryClient.invalidateQueries(['eventCalendar', id])
       await queryClient.invalidateQueries(['myEvents'])
       await queryClient.invalidateQueries(['allEvents'])
       await queryClient.invalidateQueries(['events'])
@@ -97,7 +115,10 @@ export default function EventDetailPage() {
       // Force immediate refetch to update button state and unlock content
       await queryClient.refetchQueries(['event', id])
       
-      toast.success('🎉 Joined event and group successfully!')
+      // Show calendar modal after successful join (with small delay for better UX)
+      setTimeout(() => {
+        setIsCalendarModalOpen(true)
+      }, 800)
     },
     onError: (error) => {
       // Check if error is due to authentication
@@ -722,11 +743,17 @@ export default function EventDetailPage() {
                       )}
                     </div>
                   ) : hasJoined ? (
-                    /* REGISTERED USER VIEW - Show Leave button */
+                    /* REGISTERED USER VIEW - Show Add to Calendar and Leave button */
                     <div className="space-y-3">
                       <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                         <p className="text-green-700 font-semibold text-center">✅ You're registered!</p>
                       </div>
+                      
+                      {/* Add to Calendar Button */}
+                      {!isPastEvent && calendarData && (
+                        <AddToCalendar calendarData={calendarData} />
+                      )}
+                      
                       <button
                         onClick={() => leaveMutation.mutate()}
                         disabled={leaveMutation.isLoading}
@@ -852,6 +879,16 @@ export default function EventDetailPage() {
         onSuccess={() => {
           toast.success('Check your email for the magic link!')
         }}
+      />
+
+      {/* ============================================ */}
+      {/* ADD TO CALENDAR MODAL - Opens after successful join */}
+      {/* ============================================ */}
+      <AddToCalendarModal
+        isOpen={isCalendarModalOpen}
+        onClose={() => setIsCalendarModalOpen(false)}
+        calendarData={calendarData}
+        eventTitle={event?.title || 'this event'}
       />
     </div>
   )

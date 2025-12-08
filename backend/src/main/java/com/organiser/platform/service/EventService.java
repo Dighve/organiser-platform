@@ -3,6 +3,7 @@ package com.organiser.platform.service;
 // ============================================================
 // IMPORTS
 // ============================================================
+import com.organiser.platform.dto.CalendarEventDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
 import com.organiser.platform.model.*;
@@ -600,5 +601,69 @@ public class EventService {
                         .joinedAt(participant.getRegistrationDate())
                         .build())
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Get calendar data for an event.
+     * Returns event details formatted for calendar integration.
+     */
+    @Transactional(readOnly = true)
+    public CalendarEventDTO getCalendarData(Long eventId, Long memberId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+        
+        // Check if user is a member of the group (privacy check)
+        if (memberId != null) {
+            boolean isMember = groupService.isMemberOfGroup(memberId, event.getGroup().getId());
+            if (!isMember) {
+                throw new RuntimeException("You must be a member of the group to add this event to your calendar");
+            }
+        }
+        
+        // Build calendar event description with all relevant details
+        StringBuilder description = new StringBuilder();
+        description.append(event.getDescription() != null ? event.getDescription() : "");
+        
+        if (event.getDifficultyLevel() != null) {
+            description.append("\n\nDifficulty: ").append(event.getDifficultyLevel());
+        }
+        
+        if (event.getDistanceKm() != null) {
+            description.append("\nDistance: ").append(event.getDistanceKm()).append(" km");
+        }
+        
+        if (event.getElevationGainM() != null) {
+            description.append("\nElevation Gain: ").append(event.getElevationGainM()).append(" m");
+        }
+        
+        if (event.getEstimatedDurationHours() != null) {
+            description.append("\nEstimated Duration: ").append(event.getEstimatedDurationHours()).append(" hours");
+        }
+        
+        if (event.getRequirements() != null && !event.getRequirements().isEmpty()) {
+            description.append("\n\nRequired Gear: ").append(String.join(", ", event.getRequirements()));
+        }
+        
+        // Calculate end time if not provided (use estimated duration or default 3 hours)
+        Instant endTime = event.getEndDate();
+        if (endTime == null && event.getEstimatedDurationHours() != null) {
+            long hoursToAdd = event.getEstimatedDurationHours().longValue();
+            endTime = event.getEventDate().plusSeconds(hoursToAdd * 3600);
+        } else if (endTime == null) {
+            // Default to 3 hours if no end time or duration specified
+            endTime = event.getEventDate().plusSeconds(3 * 3600);
+        }
+        
+        return CalendarEventDTO.builder()
+                .title(event.getTitle())
+                .description(description.toString())
+                .location(event.getLocation())
+                .startTime(event.getEventDate())
+                .endTime(endTime)
+                .organiserName(event.getGroup().getPrimaryOrganiser().getDisplayName() != null 
+                    ? event.getGroup().getPrimaryOrganiser().getDisplayName() 
+                    : event.getGroup().getPrimaryOrganiser().getEmail())
+                .eventUrl("https://www.outmeets.com/events/" + eventId)
+                .build();
     }
 }
