@@ -118,3 +118,29 @@ const initializeAuth = () => {
 
 // Run initialization when the store is first created
 initializeAuth()
+
+// Listen for storage changes from other tabs
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (event) => {
+    if (event.key === 'auth-storage' && event.newValue) {
+      try {
+        const newState = JSON.parse(event.newValue)
+        const currentState = useAuthStore.getState()
+        
+        // Only update if authentication state actually changed
+        if (newState.state.isAuthenticated !== currentState.isAuthenticated) {
+          // Manually update the store to trigger re-renders
+          useAuthStore.setState({
+            user: newState.state.user,
+            token: newState.state.token,
+            tokenExpiry: newState.state.tokenExpiry,
+            isAuthenticated: newState.state.isAuthenticated,
+            returnUrl: newState.state.returnUrl,
+          })
+        }
+      } catch (error) {
+        console.error('Error parsing storage event:', error)
+      }
+    }
+  })
+}

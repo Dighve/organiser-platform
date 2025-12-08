@@ -2,7 +2,6 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
 import HomePage from './pages/HomePage'
-import LoginPage from './pages/LoginPage'
 import VerifyMagicLinkPage from './pages/VerifyMagicLinkPage'
 import EventsPage from './pages/EventsPage'
 import EventDetailPage from './pages/EventDetailPage'
@@ -18,7 +17,7 @@ import MemberDetailPage from './pages/MemberDetailPage'
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
-  return isAuthenticated ? children : <Navigate to="/login" />
+  return isAuthenticated ? children : <Navigate to="/" />
 }
 
 function App() {
@@ -26,7 +25,6 @@ function App() {
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />  
-        <Route path="login" element={<LoginPage />} />
         <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
         <Route path="events" element={<EventsPage />} />
         <Route path="events/:id" element={<EventDetailPage />} />

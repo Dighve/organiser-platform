@@ -49,6 +49,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-mail'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'  // Google OAuth2
     
     // Database - Flyway migrations
     implementation "org.flywaydb:flyway-core:${flywayVersion}"
@@ -69,6 +70,9 @@ dependencies {
     
     // Cloudinary for image uploads
     implementation 'com.cloudinary:cloudinary-http44:1.36.0'
+    
+    // Google OAuth2 - ID token verification
+    implementation 'com.google.api-client:google-api-client:2.0.0'
     
     // Lombok
     compileOnly "org.projectlombok:lombok:${lombokVersion}"

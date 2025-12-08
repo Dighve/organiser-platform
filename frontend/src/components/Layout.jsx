@@ -5,10 +5,12 @@ import { useAuthStore } from '../store/authStore'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { membersAPI } from '../lib/api'
 import ProfileAvatar from './ProfileAvatar'
+import LoginModal from './LoginModal'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
   const { isAuthenticated, user, logout, updateUser } = useAuthStore()
   const navigate = useNavigate()
 
@@ -138,12 +140,12 @@ export default function Layout() {
                   </div>
                 </>
               ) : (
-                <Link
-                  to="/login"
+                <button
+                  onClick={() => setLoginModalOpen(true)}
                   className="bg-white text-purple-600 hover:bg-white/90 px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Login
-                </Link>
+                </button>
               )}
             </div>
             {/* Mobile menu button */}
@@ -216,13 +218,15 @@ export default function Layout() {
                   </button>
                 </>
               ) : (
-                <Link
-                  to="/login"
-                  className="block mx-3 text-center bg-white text-purple-600 hover:bg-white/90 px-6 py-2.5 rounded-full text-base font-bold transition-all shadow-lg"
-                  onClick={() => setMobileMenuOpen(false)}
+                <button
+                  onClick={() => {
+                    setLoginModalOpen(true)
+                    setMobileMenuOpen(false)
+                  }}
+                  className="block mx-3 text-center bg-white text-purple-600 hover:bg-white/90 px-6 py-2.5 rounded-full text-base font-bold transition-all shadow-lg w-[calc(100%-1.5rem)]"
                 >
                   Login
-                </Link>
+                </button>
               )}
             </div>
           )}
@@ -233,6 +237,13 @@ export default function Layout() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onSuccess={() => setLoginModalOpen(false)}
+      />
 
       {/* Footer */}
       <footer className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white mt-auto">

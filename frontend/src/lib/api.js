@@ -71,6 +71,7 @@ api.interceptors.response.use(
 export const authAPI = {
   requestMagicLink: (data) => api.post('/auth/magic-link', data),
   verifyMagicLink: (token) => api.get(`/auth/verify?token=${token}`),
+  authenticateWithGoogle: (data) => api.post('/auth/google', data), // Google OAuth
 }
 
 // Events API

@@ -1,8 +1,10 @@
 package com.organiser.platform.controller;
 
 import com.organiser.platform.dto.AuthResponse;
+import com.organiser.platform.dto.GoogleAuthRequest;
 import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.service.AuthService;
+import com.organiser.platform.service.GoogleOAuth2Service;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import java.util.Map;
 public class AuthController {
     
     private final AuthService authService;
+    private final GoogleOAuth2Service googleOAuth2Service;
     
     /**
      * Request a magic link to be sent to email
@@ -41,6 +44,16 @@ public class AuthController {
     @GetMapping("/verify")
     public ResponseEntity<AuthResponse> verifyMagicLink(@RequestParam String token) {
         return ResponseEntity.ok(authService.verifyMagicLink(token));
+    }
+    
+    /**
+     * Authenticate with Google OAuth2
+     * Primary authentication method - instant, no email required
+     */
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponse> authenticateWithGoogle(
+            @Valid @RequestBody GoogleAuthRequest request) {
+        return ResponseEntity.ok(googleOAuth2Service.authenticateWithGoogle(request));
     }
     
     /**
