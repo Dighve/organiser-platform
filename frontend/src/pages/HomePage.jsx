@@ -425,9 +425,16 @@ export default function HomePage() {
                   onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
                 >
                   {/* Event Image */}
-                  <div className="relative w-full h-48 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-20" />
-                    {event.imageUrl ? (
+                  <div className="relative w-full h-48 overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500">
+                    {/* Mountain icon placeholder when no image */}
+                    {!event.imageUrl && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg className="w-16 h-16 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                      </div>
+                    )}
+                    {event.imageUrl && (
                       <img 
                         src={event.imageUrl}
                         alt={event.title} 
@@ -438,7 +445,7 @@ export default function HomePage() {
                           e.target.style.display = 'none'
                         }}
                       />
-                    ) : null}
+                    )}
                     <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-purple-600 shadow-lg">
                       {event.difficultyLevel}
                     </div>
@@ -507,9 +514,16 @@ export default function HomePage() {
                   onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
                 >
                   {/* Event Image */}
-                  <div className="relative w-full h-48 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
-                    {event.imageUrl ? (
+                  <div className="relative w-full h-48 overflow-hidden bg-gradient-to-br from-orange-500 to-pink-500">
+                    {/* Mountain icon placeholder when no image */}
+                    {!event.imageUrl && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <svg className="w-16 h-16 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                        </svg>
+                      </div>
+                    )}
+                    {event.imageUrl && (
                       <img 
                         src={event.imageUrl}
                         alt={event.title} 
@@ -520,7 +534,7 @@ export default function HomePage() {
                           e.target.style.display = 'none'
                         }}
                       />
-                    ) : null}
+                    )}
                     <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
                       {event.difficultyLevel}
                     </div>

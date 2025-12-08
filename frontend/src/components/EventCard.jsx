@@ -1,27 +1,39 @@
 import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Users, DollarSign } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Mountain } from 'lucide-react'
 import { format } from 'date-fns'
+import { useState } from 'react'
 
 export default function EventCard({ event }) {
   const formattedDate = format(new Date(event.eventDate), 'MMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
+  const [imageError, setImageError] = useState(false)
+  const [imageLoaded, setImageLoaded] = useState(false)
 
   return (
     <Link to={`/events/${event.id}`} className="card hover:shadow-lg transition-shadow duration-200">
       {/* Event Image */}
       <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200">
-        {event.imageUrl ? (
+        {/* Always show gradient background with icon when no image or image failed */}
+        {(!event.imageUrl || imageError || !imageLoaded) && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Mountain className="w-16 h-16 text-white/60" />
+          </div>
+        )}
+        
+        {event.imageUrl && !imageError && (
           <img
             src={event.imageUrl}
             alt={event.title}
             className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
-            onError={(e) => {
-              e.target.style.display = 'none'
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageError(true)
+              setImageLoaded(false)
             }}
           />
-        ) : null}
+        )}
         {event.status === 'FULL' && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
             Full

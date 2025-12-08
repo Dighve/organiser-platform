@@ -37,6 +37,8 @@ export default function EventDetailPage() {
   const { isAuthenticated, user, setReturnUrl } = useAuthStore()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
+  const [heroImageError, setHeroImageError] = useState(false)
+  const [heroImageLoaded, setHeroImageLoaded] = useState(false)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -100,9 +102,6 @@ export default function EventDetailPage() {
   const joinMutation = useMutation({
     mutationFn: () => eventsAPI.joinEvent(id),
     onSuccess: async () => {
-      // Show success toast
-      toast.success('🎉 Joined event and group successfully!')
-      
       // Invalidate queries (including group membership)
       await queryClient.invalidateQueries(['event', id])
       await queryClient.invalidateQueries(['eventParticipants', id])
@@ -115,10 +114,9 @@ export default function EventDetailPage() {
       // Force immediate refetch to update button state and unlock content
       await queryClient.refetchQueries(['event', id])
       
-      // Show calendar modal after successful join (with small delay for better UX)
-      setTimeout(() => {
-        setIsCalendarModalOpen(true)
-      }, 800)
+      // Show calendar modal immediately after successful join
+      // No toast needed - modal itself is the success indicator
+      setIsCalendarModalOpen(true)
     },
     onError: (error) => {
       // Check if error is due to authentication
@@ -344,6 +342,20 @@ export default function EventDetailPage() {
   // ============================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+      {/* Loading overlay while joining event */}
+      {joinMutation.isLoading && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-sm mx-4 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 relative">
+              <div className="absolute inset-0 border-4 border-purple-200 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-purple-600 rounded-full border-t-transparent animate-spin"></div>
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Joining Event...</h3>
+            <p className="text-gray-600">Please wait while we register you for this event</p>
+          </div>
+        </div>
+      )}
+      
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <button
           onClick={() => navigate(-1)}
@@ -357,22 +369,31 @@ export default function EventDetailPage() {
         {/* HERO IMAGE with event title and organiser */}
         {/* ============================================ */}
         <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gray-200 mb-8 shadow-2xl">
-          {/* Gradient overlay */}
+          {/* Gradient overlay - always visible */}
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-30" />
           
+          {/* Mountain icon placeholder when no image or image failed/loading */}
+          {(!event.imageUrl || heroImageError || !heroImageLoaded) && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Mountain className="w-32 h-32 text-white/40" />
+            </div>
+          )}
+          
           {/* Event image (custom or fallback) */}
-          {event.imageUrl ? (
+          {event.imageUrl && !heroImageError && (
             <img 
               src={event.imageUrl}
               alt={event.title} 
               className="w-full h-full object-cover mix-blend-overlay"
               loading="eager"
               decoding="async"
-              onError={(e) => {
-                e.target.style.display = 'none'
+              onLoad={() => setHeroImageLoaded(true)}
+              onError={() => {
+                setHeroImageError(true)
+                setHeroImageLoaded(false)
               }}
             />
-          ) : null}
+          )}
           
           {/* Overlay with event info */}
           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">

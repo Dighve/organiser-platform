@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Mountain, Mail, CheckCircle, X } from 'lucide-react'
 import { useGoogleLogin } from '@react-oauth/google'
+import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 export default function LoginModal({ isOpen, onClose, onSuccess }) {
-  const { setPendingEmail, returnUrl, login, isAuthenticated } = useAuthStore()
+  const navigate = useNavigate()
+  const { setPendingEmail, returnUrl, login, isAuthenticated, clearReturnUrl } = useAuthStore()
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm()
   
   const [isLoading, setIsLoading] = useState(false)
@@ -56,7 +58,16 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         login({ id: userId, userId, email, role, isOrganiser }, token)
         
         toast.success('🎉 Signed in with Google!')
-        handleClose()
+        
+        // Navigate to returnUrl if it exists (for auto-join flow)
+        if (returnUrl) {
+          const savedReturnUrl = returnUrl
+          clearReturnUrl() // Clear before navigation
+          handleClose()
+          navigate(savedReturnUrl)
+        } else {
+          handleClose()
+        }
         
         if (onSuccess) {
           onSuccess()
