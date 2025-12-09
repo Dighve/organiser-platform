@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SingleConnectionDataSource;
-import org.testcontainers.containers.MySQLContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -30,17 +30,17 @@ import static org.junit.jupiter.api.Assertions.*;
 public class FlywayMigrationTest {
 
     private static final Logger log = LoggerFactory.getLogger(FlywayMigrationTest.class);
-    private static final String MYSQL_IMAGE = "mysql:8.0.33";
+    private static final String POSTGRES_IMAGE = "postgres:15-alpine";
     private static final String DATABASE_NAME = "testdb";
     private static final String USERNAME = "test";
     private static final String PASSWORD = "test";
 
     @Container
-    private static final MySQLContainer<?> mysql = new MySQLContainer<>(DockerImageName.parse(MYSQL_IMAGE))
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(DockerImageName.parse(POSTGRES_IMAGE))
             .withDatabaseName(DATABASE_NAME)
             .withUsername(USERNAME)
             .withPassword(PASSWORD)
-            .withLogConsumer(new Slf4jLogConsumer(log).withPrefix("MYSQL"))
+            .withLogConsumer(new Slf4jLogConsumer(log).withPrefix("POSTGRES"))
             .withReuse(true);
 
     private DataSource dataSource;
@@ -50,15 +50,15 @@ public class FlywayMigrationTest {
     void setUp() {
         try {
             // Create a simple DataSource for our test
-            String jdbcUrl = mysql.getJdbcUrl() + "?useSSL=false&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC";
+            String jdbcUrl = postgres.getJdbcUrl();
             log.info("Connecting to database with URL: {}", jdbcUrl);
             
             dataSource = new SingleConnectionDataSource(jdbcUrl, USERNAME, PASSWORD, true);
             jdbcTemplate = new JdbcTemplate(dataSource);
             
             // Test the connection
-            String dbVersion = jdbcTemplate.queryForObject("SELECT VERSION()", String.class);
-            log.info("Successfully connected to MySQL version: {}", dbVersion);
+            String dbVersion = jdbcTemplate.queryForObject("SELECT version()", String.class);
+            log.info("Successfully connected to PostgreSQL version: {}", dbVersion);
             
         } catch (Exception e) {
             log.error("Error setting up test database connection", e);
@@ -77,7 +77,7 @@ public class FlywayMigrationTest {
         log.info("Configuring Flyway...");
         Flyway flyway = Flyway.configure()
                 .dataSource(dataSource)
-                .locations("classpath:db/migration")
+                .locations("classpath:db/migration/postgresql")
                 .loggers("slf4j")
                 .load();
 
@@ -104,7 +104,7 @@ public class FlywayMigrationTest {
         // Verify all expected tables exist
         log.info("Verifying database schema...");
         List<String> tables = jdbcTemplate.queryForList(
-            "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()", 
+            "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'", 
             String.class
         );
         
@@ -142,22 +142,8 @@ public class FlywayMigrationTest {
             String dbName = conn.getCatalog();
             log.info("Successfully connected to database: {} (URL: {})", dbName, url);
             
-            // List all databases to verify connectivity
-            List<String> databases = jdbcTemplate.queryForList("SHOW DATABASES", String.class);
-            log.info("Available databases: {}", databases);
-            
-            // Create the test database if it doesn't exist
-            if (!databases.contains(DATABASE_NAME)) {
-                log.info("Creating database: {}", DATABASE_NAME);
-                jdbcTemplate.execute("CREATE DATABASE IF NOT EXISTS " + DATABASE_NAME);
-            }
-            
-            // Use the test database
-            log.info("Using database: {}", DATABASE_NAME);
-            jdbcTemplate.execute("USE " + DATABASE_NAME);
-            
             // Verify we can execute a simple query
-            String dbVersion = jdbcTemplate.queryForObject("SELECT VERSION()", String.class);
+            String dbVersion = jdbcTemplate.queryForObject("SELECT version()", String.class);
             log.info("Database version: {}", dbVersion);
             
         } catch (SQLException e) {
@@ -185,16 +171,16 @@ public class FlywayMigrationTest {
 
     private void verifyIndexExists(String tableName, String columnName) {
         String query = "SELECT COUNT(1) as index_count " +
-                "FROM information_schema.statistics " +
-                "WHERE table_schema = DATABASE() " +
-                "AND table_name = ? " +
-                "AND column_name = ?";
+                "FROM pg_indexes " +
+                "WHERE schemaname = 'public' " +
+                "AND tablename = ? " +
+                "AND indexdef LIKE ?";
 
         int count = jdbcTemplate.queryForObject(
             query, 
             Integer.class, 
-            tableName, 
-            columnName
+            tableName,
+            "%" + columnName + "%"
         );
         
         assertTrue(count > 0, 
