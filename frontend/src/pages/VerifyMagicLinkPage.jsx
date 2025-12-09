@@ -43,7 +43,16 @@ export default function VerifyMagicLinkPage() {
       
       // Redirect after 1 second to the saved return URL or homepage
       setTimeout(() => {
-        const redirectTo = finalRedirect || '/'
+        let redirectTo = finalRedirect || '/'
+        
+        // Extract pathname from absolute URL if needed (e.g., https://www.outmeets.com/events/6 -> /events/6)
+        try {
+          const url = new URL(redirectTo, window.location.origin)
+          redirectTo = url.pathname + url.search + url.hash
+        } catch {
+          // If it's already a relative path, use it as-is
+          redirectTo = redirectTo
+        }
         
         console.log('Redirecting to:', redirectTo, '(from URL param:', !!urlRedirect, ', from store:', !!storeRedirect, ')') // Debug log
         

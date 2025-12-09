@@ -61,10 +61,19 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         
         // Navigate to returnUrl if it exists (for auto-join flow)
         if (returnUrl) {
-          const savedReturnUrl = returnUrl
+          // Extract pathname from absolute URL if needed (e.g., https://www.outmeets.com/events/6 -> /events/6)
+          let pathToNavigate = returnUrl
+          try {
+            const url = new URL(returnUrl, window.location.origin)
+            pathToNavigate = url.pathname + url.search + url.hash
+          } catch {
+            // If it's already a relative path, use it as-is
+            pathToNavigate = returnUrl
+          }
+          
           clearReturnUrl() // Clear before navigation
           handleClose()
-          navigate(savedReturnUrl)
+          navigate(pathToNavigate)
         } else {
           handleClose()
         }

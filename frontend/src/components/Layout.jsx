@@ -11,7 +11,7 @@ export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [loginModalOpen, setLoginModalOpen] = useState(false)
-  const { isAuthenticated, user, logout, updateUser } = useAuthStore()
+  const { isAuthenticated, user, logout, updateUser, clearReturnUrl } = useAuthStore()
   const navigate = useNavigate()
 
   // Fetch current member data for profile photo
@@ -43,6 +43,12 @@ export default function Layout() {
       navigate(`/events?search=${encodeURIComponent(searchQuery.trim())}`)
       setSearchQuery('')
     }
+  }
+
+  // Handle login button click - clear any stale returnUrl
+  const handleLoginClick = () => {
+    clearReturnUrl() // Clear any old returnUrl from previous sessions
+    setLoginModalOpen(true)
   }
 
   return (
@@ -141,7 +147,7 @@ export default function Layout() {
                 </>
               ) : (
                 <button
-                  onClick={() => setLoginModalOpen(true)}
+                  onClick={handleLoginClick}
                   className="bg-white text-purple-600 hover:bg-white/90 px-6 py-2.5 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Login
@@ -152,7 +158,7 @@ export default function Layout() {
             <div className="md:hidden flex items-center gap-3">
               {!isAuthenticated && (
                 <button
-                  onClick={() => setLoginModalOpen(true)}
+                  onClick={handleLoginClick}
                   className="bg-white text-purple-600 hover:bg-white/90 px-4 py-2 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
                 >
                   Login
@@ -228,7 +234,7 @@ export default function Layout() {
               ) : (
                 <button
                   onClick={() => {
-                    setLoginModalOpen(true)
+                    handleLoginClick()
                     setMobileMenuOpen(false)
                   }}
                   className="block mx-3 text-center bg-white text-purple-600 hover:bg-white/90 px-6 py-2.5 rounded-full text-base font-bold transition-all shadow-lg w-[calc(100%-1.5rem)]"
