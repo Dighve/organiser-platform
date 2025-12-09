@@ -123,9 +123,7 @@ tasks.named('flywayMigrate') {
 }
 
 bootRun {
-    environment(
-            "CLOUDINARY_CLOUD_NAME": "drdttgry4",
-            "CLOUDINARY_API_KEY": "478746114596374",
-            "CLOUDINARY_API_SECRET": "wXiHJlL_64SuSpyTUc7ajf8KdV4"
-    )
+    // Environment variables are now loaded from .env.local file
+    // Copy .env.example to .env.local and add your credentials
+    environment(System.getenv())
 }

@@ -11,6 +11,8 @@ backend/*.iml
 backend/*.iws
 backend/.DS_Store
 backend/src/main/resources/application-dev.properties
+backend/.env.local
+backend/.env
 
 # Frontend (Node/React)
 frontend/node_modules/

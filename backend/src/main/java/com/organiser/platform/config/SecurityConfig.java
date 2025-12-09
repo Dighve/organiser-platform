@@ -33,28 +33,91 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints - no authentication required
+                        // Authentication endpoints - public
                         .requestMatchers(
-                                new AntPathRequestMatcher("/api/v1/auth/**"),
-                                new AntPathRequestMatcher("/api/v1/events/**"),
-                                new AntPathRequestMatcher("/api/v1/files/**"),
-                                new AntPathRequestMatcher("/api/v1/events/*/comments", "GET"),
-                                new AntPathRequestMatcher("/api/v1/activities/**"),
-                                new AntPathRequestMatcher("/api/v1/groups/public"),
-                                new AntPathRequestMatcher("/api/v1/groups/*"),
-                                new AntPathRequestMatcher("/api/v1/groups/*/members", "GET"),
-                                new AntPathRequestMatcher("/api/v1/groups/*/subscribe"),
-                                new AntPathRequestMatcher("/actuator/**"),
-                                new AntPathRequestMatcher("/api/v1/actuator/**"),
-                                new AntPathRequestMatcher("/swagger-ui/**"),
-                                new AntPathRequestMatcher("/v3/api-docs/**"),
-                                new AntPathRequestMatcher("/h2-console/**"),
-                                new AntPathRequestMatcher("/api/v1/files/**")
+                                new AntPathRequestMatcher("/api/v1/auth/magic-link", "POST"),
+                                new AntPathRequestMatcher("/api/v1/auth/verify", "GET"),
+                                new AntPathRequestMatcher("/api/v1/auth/google", "POST")
                         ).permitAll()
+                        
+                        // Public READ-ONLY endpoints for events
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/public", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/public/search", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/*/public", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/*/calendar", "GET")
+                        ).permitAll()
+                        
+                        // Public READ-ONLY endpoints for groups
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/groups/public", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/public", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/members", "GET")
+                        ).permitAll()
+                        
+                        // Public READ-ONLY endpoints for members
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/members/*", "GET")
+                        ).permitAll()
+                        
+                        // Public READ-ONLY endpoints for activities
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/activities", "GET"),
+                                new AntPathRequestMatcher("/api/v1/activities/*", "GET")
+                        ).permitAll()
+                        
+                        // Event write operations - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/events/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/events/*/join", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/leave", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/participants", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/*/comments", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/*/comments", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/comments/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/events/comments/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/events/comments/*/replies", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/replies/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/events/replies/*", "DELETE")
+                        ).authenticated()
+                        
+                        // Group write operations - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/groups", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/groups/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/subscribe", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/unsubscribe", "POST")
+                        ).authenticated()
+                        
+                        // File upload - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/files/upload/**", "POST"),
+                                new AntPathRequestMatcher("/api/v1/files/delete", "DELETE")
+                        ).authenticated()
+                        
+                        // Member endpoints - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/members/me", "GET"),
+                                new AntPathRequestMatcher("/api/v1/members/me", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/me/events", "GET"),
+                                new AntPathRequestMatcher("/api/v1/members/me/groups", "GET")
+                        ).authenticated()
+                        
                         // Admin endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**")).hasRole("ADMIN")
+                        
                         // Organiser endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/organiser/**")).hasAnyRole("ORGANISER", "ADMIN")
+                        
+                        // Development/debugging endpoints (disable in production)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/actuator/health", "GET"),
+                                new AntPathRequestMatcher("/actuator/info", "GET")
+                        ).permitAll()
+                        
                         // All other requests require authentication
                         .anyRequest().authenticated()
                 )
@@ -81,8 +144,18 @@ public class SecurityConfig {
                 "https://www.outmeets.com/"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setExposedHeaders(Arrays.asList("*"));
+        // Restrict to specific headers needed by the application
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin",
+                "X-Requested-With"
+        ));
+        configuration.setExposedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type"
+        ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
         
