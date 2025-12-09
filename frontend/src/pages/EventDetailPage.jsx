@@ -104,22 +104,22 @@ export default function EventDetailPage() {
   const joinMutation = useMutation({
     mutationFn: () => eventsAPI.joinEvent(id),
     onSuccess: async () => {
-      // Invalidate queries (including group membership)
-      await queryClient.invalidateQueries(['event', id])
-      await queryClient.invalidateQueries(['eventParticipants', id])
-      await queryClient.invalidateQueries(['eventCalendar', id])
-      await queryClient.invalidateQueries(['myEvents'])
-      await queryClient.invalidateQueries(['allEvents'])
-      await queryClient.invalidateQueries(['events'])
-      await queryClient.invalidateQueries(['myGroups']) // Refresh group membership
-      
-      // Force immediate refetch to update button state and unlock content
-      await queryClient.refetchQueries(['event', id])
-      
-      // Show calendar modal - loader will hide when modal opens
+      // Show calendar modal immediately for instant feedback
       // No toast needed - modal itself is the success indicator
       setIsCalendarModalOpen(true)
       // Note: isJoiningFlow will be set to false when modal opens (see useEffect below)
+      
+      // Invalidate queries in background (don't await - let them happen async)
+      queryClient.invalidateQueries(['event', id])
+      queryClient.invalidateQueries(['eventParticipants', id])
+      queryClient.invalidateQueries(['eventCalendar', id])
+      queryClient.invalidateQueries(['myEvents'])
+      queryClient.invalidateQueries(['allEvents'])
+      queryClient.invalidateQueries(['events'])
+      queryClient.invalidateQueries(['myGroups']) // Refresh group membership
+      
+      // Force refetch to update button state and unlock content
+      queryClient.refetchQueries(['event', id])
     },
     onError: (error) => {
       setIsJoiningFlow(false) // Stop joining flow on error
@@ -137,17 +137,18 @@ export default function EventDetailPage() {
   const leaveMutation = useMutation({
     mutationFn: () => eventsAPI.leaveEvent(id),
     onSuccess: async () => {
-      // Invalidate queries
-      await queryClient.invalidateQueries(['event', id])
-      await queryClient.invalidateQueries(['eventParticipants', id])
-      await queryClient.invalidateQueries(['myEvents'])
-      await queryClient.invalidateQueries(['allEvents'])
-      await queryClient.invalidateQueries(['events'])
-      
-      // Force immediate refetch to update button state
-      await queryClient.refetchQueries(['event', id])
-      
+      // Show toast immediately for instant feedback
       toast.success('Successfully left the event')
+      
+      // Invalidate queries in background (don't await - let them happen async)
+      queryClient.invalidateQueries(['event', id])
+      queryClient.invalidateQueries(['eventParticipants', id])
+      queryClient.invalidateQueries(['myEvents'])
+      queryClient.invalidateQueries(['allEvents'])
+      queryClient.invalidateQueries(['events'])
+      
+      // Force refetch of current event to update UI
+      queryClient.refetchQueries(['event', id])
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to leave event')
