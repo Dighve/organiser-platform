@@ -112,10 +112,11 @@ public class SecurityConfig {
                         // Organiser endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/organiser/**")).hasAnyRole("ORGANISER", "ADMIN")
                         
-                        // Development/debugging endpoints (disable in production)
+                        // Actuator health check endpoints (required for Render deployment)
                         .requestMatchers(
-                                new AntPathRequestMatcher("/actuator/health", "GET"),
-                                new AntPathRequestMatcher("/actuator/info", "GET")
+                                new AntPathRequestMatcher("/api/v1/actuator/health", "GET"),
+                                new AntPathRequestMatcher("/api/v1/actuator/health/**", "GET"),
+                                new AntPathRequestMatcher("/api/v1/actuator/info", "GET")
                         ).permitAll()
                         
                         // All other requests require authentication
