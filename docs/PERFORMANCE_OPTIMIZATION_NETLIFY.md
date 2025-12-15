@@ -249,6 +249,11 @@ build: {
 - ✅ Smaller initial bundle
 - ✅ Console logs removed in production
 
+**Important:** Terser must be installed as a dev dependency:
+```bash
+npm install -D terser
+```
+
 **Performance Gain:** ~20-30% reduction in bundle size
 
 ---
@@ -365,14 +370,19 @@ Lazy-loaded chunks (loaded on-demand):
 
 ## Deployment Steps
 
-### 1. Build and Test Locally
+### 1. Install Terser (Required for Production Build)
 ```bash
 cd frontend
+npm install -D terser
+```
+
+### 2. Build and Test Locally
+```bash
 npm run build
 npm run preview
 ```
 
-### 2. Deploy to Netlify
+### 3. Deploy to Netlify
 ```bash
 # Netlify will automatically detect changes and rebuild
 git add .
@@ -380,7 +390,7 @@ git commit -m "Performance optimizations: code splitting, cache tuning, animatio
 git push origin main
 ```
 
-### 3. Verify on Netlify
+### 4. Verify on Netlify
 1. Check build logs for successful deployment
 2. Test all routes work correctly
 3. Verify lazy loading with Network tab

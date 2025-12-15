@@ -445,11 +445,15 @@ export default function EventDetailPage() {
           {isAccessDenied ? (
             <button
               onClick={handleJoinClick}
-              disabled={joinMutation.isLoading}
+              disabled={joinMutation.isLoading || isJoiningFlow}
               className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              <Users className="h-5 w-5" />
-              {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
+              {joinMutation.isLoading || isJoiningFlow ? (
+                <Loader className="h-5 w-5 animate-spin" />
+              ) : (
+                <Users className="h-5 w-5" />
+              )}
+              {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
             </button>
           ) : isAuthenticated ? (
             isEventOrganiser ? (
@@ -486,11 +490,15 @@ export default function EventDetailPage() {
             ) : (
               <button
                 onClick={handleJoinClick}
-                disabled={event.status === 'FULL' || joinMutation.isLoading}
+                disabled={event.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
                 className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                <Users className="h-5 w-5" />
-                {joinMutation.isLoading ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                {joinMutation.isLoading || isJoiningFlow ? (
+                  <Loader className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Users className="h-5 w-5" />
+                )}
+                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
               </button>
             )
           ) : (
@@ -524,11 +532,15 @@ export default function EventDetailPage() {
                   <p className="text-gray-600 mb-4">Join event to unlock details</p>
                   <button
                     onClick={handleJoinClick}
-                    disabled={joinMutation.isLoading}
+                    disabled={joinMutation.isLoading || isJoiningFlow}
                     className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
                   >
-                    <Users className="h-4 w-4" />
-                    {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
+                    {joinMutation.isLoading || isJoiningFlow ? (
+                      <Loader className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Users className="h-4 w-4" />
+                    )}
+                    {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
                   </button>
                 </div>
               ) : (
@@ -579,11 +591,15 @@ export default function EventDetailPage() {
                     <p className="text-gray-600 mb-4">Join event to unlock location and details</p>
                     <button
                       onClick={handleJoinClick}
-                      disabled={joinMutation.isLoading}
+                      disabled={joinMutation.isLoading || isJoiningFlow}
                       className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
                     >
-                      <Users className="h-4 w-4" />
-                      {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
+                      {joinMutation.isLoading || isJoiningFlow ? (
+                        <Loader className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Users className="h-4 w-4" />
+                      )}
+                      {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
                     </button>
                   </div>
                 ) : (
@@ -738,11 +754,15 @@ export default function EventDetailPage() {
                     </button>
                     <button
                       onClick={handleJoinClick}
-                      disabled={joinMutation.isLoading}
+                      disabled={joinMutation.isLoading || isJoiningFlow}
                       className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
                     >
-                      <Users className="h-5 w-5" />
-                      {joinMutation.isLoading ? 'Joining...' : 'Join Event'}
+                      {joinMutation.isLoading || isJoiningFlow ? (
+                        <Loader className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Users className="h-5 w-5" />
+                      )}
+                      {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
                     </button>
                   </div>
                 ) : isAuthenticated ? (
@@ -846,11 +866,15 @@ export default function EventDetailPage() {
                     /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
                     <button
                       onClick={handleJoinClick}
-                      disabled={event.status === 'FULL' || joinMutation.isLoading}
+                      disabled={event.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
                       className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
                     >
-                      <Users className="h-5 w-5" />
-                      {joinMutation.isLoading ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                      {joinMutation.isLoading || isJoiningFlow ? (
+                        <Loader className="h-5 w-5 animate-spin" />
+                      ) : (
+                        <Users className="h-5 w-5" />
+                      )}
+                      {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
                     </button>
                   )
                 ) : (
