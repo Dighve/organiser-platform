@@ -1,19 +1,36 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
+
+// Critical pages - loaded immediately
 import HomePage from './pages/HomePage'
 import VerifyMagicLinkPage from './pages/VerifyMagicLinkPage'
-import EventsPage from './pages/EventsPage'
-import EventDetailPage from './pages/EventDetailPage'
-import CreateEventPage from './pages/CreateEventPage'
-import EditEventPage from './pages/EditEventPage'
-import MyGroupsPage from './pages/MyGroupsPage'
-import BrowseGroupsPage from './pages/BrowseGroupsPage'
-import CreateGroupPage from './pages/CreateGroupPage'
-import GroupDetailPage from './pages/GroupDetailPage'
-import ProfilePage from './pages/ProfilePage'
-import HikingGradeFAQPage from './pages/HikingGradeFAQPage'
-import MemberDetailPage from './pages/MemberDetailPage'
+
+// Lazy-loaded pages - loaded on demand for better initial load time
+const EventsPage = lazy(() => import('./pages/EventsPage'))
+const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
+const CreateEventPage = lazy(() => import('./pages/CreateEventPage'))
+const EditEventPage = lazy(() => import('./pages/EditEventPage'))
+const MyGroupsPage = lazy(() => import('./pages/MyGroupsPage'))
+const BrowseGroupsPage = lazy(() => import('./pages/BrowseGroupsPage'))
+const CreateGroupPage = lazy(() => import('./pages/CreateGroupPage'))
+const GroupDetailPage = lazy(() => import('./pages/GroupDetailPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const HikingGradeFAQPage = lazy(() => import('./pages/HikingGradeFAQPage'))
+const MemberDetailPage = lazy(() => import('./pages/MemberDetailPage'))
+
+// Loading fallback component
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+        <p className="text-gray-600 font-medium">Loading...</p>
+      </div>
+    </div>
+  )
+}
 
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
@@ -26,13 +43,23 @@ function App() {
       <Route path="/" element={<Layout />}>
         <Route index element={<HomePage />} />  
         <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
-        <Route path="events" element={<EventsPage />} />
-        <Route path="events/:id" element={<EventDetailPage />} />
+        <Route path="events" element={
+          <Suspense fallback={<PageLoader />}>
+            <EventsPage />
+          </Suspense>
+        } />
+        <Route path="events/:id" element={
+          <Suspense fallback={<PageLoader />}>
+            <EventDetailPage />
+          </Suspense>
+        } />
         <Route
           path="events/:id/edit"
           element={
             <PrivateRoute>
-              <EditEventPage />
+              <Suspense fallback={<PageLoader />}>
+                <EditEventPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
@@ -40,7 +67,9 @@ function App() {
           path="create-event"
           element={
             <PrivateRoute>
-              <CreateEventPage />
+              <Suspense fallback={<PageLoader />}>
+                <CreateEventPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
@@ -48,20 +77,44 @@ function App() {
           path="my-groups"
           element={
             <PrivateRoute>
-              <MyGroupsPage />
+              <Suspense fallback={<PageLoader />}>
+                <MyGroupsPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
-        <Route path="browse-groups" element={<BrowseGroupsPage />} />
-        <Route path="groups" element={<BrowseGroupsPage />} />
-        <Route path="hiking-grade-faq" element={<HikingGradeFAQPage />} />
-        <Route path="groups/:id" element={<GroupDetailPage />} />
-        <Route path="members/:id" element={<MemberDetailPage />} />
+        <Route path="browse-groups" element={
+          <Suspense fallback={<PageLoader />}>
+            <BrowseGroupsPage />
+          </Suspense>
+        } />
+        <Route path="groups" element={
+          <Suspense fallback={<PageLoader />}>
+            <BrowseGroupsPage />
+          </Suspense>
+        } />
+        <Route path="hiking-grade-faq" element={
+          <Suspense fallback={<PageLoader />}>
+            <HikingGradeFAQPage />
+          </Suspense>
+        } />
+        <Route path="groups/:id" element={
+          <Suspense fallback={<PageLoader />}>
+            <GroupDetailPage />
+          </Suspense>
+        } />
+        <Route path="members/:id" element={
+          <Suspense fallback={<PageLoader />}>
+            <MemberDetailPage />
+          </Suspense>
+        } />
         <Route
           path="groups/create"
           element={
             <PrivateRoute>
-              <CreateGroupPage />
+              <Suspense fallback={<PageLoader />}>
+                <CreateGroupPage />
+              </Suspense>
             </PrivateRoute>
           }
         />
@@ -69,7 +122,9 @@ function App() {
           path="profile"
           element={
             <PrivateRoute>
-              <ProfilePage />
+              <Suspense fallback={<PageLoader />}>
+                <ProfilePage />
+              </Suspense>
             </PrivateRoute>
           }
         />

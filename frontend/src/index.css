@@ -141,3 +141,21 @@ body {
 .animate-fade-in {
   animation: fade-in 0.6s ease-out forwards;
 }
+
+/* Accessibility: Respect user's motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  /* Disable blob animations for users who prefer reduced motion */
+  .animate-blob,
+  .animate-gradient,
+  .animate-bounce-slow {
+    animation: none !important;
+  }
+}
