@@ -56,6 +56,20 @@ public class Member {
     @Column(name = "is_organiser", nullable = false)
     private Boolean isOrganiser = false;
     
+    @Builder.Default
+    @Column(name = "has_accepted_organiser_agreement")
+    private Boolean hasAcceptedOrganiserAgreement = false;
+    
+    @Column(name = "organiser_agreement_accepted_at")
+    private LocalDateTime organiserAgreementAcceptedAt;
+    
+    @Builder.Default
+    @Column(name = "has_accepted_user_agreement")
+    private Boolean hasAcceptedUserAgreement = false;
+    
+    @Column(name = "user_agreement_accepted_at")
+    private LocalDateTime userAgreementAcceptedAt;
+    
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

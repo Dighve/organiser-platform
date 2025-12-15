@@ -1,10 +1,10 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { groupsAPI } from '../lib/api'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
+import { groupsAPI, membersAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { ArrowLeft, Upload } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
@@ -27,6 +27,7 @@ export default function CreateGroupPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    termsAndConditions: '',
     activityId: 1, // Currently: Hiking (Running, Climbing, Swimming coming soon)
     location: '',
     imageUrl: '',
@@ -35,6 +36,11 @@ export default function CreateGroupPage() {
   })
   
   const [errors, setErrors] = useState({})  // Form validation errors
+
+  // ============================================================
+  // QUERIES
+  // ============================================================
+  // (None needed - organiser check handled by header button)
   
   // ============================================================
   // MUTATIONS
@@ -104,6 +110,7 @@ export default function CreateGroupPage() {
     const groupData = {
       name: formData.name.trim(),
       description: formData.description.trim() || null,
+      termsAndConditions: formData.termsAndConditions.trim() || null,
       activityId: formData.activityId, // Always 1 for Hiking
       location: formData.location.trim() || null,
       imageUrl: formData.imageUrl || null,
@@ -139,8 +146,8 @@ export default function CreateGroupPage() {
   // MAIN RENDER
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ========== BACK BUTTON ========== */}
         <button
@@ -207,6 +214,26 @@ export default function CreateGroupPage() {
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
               placeholder="Describe your group, its purpose, and what members can expect..."
             />
+          </div>
+          
+          {/* TERMS AND CONDITIONS FIELD (Optional) */}
+          <div>
+            <label htmlFor="termsAndConditions" className="block text-sm font-semibold text-gray-700 mb-2">
+              📜 Group Terms & Conditions
+              <span className="text-gray-500 font-normal text-sm ml-2">(optional)</span>
+            </label>
+            <textarea
+              id="termsAndConditions"
+              name="termsAndConditions"
+              value={formData.termsAndConditions}
+              onChange={handleChange}
+              rows={6}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none"
+              placeholder="e.g., All participants must bring their own equipment. No refunds within 24 hours of event. Participants must be 18+..."
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              💡 Set rules that members must accept when joining your events (e.g., equipment requirements, age restrictions, cancellation policy)
+            </p>
           </div>
           
           {/* COVER PHOTO / BANNER FIELD (Optional) */}
@@ -318,7 +345,7 @@ export default function CreateGroupPage() {
             </button>
           </div>
         </form>
+        </div>
       </div>
-    </div>
   )
 }

@@ -176,4 +176,15 @@ export const membersAPI = {
   updateProfile: (data) => api.put('/members/me', data),
 }
 
+// Legal API
+export const legalAPI = {
+  acceptOrganiserAgreement: (data) => api.post('/legal/accept-organiser-agreement', data),
+  
+  hasAcceptedOrganiserAgreement: () => api.get('/legal/has-accepted-organiser-agreement'),
+  
+  acceptUserAgreement: (data) => api.post('/legal/accept-user-agreement', data),
+  
+  hasAcceptedUserAgreement: () => api.get('/legal/has-accepted-user-agreement'),
+}
+
 export default api

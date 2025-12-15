@@ -84,6 +84,7 @@ public class GroupService {
                 .location(request.getLocation())
                 .maxMembers(request.getMaxMembers())
                 .isPublic(request.getIsPublic() != null ? request.getIsPublic() : true)
+                .termsAndConditions(request.getTermsAndConditions())
                 .active(true)
                 .build();
         
@@ -136,6 +137,9 @@ public class GroupService {
         }
         if (request.getIsPublic() != null) {
             group.setIsPublic(request.getIsPublic());
+        }
+        if (request.getTermsAndConditions() != null) {
+            group.setTermsAndConditions(request.getTermsAndConditions());
         }
         
         // Update activity if changed

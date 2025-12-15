@@ -78,6 +78,9 @@ public class Group {
     @Builder.Default
     private Boolean isPublic = true;
     
+    @Column(name = "terms_and_conditions", columnDefinition = "TEXT")
+    private String termsAndConditions;
+    
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

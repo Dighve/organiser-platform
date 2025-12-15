@@ -26,6 +26,7 @@ public class GroupDTO {
     private Integer currentMembers;
     private Boolean active;
     private Boolean isPublic;
+    private String termsAndConditions;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
@@ -44,6 +45,7 @@ public class GroupDTO {
                 .currentMembers(currentMembers)
                 .active(group.getActive())
                 .isPublic(group.getIsPublic())
+                .termsAndConditions(group.getTermsAndConditions())
                 .createdAt(group.getCreatedAt())
                 .updatedAt(group.getUpdatedAt())
                 .build();

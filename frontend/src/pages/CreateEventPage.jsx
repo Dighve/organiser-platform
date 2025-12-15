@@ -6,12 +6,13 @@ import { useForm } from 'react-hook-form'
 import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Type, FileText, Image, Timer } from 'lucide-react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { activityTypesAPI, eventsAPI } from '../lib/api'
+import { activityTypesAPI, eventsAPI, membersAPI } from '../lib/api'
 import toast from 'react-hot-toast'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
 import ImageUpload from '../components/ImageUpload'
+import { useAuthStore } from '../store/authStore'
 
 // ============================================================
 // CONSTANTS
@@ -118,6 +119,13 @@ export default function CreateEventPage() {
   const copyFromId = searchParams.get('copyFrom')
   const copiedEventData = location.state?.eventData
   const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
+  const { isAuthenticated } = useAuthStore()
+  
+  // ============================================================
+  // QUERIES
+  // ============================================================
+  
+  // (Organiser check handled by header button)
   
   // ============================================================
   // LOCAL STATE
@@ -166,6 +174,7 @@ export default function CreateEventPage() {
   // ============================================================
   // EFFECTS
   // ============================================================
+  
   
   // Redirect if no groupId is provided (events must belong to a group)
   useEffect(() => {
@@ -1120,8 +1129,8 @@ export default function CreateEventPage() {
   // MAIN COMPONENT RETURN
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-10 text-center">
           <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-4 animate-fade-in">
             🏔️ Create a Hike Event
@@ -1149,7 +1158,7 @@ export default function CreateEventPage() {
         <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-10 border-2 border-white/50 shadow-2xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-shadow duration-300">
           {renderCurrentStep()}
         </div>
+        </div>
       </div>
-    </div>
   )
 }

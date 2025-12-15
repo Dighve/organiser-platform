@@ -159,6 +159,10 @@ public class MemberService {
                 .profilePhotoUrl(member.getProfilePhotoUrl())
                 .imagePosition(member.getImagePosition())
                 .isOrganiser(member.getIsOrganiser())
+                .hasAcceptedOrganiserAgreement(member.getHasAcceptedOrganiserAgreement())
+                .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())
+                .hasAcceptedUserAgreement(member.getHasAcceptedUserAgreement())
+                .userAgreementAcceptedAt(member.getUserAgreementAcceptedAt())
                 .build();
     }
 }

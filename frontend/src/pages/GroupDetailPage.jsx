@@ -136,6 +136,7 @@ export default function GroupDetailPage() {
   const [editFormData, setEditFormData] = useState({
     name: '',
     description: '',
+    termsAndConditions: '',
     location: '',
     imageUrl: '',
     maxMembers: '',
@@ -270,6 +271,7 @@ export default function GroupDetailPage() {
       setEditFormData({
         name: group.name || '',
         description: group.description || '',
+        termsAndConditions: group.termsAndConditions || '',
         location: group.location || '',
         imageUrl: group.imageUrl || '',
         maxMembers: group.maxMembers || '',
@@ -286,6 +288,7 @@ export default function GroupDetailPage() {
     const updateData = {
       name: editFormData.name.trim(),
       description: editFormData.description.trim() || null,
+      termsAndConditions: editFormData.termsAndConditions.trim() || null,
       activityId: 1, // Always Hiking for now
       location: editFormData.location.trim() || null,
       imageUrl: editFormData.imageUrl || null,
@@ -845,6 +848,25 @@ export default function GroupDetailPage() {
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
                   placeholder="Describe your group, its purpose, and what members can expect..."
                 />
+              </div>
+
+              {/* Terms and Conditions */}
+              <div>
+                <label htmlFor="edit-termsAndConditions" className="block text-sm font-semibold text-gray-700 mb-2">
+                  📜 Group Terms & Conditions
+                  <span className="text-gray-500 font-normal text-sm ml-2">(optional)</span>
+                </label>
+                <textarea
+                  id="edit-termsAndConditions"
+                  value={editFormData.termsAndConditions}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, termsAndConditions: e.target.value }))}
+                  rows={6}
+                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none"
+                  placeholder="e.g., All participants must bring their own equipment. No refunds within 24 hours of event. Participants must be 18+..."
+                />
+                <p className="mt-2 text-xs text-gray-500">
+                  💡 Set rules that members must accept when joining your events
+                </p>
               </div>
 
               {/* Cover Photo */}

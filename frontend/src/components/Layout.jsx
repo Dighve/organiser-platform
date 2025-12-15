@@ -1,18 +1,23 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { Menu, X, LogOut, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { membersAPI } from '../lib/api'
 import ProfileAvatar from './ProfileAvatar'
 import LoginModal from './LoginModal'
+import OrganiserAgreementModal from './OrganiserAgreementModal'
+import UserAgreementModal from './UserAgreementModal'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [loginModalOpen, setLoginModalOpen] = useState(false)
+  const [showOrganiserModal, setShowOrganiserModal] = useState(false)
+  const [showUserAgreementModal, setShowUserAgreementModal] = useState(false)
   const { isAuthenticated, user, logout, updateUser, clearReturnUrl } = useAuthStore()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   // Fetch current member data for profile photo
   const { data: memberData } = useQuery({
@@ -21,16 +26,36 @@ export default function Layout() {
     enabled: isAuthenticated,
   })
 
-  const becomeOrganiserMutation = useMutation({
-    mutationFn: membersAPI.becomeOrganiser,
-    onSuccess: (response) => {
-      updateUser({ isOrganiser: response.data.isOrganiser })
-      alert('You are now an organiser! You can create groups and events.')
-    },
-    onError: (error) => {
-      alert(error.response?.data?.message || 'Failed to become organiser')
-    },
-  })
+  // Sync memberData with auth store - CRITICAL for organiser features!
+  useEffect(() => {
+    if (memberData && isAuthenticated) {
+      // Update auth store with latest member data
+      updateUser({
+        isOrganiser: memberData.isOrganiser,
+        hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
+        hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement,
+        displayName: memberData.displayName,
+        profilePhotoUrl: memberData.profilePhotoUrl,
+      })
+      console.log('🔄 Auth store updated with member data:', {
+        isOrganiser: memberData.isOrganiser,
+        hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
+        hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement
+      })
+      
+      // Show user agreement modal if not accepted
+      if (!memberData.hasAcceptedUserAgreement) {
+        console.log('⚠️ User has not accepted User Agreement - showing modal')
+        setShowUserAgreementModal(true)
+      }
+    }
+  }, [memberData, isAuthenticated, updateUser])
+
+  // Handle becoming an organiser - show modal
+  const handleBecomeOrganiser = () => {
+    setShowOrganiserModal(true)
+    setMobileMenuOpen(false) // Close mobile menu if open
+  }
 
   const handleLogout = () => {
     logout()
@@ -126,13 +151,12 @@ export default function Layout() {
                       >
                         My Groups
                       </Link>
-                      {!user?.isOrganiser && (
+                      {!memberData?.hasAcceptedOrganiserAgreement && (
                         <button
-                          onClick={() => becomeOrganiserMutation.mutate()}
-                          disabled={becomeOrganiserMutation.isLoading}
-                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                          onClick={handleBecomeOrganiser}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         >
-                          {becomeOrganiserMutation.isLoading ? 'Processing...' : 'Become Organiser'}
+                          Become Organiser
                         </button>
                       )}
                       <button
@@ -209,16 +233,12 @@ export default function Layout() {
                   >
                     My Groups
                   </Link>
-                  {!user?.isOrganiser && (
+                  {!memberData?.hasAcceptedOrganiserAgreement && (
                     <button
-                      onClick={() => {
-                        becomeOrganiserMutation.mutate()
-                        setMobileMenuOpen(false)
-                      }}
-                      disabled={becomeOrganiserMutation.isLoading}
-                      className="block w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold disabled:opacity-50"
+                      onClick={handleBecomeOrganiser}
+                      className="block w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
                     >
-                      {becomeOrganiserMutation.isLoading ? 'Processing...' : 'Become Organiser'}
+                      Become Organiser
                     </button>
                   )}
                   <button
@@ -257,6 +277,31 @@ export default function Layout() {
         isOpen={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
         onSuccess={() => setLoginModalOpen(false)}
+      />
+
+      {/* Organiser Agreement Modal */}
+      <OrganiserAgreementModal
+        isOpen={showOrganiserModal}
+        onClose={() => setShowOrganiserModal(false)}
+        onAccept={() => {
+          setShowOrganiserModal(false)
+          // Refresh member data after acceptance
+          queryClient.invalidateQueries(['currentMember'])
+        }}
+      />
+
+      {/* User Agreement Modal - Cannot be dismissed */}
+      <UserAgreementModal
+        isOpen={showUserAgreementModal}
+        onClose={() => {
+          // User agreement cannot be dismissed - they must accept
+          console.log('⚠️ User Agreement modal cannot be closed without accepting')
+        }}
+        onAccept={() => {
+          setShowUserAgreementModal(false)
+          // Refresh member data after acceptance
+          queryClient.invalidateQueries(['currentMember'])
+        }}
       />
 
       {/* Footer */}

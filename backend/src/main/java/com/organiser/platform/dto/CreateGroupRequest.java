@@ -22,4 +22,6 @@ public class CreateGroupRequest {
     private Integer maxMembers;
     
     private Boolean isPublic = true;
+    
+    private String termsAndConditions;
 }

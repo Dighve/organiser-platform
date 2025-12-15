@@ -11,6 +11,7 @@ import ProfileAvatar from '../components/ProfileAvatar'
 import LoginModal from '../components/LoginModal'
 import AddToCalendar from '../components/AddToCalendar'
 import AddToCalendarModal from '../components/AddToCalendarModal'
+import GroupTermsModal from '../components/GroupTermsModal'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -37,6 +38,7 @@ export default function EventDetailPage() {
   const { isAuthenticated, user, setReturnUrl } = useAuthStore()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
+  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
   const [heroImageError, setHeroImageError] = useState(false)
   const [heroImageLoaded, setHeroImageLoaded] = useState(false)
   const [isJoiningFlow, setIsJoiningFlow] = useState(false) // Track entire join flow until modal opens
@@ -96,7 +98,23 @@ export default function EventDetailPage() {
       setIsLoginModalOpen(true)
       return
     }
-    setIsJoiningFlow(true) // Start joining flow - show loader until modal opens
+    
+    // Check if group has terms and conditions
+    const groupTerms = event?.group?.termsAndConditions
+    if (groupTerms && groupTerms.trim()) {
+      // Show terms modal first
+      setIsTermsModalOpen(true)
+    } else {
+      // No terms, join directly
+      setIsJoiningFlow(true)
+      joinMutation.mutate()
+    }
+  }
+  
+  // Handle accepting terms and joining
+  const handleAcceptTerms = () => {
+    setIsTermsModalOpen(false)
+    setIsJoiningFlow(true)
     joinMutation.mutate()
   }
 
@@ -954,6 +972,18 @@ export default function EventDetailPage() {
         onClose={() => setIsCalendarModalOpen(false)}
         calendarData={calendarData}
         eventTitle={event?.title || 'this event'}
+      />
+
+      {/* ============================================ */}
+      {/* GROUP TERMS MODAL - Opens before joining if group has terms */}
+      {/* ============================================ */}
+      <GroupTermsModal
+        isOpen={isTermsModalOpen}
+        onClose={() => setIsTermsModalOpen(false)}
+        onAccept={handleAcceptTerms}
+        groupName={event?.group?.name || 'this group'}
+        terms={event?.group?.termsAndConditions || ''}
+        isLoading={joinMutation.isLoading}
       />
     </div>
   )
