@@ -60,26 +60,40 @@ public class LegalService {
         
         // Check if already accepted
         if (legalAgreementRepository.existsByMemberIdAndAgreementType(memberId, "USER")) {
+            System.out.println("ℹ️ Member " + memberId + " already accepted User Agreement");
             return; // Already accepted
         }
         
-        // Create legal agreement record
-        LegalAgreement agreement = new LegalAgreement();
-        agreement.setMember(member);
-        agreement.setAgreementType("USER");
-        agreement.setAgreementVersion("2024-12-15");
-        agreement.setAcceptedAt(LocalDateTime.now());
-        agreement.setIpAddress(ipAddress);
-        agreement.setUserAgent(userAgent);
-        
-        legalAgreementRepository.save(agreement);
-        
-        // Update member flags
-        member.setHasAcceptedUserAgreement(true);
-        member.setUserAgreementAcceptedAt(LocalDateTime.now());
-        memberRepository.save(member);
-        
-        System.out.println("✅ Member " + memberId + " accepted User Agreement!");
+        try {
+            // Create legal agreement record
+            LegalAgreement agreement = new LegalAgreement();
+            agreement.setMember(member);
+            agreement.setAgreementType("USER");
+            agreement.setAgreementVersion("2024-12-15");
+            agreement.setAcceptedAt(LocalDateTime.now());
+            agreement.setIpAddress(ipAddress);
+            agreement.setUserAgent(userAgent);
+            
+            legalAgreementRepository.save(agreement);
+            
+            // Update member flags
+            member.setHasAcceptedUserAgreement(true);
+            member.setUserAgreementAcceptedAt(LocalDateTime.now());
+            memberRepository.save(member);
+            
+            System.out.println("✅ Member " + memberId + " accepted User Agreement!");
+        } catch (Exception e) {
+            // Handle duplicate key constraint violation (race condition)
+            if (e.getMessage() != null && e.getMessage().contains("unique constraint")) {
+                System.out.println("ℹ️ Member " + memberId + " already accepted (race condition)");
+                // Update member flags anyway
+                member.setHasAcceptedUserAgreement(true);
+                member.setUserAgreementAcceptedAt(LocalDateTime.now());
+                memberRepository.save(member);
+                return;
+            }
+            throw e; // Re-throw if it's a different error
+        }
     }
     
     public boolean hasAcceptedUserAgreement(Long memberId) {

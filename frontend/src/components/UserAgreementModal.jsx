@@ -13,6 +13,7 @@ export default function UserAgreementModal({ isOpen, onClose, onAccept }) {
   const acceptMutation = useMutation({
     mutationFn: async () => {
       console.log('🔄 Accepting user agreement...')
+      console.log('📡 API Base URL:', import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1')
       
       try {
         const response = await legalAPI.acceptUserAgreement({
@@ -23,6 +24,12 @@ export default function UserAgreementModal({ isOpen, onClose, onAccept }) {
         return response
       } catch (error) {
         console.error('❌ Accept user agreement error:', error)
+        console.error('❌ Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          url: error.config?.url
+        })
         throw error
       }
     },

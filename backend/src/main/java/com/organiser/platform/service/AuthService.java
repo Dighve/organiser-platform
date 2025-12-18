@@ -109,14 +109,17 @@ public class AuthService {
             memberRepository.save(member);
         }
         
+        // Determine role based on admin status
+        String role = member.getIsAdmin() ? "ADMIN" : "MEMBER";
+        
         // Generate JWT token
-        String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), "MEMBER");
+        String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
         
         return AuthResponse.builder()
                 .token(jwtToken)
                 .userId(member.getId())
                 .email(member.getEmail())
-                .role("MEMBER")
+                .role(role)
                 .isOrganiser(member.getIsOrganiser())
                 .build();
     }

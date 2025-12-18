@@ -16,4 +16,7 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     List<Group> findByPrimaryOrganiserId(Long organiserId);
     
     List<Group> findByIsPublicTrueAndActiveTrue();
+    
+    // Admin dashboard queries
+    Long countByPrimaryOrganiserId(Long organiserId);
 }

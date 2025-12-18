@@ -187,4 +187,13 @@ export const legalAPI = {
   hasAcceptedUserAgreement: () => api.get('/legal/has-accepted-user-agreement'),
 }
 
+// Admin API
+export const adminAPI = {
+  getUserStats: () => api.get('/admin/stats/users'),
+  
+  getRecentUsers: (limit = 50) => api.get('/admin/users/recent', { params: { limit } }),
+  
+  checkAdminStatus: () => api.get('/admin/check'),
+}
+
 export default api

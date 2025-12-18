@@ -106,7 +106,10 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/members/me/groups", "GET")
                         ).authenticated()
                         
-                        // Admin endpoints
+                        // Admin check endpoint - authenticated users can check their status
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/check", "GET")).authenticated()
+                        
+                        // Other admin endpoints - require ADMIN role
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**")).hasRole("ADMIN")
                         
                         // Organiser endpoints

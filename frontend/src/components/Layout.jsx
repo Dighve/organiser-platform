@@ -1,9 +1,9 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Menu, X, LogOut, Search } from 'lucide-react'
+import { Menu, X, LogOut, Search, Shield } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { membersAPI } from '../lib/api'
+import { membersAPI, adminAPI } from '../lib/api'
 import ProfileAvatar from './ProfileAvatar'
 import LoginModal from './LoginModal'
 import OrganiserAgreementModal from './OrganiserAgreementModal'
@@ -26,6 +26,13 @@ export default function Layout() {
     enabled: isAuthenticated,
   })
 
+  // Check if user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ['isAdmin'],
+    queryFn: () => adminAPI.checkAdminStatus().then(res => res.data),
+    enabled: isAuthenticated,
+  })
+
   // Sync memberData with auth store - CRITICAL for organiser features!
   useEffect(() => {
     if (memberData && isAuthenticated) {
@@ -40,7 +47,8 @@ export default function Layout() {
       console.log('🔄 Auth store updated with member data:', {
         isOrganiser: memberData.isOrganiser,
         hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
-        hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement
+        hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement,
+        isAdmin: memberData.isAdmin
       })
       
       // Show user agreement modal if not accepted
@@ -151,6 +159,15 @@ export default function Layout() {
                       >
                         My Groups
                       </Link>
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-semibold flex items-center space-x-2"
+                        >
+                          <Shield className="h-4 w-4" />
+                          <span>Admin Dashboard</span>
+                        </Link>
+                      )}
                       {!memberData?.hasAcceptedOrganiserAgreement && (
                         <button
                           onClick={handleBecomeOrganiser}

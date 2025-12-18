@@ -19,6 +19,7 @@ const GroupDetailPage = lazy(() => import('./pages/GroupDetailPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const HikingGradeFAQPage = lazy(() => import('./pages/HikingGradeFAQPage'))
 const MemberDetailPage = lazy(() => import('./pages/MemberDetailPage'))
+const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -124,6 +125,16 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="admin"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <AdminDashboardPage />
               </Suspense>
             </PrivateRoute>
           }

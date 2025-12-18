@@ -19,4 +19,7 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     boolean existsByMemberIdAndGroupId(Long memberId, Long groupId);
     
     long countByGroupIdAndStatus(Long groupId, Subscription.SubscriptionStatus status);
+    
+    // Admin dashboard queries
+    Long countByMemberId(Long memberId);
 }

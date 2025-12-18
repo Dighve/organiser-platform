@@ -73,6 +73,7 @@ public class MemberService {
      */
     public MemberDTO getMemberDTOById(Long memberId) {
         Member member = getMemberById(memberId);
+        log.info("member {}", member);
         return convertToDTO(member);
     }
     
@@ -159,6 +160,7 @@ public class MemberService {
                 .profilePhotoUrl(member.getProfilePhotoUrl())
                 .imagePosition(member.getImagePosition())
                 .isOrganiser(member.getIsOrganiser())
+                .isAdmin(member.getIsAdmin())
                 .hasAcceptedOrganiserAgreement(member.getHasAcceptedOrganiserAgreement())
                 .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())
                 .hasAcceptedUserAgreement(member.getHasAcceptedUserAgreement())

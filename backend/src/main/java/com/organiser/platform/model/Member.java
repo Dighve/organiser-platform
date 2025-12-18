@@ -57,6 +57,10 @@ public class Member {
     private Boolean isOrganiser = false;
     
     @Builder.Default
+    @Column(name = "is_admin", nullable = false)
+    private Boolean isAdmin = false;
+    
+    @Builder.Default
     @Column(name = "has_accepted_organiser_agreement")
     private Boolean hasAcceptedOrganiserAgreement = false;
     

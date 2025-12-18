@@ -65,4 +65,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
            "OR LOWER(e.group.primaryOrganiser.displayName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.group.primaryOrganiser.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") Instant now, Pageable pageable);
+    
+    // Admin dashboard queries
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId")
+    Long countByOrganiserId(@Param("organiserId") Long organiserId);
 }

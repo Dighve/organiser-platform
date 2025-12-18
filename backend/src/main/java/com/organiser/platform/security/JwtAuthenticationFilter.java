@@ -45,19 +45,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             email = jwtUtil.extractUsername(jwt); // Extract email from token
             
             if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                // Extract userId from JWT token
+                // Extract userId and role from JWT token
                 Long userId = jwtUtil.extractClaim(jwt, claims -> claims.get("userId", Long.class));
+                String role = jwtUtil.extractClaim(jwt, claims -> claims.get("role", String.class));
                 
                 // Load member by email
                 Member member = memberRepository.findByEmail(email).orElse(null);
                 
                 if (member != null && member.getActive()) {
+                    // Use role from JWT token, default to MEMBER if not present
+                    String authority = "ROLE_" + (role != null ? role : "MEMBER");
+                    
                     // Create simple UserDetails-like object
                     org.springframework.security.core.userdetails.User userDetails = 
                         new org.springframework.security.core.userdetails.User(
                             member.getEmail(),
                             "",  // No password needed
-                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_MEMBER"))
+                            Collections.singletonList(new SimpleGrantedAuthority(authority))
                         );
                     
                     if (jwtUtil.validateToken(jwt, userDetails)) {

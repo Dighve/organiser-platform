@@ -19,4 +19,7 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     boolean existsByEventIdAndMemberId(Long eventId, Long memberId);
     
     long countByEventIdAndStatus(Long eventId, EventParticipant.ParticipationStatus status);
+    
+    // Admin dashboard queries
+    Long countByMemberId(Long memberId);
 }
