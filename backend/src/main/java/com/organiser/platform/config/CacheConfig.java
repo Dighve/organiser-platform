@@ -27,9 +27,12 @@ public class CacheConfig {
      * 
      * Performance characteristics:
      * - Maximum 1000 entries per cache
-     * - 5 minute expiration after write
+     * - 10 minute expiration after write (matches frontend cache)
      * - Automatic eviction of least recently used entries
      * - Thread-safe concurrent access
+     * 
+     * OPTIMIZED: Increased from 5 to 10 minutes for better production performance
+     * Events don't change frequently, so longer cache is safe
      */
     @Bean
     public CacheManager cacheManager() {
@@ -39,12 +42,13 @@ public class CacheConfig {
             "groups",  // Generic groups cache (for getAllPublicGroups, getGroupById, etc.)
             "eventDetail", 
             "publicGroups",
-            "groupDetail"
+            "groupDetail",
+            "members"  // Member cache for profile photos
         );
         
         cacheManager.setCaffeine(Caffeine.newBuilder()
             .maximumSize(1000)  // Max 1000 entries per cache
-            .expireAfterWrite(5, TimeUnit.MINUTES)  // 5 minute TTL
+            .expireAfterWrite(10, TimeUnit.MINUTES)  // 10 minute TTL (matches frontend)
             .recordStats());  // Enable statistics for monitoring
         
         return cacheManager;

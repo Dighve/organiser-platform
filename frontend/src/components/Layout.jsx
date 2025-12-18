@@ -44,12 +44,12 @@ export default function Layout() {
         displayName: memberData.displayName,
         profilePhotoUrl: memberData.profilePhotoUrl,
       })
-      console.log('🔄 Auth store updated with member data:', {
-        isOrganiser: memberData.isOrganiser,
-        hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
-        hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement,
-        isAdmin: memberData.isAdmin
-      })
+      // console.log('🔄 Auth store updated with member data:', {
+      //   isOrganiser: memberData.isOrganiser,
+      //   hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
+      //   hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement,
+      //   isAdmin: memberData.isAdmin
+      // })
       
       // Show user agreement modal if not accepted
       if (!memberData.hasAcceptedUserAgreement) {

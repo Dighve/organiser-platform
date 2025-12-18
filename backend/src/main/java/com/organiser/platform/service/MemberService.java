@@ -73,7 +73,6 @@ public class MemberService {
      */
     public MemberDTO getMemberDTOById(Long memberId) {
         Member member = getMemberById(memberId);
-        log.info("member {}", member);
         return convertToDTO(member);
     }
     

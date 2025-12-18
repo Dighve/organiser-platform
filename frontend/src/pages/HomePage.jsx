@@ -38,6 +38,8 @@ export default function HomePage() {
     queryKey: ['myGroups'],
     queryFn: () => groupsAPI.getMyGroups(),
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000, // 5 minutes - user's groups don't change often
+    refetchOnWindowFocus: false,
   })
   
   // Fetch user's organised groups (only if authenticated and is organiser)
@@ -45,6 +47,8 @@ export default function HomePage() {
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
     enabled: isAuthenticated && user?.isOrganiser,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchOnWindowFocus: false,
   })
   
   // Fetch user's events (only if authenticated)
@@ -52,16 +56,20 @@ export default function HomePage() {
     queryKey: ['myEvents'],
     queryFn: () => eventsAPI.getMyEvents(0, 10),
     enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000, // 5 minutes - user's events don't change often
+    refetchOnWindowFocus: false,
   })
   
   // Fetch all public events for discovery
   const { data: allEventsData, isLoading: allEventsLoading } = useQuery({
     queryKey: ['allEvents'],
     queryFn: () => eventsAPI.getUpcomingEvents(0, 10),
-    // Use global staleTime (10 minutes) for better performance
-    // Data will be cached and reused across page visits
-    staleTime: 2 * 60 * 1000, // 2 minutes - balance between freshness and performance
+    // OPTIMIZED: Longer cache for better production performance
+    // Events don't change frequently, so 10 minutes is safe
+    staleTime: 10 * 60 * 1000, // 10 minutes - aggressive caching for production speed
+    cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
     refetchOnWindowFocus: false, // Disable refetch on window focus to reduce API calls
+    refetchOnMount: false, // Don't refetch if data is still fresh
   })
   
   // ============================================================

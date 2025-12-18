@@ -33,7 +33,15 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e WHERE e.group.id = :groupId ORDER BY e.eventDate ASC")
     List<Event> findAllByGroupId(@Param("groupId") Long groupId);
     
-    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now ORDER BY e.eventDate ASC")
+    // OPTIMIZED: JOIN FETCH to prevent N+1 queries - loads group and organiser in one query
+    // Note: Activity JOIN commented out since we only support Hiking (activityId = 1) for now
+    // Uncomment when adding Running, Climbing, Swimming support
+    @Query("SELECT DISTINCT e FROM Event e " +
+           "LEFT JOIN FETCH e.group g " +
+           "LEFT JOIN FETCH g.primaryOrganiser " +
+           // "LEFT JOIN FETCH g.activity " +  // TODO: Uncomment when supporting multiple activities
+           "WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
+           "ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEvents(@Param("now") Instant now, Pageable pageable);
     
     // Get upcoming events by activity through group relationship
