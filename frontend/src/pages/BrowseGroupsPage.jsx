@@ -28,6 +28,8 @@ export default function BrowseGroupsPage() {
   const [activeTab, setActiveTab] = useState('explore')  // Current tab: 'explore', 'member', or 'organiser'
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)  // Login modal state
   const [pendingGroupId, setPendingGroupId] = useState(null)  // Group to join after login
+  const [showSuccessModal, setShowSuccessModal] = useState(false)  // Success modal after joining
+  const [joinedGroupName, setJoinedGroupName] = useState('')  // Name of joined group
   
   // ============================================================
   // EFFECTS
@@ -69,13 +71,26 @@ export default function BrowseGroupsPage() {
   // Subscribe to a group
   const subscribeMutation = useMutation({
     mutationFn: (groupId) => groupsAPI.subscribeToGroup(groupId),
-    onSuccess: () => {
-      toast.success('Successfully joined the group!')
+    onSuccess: (_, groupId) => {
+      // Find the group name
+      const allGroups = data?.data || []
+      const group = allGroups.find(g => g.id === groupId)
+      
+      // Show success modal if this was from login flow
+      if (pendingGroupId) {
+        setJoinedGroupName(group?.name || 'the group')
+        setShowSuccessModal(true)
+      } else {
+        // Show toast for direct joins
+        toast.success('Successfully joined the group!')
+      }
+      
       queryClient.invalidateQueries(['publicGroups'])
       queryClient.invalidateQueries(['myGroups'])
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to join group')
+      setPendingGroupId(null)  // Clear pending state on error
     },
   })
   
@@ -178,8 +193,11 @@ export default function BrowseGroupsPage() {
   // Auto-join group after successful login
   useEffect(() => {
     if (isAuthenticated && pendingGroupId) {
-      subscribeMutation.mutate(pendingGroupId)
-      setPendingGroupId(null)
+      // Small delay to ensure auth state is fully set
+      const timer = setTimeout(() => {
+        subscribeMutation.mutate(pendingGroupId)
+      }, 500)
+      return () => clearTimeout(timer)
     }
   }, [isAuthenticated, pendingGroupId])
   
@@ -209,6 +227,50 @@ export default function BrowseGroupsPage() {
           setPendingGroupId(null)
         }} 
       />
+      
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 text-center transform transition-all">
+            {/* Success Icon */}
+            <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full flex items-center justify-center">
+              <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            
+            {/* Success Message */}
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">Successfully Joined!</h2>
+            <p className="text-gray-600 mb-6">
+              You've joined <span className="font-bold text-purple-600">{joinedGroupName}</span>. 
+              Start exploring events and connecting with members!
+            </p>
+            
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false)
+                  setPendingGroupId(null)
+                  setActiveTab('member')  // Switch to member tab
+                }}
+                className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+              >
+                View My Groups
+              </button>
+              <button
+                onClick={() => {
+                  setShowSuccessModal(false)
+                  setPendingGroupId(null)
+                }}
+                className="flex-1 py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
