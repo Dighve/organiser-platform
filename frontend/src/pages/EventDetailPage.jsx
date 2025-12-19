@@ -181,7 +181,7 @@ export default function EventDetailPage() {
       await queryClient.invalidateQueries(['events'])
       await queryClient.invalidateQueries(['allEvents'])
       if (event?.groupId) {
-        queryClient.invalidateQueries(['groupEvents', event.groupId.toString()])
+        queryClient.invalidateQueries(['groupEvents', event?.groupId?.toString()])
       }
       await queryClient.refetchQueries(['event', id])
       toast.success('🎉 Event published successfully!')
@@ -197,7 +197,7 @@ export default function EventDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries(['events'])
       if (event?.groupId) {
-        queryClient.invalidateQueries(['groupEvents', event.groupId.toString()])
+        queryClient.invalidateQueries(['groupEvents', event?.groupId?.toString()])
       }
       toast.success('Event deleted successfully')
       navigate('/')
@@ -230,28 +230,28 @@ export default function EventDetailPage() {
   const handleCopyEvent = () => {
     // Encode event data as URL parameters
     const eventData = {
-      title: event.title,
-      description: event.description,
-      location: event.location,
-      latitude: event.latitude,
-      longitude: event.longitude,
-      difficultyLevel: event.difficultyLevel,
-      distanceKm: event.distanceKm,
-      elevationGainM: event.elevationGainM,
-      estimatedDurationHours: event.estimatedDurationHours,
-      maxParticipants: event.maxParticipants,
-      costPerPerson: event.costPerPerson,
-      requiredGear: event.requiredGear,
-      includedItems: event.includedItems,
-      cancellationPolicy: event.cancellationPolicy,
-      imageUrl: event.imageUrl,
-      hostName: event.hostName,
-      groupId: event.groupId
+      title: event?.title,
+      description: event?.description,
+      location: event?.location,
+      latitude: event?.latitude,
+      longitude: event?.longitude,
+      difficultyLevel: event?.difficultyLevel,
+      distanceKm: event?.distanceKm,
+      elevationGainM: event?.elevationGainM,
+      estimatedDurationHours: event?.estimatedDurationHours,
+      maxParticipants: event?.maxParticipants,
+      costPerPerson: event?.costPerPerson,
+      requiredGear: event?.requiredGear,
+      includedItems: event?.includedItems,
+      cancellationPolicy: event?.cancellationPolicy,
+      imageUrl: event?.imageUrl,
+      hostName: event?.hostName,
+      groupId: event?.groupId
     }
     
     // Navigate to create event page with groupId and copyFrom parameters
     // This ensures the event belongs to the same group
-    navigate(`/create-event?groupId=${event.groupId}&copyFrom=${id}`, { state: { eventData } })
+    navigate(`/create-event?groupId=${event?.groupId}&copyFrom=${id}`, { state: { eventData } })
     toast.success('Event copied! Update the date and details as needed.')
   }
 
@@ -317,13 +317,19 @@ export default function EventDetailPage() {
   const hasJoined = event && isAuthenticated && event?.participantIds?.includes(user?.id)
   
   // Check if event is in the past
-  const isPastEvent = event ? new Date(event.eventDate) < new Date() : false
+  const isPastEvent = event ? new Date(event?.eventDate) < new Date() : false
   
   // Check if access is denied (non-member trying to view members-only event)
   // Organisers always have access
-  const isAccessDenied = !isEventOrganiser && (
+  // Safely check for 403 error with multiple possible error structures
+  const is403Error = error && (
     error?.response?.status === 403 || 
-    (event && event.title && !event.description)
+    error?.status === 403 ||
+    (error?.message && error.message.includes('403'))
+  )
+  const isAccessDenied = !isEventOrganiser && (
+    is403Error || 
+    (event && event?.title && !event?.description)
   )
   
   // Create display event for access-denied cases (partial data)
@@ -336,7 +342,7 @@ export default function EventDetailPage() {
   }
 
   // Calculate if event is multi-day
-  const startDate = event ? new Date(event.eventDate) : null
+  const startDate = event ? new Date(event?.eventDate) : null
   const endDate = event?.endDate ? new Date(event.endDate) : null
   const isMultiDay = startDate && endDate && (
     startDate.getFullYear() !== endDate.getFullYear() ||
@@ -553,7 +559,7 @@ export default function EventDetailPage() {
                   </button>
                 </div>
               ) : (
-                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{event.description}</p>
+                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{event?.description}</p>
               )}
             </div>
 
@@ -614,35 +620,35 @@ export default function EventDetailPage() {
                 ) : (
                   /* Full details for members */
                   <>
-                    {event.difficultyLevel && (
+                    {event?.difficultyLevel && (
                       <div className="flex items-start p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
                         <TrendingUp className="h-6 w-6 mr-4 mt-1 text-orange-600" />
                         <div>
                           <div className="text-sm text-gray-600">Difficulty Level</div>
-                          <div className="font-bold text-gray-900">{event.difficultyLevel}</div>
+                          <div className="font-bold text-gray-900">{event?.difficultyLevel}</div>
                         </div>
                       </div>
                     )}
 
-                    {event.distanceKm && (
+                    {event?.distanceKm && (
                       <div className="flex items-start p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
                         <Clock className="h-6 w-6 mr-4 mt-1 text-green-600" />
                         <div>
                           <div className="text-sm text-gray-600">Distance</div>
-                          <div className="font-bold text-gray-900">{event.distanceKm} km</div>
-                          {event.estimatedDurationHours && (
-                            <div className="text-sm text-gray-600 mt-1">Duration: ~{event.estimatedDurationHours} hours</div>
+                          <div className="font-bold text-gray-900">{event?.distanceKm} km</div>
+                          {event?.estimatedDurationHours && (
+                            <div className="text-sm text-gray-600 mt-1">Duration: ~{event?.estimatedDurationHours} hours</div>
                           )}
                         </div>
                       </div>
                     )}
 
-                    {event.elevationGainM && (
+                    {event?.elevationGainM && (
                       <div className="flex items-start p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl">
                         <ArrowUp className="h-6 w-6 mr-4 mt-1 text-blue-600" />
                         <div>
                           <div className="text-sm text-gray-600">Elevation Gain</div>
-                          <div className="font-bold text-gray-900">{event.elevationGainM} m</div>
+                          <div className="font-bold text-gray-900">{event?.elevationGainM} m</div>
                         </div>
                       </div>
                     )}
@@ -652,11 +658,11 @@ export default function EventDetailPage() {
             </div>
 
             {/* Requirements Section (members only) */}
-            {!isAccessDenied && event.requirements && event.requirements.length > 0 && (
+            {!isAccessDenied && event?.requirements && event?.requirements.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">⚠️ Requirements</h2>
                 <ul className="space-y-3">
-                  {Array.from(event.requirements).map((req, index) => (
+                  {Array.from(event?.requirements || []).map((req, index) => (
                     <li key={index} className="flex items-start">
                       <span className="inline-block w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                       <span className="text-gray-700">{req}</span>
@@ -667,11 +673,11 @@ export default function EventDetailPage() {
             )}
 
             {/* Included Items Section (members only) */}
-            {!isAccessDenied && event.includedItems && event.includedItems.length > 0 && (
+            {!isAccessDenied && event?.includedItems && event?.includedItems.length > 0 && (
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">✨ What's Included</h2>
                 <ul className="space-y-3">
-                  {Array.from(event.includedItems).map((item, index) => (
+                  {Array.from(event?.includedItems || []).map((item, index) => (
                     <li key={index} className="flex items-start">
                       <span className="inline-block w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
                       <span className="text-gray-700">{item}</span>
@@ -686,7 +692,7 @@ export default function EventDetailPage() {
               <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
                 <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
                   <Users className="inline h-7 w-7 mr-2 mb-1" />
-                  Attendees ({event.currentParticipants || 0}{event.maxParticipants ? `/${event.maxParticipants}` : ''})
+                  Attendees ({event?.currentParticipants || 0}{event?.maxParticipants ? `/${event?.maxParticipants}` : ''})
                 </h2>
                 {participantsData?.data && participantsData.data.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -735,10 +741,10 @@ export default function EventDetailPage() {
                 <>
                   <div>
                     <p className="text-sm text-gray-500 font-semibold mb-2">PRICE</p>
-                    {event.price > 0 ? (
+                    {event?.price > 0 ? (
                       <div className="flex items-center text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                         <DollarSign className="h-10 w-10 text-purple-600" />
-                        <span>{event.price}</span>
+                        <span>{event?.price}</span>
                       </div>
                     ) : (
                       <div className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Free</div>
