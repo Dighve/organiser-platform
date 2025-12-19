@@ -313,8 +313,8 @@ export default function EventDetailPage() {
   const event = data?.data
   
   // Check user's relationship to this event
-  const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event.organiserId)
-  const hasJoined = event && isAuthenticated && event.participantIds?.includes(user?.id)
+  const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
+  const hasJoined = event && isAuthenticated && event?.participantIds?.includes(user?.id)
   
   // Check if event is in the past
   const isPastEvent = event ? new Date(event.eventDate) < new Date() : false
@@ -499,7 +499,7 @@ export default function EventDetailPage() {
             ) : (
               <button
                 onClick={handleJoinClick}
-                disabled={event.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
+                disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
                 className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {joinMutation.isLoading || isJoiningFlow ? (
@@ -507,7 +507,7 @@ export default function EventDetailPage() {
                 ) : (
                   <Users className="h-5 w-5" />
                 )}
-                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
               </button>
             )
           ) : (
@@ -780,12 +780,12 @@ export default function EventDetailPage() {
                     <div className="space-y-3">
                       <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
                         <p className="text-orange-700 font-semibold">👑 You're the organiser</p>
-                        <p className="text-xs text-gray-600 mt-1">Status: <span className="font-mono font-bold">{event.status || 'UNKNOWN'}</span></p>
+                        <p className="text-xs text-gray-600 mt-1">Status: <span className="font-mono font-bold">{event?.status || 'UNKNOWN'}</span></p>
                       </div>
                       {!isPastEvent ? (
                         /* FUTURE EVENT - Show Publish (if DRAFT), Edit and Delete buttons */
                         <>
-                          {event.status === 'DRAFT' && (
+                          {event?.status === 'DRAFT' && (
                             <div className="space-y-3">
                               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl">
                                 <p className="text-sm text-yellow-800 text-center">
@@ -875,7 +875,7 @@ export default function EventDetailPage() {
                     /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
                     <button
                       onClick={handleJoinClick}
-                      disabled={event.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
+                      disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
                       className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
                     >
                       {joinMutation.isLoading || isJoiningFlow ? (
@@ -883,7 +883,7 @@ export default function EventDetailPage() {
                       ) : (
                         <Users className="h-5 w-5" />
                       )}
-                      {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                      {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
                     </button>
                   )
                 ) : (
@@ -901,7 +901,7 @@ export default function EventDetailPage() {
                   </div>
                 )}
 
-                {event.status === 'FULL' && (
+                {event?.status === 'FULL' && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                     <p className="text-sm text-red-600 text-center font-semibold">
                       ⚠️ This event is currently full
@@ -911,27 +911,27 @@ export default function EventDetailPage() {
               </div>
 
               {/* Location Map Section (members only) */}
-              {!isAccessDenied && event.location && (
+              {!isAccessDenied && event?.location && (
                 <div className="pt-6 border-t border-gray-200">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 mb-3">
                       <MapPin className="h-5 w-5 text-pink-600" />
                       <h3 className="font-bold text-gray-900">Location</h3>
                     </div>
-                    <p className="text-sm text-gray-700 mb-3">{event.location}</p>
+                    <p className="text-sm text-gray-700 mb-3">{event?.location}</p>
                     
                     {/* Clickable Compact Map Preview */}
                     <button
                       onClick={() => {
-                        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event.location)}`
+                        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event?.location || '')}`
                         window.open(googleMapsUrl, '_blank')
                       }}
                       className="relative w-full h-40 rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02]"
                     >
                       {/* Static Map from Google Maps */}
                       <img
-                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event.location)}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event.location)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
-                        alt={`Map of ${event.location}`}
+                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event?.location || '')}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event?.location || '')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
+                        alt={`Map of ${event?.location || 'Event location'}`}
                         className="w-full h-full object-cover"
                         loading="lazy"
                         decoding="async"

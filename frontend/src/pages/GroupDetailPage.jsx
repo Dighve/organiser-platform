@@ -196,6 +196,21 @@ export default function GroupDetailPage() {
   // COMPUTED VALUES - Derived from fetched data
   // ============================================
   const group = groupData?.data
+  
+  // Create display group for error cases (when group is null)
+  const displayGroup = group || {
+    name: 'Group',
+    activityName: 'Hiking',
+    imageUrl: null,
+    currentMembers: 0,
+    location: '',
+    isPublic: true,
+    maxMembers: null,
+    description: 'No description available.',
+    createdAt: null,
+    primaryOrganiserName: 'Organiser',
+  }
+  
   const groupEvents = eventsData?.data?.content || []
   const organisedGroups = organisedGroupsData?.data || []
   const subscribedGroups = subscribedGroupsData?.data || []
@@ -373,8 +388,8 @@ export default function GroupDetailPage() {
             
             {/* Banner image (custom or fallback) */}
             <img 
-              src={group.imageUrl || DEFAULT_GROUP_IMAGES[parseInt(id) % DEFAULT_GROUP_IMAGES.length]}
-              alt={`${group.name} banner`}
+              src={displayGroup.imageUrl || DEFAULT_GROUP_IMAGES[parseInt(id) % DEFAULT_GROUP_IMAGES.length]}
+              alt={`${displayGroup.name} banner`}
               className="w-full h-full object-cover mix-blend-overlay"
             />
             
@@ -386,32 +401,32 @@ export default function GroupDetailPage() {
               <div className="flex items-end justify-between">
                 <div className="flex-1">
                   <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white font-semibold text-sm mb-4">
-                    {group.activityName}
+                    {displayGroup.activityName}
                   </div>
-                  <h1 className="text-5xl font-extrabold text-white mb-4 drop-shadow-2xl">{group.name}</h1>
+                  <h1 className="text-5xl font-extrabold text-white mb-4 drop-shadow-2xl">{displayGroup.name}</h1>
                   <div className="flex items-center gap-6 text-white/90">
                     <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                       <Users className="h-5 w-5" />
-                      <span className="font-semibold">{group.currentMembers || 0}</span>
+                      <span className="font-semibold">{displayGroup.currentMembers || 0}</span>
                       <span className="text-white/70">members</span>
                     </div>
-                    {group.location && (
+                    {displayGroup.location && (
                       <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                         <MapPin className="h-5 w-5" />
-                        <span>{group.location}</span>
+                        <span>{displayGroup.location}</span>
                       </div>
                     )}
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
                   <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-lg ${
-                    group.isPublic ? 'bg-green-500 text-white' : 'bg-gray-700 text-white'
+                    displayGroup.isPublic ? 'bg-green-500 text-white' : 'bg-gray-700 text-white'
                   }`}>
-                    {group.isPublic ? '🌍 Public' : '🔒 Private'}
+                    {displayGroup.isPublic ? '🌍 Public' : '🔒 Private'}
                   </span>
-                  {group.maxMembers && (
+                  {displayGroup.maxMembers && (
                     <span className="px-4 py-2 bg-white text-purple-700 rounded-full text-sm font-bold shadow-lg">
-                      Max: {group.maxMembers}
+                      Max: {displayGroup.maxMembers}
                     </span>
                   )}
                 </div>
@@ -558,14 +573,14 @@ export default function GroupDetailPage() {
                   
                   {/* Group description text */}
                   <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap mb-8">
-                    {group.description || 'No description available.'}
+                    {displayGroup.description || 'No description available.'}
                   </p>
                   
                   {/* Group creation date */}
-                  {group.createdAt && (
+                  {displayGroup.createdAt && (
                     <div className="flex items-center gap-2 text-gray-500 text-sm pb-8 border-t border-gray-200 pt-8 mb-8">
                       <Calendar className="h-4 w-4" />
-                      <span>Created on {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                      <span>Created on {new Date(displayGroup.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   )}
 
@@ -788,10 +803,10 @@ export default function GroupDetailPage() {
                 )}
 
                 {/* Organiser information */}
-                {group.primaryOrganiserName && (
+                {displayGroup.primaryOrganiserName && (
                   <div className="mt-6 pt-6 border-t border-gray-200">
                     <h4 className="text-sm font-semibold text-gray-500 mb-2">ORGANISED BY</h4>
-                    <p className="text-gray-900 font-semibold text-lg">{group.primaryOrganiserName}</p>
+                    <p className="text-gray-900 font-semibold text-lg">{displayGroup.primaryOrganiserName}</p>
                   </div>
                 )}
               </div>
