@@ -185,7 +185,12 @@ public class EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
-        // Check if user is a member of the group
+        // If group is public, show full event details to everyone
+        if (event.getGroup().getIsPublic()) {
+            return convertToDTO(event);
+        }
+        
+        // For private groups, check if user is a member
         // If not a member, return partial event data (title, date, organiser, activity only)
         if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
             return convertToPartialDTO(event);

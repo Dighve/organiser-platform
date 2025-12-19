@@ -50,16 +50,20 @@ public class EventCommentService {
     
     /**
      * Get all comments for an event with their replies.
-     * Requires group membership to view.
+     * Public groups: Anyone can view comments
+     * Private groups: Requires group membership to view
      */
     @Transactional(readOnly = true)
     public List<CommentDTO> getEventComments(Long eventId, Long memberId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
-        // Check if user is a member of the group
-        if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
-            throw new RuntimeException("Access denied. You must be a member of the group to view comments.");
+        // If group is public, allow everyone to view comments
+        if (!event.getGroup().getIsPublic()) {
+            // For private groups, check if user is a member
+            if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
+                throw new RuntimeException("Access denied. You must be a member of the group to view comments.");
+            }
         }
         
         List<EventComment> comments = commentRepository.findByEventIdOrderByCreatedAtDesc(eventId);
@@ -70,16 +74,19 @@ public class EventCommentService {
     
     /**
      * Create a new comment on an event.
-     * Requires group membership.
+     * Public groups: Anyone can comment
+     * Private groups: Requires group membership
      */
     @Transactional
     public CommentDTO createComment(Long eventId, CreateCommentRequest request, Long memberId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
-        // Check if user is a member of the group
-        if (!groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
-            throw new RuntimeException("Access denied. You must be a member of the group to comment.");
+        // For private groups, check if user is a member
+        if (!event.getGroup().getIsPublic()) {
+            if (!groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
+                throw new RuntimeException("Access denied. You must be a member of the group to comment.");
+            }
         }
         
         Member member = memberRepository.findById(memberId)
