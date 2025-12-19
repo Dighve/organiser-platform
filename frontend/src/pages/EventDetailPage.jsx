@@ -339,8 +339,8 @@ export default function EventDetailPage() {
   // ERROR STATES
   // ============================================
   
-  // Event not found
-  if (!event) {
+  // Event not found - Only show if not loading and no error (avoid race conditions on mobile Safari)
+  if (!isLoading && !event && !error) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-10 text-center max-w-md">
