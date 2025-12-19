@@ -89,8 +89,23 @@ export default function BrowseGroupsPage() {
       queryClient.invalidateQueries(['myGroups'])
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to join group')
-      setPendingGroupId(null)  // Clear pending state on error
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to join group'
+      
+      // Check if already subscribed
+      if (errorMessage.includes('Already subscribed')) {
+        toast.success('You are already a member of this group!')
+        // Refresh queries to update UI
+        queryClient.invalidateQueries(['publicGroups'])
+        queryClient.invalidateQueries(['myGroups'])
+        // Switch to member tab if this was from login flow
+        if (pendingGroupId) {
+          setActiveTab('member')
+        }
+      } else {
+        toast.error(errorMessage)
+      }
+      
+      setPendingGroupId(null)  // Clear pending state
     },
   })
   
