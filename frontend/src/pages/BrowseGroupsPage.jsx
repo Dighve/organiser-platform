@@ -7,6 +7,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { Users, Search, Plus, Calendar } from 'lucide-react'
+import LoginModal from '../components/LoginModal'
+import toast from 'react-hot-toast'
 
 // ============================================================
 // MAIN COMPONENT
@@ -24,6 +26,8 @@ export default function BrowseGroupsPage() {
   // ============================================================
   const [searchQuery, setSearchQuery] = useState('')  // Search input for explore tab
   const [activeTab, setActiveTab] = useState('explore')  // Current tab: 'explore', 'member', or 'organiser'
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)  // Login modal state
+  const [pendingGroupId, setPendingGroupId] = useState(null)  // Group to join after login
   
   // ============================================================
   // EFFECTS
@@ -66,8 +70,12 @@ export default function BrowseGroupsPage() {
   const subscribeMutation = useMutation({
     mutationFn: (groupId) => groupsAPI.subscribeToGroup(groupId),
     onSuccess: () => {
+      toast.success('Successfully joined the group!')
       queryClient.invalidateQueries(['publicGroups'])
       queryClient.invalidateQueries(['myGroups'])
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to join group')
     },
   })
   
@@ -75,8 +83,12 @@ export default function BrowseGroupsPage() {
   const unsubscribeMutation = useMutation({
     mutationFn: (groupId) => groupsAPI.unsubscribeFromGroup(groupId),
     onSuccess: () => {
+      toast.success('Successfully left the group')
       queryClient.invalidateQueries(['publicGroups'])
       queryClient.invalidateQueries(['myGroups'])
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to leave group')
     },
   })
   
@@ -153,11 +165,23 @@ export default function BrowseGroupsPage() {
   // EVENT HANDLERS
   // ============================================================
   
-  // Handle subscribe to group (redirect to login if not authenticated)
+  // Handle subscribe to group (show login modal if not authenticated)
   const handleSubscribe = (groupId) => {
-    if (!isAuthenticated) return navigate('/login')
+    if (!isAuthenticated) {
+      setPendingGroupId(groupId)
+      setIsLoginModalOpen(true)
+      return
+    }
     subscribeMutation.mutate(groupId)
   }
+  
+  // Auto-join group after successful login
+  useEffect(() => {
+    if (isAuthenticated && pendingGroupId) {
+      subscribeMutation.mutate(pendingGroupId)
+      setPendingGroupId(null)
+    }
+  }, [isAuthenticated, pendingGroupId])
   
   // Handle unsubscribe from group (with confirmation)
   const handleUnsubscribe = (groupId) => {
@@ -176,6 +200,16 @@ export default function BrowseGroupsPage() {
   // MAIN RENDER
   // ============================================================
   return (
+    <>
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => {
+          setIsLoginModalOpen(false)
+          setPendingGroupId(null)
+        }} 
+      />
+      
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -331,6 +365,7 @@ export default function BrowseGroupsPage() {
         })()}
       </div>
     </div>
+    </>
   )
 }
 
