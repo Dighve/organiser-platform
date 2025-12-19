@@ -325,6 +325,15 @@ export default function EventDetailPage() {
     error?.response?.status === 403 || 
     (event && event.title && !event.description)
   )
+  
+  // Create display event for access-denied cases (partial data)
+  const displayEvent = event || {
+    title: 'Members Only Event',
+    activityTypeName: 'Hiking',
+    organiserName: 'Event Organiser',
+    imageUrl: null,
+    eventDate: new Date().toISOString(),
+  }
 
   // Calculate if event is multi-day
   const startDate = event ? new Date(event.eventDate) : null
@@ -404,17 +413,17 @@ export default function EventDetailPage() {
           <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-30" />
           
           {/* Mountain icon placeholder when no image or image failed/loading */}
-          {(!event.imageUrl || heroImageError || !heroImageLoaded) && (
+          {(!displayEvent.imageUrl || heroImageError || !heroImageLoaded) && (
             <div className="absolute inset-0 flex items-center justify-center">
               <Mountain className="w-32 h-32 text-white/40" />
             </div>
           )}
           
           {/* Event image (custom or fallback) */}
-          {event.imageUrl && !heroImageError && (
+          {displayEvent.imageUrl && !heroImageError && (
             <img 
-              src={event.imageUrl}
-              alt={event.title} 
+              src={displayEvent.imageUrl}
+              alt={displayEvent.title} 
               className="w-full h-full object-cover mix-blend-overlay"
               loading="eager"
               decoding="async"
@@ -429,11 +438,11 @@ export default function EventDetailPage() {
           {/* Overlay with event info */}
           <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
             <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white font-semibold text-sm mb-3">
-              {event.activityTypeName}
+              {displayEvent.activityTypeName || 'Hiking'}
             </div>
-            <h1 className="text-5xl font-extrabold text-white mb-3 drop-shadow-2xl">{event.title}</h1>
+            <h1 className="text-5xl font-extrabold text-white mb-3 drop-shadow-2xl">{displayEvent.title || 'Event'}</h1>
             <div className="flex items-center text-white/90">
-              <span>Hosted by <span className="font-bold">{event.organiserName}</span></span>
+              <span>Hosted by <span className="font-bold">{displayEvent.organiserName || 'Organiser'}</span></span>
             </div>
           </div>
         </div>
