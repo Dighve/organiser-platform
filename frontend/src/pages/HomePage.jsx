@@ -242,18 +242,33 @@ export default function HomePage() {
       
       {/* ========== LEFT SIDEBAR: YOUR GROUPS ========== */}
       <div className="w-full lg:w-1/4">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Groups</h2>
-          <button
-            onClick={() => navigate('/browse-groups')}
-            className="text-sm font-semibold text-purple-600 hover:text-pink-600 transition-colors flex items-center gap-1 group"
-          >
-            Explore
-            <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
+        {isAuthenticated ? (
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Groups</h2>
+            <button
+              onClick={() => navigate('/browse-groups')}
+              className="text-sm font-semibold text-purple-600 hover:text-pink-600 transition-colors flex items-center gap-1 group"
+            >
+              Explore
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Groups</h2>
+            <button
+              onClick={() => navigate('/browse-groups')}
+              className="text-sm font-semibold text-purple-600 hover:text-pink-600 transition-colors flex items-center gap-1 group"
+            >
+              Explore
+              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
         
         {/* Tabs - Modern pill style */}
         {isAuthenticated && (
@@ -285,6 +300,24 @@ export default function HomePage() {
           </div>
         )}
         
+        {/* Login prompt for non-authenticated users */}
+        {!isAuthenticated ? (
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 text-center border-2 border-dashed border-purple-300 shadow-lg">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+              <svg className="w-8 h-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Login to See Your Groups</h3>
+            <p className="text-sm text-gray-600 mb-4">Join groups and connect with outdoor enthusiasts</p>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+            >
+              Login Now
+            </button>
+          </div>
+        ) : (
         <div className="space-y-3">
           {/* ========== MEMBER TAB - Subscribed Groups ========== */}
           {activeGroupTab === 'member' && (
@@ -332,7 +365,7 @@ export default function HomePage() {
               ) : (
                 <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 text-center border border-gray-200">
                   <div className="text-gray-500">
-                    {isAuthenticated ? '🎯 No groups yet. Join some groups to get started!' : '🔐 Login to see your groups'}
+                    🎯 No groups yet. Join some groups to get started!
                   </div>
                 </div>
               )}
@@ -411,6 +444,7 @@ export default function HomePage() {
             </>
           )}
         </div>
+        )}
       </div>
 
       {/* ========== RIGHT CONTENT: EVENTS ========== */}
@@ -418,10 +452,16 @@ export default function HomePage() {
         
         {/* ========== YOUR EVENTS SECTION ========== */}
         <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Events</h2>
-            <span className="text-sm text-gray-500 font-medium">{yourEvents.length} event{yourEvents.length !== 1 ? 's' : ''}</span>
-          </div>
+          {isAuthenticated ? (
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Events</h2>
+              <span className="text-sm text-gray-500 font-medium">{yourEvents.length} event{yourEvents.length !== 1 ? 's' : ''}</span>
+            </div>
+          ) : (
+            <div className="mb-6">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Events</h2>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {yourEventsLoading ? (
               <div className="col-span-full flex items-center justify-center py-12">
@@ -495,11 +535,27 @@ export default function HomePage() {
                   </div>
                 </div>
               ))
-            ) : (
+            ) : isAuthenticated ? (
               <div className="col-span-full bg-white/60 backdrop-blur-sm rounded-2xl p-12 text-center border border-gray-200">
                 <div className="text-gray-500 text-lg">
-                  {isAuthenticated ? '🎯 No events yet. Discover events below!' : '🔐 Login to see your events'}
+                  🎯 No events yet. Discover events below!
                 </div>
+              </div>
+            ) : (
+              <div className="col-span-full bg-white/80 backdrop-blur-sm rounded-2xl p-12 text-center border-2 border-dashed border-purple-300 shadow-lg">
+                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
+                  <svg className="w-10 h-10 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">Login to See Your Events</h3>
+                <p className="text-gray-600 mb-6">Track your upcoming adventures and manage your registrations</p>
+                <button
+                  onClick={() => navigate('/login')}
+                  className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+                >
+                  Login Now
+                </button>
               </div>
             )}
           </div>
