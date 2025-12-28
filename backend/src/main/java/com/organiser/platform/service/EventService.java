@@ -6,6 +6,7 @@ package com.organiser.platform.service;
 import com.organiser.platform.dto.CalendarEventDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
+import com.organiser.platform.exception.AlreadyRegisteredException;
 import com.organiser.platform.model.*;
 import java.math.BigDecimal;
 import com.organiser.platform.repository.*;
@@ -334,9 +335,10 @@ public class EventService {
                 .orElseThrow(() -> new RuntimeException("Member not found"));
         
         // CHECK IF ALREADY REGISTERED (prevent duplicate registrations)
+        // Note: This is expected behavior when users click "Join" multiple times or refresh after joining
         boolean alreadyRegistered = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId).isPresent();
         if (alreadyRegistered) {
-            throw new RuntimeException("You are already registered for this event");
+            throw new AlreadyRegisteredException("You are already registered for this event");
         }
         
         // Check if the event is full

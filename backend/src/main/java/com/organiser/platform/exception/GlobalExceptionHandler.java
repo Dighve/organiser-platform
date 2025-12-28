@@ -44,6 +44,30 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * Handle already registered exceptions (not an error - expected behavior)
+     * User clicked "Join" when already registered - log at WARN level without stack trace
+     */
+    @ExceptionHandler(AlreadyRegisteredException.class)
+    public ResponseEntity<Map<String, Object>> handleAlreadyRegistered(
+            AlreadyRegisteredException ex,
+            WebRequest request) {
+        
+        Map<String, Object> errorResponse = new HashMap<>();
+        errorResponse.put("timestamp", LocalDateTime.now().toString());
+        errorResponse.put("message", ex.getMessage());
+        errorResponse.put("status", HttpStatus.BAD_REQUEST.value());
+        
+        // Log at WARN level without stack trace - this is expected behavior, not an error
+        log.warn("User already registered: {} - Request: {}", 
+            ex.getMessage(), 
+            request.getDescription(false));
+        
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(errorResponse);
+    }
+    
+    /**
      * Handle validation exceptions
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)

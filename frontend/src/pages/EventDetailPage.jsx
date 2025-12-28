@@ -339,6 +339,12 @@ export default function EventDetailPage() {
     organiserName: 'Event Organiser',
     imageUrl: null,
     eventDate: new Date().toISOString(),
+    startTime: '09:00',
+    groupName: 'Private Group',
+    groupId: null,
+    description: '',
+    participantIds: [],
+    currentParticipants: 0,
   }
 
   // Calculate if event is multi-day
@@ -354,23 +360,33 @@ export default function EventDetailPage() {
   // ERROR STATES
   // ============================================
   
-  // Event not found - Only show if not loading and no error (avoid race conditions on mobile Safari)
-  if (!isLoading && !event && !error) {
-    return (
-      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-10 text-center max-w-md">
-          <div className="text-6xl mb-4">😕</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Event not found</h2>
-          <p className="text-gray-600 mb-6">The event you're looking for doesn't exist or has been removed.</p>
-          <button 
-            onClick={() => navigate('/')} 
-            className="py-3 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
-          >
-            Back to Home
-          </button>
+  // Event not found - Show if not loading and no event data
+  // BUT: Allow 403 errors to pass through (they render partial view with "Join" buttons)
+  if (!isLoading && !event && error) {
+    // Check if it's a 403 error (access denied - non-member viewing members-only event)
+    const is403 = error?.response?.status === 403 || 
+                  error?.status === 403 ||
+                  (error?.message && error.message.includes('403'))
+    
+    // For 403 errors, continue to render (partial view with join buttons)
+    // For other errors, show error page
+    if (!is403) {
+      return (
+        <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-10 text-center max-w-md">
+            <div className="text-6xl mb-4">😕</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Event not found</h2>
+            <p className="text-gray-600 mb-6">The event you're looking for doesn't exist or has been removed.</p>
+            <button 
+              onClick={() => navigate('/')} 
+              className="py-3 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+            >
+              Back to Home
+            </button>
+          </div>
         </div>
-      </div>
-    )
+      )
+    }
   }
 
   // Format dates for display (with timezone support)
@@ -965,7 +981,7 @@ export default function EventDetailPage() {
               )}
 
               {/* Group Information Section */}
-              {event.groupName && (
+              {displayEvent.groupName && (
                 <div className="pt-6 border-t border-gray-200">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 mb-3">
@@ -973,9 +989,9 @@ export default function EventDetailPage() {
                       <h3 className="font-bold text-gray-900">Organized by</h3>
                     </div>
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
-                      <p className="font-bold text-gray-900 mb-2">{event.groupName}</p>
+                      <p className="font-bold text-gray-900 mb-2">{displayEvent.groupName}</p>
                       <button
-                        onClick={() => navigate(`/groups/${event.groupId}`)}
+                        onClick={() => navigate(`/groups/${displayEvent.groupId}`)}
                         className="w-full py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all transform hover:scale-105 text-sm"
                       >
                         View Group
