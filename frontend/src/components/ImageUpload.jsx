@@ -2,10 +2,12 @@ import { useState, useRef, useEffect } from 'react'
 import { Upload, X, Image as ImageIcon, Loader2, CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import axios from 'axios'
+import { useAuthStore } from '../store/authStore'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
 export default function ImageUpload({ value, onChange, folder = 'event-photo' }) {
+  const { token, isAuthenticated } = useAuthStore()
   const [uploading, setUploading] = useState(false)
   const [preview, setPreview] = useState(value || null)
   const fileInputRef = useRef(null)
@@ -51,18 +53,13 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
     setUploading(true)
     
     try {
-      const token = localStorage.getItem('token')
-      
       // Check if user is authenticated
-      if (!token) {
+      if (!isAuthenticated || !token) {
         toast.error('Please login to upload images')
         setPreview(null)
         setUploading(false)
         return
       }
-
-      console.log('Uploading to:', `${API_URL}/files/upload/${folder}`)
-      console.log('Token exists:', !!token)
       
       const response = await axios.post(
         `${API_URL}/files/upload/${folder}`,
