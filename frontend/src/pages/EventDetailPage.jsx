@@ -429,11 +429,11 @@ export default function EventDetailPage() {
         </button>
 
         {/* ============================================ */}
-        {/* HERO IMAGE with event title and organiser */}
+        {/* HERO IMAGE - Clean, no overlay */}
         {/* ============================================ */}
-        <div className="relative h-[500px] rounded-3xl overflow-hidden bg-gray-200 mb-8 shadow-2xl">
-          {/* Gradient overlay - always visible */}
-          <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-30" />
+        <div className="relative h-[400px] md:h-[500px] rounded-3xl overflow-hidden bg-gray-200 mb-6 shadow-2xl">
+          {/* Gradient overlay - subtle */}
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500 to-pink-500 opacity-20" />
           
           {/* Mountain icon placeholder when no image or image failed/loading */}
           {(!displayEvent.imageUrl || heroImageError || !heroImageLoaded) && (
@@ -447,7 +447,7 @@ export default function EventDetailPage() {
             <img 
               src={displayEvent.imageUrl}
               alt={displayEvent.title} 
-              className="w-full h-full object-cover mix-blend-overlay"
+              className="w-full h-full object-cover"
               loading="eager"
               decoding="async"
               onLoad={() => setHeroImageLoaded(true)}
@@ -457,16 +457,20 @@ export default function EventDetailPage() {
               }}
             />
           )}
-          
-          {/* Overlay with event info */}
-          <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 to-transparent">
-            <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white font-semibold text-sm mb-3">
-              {displayEvent.activityTypeName || 'Hiking'}
-            </div>
-            <h1 className="text-5xl font-extrabold text-white mb-3 drop-shadow-2xl">{displayEvent.title || 'Event'}</h1>
-            <div className="flex items-center text-white/90">
-              <span>Hosted by <span className="font-bold">{displayEvent.organiserName || 'Organiser'}</span></span>
-            </div>
+        </div>
+
+        {/* ============================================ */}
+        {/* EVENT TITLE & INFO - Below image */}
+        {/* ============================================ */}
+        <div className="mb-8">
+          <div className="inline-block px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full text-white font-semibold text-sm mb-4 shadow-md">
+            {displayEvent.activityTypeName || 'Hiking'}
+          </div>
+          <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-3">
+            {displayEvent.title || 'Event'}
+          </h1>
+          <div className="flex items-center text-gray-600 text-lg">
+            <span>Hosted by <span className="font-bold text-gray-900">{displayEvent.organiserName || 'Organiser'}</span></span>
           </div>
         </div>
 
