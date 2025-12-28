@@ -579,8 +579,8 @@ export default function EventDetailPage() {
                   </button>
                 </div>
               ) : (
-                <div className="prose prose-lg max-w-none">
-                  <ReactMarkdown className="text-gray-700 leading-relaxed">
+                <div className="prose prose-lg max-w-none text-gray-700">
+                  <ReactMarkdown>
                     {event?.description || ''}
                   </ReactMarkdown>
                 </div>
