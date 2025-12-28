@@ -54,7 +54,7 @@ public class SecurityConfig {
                         // Public READ-ONLY endpoints for groups
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/groups/public", "GET"),
-                                new AntPathRequestMatcher("/api/v1/groups/*/public", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*", "GET"),
                                 new AntPathRequestMatcher("/api/v1/groups/*/members", "GET")
                         ).permitAll()
                         
