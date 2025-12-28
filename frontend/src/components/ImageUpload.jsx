@@ -3,7 +3,7 @@ import { Upload, X, Image as ImageIcon, Loader2, CheckCircle } from 'lucide-reac
 import toast from 'react-hot-toast'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
 export default function ImageUpload({ value, onChange, folder = 'event-photo' }) {
   const [uploading, setUploading] = useState(false)
@@ -52,13 +52,25 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
     
     try {
       const token = localStorage.getItem('token')
+      
+      // Check if user is authenticated
+      if (!token) {
+        toast.error('Please login to upload images')
+        setPreview(null)
+        setUploading(false)
+        return
+      }
+
+      console.log('Uploading to:', `${API_URL}/files/upload/${folder}`)
+      console.log('Token exists:', !!token)
+      
       const response = await axios.post(
         `${API_URL}/files/upload/${folder}`,
         formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            'Authorization': token ? `Bearer ${token}` : ''
+            'Authorization': `Bearer ${token}`
           }
         }
       )
@@ -71,8 +83,15 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
       }
     } catch (error) {
       console.error('Upload error:', error)
+      console.error('Error response:', error.response?.data)
+      console.error('Error status:', error.response?.status)
       setPreview(null)
-      toast.error(error.response?.data?.error || 'Failed to upload image. Please try again.')
+      
+      if (error.response?.status === 403) {
+        toast.error('Authentication failed. Please login again.')
+      } else {
+        toast.error(error.response?.data?.error || 'Failed to upload image. Please try again.')
+      }
     } finally {
       setUploading(false)
     }

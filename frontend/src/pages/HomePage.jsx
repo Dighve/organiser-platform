@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import LoginModal from '../components/LoginModal'
 
 // ============================================================
 // MAIN COMPONENT
@@ -22,6 +23,7 @@ export default function HomePage() {
   // ============================================================
   const [activeGroupTab, setActiveGroupTab] = useState('member')  // Tab selection: 'member' or 'organiser'
   const [hasInitializedTab, setHasInitializedTab] = useState(false)  // Track if tab has been auto-selected
+  const [loginModalOpen, setLoginModalOpen] = useState(false)  // Login modal state
   
   // Check if user has already clicked discover before (localStorage)
   const [showDiscover, setShowDiscover] = useState(() => {
@@ -311,7 +313,7 @@ export default function HomePage() {
             <h3 className="text-lg font-bold text-gray-900 mb-2">Login to See Your Groups</h3>
             <p className="text-sm text-gray-600 mb-4">Join groups and connect with outdoor enthusiasts</p>
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => setLoginModalOpen(true)}
               className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
             >
               Login Now
@@ -551,7 +553,7 @@ export default function HomePage() {
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Login to See Your Events</h3>
                 <p className="text-gray-600 mb-6">Track your upcoming adventures and manage your registrations</p>
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={() => setLoginModalOpen(true)}
                   className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
                 >
                   Login Now
@@ -648,6 +650,12 @@ export default function HomePage() {
           </div>
         </div>
       </div>
+
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={loginModalOpen} 
+        onClose={() => setLoginModalOpen(false)} 
+      />
     </div>
   )
 }
