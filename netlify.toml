@@ -6,7 +6,7 @@
   command = "npm run build"
   
   # Directory with the static content (relative to base)
-  publish = "frontend/dist"
+  publish = "dist"
 
 # Redirect all requests to index.html for client-side routing
 [[redirects]]
