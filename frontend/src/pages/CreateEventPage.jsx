@@ -625,7 +625,9 @@ export default function CreateEventPage() {
             placeholder="Describe your hike, meeting point, what to expect..."
           />
         </div>
-        <p className="text-sm text-gray-500 mt-2 ml-1">💡 Help hikers know what to expect on this adventure</p>
+        <p className="text-sm text-gray-500 mt-2 ml-1">
+          💡 Help hikers know what to expect. Use **bold** for emphasis, *italic* for notes
+        </p>
       </div>
 
       <div className="flex justify-end pt-4">

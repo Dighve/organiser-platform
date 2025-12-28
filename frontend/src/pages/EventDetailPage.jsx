@@ -6,6 +6,7 @@ import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
+import ReactMarkdown from 'react-markdown'
 import CommentSection from '../components/CommentSection'
 import ProfileAvatar from '../components/ProfileAvatar'
 import LoginModal from '../components/LoginModal'
@@ -578,7 +579,11 @@ export default function EventDetailPage() {
                   </button>
                 </div>
               ) : (
-                <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap">{event?.description}</p>
+                <div className="prose prose-lg max-w-none">
+                  <ReactMarkdown className="text-gray-700 leading-relaxed">
+                    {event?.description || ''}
+                  </ReactMarkdown>
+                </div>
               )}
             </div>
 
