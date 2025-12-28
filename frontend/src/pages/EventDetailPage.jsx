@@ -518,7 +518,10 @@ export default function EventDetailPage() {
             )
           ) : (
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => {
+                setReturnUrl(`/events/${id}?action=join`)
+                setIsLoginModalOpen(true)
+              }}
               className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
             >
               <LogIn className="h-5 w-5" />
@@ -899,7 +902,10 @@ export default function EventDetailPage() {
                       <p className="text-sm text-gray-600">🔐 Login to join this event</p>
                     </div>
                     <button
-                      onClick={() => navigate('/login')}
+                      onClick={() => {
+                        setReturnUrl(`/events/${id}?action=join`)
+                        setIsLoginModalOpen(true)
+                      }}
                       className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
                     >
                       Login to Join

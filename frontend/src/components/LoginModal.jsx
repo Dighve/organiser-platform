@@ -38,20 +38,10 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
     onSuccess: async (tokenResponse) => {
       setIsLoading(true)
       try {
-        // Use access token to get user info from Google
-        const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-          headers: {
-            Authorization: `Bearer ${tokenResponse.access_token}`,
-          },
-        })
-        
-        const userInfo = await userInfoResponse.json()
-        
-        // Send user info to backend (backend will create/update user)
+        // Send access token to backend (backend will verify and get user info from Google)
         const response = await authAPI.authenticateWithGoogle({
           idToken: tokenResponse.access_token, // Send access token
-          redirectUrl: returnUrl,
-          userInfo: userInfo // Send user info directly
+          redirectUrl: returnUrl
         })
         
         const { token, userId, email, role, isOrganiser } = response.data

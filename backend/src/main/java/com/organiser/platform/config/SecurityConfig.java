@@ -43,9 +43,12 @@ public class SecurityConfig {
                         // Public READ-ONLY endpoints for events
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/events/public", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/public/*", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/public/search", "GET"),
-                                new AntPathRequestMatcher("/api/v1/events/*/public", "GET"),
-                                new AntPathRequestMatcher("/api/v1/events/*/calendar", "GET")
+                                new AntPathRequestMatcher("/api/v1/events/public/activity/*", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/public/group/*", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/public/*/participants", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/public/*/calendar", "GET")
                         ).permitAll()
                         
                         // Public READ-ONLY endpoints for groups
