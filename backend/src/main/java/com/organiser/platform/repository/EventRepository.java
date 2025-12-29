@@ -22,7 +22,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Page<Event> findByActivityId(@Param("activityId") Long activityId, Pageable pageable);
     
     // Get events by organiser through group relationship
-    @Query("SELECT e FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId ORDER BY e.eventDate DESC")
+    @Query("SELECT e FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId ORDER BY e.eventDate ASC")
     Page<Event> findByOrganiserId(@Param("organiserId") Long organiserId, Pageable pageable);
     
     // Get events by group
@@ -61,7 +61,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
         Pageable pageable
     );
     
-    @Query("SELECT e FROM Event e JOIN e.participants p WHERE p.id = :userId ORDER BY e.eventDate DESC")
+    @Query("SELECT e FROM Event e JOIN e.participants p WHERE p.id = :userId ORDER BY e.eventDate ASC")
     Page<Event> findEventsByParticipant(@Param("userId") Long userId, Pageable pageable);
     
     @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
@@ -71,7 +71,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
            "OR LOWER(e.difficultyLevel) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.group.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.group.primaryOrganiser.displayName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "OR LOWER(e.group.primaryOrganiser.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+           "OR LOWER(e.group.primaryOrganiser.email) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+           "ORDER BY e.eventDate ASC")
     Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") Instant now, Pageable pageable);
     
     // Admin dashboard queries
