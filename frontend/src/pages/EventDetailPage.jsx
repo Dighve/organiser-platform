@@ -52,9 +52,9 @@ export default function EventDetailPage() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['event', id],
     queryFn: () => eventsAPI.getEventById(id),
-    staleTime: 0, // Always refetch to ensure membership changes are reflected immediately
-    refetchOnMount: 'always', // Always refetch when component mounts (e.g., after joining group)
-    refetchOnWindowFocus: true, // Refetch when window regains focus
+    staleTime: 2 * 60 * 1000, // Cache for 2 minutes - reduces unnecessary refetches
+    refetchOnMount: false, // Don't refetch on every mount - use cache
+    refetchOnWindowFocus: false, // Don't refetch on window focus - reduces API calls
     retry: (failureCount, error) => {
       // Don't retry on 403 errors (non-member trying to access)
       if (error?.response?.status === 403) {
@@ -583,8 +583,12 @@ export default function EventDetailPage() {
                   </button>
                 </div>
               ) : (
-                <div className="prose prose-lg max-w-none text-gray-700">
-                  <ReactMarkdown>
+                <div className="prose prose-lg max-w-none text-gray-700 whitespace-pre-wrap">
+                  <ReactMarkdown
+                    components={{
+                      p: ({node, ...props}) => <p className="mb-4" {...props} />
+                    }}
+                  >
                     {event?.description || ''}
                   </ReactMarkdown>
                 </div>
