@@ -163,6 +163,7 @@ export default function CreateEventPage() {
   const watchedLocation = watch('location')
   const watchedLatitude = watch('latitude')
   const watchedLongitude = watch('longitude')
+  const watchedHostMemberId = watch('hostMemberId')
   const watchedHostName = watch('hostName')
   const selectedDate = watch('eventDate')
   const selectedEndDate = watch('endDate')
@@ -381,7 +382,8 @@ export default function CreateEventPage() {
       additionalImages: [],
       requirements: selectedRequirements,
       includedItems: data.includedItems ? data.includedItems.split(',').map(s => s.trim()).filter(Boolean) : [],
-      cancellationPolicy: data.cancellationPolicy || null
+      cancellationPolicy: data.cancellationPolicy || null,
+      hostMemberId: data.hostMemberId ? Number(data.hostMemberId) : null
     }
 
     // Debug logging
@@ -885,9 +887,20 @@ export default function CreateEventPage() {
           <MemberAutocomplete
             groupId={groupId}
             value={watchedHostName}
-            onChange={(value) => setValue('hostName', value)}
+            onChange={(value) => {
+              if (typeof value === 'object' && value.id) {
+                // Member selected from dropdown
+                setValue('hostMemberId', value.id)
+                setValue('hostName', value.name)
+              } else {
+                // Manual text input
+                setValue('hostMemberId', null)
+                setValue('hostName', value)
+              }
+            }}
             error={errors.hostName?.message}
           />
+          <input type="hidden" {...register('hostMemberId')} />
           <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
           {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
           <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>

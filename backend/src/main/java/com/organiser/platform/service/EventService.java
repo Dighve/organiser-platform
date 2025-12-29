@@ -76,11 +76,24 @@ public class EventService {
         // Get the activity from the group
         Activity activity = group.getActivity();
         
+        // Get host member if specified
+        Member hostMember = null;
+        if (request.getHostMemberId() != null) {
+            hostMember = memberRepository.findById(request.getHostMemberId())
+                    .orElseThrow(() -> new RuntimeException("Host member not found"));
+            
+            // Verify host is a member of the group
+            if (!groupService.isMemberOfGroup(hostMember.getId(), group.getId())) {
+                throw new RuntimeException("Host must be a member of the group");
+            }
+        }
+        
         // Build the event with all required fields
         Event event = Event.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .group(group)
+                .hostMember(hostMember)
                 .eventDate(request.getEventDate())
                 .endDate(request.getEndDate())
                 .registrationDeadline(request.getRegistrationDeadline())
@@ -113,15 +126,17 @@ public class EventService {
         
         event = eventRepository.save(event);
         
-        // Automatically add the organiser as a participant
-        EventParticipant organiserParticipant = EventParticipant.builder()
-                .event(event)
-                .member(organiser)
-                .status(EventParticipant.ParticipationStatus.CONFIRMED)
-                .registrationDate(LocalDateTime.now())
-                .build();
-        event.getParticipants().add(organiserParticipant);
-        event = eventRepository.save(event);
+        // Automatically add the host as a participant (if host is specified)
+        if (event.getHostMember() != null) {
+            EventParticipant hostParticipant = EventParticipant.builder()
+                    .event(event)
+                    .member(event.getHostMember())
+                    .status(EventParticipant.ParticipationStatus.CONFIRMED)
+                    .registrationDate(LocalDateTime.now())
+                    .build();
+            event.getParticipants().add(hostParticipant);
+            event = eventRepository.save(event);
+        }
         
         return convertToDTO(event);
     }
@@ -140,6 +155,20 @@ public class EventService {
         // Verify that the user is the organiser of the group that owns this event
         if (!event.getGroup().getPrimaryOrganiser().getId().equals(organiserId)) {
             throw new RuntimeException("You are not authorized to update this event");
+        }
+        
+        // Update host member if specified
+        if (request.getHostMemberId() != null) {
+            Member hostMember = memberRepository.findById(request.getHostMemberId())
+                    .orElseThrow(() -> new RuntimeException("Host member not found"));
+            
+            // Verify host is a member of the group
+            if (!groupService.isMemberOfGroup(hostMember.getId(), event.getGroup().getId())) {
+                throw new RuntimeException("Host must be a member of the group");
+            }
+            event.setHostMember(hostMember);
+        } else {
+            event.setHostMember(null);
         }
         
         // Update all fields
@@ -476,6 +505,16 @@ public class EventService {
                         .collect(Collectors.toSet()) :
                 new HashSet<>();
         
+        // Get host member info if present
+        Long hostMemberId = null;
+        String hostMemberName = null;
+        if (event.getHostMember() != null) {
+            hostMemberId = event.getHostMember().getId();
+            hostMemberName = event.getHostMember().getDisplayName() != null && !event.getHostMember().getDisplayName().isEmpty()
+                    ? event.getHostMember().getDisplayName()
+                    : event.getHostMember().getEmail();
+        }
+        
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
@@ -488,6 +527,8 @@ public class EventService {
                 .activityTypeName(activity.getName())
                 .groupId(group.getId())
                 .groupName(group.getName())
+                .hostMemberId(hostMemberId)
+                .hostMemberName(hostMemberName)
                 .eventDate(event.getEventDate())
                 .endDate(event.getEndDate())
                 .registrationDeadline(event.getRegistrationDeadline())

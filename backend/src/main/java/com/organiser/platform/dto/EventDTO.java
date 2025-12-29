@@ -25,6 +25,8 @@ public class EventDTO {
     private String activityTypeName;
     private Long groupId;
     private String groupName;
+    private Long hostMemberId;
+    private String hostMemberName;
     private Instant eventDate;  // UTC timestamp for proper timezone handling
     private Instant endDate;  // UTC timestamp
     private Instant registrationDeadline;  // UTC timestamp

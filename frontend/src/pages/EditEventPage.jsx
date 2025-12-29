@@ -230,7 +230,8 @@ export default function EditEventPage() {
       additionalImages: [],
       requirements: selectedRequirements,
       includedItems: [],
-      cancellationPolicy: null
+      cancellationPolicy: null,
+      hostMemberId: data.hostMemberId ? Number(data.hostMemberId) : null
     }
 
     try {
@@ -789,9 +790,20 @@ export default function EditEventPage() {
                 <MemberAutocomplete
                   groupId={event?.groupId}
                   value={watchedHostName}
-                  onChange={(value) => setValue('hostName', value)}
+                  onChange={(value) => {
+                    if (typeof value === 'object' && value.id) {
+                      // Member selected from dropdown
+                      setValue('hostMemberId', value.id)
+                      setValue('hostName', value.name)
+                    } else {
+                      // Manual text input
+                      setValue('hostMemberId', null)
+                      setValue('hostName', value)
+                    }
+                  }}
                   error={errors.hostName?.message}
                 />
+                <input type="hidden" {...register('hostMemberId')} />
                 <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
                 {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
                 <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>

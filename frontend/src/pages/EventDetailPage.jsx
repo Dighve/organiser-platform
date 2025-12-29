@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
 import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader } from 'lucide-react'
@@ -469,9 +469,22 @@ export default function EventDetailPage() {
           <h1 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-3">
             {displayEvent.title || 'Event'}
           </h1>
-          <div className="flex items-center text-gray-600 text-lg">
-            <span>Hosted by <span className="font-bold text-gray-900">{displayEvent.organiserName || 'Organiser'}</span></span>
-          </div>
+          {displayEvent.hostMemberName && (
+            <div className="flex items-center text-gray-600 text-lg">
+              <span>Hosted by {
+                displayEvent.hostMemberId ? (
+                  <Link 
+                    to={`/members/${displayEvent.hostMemberId}`}
+                    className="font-bold text-gray-900 hover:text-transparent hover:bg-clip-text hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 transition-all duration-200 cursor-pointer"
+                  >
+                    {displayEvent.hostMemberName}
+                  </Link>
+                ) : (
+                  <span className="font-bold text-gray-900">{displayEvent.hostMemberName}</span>
+                )
+              }</span>
+            </div>
+          )}
         </div>
 
         {/* ============================================ */}
@@ -747,7 +760,7 @@ export default function EventDetailPage() {
                             Joined {new Date(participant.joinedAt).toLocaleDateString()}
                           </p>
                         </div>
-                        {participant.isOrganiser && (
+                        {event?.hostMemberId && participant.id === event.hostMemberId && (
                           <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Host</span>
                         )}
                       </div>
@@ -814,12 +827,50 @@ export default function EventDetailPage() {
                   </div>
                 ) : isAuthenticated ? (
                   isEventOrganiser ? (
-                    /* ORGANISER VIEW - Show Edit and Delete buttons */
+                    /* ORGANISER VIEW - Show Edit and Delete buttons, plus Join if not joined */
                     <div className="space-y-3">
                       <div className="text-center p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border border-orange-100">
                         <p className="text-orange-700 font-semibold">👑 You're the organiser</p>
                         <p className="text-xs text-gray-600 mt-1">Status: <span className="font-mono font-bold">{event?.status || 'UNKNOWN'}</span></p>
                       </div>
+                      
+                      {/* Show Join button if organiser hasn't joined */}
+                      {!hasJoined && !isPastEvent && (
+                        <button
+                          onClick={handleJoinClick}
+                          disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
+                          className="w-full py-3 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-green-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {joinMutation.isLoading || isJoiningFlow ? (
+                            <Loader className="h-5 w-5 animate-spin" />
+                          ) : (
+                            <Users className="h-5 w-5" />
+                          )}
+                          {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join as Participant'}
+                        </button>
+                      )}
+                      
+                      {/* Show Leave button if organiser has joined */}
+                      {hasJoined && !isPastEvent && (
+                        <div className="space-y-3">
+                          <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                            <p className="text-green-700 font-semibold text-center text-sm">✅ You're also attending</p>
+                          </div>
+                          <button
+                            onClick={() => leaveMutation.mutate()}
+                            disabled={leaveMutation.isLoading}
+                            className={`w-full py-2 px-4 font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm ${
+                              leaveMutation.isLoading 
+                                ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`}
+                          >
+                            {leaveMutation.isLoading && <Loader className="h-4 w-4 animate-spin" />}
+                            {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
+                          </button>
+                        </div>
+                      )}
+                      
                       {!isPastEvent ? (
                         /* FUTURE EVENT - Show Publish (if DRAFT), Edit and Delete buttons */
                         <>

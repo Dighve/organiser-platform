@@ -38,6 +38,9 @@ public class CreateEventRequest {
     private BigDecimal latitude;
     private BigDecimal longitude;
     
+    // Host/Guide for this event (can be any group member)
+    private Long hostMemberId;
+    
     @Positive(message = "Max participants must be positive")
     private Integer maxParticipants;
     

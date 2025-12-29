@@ -110,11 +110,11 @@ test {
 
 // Flyway configuration for local development
 flyway {
-    url = 'jdbc:mariadb://localhost:3307/organiser_platform'
+    url = 'jdbc:postgresql://localhost:5433/organiser_platform'
     user = 'organiser_user'
     password = 'organiser_pass'
     baselineOnMigrate = true
-    locations = ['classpath:db/migration']
+    locations = ['classpath:db/migration/postgresql']
     cleanDisabled = false
 }
 

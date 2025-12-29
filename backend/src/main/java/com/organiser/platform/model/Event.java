@@ -68,6 +68,11 @@ public class Event {
     @Builder.Default
     private Set<Member> eventOrganisers = new HashSet<>();
     
+    // Host/Guide for this event (can be any group member, different from organiser)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "host_member_id")
+    private Member hostMember;
+    
     @Column(name = "event_date", nullable = false)
     private Instant eventDate;  // Changed to Instant for proper UTC handling
     

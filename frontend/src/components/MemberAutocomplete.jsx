@@ -37,7 +37,8 @@ export default function MemberAutocomplete({ groupId, value, onChange, error }) 
   const handleSelect = (member) => {
     const displayName = member.displayName || member.email.split('@')[0]
     setSearchTerm(displayName)
-    onChange(displayName)
+    // Pass the member object with ID instead of just the name
+    onChange({ id: member.id, name: displayName })
     setIsOpen(false)
   }
 
