@@ -23,7 +23,7 @@ export default function MyGroupsPage() {
   // LOCAL STATE
   // ============================================================
   // Default to 'organiser' tab if user is organiser, otherwise 'subscribed'
-  const [activeTab, setActiveTab] = useState(user?.isOrganiser ? 'organiser' : 'subscribed')
+  const [activeTab, setActiveTab] = useState(user?.hasOrganiserRole ? 'organiser' : 'subscribed')
   
   // ============================================================
   // DATA FETCHING - Queries
@@ -40,7 +40,7 @@ export default function MyGroupsPage() {
   const { data: organisedData, isLoading: organisedLoading, error: organisedError } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
-    enabled: isAuthenticated && user?.isOrganiser,
+    enabled: isAuthenticated && Boolean(user?.hasOrganiserRole),
   })
   
   // ============================================================
@@ -127,7 +127,7 @@ export default function MyGroupsPage() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 My Groups</h1>
           <div className="flex gap-3">
-            {user?.isOrganiser && (
+            {user?.hasOrganiserRole && (
               <button
                 onClick={() => navigate('/groups/create')}
                 className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
@@ -142,7 +142,7 @@ export default function MyGroupsPage() {
         {/* ========== TAB NAVIGATION ========== */}
         <div className="mb-8">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 inline-flex gap-2 border border-gray-100 shadow-lg">
-            {user?.isOrganiser && (
+            {user?.hasOrganiserRole && (
               <button
                 onClick={() => setActiveTab('organiser')}
                 className={`px-6 py-3 rounded-xl font-semibold transition-all ${
@@ -289,7 +289,7 @@ export default function MyGroupsPage() {
       )}
       
       {/* ORGANISER TAB - Groups user created and manages */}
-      {activeTab === 'organiser' && user?.isOrganiser && (
+      {activeTab === 'organiser' && user?.hasOrganiserRole && (
           <>
             {organisedLoading ? (
               <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-lg text-center">

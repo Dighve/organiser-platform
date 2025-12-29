@@ -43,7 +43,7 @@ public class LegalService {
         // Update member flags - IMPORTANT: Set both flags!
         member.setHasAcceptedOrganiserAgreement(true);
         member.setOrganiserAgreementAcceptedAt(LocalDateTime.now());
-        member.setIsOrganiser(true); // THIS IS CRITICAL - Makes user an actual organiser!
+        member.setHasOrganiserRole(true); // THIS IS CRITICAL - Makes user an actual organiser!
         memberRepository.save(member);
         
         System.out.println("✅ Member " + memberId + " is now an ORGANISER!");

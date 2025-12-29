@@ -28,9 +28,9 @@ export default function VerifyMagicLinkPage() {
   const verifyToken = async (token, redirectParam) => {
     try {
       const response = await authAPI.verifyMagicLink(token)
-      const { token: jwtToken, userId, email, role, isOrganiser } = response.data
+      const { token: jwtToken, userId, email, role, hasOrganiserRole } = response.data
       
-      login({ id: userId, userId, email, role, isOrganiser }, jwtToken)
+      login({ id: userId, userId, email, role, hasOrganiserRole }, jwtToken)
       
       // Priority: URL param (cross-browser) > localStorage (same browser)
       const urlRedirect = redirectParam ? decodeURIComponent(redirectParam) : null

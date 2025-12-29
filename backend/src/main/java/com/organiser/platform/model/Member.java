@@ -52,9 +52,11 @@ public class Member {
     @Column(nullable = false)
     private Boolean active = true;
     
+    // Platform-level organiser role - indicates member has organiser capabilities
+    // This is different from being an organiser of a specific group/event
     @Builder.Default
-    @Column(name = "is_organiser", nullable = false)
-    private Boolean isOrganiser = false;
+    @Column(name = "has_organiser_role", nullable = false)
+    private Boolean hasOrganiserRole = false;
     
     @Builder.Default
     @Column(name = "is_admin", nullable = false)

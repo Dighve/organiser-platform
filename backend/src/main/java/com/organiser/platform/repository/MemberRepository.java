@@ -24,7 +24,7 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @Query("SELECT COUNT(m) FROM Member m WHERE m.createdAt >= :startDate")
     Long countNewUsersSince(@Param("startDate") LocalDateTime startDate);
     
-    @Query("SELECT COUNT(m) FROM Member m WHERE m.isOrganiser = true")
+    @Query("SELECT COUNT(m) FROM Member m WHERE m.hasOrganiserRole = true")
     Long countOrganisers();
     
     @Query("SELECT m FROM Member m ORDER BY m.createdAt DESC")

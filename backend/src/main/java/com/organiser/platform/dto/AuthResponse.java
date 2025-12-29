@@ -16,5 +16,7 @@ public class AuthResponse {
     private Long userId;
     private String email;
     private String role;
-    private Boolean isOrganiser;
+    
+    // Platform-level organiser role
+    private Boolean hasOrganiserRole;
 }

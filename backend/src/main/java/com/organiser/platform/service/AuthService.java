@@ -120,7 +120,7 @@ public class AuthService {
                 .userId(member.getId())
                 .email(member.getEmail())
                 .role(role)
-                .isOrganiser(member.getIsOrganiser())
+                .hasOrganiserRole(member.getHasOrganiserRole())
                 .build();
     }
     

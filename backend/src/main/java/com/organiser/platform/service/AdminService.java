@@ -104,7 +104,7 @@ public class AdminService {
             .email(member.getEmail())
             .displayName(member.getDisplayName())
             .profilePhotoUrl(member.getProfilePhotoUrl())
-            .isOrganiser(member.getIsOrganiser())
+            .hasOrganiserRole(member.getHasOrganiserRole())
             .verified(member.getVerified())
             .active(member.getActive())
             .createdAt(member.getCreatedAt())

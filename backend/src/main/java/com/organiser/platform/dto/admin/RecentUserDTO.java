@@ -20,7 +20,10 @@ public class RecentUserDTO {
     private String email;
     private String displayName;
     private String profilePhotoUrl;
-    private Boolean isOrganiser;
+    
+    // Platform-level organiser role
+    private Boolean hasOrganiserRole;
+    
     private Boolean verified;
     private Boolean active;
     private LocalDateTime createdAt;

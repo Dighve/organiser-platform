@@ -38,14 +38,14 @@ export default function Layout() {
     if (memberData && isAuthenticated) {
       // Update auth store with latest member data
       updateUser({
-        isOrganiser: memberData.isOrganiser,
+        hasOrganiserRole: memberData.hasOrganiserRole,
         hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
         hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement,
         displayName: memberData.displayName,
         profilePhotoUrl: memberData.profilePhotoUrl,
       })
       // console.log('🔄 Auth store updated with member data:', {
-      //   isOrganiser: memberData.isOrganiser,
+      //   hasOrganiserRole: memberData.hasOrganiserRole,
       //   hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
       //   hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement,
       //   isAdmin: memberData.isAdmin

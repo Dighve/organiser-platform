@@ -48,7 +48,7 @@ export default function HomePage() {
   const { data: organisedGroupsData, isLoading: organisedGroupsLoading } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
-    enabled: isAuthenticated && user?.isOrganiser,
+    enabled: isAuthenticated && Boolean(user?.hasOrganiserRole),
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   })
@@ -120,7 +120,7 @@ export default function HomePage() {
   
   // Smart tab selection: Auto-select organiser tab if user has organised groups
   useEffect(() => {
-    if (!hasInitializedTab && !organisedGroupsLoading && user?.isOrganiser) {
+    if (!hasInitializedTab && !organisedGroupsLoading && user?.hasOrganiserRole) {
       // If organiser has groups, default to organiser tab
       // If organiser has no groups, stay on member tab
       if (organisedGroups.length > 0) {
@@ -128,7 +128,7 @@ export default function HomePage() {
       }
       setHasInitializedTab(true)
     }
-  }, [organisedGroupsLoading, organisedGroups.length, user?.isOrganiser, hasInitializedTab])
+  }, [organisedGroupsLoading, organisedGroups.length, user?.hasOrganiserRole, hasInitializedTab])
 
   // ============================================================
   // EVENT HANDLERS
@@ -276,7 +276,7 @@ export default function HomePage() {
         {isAuthenticated && (
           <div className="mb-6 bg-white/60 backdrop-blur-sm p-1.5 rounded-full inline-flex">
             <nav className="flex gap-2">
-              {user?.isOrganiser && (
+              {user?.hasOrganiserRole && (
                 <button
                   onClick={() => setActiveGroupTab('organiser')}
                   className={`px-6 py-2 rounded-full font-semibold text-sm transition-all duration-200 ${
@@ -375,7 +375,7 @@ export default function HomePage() {
           )}
           
           {/* ========== ORGANISER TAB - Managed Groups ========== */}
-          {activeGroupTab === 'organiser' && user?.isOrganiser && (
+          {activeGroupTab === 'organiser' && user?.hasOrganiserRole && (
             <>
               {organisedGroupsLoading ? (
                 <div className="flex items-center justify-center py-8">

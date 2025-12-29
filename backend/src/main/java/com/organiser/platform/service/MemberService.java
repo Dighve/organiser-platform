@@ -44,11 +44,11 @@ public class MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
         
-        if (Boolean.TRUE.equals(member.getIsOrganiser())) {
+        if (Boolean.TRUE.equals(member.getHasOrganiserRole())) {
             throw new RuntimeException("Member is already an organiser");
         }
         
-        member.setIsOrganiser(true);
+        member.setHasOrganiserRole(true);
         return memberRepository.save(member);
     }
     
@@ -158,7 +158,7 @@ public class MemberService {
                 .displayName(member.getDisplayName())
                 .profilePhotoUrl(member.getProfilePhotoUrl())
                 .imagePosition(member.getImagePosition())
-                .isOrganiser(member.getIsOrganiser())
+                .hasOrganiserRole(member.getHasOrganiserRole())
                 .isAdmin(member.getIsAdmin())
                 .hasAcceptedOrganiserAgreement(member.getHasAcceptedOrganiserAgreement())
                 .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())

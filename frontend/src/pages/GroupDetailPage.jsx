@@ -165,7 +165,7 @@ export default function GroupDetailPage() {
   const { data: organisedGroupsData } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
-    enabled: isAuthenticated && user?.isOrganiser,
+    enabled: isAuthenticated && Boolean(user?.hasOrganiserRole),
     staleTime: 0,
   })
 

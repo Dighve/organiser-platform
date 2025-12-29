@@ -101,7 +101,7 @@ public class GoogleOAuth2Service {
                     .userId(member.getId())
                     .email(member.getEmail())
                     .role(role)
-                    .isOrganiser(member.getIsOrganiser())
+                    .hasOrganiserRole(member.getHasOrganiserRole())
                     .build();
                     
         } catch (Exception e) {

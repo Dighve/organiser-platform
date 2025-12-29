@@ -247,7 +247,7 @@ export default function AdminDashboardPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {user.isOrganiser ? (
+                      {user.hasOrganiserRole ? (
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800">
                           Organiser
                         </span>
@@ -261,7 +261,7 @@ export default function AdminDashboardPage() {
                       <div className="flex gap-3">
                         <span title="Groups Joined">🏔️ {user.groupsJoined}</span>
                         <span title="Events Joined">📅 {user.eventsJoined}</span>
-                        {user.isOrganiser && (
+                        {user.hasOrganiserRole && (
                           <>
                             <span title="Groups Created">🎯 {user.groupsCreated}</span>
                             <span title="Events Created">✨ {user.eventsCreated}</span>

@@ -125,7 +125,7 @@ export default function MemberDetailPage() {
               <h1 className="text-4xl font-extrabold text-gray-900 mb-2">
                 {member.displayName || 'OutMeets Member'}
               </h1>
-              {member.isOrganiser && (
+              {member.hasOrganiserRole && (
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-pink-100 rounded-full border border-orange-200 mb-3">
                   <span className="text-lg">💼</span>
                   <span className="font-semibold text-orange-700">Organiser</span>

@@ -319,7 +319,7 @@ export default function ProfilePage() {
                   {memberData?.displayName || 'Set your display name'}
                 </h2>
               )}
-              {memberData?.isOrganiser && (
+              {memberData?.hasOrganiserRole && (
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-100 to-pink-100 rounded-full border border-orange-200">
                   <span className="text-lg">💼</span>
                   <span className="font-semibold text-orange-700">Organiser</span>
