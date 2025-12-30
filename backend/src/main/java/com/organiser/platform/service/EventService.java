@@ -134,8 +134,12 @@ public class EventService {
                     .status(EventParticipant.ParticipationStatus.CONFIRMED)
                     .registrationDate(LocalDateTime.now())
                     .build();
-            event.getParticipants().add(hostParticipant);
-            event = eventRepository.save(event);
+            // Save the participant explicitly to the repository
+            eventParticipantRepository.save(hostParticipant);
+            
+            // Refresh the event to load the updated participants collection
+            event = eventRepository.findById(event.getId())
+                    .orElseThrow(() -> new RuntimeException("Event not found after save"));
         }
         
         return convertToDTO(event);
