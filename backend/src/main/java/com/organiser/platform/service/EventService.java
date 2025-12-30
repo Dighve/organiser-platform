@@ -11,6 +11,7 @@ import com.organiser.platform.model.*;
 import java.math.BigDecimal;
 import com.organiser.platform.repository.*;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -304,8 +305,8 @@ public class EventService {
         // Get events by IDs
         List<Event> events = eventRepository.findAllById(eventIds);
         
-        // Sort by event date descending
-        events.sort((e1, e2) -> e2.getEventDate().compareTo(e1.getEventDate()));
+        // Sort by event date ascending
+        events.sort(Comparator.comparing(Event::getEventDate));
         
         // Convert to DTOs
         List<EventDTO> eventDTOs = events.stream()
