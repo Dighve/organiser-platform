@@ -329,9 +329,7 @@ export default function EventDetailPage() {
     (error?.message && error.message.includes('403'))
   )
   const isAccessDenied = !isEventOrganiser && (
-    is403Error || 
-    (event && event?.title && !event?.description)
-  )
+    is403Error || !event || !event?.title )
   
   // Create display event for access-denied cases (partial data)
   const displayEvent = event || {

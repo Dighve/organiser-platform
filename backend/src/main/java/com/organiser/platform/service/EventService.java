@@ -49,6 +49,7 @@ public class EventService {
     private final GroupRepository groupRepository;
     private final GroupService groupService;
     private final EventParticipantRepository eventParticipantRepository;
+    private final NotificationService notificationService;
     
     // ============================================================
     // PUBLIC METHODS - Event CRUD Operations
@@ -350,8 +351,15 @@ public class EventService {
             throw new RuntimeException("Unauthorized: Only the group organiser can publish events");
         }
         
+        Member organiser = memberRepository.findById(organiserId)
+                .orElseThrow(() -> new RuntimeException("Organiser not found"));
+        
         event.setStatus(Event.EventStatus.PUBLISHED);
         event = eventRepository.save(event);
+        
+        // Create notifications for all group subscribers
+        notificationService.createNewEventNotifications(event, organiser);
+        
         return convertToDTO(event);
     }
     

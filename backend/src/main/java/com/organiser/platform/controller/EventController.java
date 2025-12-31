@@ -161,7 +161,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.getCalendarData(id, memberId));
     }
     
-    private Long getUserIdFromAuth(Authentication authentication) {
+    public static Long getUserIdFromAuth(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
             throw new RuntimeException("User not authenticated");
         }

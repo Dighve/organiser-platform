@@ -8,6 +8,7 @@ import ProfileAvatar from './ProfileAvatar'
 import LoginModal from './LoginModal'
 import OrganiserAgreementModal from './OrganiserAgreementModal'
 import UserAgreementModal from './UserAgreementModal'
+import NotificationBell from './NotificationBell'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -139,6 +140,9 @@ export default function Layout() {
             <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
               {isAuthenticated ? (
                 <>
+                  {/* Notification Bell */}
+                  <NotificationBell />
+                  
                   <div className="relative group z-[1000]">
                     {/* Invisible bridge to keep dropdown open */}
                     <div className="absolute right-0 top-full w-48 h-2 hidden group-hover:block"></div>

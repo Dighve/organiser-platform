@@ -43,6 +43,7 @@ public class EventCommentService {
     private final EventRepository eventRepository;
     private final MemberRepository memberRepository;
     private final GroupService groupService;
+    private final NotificationService notificationService;
     
     // ============================================================
     // PUBLIC METHODS - Comment Operations
@@ -100,6 +101,10 @@ public class EventCommentService {
                 .build();
         
         EventComment savedComment = commentRepository.save(comment);
+        
+        // Create notifications for all event participants (except the commenter)
+        notificationService.createNewCommentNotifications(savedComment, member);
+        
         return convertToDTO(savedComment);
     }
     

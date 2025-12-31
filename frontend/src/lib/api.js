@@ -196,4 +196,20 @@ export const adminAPI = {
   checkAdminStatus: () => api.get('/admin/check'),
 }
 
+// Notifications API
+export const notificationsAPI = {
+  getNotifications: (page = 0, size = 20) => 
+    api.get(`/notifications?page=${page}&size=${size}`),
+  
+  getUnreadCount: () => api.get('/notifications/unread-count'),
+  
+  markAsRead: (notificationId) => 
+    api.put(`/notifications/${notificationId}/read`),
+  
+  markAllAsRead: () => api.put('/notifications/read-all'),
+  
+  deleteNotification: (notificationId) => 
+    api.delete(`/notifications/${notificationId}`),
+}
+
 export default api
