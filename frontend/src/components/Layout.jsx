@@ -1,4 +1,4 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom'
+import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, X, LogOut, Search, Shield } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuthStore } from '../store/authStore'
@@ -18,7 +18,15 @@ export default function Layout() {
   const [showUserAgreementModal, setShowUserAgreementModal] = useState(false)
   const { isAuthenticated, user, logout, updateUser, clearReturnUrl } = useAuthStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
+
+  // Sync search query with URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search)
+    const urlSearch = urlParams.get('search') || ''
+    setSearchQuery(urlSearch)
+  }, [location.search])
 
   // Fetch current member data for profile photo
   const { data: memberData } = useQuery({
@@ -75,7 +83,6 @@ export default function Layout() {
     e.preventDefault()
     if (searchQuery.trim()) {
       navigate(`/events?search=${encodeURIComponent(searchQuery.trim())}`)
-      setSearchQuery('')
     }
   }
 
@@ -102,26 +109,21 @@ export default function Layout() {
                 {/* Modern Logo with text */}
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-lg">
-                      {/* Mountain range - updated colors */}
-                      <polygon points="2,44 14,24 24,44" fill="#FBBF24" opacity="0.9" />
-                      <polygon points="14,44 26,18 38,44" fill="#F59E0B" opacity="0.9" />
-                      <polygon points="26,44 36,28 46,44" fill="#FDE68A" opacity="0.8" />
-                      {/* Hiker */}
-                      <circle cx="32" cy="32" r="3" fill="white" opacity="0.95" />
-                      <rect x="31" y="35" width="2" height="7" rx="1" fill="white" opacity="0.95" />
-                      <rect x="30" y="40" width="1.5" height="6" rx="0.75" fill="white" opacity="0.95" transform="rotate(-20 30 40)" />
-                      <rect x="33" y="40" width="1.5" height="6" rx="0.75" fill="white" opacity="0.95" transform="rotate(20 33 40)" />
-                      <rect x="32.5" y="36" width="1" height="6" rx="0.5" fill="white" opacity="0.95" transform="rotate(-30 32.5 36)" />
-                    </svg>
+                    <img 
+                      src="/favicon1.svg" 
+                      alt="OutMeets" 
+                      width="40" 
+                      height="40" 
+                      className="drop-shadow-lg"
+                    />
                   </div>
                   <span className="text-2xl font-extrabold text-white drop-shadow-md hidden sm:block">OutMeets</span>
                 </div>
               </Link>
             </div>
 
-            {/* Search Bar - Desktop */}
-            <div className="hidden md:flex flex-1 max-w-lg">
+            {/* Search Bar - Mobile & Desktop */}
+            <div className="flex-1 max-w-lg mx-4">
               <form onSubmit={handleSearch} className="w-full">
                 <div className="relative">
                   <input
@@ -129,9 +131,19 @@ export default function Layout() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search events..."
-                    className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white focus:border-white bg-white/20 backdrop-blur-md placeholder-white/70 text-white font-medium transition-all"
+                    className="w-full pl-10 md:pl-12 pr-10 py-2 md:py-3 text-base rounded-full border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white focus:border-white bg-white/20 backdrop-blur-md placeholder-white/70 text-white font-medium transition-all"
                   />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
+                  <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-white/70" />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-white/70 hover:text-white transition-colors"
+                      aria-label="Clear search"
+                    >
+                      <X className="h-full w-full" />
+                    </button>
+                  )}
                 </div>
               </form>
             </div>
@@ -199,45 +211,25 @@ export default function Layout() {
                 </button>
               )}
             </div>
-            {/* Mobile menu button and login */}
-            <div className="md:hidden flex items-center gap-3">
-              {!isAuthenticated && (
+            {/* Mobile menu button - only show for authenticated users */}
+            {isAuthenticated && (
+              <div className="md:hidden flex items-center">
                 <button
-                  onClick={handleLoginClick}
-                  className="bg-white text-purple-600 hover:bg-white/90 px-4 py-2 rounded-full text-sm font-bold transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="text-white hover:text-white/80 transition-colors"
                 >
-                  Login
+                  {mobileMenuOpen ? (
+                    <X className="h-6 w-6" />
+                  ) : (
+                    <Menu className="h-6 w-6" />
+                  )}
                 </button>
-              )}
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="text-white hover:text-white/80 transition-colors"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </button>
-            </div>
+              </div>
+            )}
           </div>
           {/* Mobile Navigation */}
-          {mobileMenuOpen && (
+          {mobileMenuOpen && isAuthenticated && (
             <div className="md:hidden py-4 space-y-2 bg-white/10 backdrop-blur-md rounded-b-2xl mt-2">
-              {/* Search Bar - Mobile */}
-              <form onSubmit={handleSearch} className="px-3 pb-2">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search events..."
-                    className="w-full pl-12 pr-4 py-3 rounded-full border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white bg-white/20 backdrop-blur-sm placeholder-white/70 text-white font-medium"
-                  />
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white/70" />
-                </div>
-              </form>
-              
               {isAuthenticated ? (
                 <>
                   <Link
@@ -272,17 +264,7 @@ export default function Layout() {
                     Logout
                   </button>
                 </>
-              ) : (
-                <button
-                  onClick={() => {
-                    handleLoginClick()
-                    setMobileMenuOpen(false)
-                  }}
-                  className="block mx-3 text-center bg-white text-purple-600 hover:bg-white/90 px-6 py-2.5 rounded-full text-base font-bold transition-all shadow-lg w-[calc(100%-1.5rem)]"
-                >
-                  Login
-                </button>
-              )}
+              ) : null}
             </div>
           )}
         </nav>
@@ -331,9 +313,9 @@ export default function Layout() {
           <div className="flex flex-col items-center gap-4">
             <div className="flex items-center gap-3">
               <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="2,44 14,24 24,44" fill="#FBBF24" opacity="0.9" />
-                <polygon points="14,44 26,18 38,44" fill="#F59E0B" opacity="0.9" />
-                <polygon points="26,44 36,28 46,44" fill="#FDE68A" opacity="0.8" />
+                <polygon points="2,44 14,24 24,44" fill="#FBBF24" opacity="0.95" />
+                <polygon points="14,44 26,18 38,44" fill="#F59E0B" opacity="0.95" />
+                <polygon points="26,44 36,28 46,44" fill="#FDE68A" opacity="0.9" />
               </svg>
               <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">OutMeets</span>
             </div>
