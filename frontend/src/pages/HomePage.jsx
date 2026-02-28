@@ -8,6 +8,7 @@ import { Search } from 'lucide-react'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import LoginModal from '../components/LoginModal'
+import WelcomeScreen from '../components/WelcomeScreen'
 
 // ============================================================
 // MAIN COMPONENT
@@ -139,102 +140,21 @@ export default function HomePage() {
   const handleDiscoverClick = () => {
     localStorage.setItem('hasDiscovered', 'true')
     setShowDiscover(false)
+    // Remove welcome parameter from URL
+    navigate('/', { replace: true })
   }
-
-  // ============================================================
-  // RENDER HELPERS
-  // ============================================================
-  
-  // HERO BACKGROUND - Optimized animated gradient with floating shapes
-  const heroBackground = (
-    <div className="absolute inset-0 -z-10 w-full h-full overflow-hidden">
-      {/* Animated gradient background - GPU accelerated */}
-      <div className="absolute inset-0 bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700" 
-           style={{ willChange: 'transform' }} />
-      {/* Overlay pattern */}
-      <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-      }} />
-      {/* Floating shapes - Reduced blur for better performance */}
-      <div className="absolute top-20 left-10 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob" 
-           style={{ willChange: 'transform' }} />
-      <div className="absolute top-40 right-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-2000" 
-           style={{ willChange: 'transform' }} />
-      <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-indigo-400 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob animation-delay-4000" 
-           style={{ willChange: 'transform' }} />
-    </div>
-  )
 
   // ============================================================
   // HERO VIEW - First-time visitor landing page
   // ============================================================
   if (showDiscover) {
-    return (
-      <div className="relative min-h-screen flex flex-col items-center justify-center text-center overflow-hidden">
-        {heroBackground}
-        <div className="relative z-10 max-w-5xl mx-auto px-4 py-20">
-          <div className="inline-block mb-6 px-6 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white font-semibold text-sm border border-white/30">
-            🌲 Your Outdoor Adventure Starts Here
-          </div>
-          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white mb-6 drop-shadow-2xl leading-tight">
-            Discover Amazing <br/>
-            <span className="bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-400 bg-clip-text text-transparent">Outdoor Events</span>
-          </h1>
-          <p className="text-xl sm:text-2xl text-white/90 mb-8 max-w-2xl mx-auto font-light leading-relaxed">
-            Join a community of outdoor enthusiasts. Find your next adventure, connect with like-minded people, and create unforgettable memories.
-          </p>
-          {/* Coming Soon Activities Banner */}
-          <div className="mb-8 max-w-3xl mx-auto">
-            <div className="bg-white/10 backdrop-blur-md border-2 border-white/30 rounded-2xl p-4">
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <span className="text-white/80 font-semibold text-sm">Currently:</span>
-                <span className="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-bold shadow-lg">🥾 Hiking</span>
-                <span className="text-white/60 text-sm">|</span>
-                <span className="text-white/80 font-semibold text-sm">Coming Soon:</span>
-                <span className="px-3 py-1.5 bg-white/20 text-white/70 rounded-full text-sm font-semibold">🏃 Running</span>
-                <span className="px-3 py-1.5 bg-white/20 text-white/70 rounded-full text-sm font-semibold">🧗 Climbing</span>
-                <span className="px-3 py-1.5 bg-white/20 text-white/70 rounded-full text-sm font-semibold">🏊 Swimming</span>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button
-              className="group relative px-10 py-4 text-lg font-bold rounded-full shadow-2xl bg-gradient-to-r from-orange-500 to-pink-600 text-white hover:shadow-orange-500/50 transform hover:scale-105 transition-all duration-300 overflow-hidden"
-              onClick={handleDiscoverClick}
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                Discover Events
-                <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-            </button>
-          </div>
-          {/* Decorative elements */}
-          {/* <div className="mt-16 flex justify-center gap-12 text-white/80">
-            <div className="text-center">
-              <div className="text-3xl font-bold">500+</div>
-              <div className="text-sm">Events</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">1000+</div>
-              <div className="text-sm">Members</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold">50+</div>
-              <div className="text-sm">Groups</div>
-            </div>
-          </div> */}
-        </div>
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-          </svg>
-        </div>
-      </div>
-    )
+    // Add welcome parameter to URL for header logic
+    const currentUrl = new URL(window.location)
+    if (!currentUrl.searchParams.has('welcome')) {
+      currentUrl.searchParams.set('welcome', 'true')
+      navigate(`/?welcome=true`, { replace: true })
+    }
+    return <WelcomeScreen onDiscoverClick={handleDiscoverClick} />
   }
 
   // ============================================================

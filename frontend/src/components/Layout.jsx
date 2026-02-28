@@ -94,12 +94,13 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header with modern vibrant gradient */}
-  <header className="relative bg-transparent sticky top-0 z-[999] overflow-visible shadow-lg">
+      {/* Header with modern vibrant gradient - Hide only on welcome screen */}
+      {!(location.pathname === '/' && location.search.includes('welcome=true')) && (
+        <header className="relative bg-transparent sticky top-0 z-[999] overflow-visible shadow-lg">
         {/* Modern gradient background */}
-  <div className="absolute inset-0 -z-10 w-full h-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500">
-  {/* Smooth gradient fade at bottom of header */}
-  <div className="absolute left-0 right-0 bottom-0 h-2 -z-10" style={{background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(255,255,255,0) 100%)'}} />
+        <div className="absolute inset-0 -z-10 w-full h-full bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500">
+          {/* Smooth gradient fade at bottom of header */}
+          <div className="absolute left-0 right-0 bottom-0 h-2 -z-10" style={{background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(255,255,255,0) 100%)'}} />
         </div>
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-4">
@@ -120,31 +121,33 @@ export default function Layout() {
               </Link>
             </div>
 
-            {/* Search Bar - Mobile & Desktop */}
-            <div className="flex-1 max-w-lg mx-4">
-              <form onSubmit={handleSearch} className="w-full">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search events..."
-                    className="w-full pl-10 md:pl-12 pr-10 py-2 md:py-3 text-base rounded-full border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white focus:border-white bg-white/20 backdrop-blur-md placeholder-white/70 text-white font-medium transition-all"
-                  />
-                  <Search className="absolute left-3 md:left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-white/70" />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-white/70 hover:text-white transition-colors"
-                      aria-label="Clear search"
-                    >
-                      <X className="h-full w-full" />
-                    </button>
-                  )}
-                </div>
-              </form>
-            </div>
+            {/* Search Bar - Mobile & Desktop - Hide on welcome screen */}
+            {!(location.pathname === '/' && location.search.includes('welcome=true')) && (
+              <div className="flex-1 max-w-md mx-4">
+                <form onSubmit={handleSearch} className="w-full">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search events..."
+                      className="w-full pl-8 md:pl-10 pr-8 py-1.5 md:py-2 text-sm rounded-full border-2 border-white/30 focus:outline-none focus:ring-2 focus:ring-white focus:border-white bg-white/20 backdrop-blur-md placeholder-white/70 text-white font-medium transition-all"
+                    />
+                    <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 md:h-4 md:w-4 text-white/70" />
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchQuery('')}
+                        className="absolute right-2.5 md:right-3 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 md:h-4 md:w-4 text-white/70 hover:text-white transition-colors"
+                        aria-label="Clear search"
+                      >
+                        <X className="h-full w-full" />
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+            )}
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
@@ -267,6 +270,7 @@ export default function Layout() {
           )}
         </nav>
       </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-1">
@@ -304,25 +308,6 @@ export default function Layout() {
           queryClient.invalidateQueries(['currentMember'])
         }}
       />
-
-      {/* Footer */}
-      <footer className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex flex-col items-center gap-4">
-            <div className="flex items-center gap-3">
-              <svg width="32" height="32" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polygon points="2,44 14,24 24,44" fill="#FBBF24" opacity="0.95" />
-                <polygon points="14,44 26,18 38,44" fill="#F59E0B" opacity="0.95" />
-                <polygon points="26,44 36,28 46,44" fill="#FDE68A" opacity="0.9" />
-              </svg>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">OutMeets</span>
-            </div>
-            <div className="text-center text-gray-400">
-              <p className="text-sm">&copy; 2025 OutMeets. Connect through outdoor adventures. All rights reserved.</p>
-            </div>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

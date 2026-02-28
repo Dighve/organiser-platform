@@ -1,0 +1,29 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer symmetric ring -->
+  <circle cx="24" cy="24" r="16" 
+          fill="none" stroke="#F59E0B" stroke-width="3" opacity="0.8"/>
+  
+  <!-- Middle ring -->
+  <circle cx="24" cy="24" r="10" 
+          fill="none" stroke="#F59E0B" stroke-width="2.5" opacity="0.85"/>
+  
+  <!-- Inner circle - the central hub -->
+  <circle cx="24" cy="24" r="6" 
+          fill="none" stroke="#F59E0B" stroke-width="2" opacity="0.9"/>
+  
+  <!-- Central core -->
+  <circle cx="24" cy="24" r="3" 
+          fill="#F59E0B" opacity="0.95"/>
+  
+  <!-- Radiating connection nodes -->
+  <circle cx="24" cy="10" r="1.5" fill="#F59E0B" opacity="0.9"/>
+  <circle cx="38" cy="24" r="1.5" fill="#F59E0B" opacity="0.9"/>
+  <circle cx="24" cy="38" r="1.5" fill="#F59E0B" opacity="0.9"/>
+  <circle cx="10" cy="24" r="1.5" fill="#F59E0B" opacity="0.9"/>
+  
+  <!-- Diagonal connection points -->
+  <circle cx="32" cy="16" r="1" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="32" cy="32" r="1" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="16" cy="32" r="1" fill="#F59E0B" opacity="0.8"/>
+  <circle cx="16" cy="16" r="1" fill="#F59E0B" opacity="0.8"/>
+</svg>
