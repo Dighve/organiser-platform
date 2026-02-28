@@ -8,6 +8,7 @@ import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
 import { toast } from 'react-hot-toast'
+import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -34,7 +35,7 @@ const DEFAULT_EVENT_IMAGES = [
 // REUSABLE EVENT CARD COMPONENT
 // Used for displaying events in both About and Events tabs
 // ============================================
-const EventCard = ({ event, isPast = false, onClick }) => {
+const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
   // Use event's image or fallback to default based on event ID
   const imageUrl = event.imageUrl || DEFAULT_EVENT_IMAGES[parseInt(event.id) % DEFAULT_EVENT_IMAGES.length]
   
@@ -89,10 +90,13 @@ const EventCard = ({ event, isPast = false, onClick }) => {
               {new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
             </span>
           </div>
-          <div className={`flex items-center gap-2 text-sm ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
-            <MapPin className={`h-4 w-4 ${isPast ? 'text-gray-400' : 'text-pink-500'}`} />
-            <span className="truncate">{event.location}</span>
-          </div>
+          {/* Only show location if location features are enabled */}
+          {showLocation && event.location && (
+            <div className={`flex items-center gap-2 text-sm ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
+              <MapPin className={`h-4 w-4 ${isPast ? 'text-gray-400' : 'text-pink-500'}`} />
+              <span className="truncate">{event.location}</span>
+            </div>
+          )}
         </div>
         {/* Participants count */}
         <div className={`flex items-center justify-between pt-3 mt-3 border-t ${isPast ? 'border-gray-200' : 'border-gray-100'}`}>
@@ -126,6 +130,7 @@ export default function GroupDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
+  const { isGroupLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
   const [searchParams] = useSearchParams()
 
   // ============================================
@@ -410,7 +415,7 @@ export default function GroupDetailPage() {
                       <span className="font-semibold">{displayGroup.currentMembers || 0}</span>
                       <span className="text-white/70">members</span>
                     </div>
-                    {displayGroup.location && (
+                    {displayGroup.location && isGroupLocationEnabled() && isGoogleMapsEnabled() && (
                       <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
                         <MapPin className="h-5 w-5" />
                         <span>{displayGroup.location}</span>
@@ -508,6 +513,7 @@ export default function GroupDetailPage() {
                                 event={event}
                                 isPast={false}
                                 onClick={() => navigate(`/events/${event.id}`)}
+                                showLocation={isGroupLocationEnabled && isGoogleMapsEnabled}
                               />
                             ))}
                           </div>
@@ -527,6 +533,7 @@ export default function GroupDetailPage() {
                                 event={event}
                                 isPast={true}
                                 onClick={() => navigate(`/events/${event.id}`)}
+                                showLocation={isGroupLocationEnabled && isGoogleMapsEnabled}
                               />
                             ))}
                           </div>
@@ -599,6 +606,7 @@ export default function GroupDetailPage() {
                             event={event}
                             isPast={false}
                             onClick={() => navigate(`/events/${event.id}`)}
+                            showLocation={isGroupLocationEnabled && isGoogleMapsEnabled}
                           />
                         ))}
                       </div>
@@ -902,21 +910,23 @@ export default function GroupDetailPage() {
                 </p>
               </div>
 
-              {/* Location */}
-              <div>
-                <label htmlFor="edit-location" className="block text-sm font-semibold text-gray-700 mb-2">
-                  📍 Location
-                </label>
-                <GooglePlacesAutocomplete
-                  onPlaceSelect={(locationData) => {
-                    setEditFormData(prev => ({
-                      ...prev,
-                      location: locationData.address
-                    }))
-                  }}
-                  placeholder="e.g., Peak District, UK"
-                />
-              </div>
+              {/* Location - Only show if location features are enabled */}
+              {isGroupLocationEnabled() && isGoogleMapsEnabled() && (
+                <div>
+                  <label htmlFor="edit-location" className="block text-sm font-semibold text-gray-700 mb-2">
+                    📍 Location
+                  </label>
+                  <GooglePlacesAutocomplete
+                    onPlaceSelect={(locationData) => {
+                      setEditFormData(prev => ({
+                        ...prev,
+                        location: locationData.address
+                      }))
+                    }}
+                    placeholder="e.g., Peak District, UK"
+                  />
+                </div>
+              )}
 
               {/* Max Members */}
               <div>

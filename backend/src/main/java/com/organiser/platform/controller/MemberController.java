@@ -6,10 +6,12 @@ import com.organiser.platform.model.Member;
 import com.organiser.platform.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/members")
 @RequiredArgsConstructor
@@ -28,6 +30,7 @@ public class MemberController {
     public ResponseEntity<MemberDTO> getCurrentMember(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         MemberDTO member = memberService.getMemberDTOById(userId);
+        log.info("member-details {}", member.toString());
         return ResponseEntity.ok(member);
     }
     

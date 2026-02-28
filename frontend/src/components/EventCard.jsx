@@ -2,12 +2,14 @@ import { Link } from 'react-router-dom'
 import { Calendar, MapPin, Users, DollarSign, Mountain } from 'lucide-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
+import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 
 export default function EventCard({ event }) {
   const formattedDate = format(new Date(event.eventDate), 'MMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
+  const { isEventLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
 
   return (
     <Link to={`/events/${event.id}`} className="card hover:shadow-lg transition-shadow duration-200">
@@ -62,10 +64,13 @@ export default function EventCard({ event }) {
             <span>{formattedDate} at {formattedTime}</span>
           </div>
 
-          <div className="flex items-center">
-            <MapPin className="h-4 w-4 mr-2" />
-            <span className="line-clamp-1">{event.location}</span>
-          </div>
+          {/* Only show location if location features are enabled */}
+          {isEventLocationEnabled() && isGoogleMapsEnabled() && (
+            <div className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2" />
+              <span className="line-clamp-1">{event.location}</span>
+            </div>
+          )}
 
           <div className="flex items-center justify-between">
             <div className="flex items-center">

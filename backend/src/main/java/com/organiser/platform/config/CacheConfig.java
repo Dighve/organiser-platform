@@ -43,7 +43,9 @@ public class CacheConfig {
             "eventDetail", 
             "publicGroups",
             "groupDetail",
-            "members"  // Member cache for profile photos
+            "members",  // Member cache for profile photos
+            "featureFlags",  // Feature flags cache
+            "featureFlagsMap"  // Feature flags map cache for frontend
         );
         
         cacheManager.setCaffeine(Caffeine.newBuilder()

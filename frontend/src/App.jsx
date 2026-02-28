@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { lazy, Suspense } from 'react'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
+import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 
 // Critical pages - loaded immediately
 import HomePage from './pages/HomePage'
@@ -40,10 +41,11 @@ function PrivateRoute({ children }) {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<HomePage />} />  
-        <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
+    <FeatureFlagProvider>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<HomePage />} />  
+          <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
         <Route path="events" element={
           <Suspense fallback={<PageLoader />}>
             <EventsPage />
@@ -141,6 +143,7 @@ function App() {
         />
       </Route>
     </Routes>
+    </FeatureFlagProvider>
   )
 }
 

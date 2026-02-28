@@ -13,6 +13,7 @@ import LoginModal from '../components/LoginModal'
 import AddToCalendar from '../components/AddToCalendar'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupTermsModal from '../components/GroupTermsModal'
+import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -37,6 +38,7 @@ export default function EventDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user, setReturnUrl } = useAuthStore()
+  const { isEventLocationEnabled, isGoogleMapsEnabled, isStaticMapsEnabled } = useFeatureFlags()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
@@ -321,15 +323,19 @@ export default function EventDetailPage() {
   const isPastEvent = event ? new Date(event?.eventDate) < new Date() : false
   
   // Check if access is denied (non-member trying to view members-only event)
-  // Organisers always have access
-  // Safely check for 403 error with multiple possible error structures
+  // The backend returns partial event data for non-group members
+  // Detect partial data by checking if key member-only fields are missing
   const is403Error = error && (
     error?.response?.status === 403 || 
     error?.status === 403 ||
     (error?.message && error.message.includes('403'))
   )
-  const isAccessDenied = !isEventOrganiser && (
-    is403Error || !event || !event?.title )
+  const isPartialData = event && (
+    event.description === null || 
+    event.location === null || 
+    event.maxParticipants === null
+  )
+  const isAccessDenied = is403Error || !event || !event?.title || isPartialData
   
   // Create display event for access-denied cases (partial data)
   const displayEvent = event || {
@@ -567,210 +573,193 @@ export default function EventDetailPage() {
           {/* MAIN CONTENT - Event details, participants */}
           {/* ============================================ */}
           <div className="order-1 lg:order-1 lg:col-span-2 space-y-6">
-            {/* Event Description (members only) */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Details</h2>
-              {isAccessDenied ? (
-                <div className="text-center py-12">
-                  <button 
-                    onClick={handleJoinClick}
-                    className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4 hover:from-purple-200 hover:to-pink-200 transition-all cursor-pointer transform hover:scale-110"
-                    title="Click to login and join"
-                  >
-                    <Lock className="h-8 w-8 text-purple-600" />
-                  </button>
-                  <p className="text-gray-600 mb-4">Join event to unlock details</p>
-                  <button
-                    onClick={handleJoinClick}
-                    disabled={joinMutation.isLoading || isJoiningFlow}
-                    className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
-                  >
-                    {joinMutation.isLoading || isJoiningFlow ? (
-                      <Loader className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Users className="h-4 w-4" />
-                    )}
-                    {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
-                  </button>
-                </div>
-              ) : (
-                <div className="prose prose-lg max-w-none text-gray-700 whitespace-pre-wrap">
-                  <ReactMarkdown
-                    components={{
-                      p: ({node, ...props}) => <p className="mb-4" {...props} />
-                    }}
-                  >
-                    {event?.description || ''}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
-
-            {/* Event Details (date/time always visible, rest members only) */}
-            <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Event Details</h2>
-              <div className="space-y-5">
-                {/* Always show date and time */}
-                <div className="flex items-start p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
-                  <Calendar className="h-6 w-6 mr-4 mt-1 text-purple-600" />
-                  <div>
-                    {isMultiDay ? (
-                      /* Multi-day event: Show date range */
-                      <>
-                        <div className="font-bold text-gray-900">
-                          {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
-                        </div>
-                        <div className="text-purple-600 font-semibold text-sm mt-1">
-                          {formattedStartTime} to {formattedEndTime} {timezoneAbbr}
-                        </div>
-                      </>
-                    ) : (
-                      /* Single day event: Show date with time range */
-                      <>
-                        <div className="font-bold text-gray-900">{formattedStartDate}</div>
-                        <div className="text-purple-600 font-semibold">
-                          {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime} {timezoneAbbr}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {isAccessDenied ? (
-                  /* Locked state for other details */
-                  <div className="text-center py-12 border-2 border-dashed border-gray-300 rounded-xl">
-                    <button 
-                      onClick={handleJoinClick}
-                      className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 mb-4 hover:from-purple-200 hover:to-pink-200 transition-all cursor-pointer transform hover:scale-110"
-                      title="Click to login and join"
-                    >
-                      <Lock className="h-8 w-8 text-purple-600" />
-                    </button>
-                    <p className="text-gray-600 mb-4">Join event to unlock location and details</p>
-                    <button
-                      onClick={handleJoinClick}
-                      disabled={joinMutation.isLoading || isJoiningFlow}
-                      className="px-6 py-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 flex items-center justify-center gap-2 mx-auto"
-                    >
-                      {joinMutation.isLoading || isJoiningFlow ? (
-                        <Loader className="h-4 w-4 animate-spin" />
+            {/* For non-members: Show only date/time, hide everything else */}
+            {isAccessDenied ? (
+              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Event Details</h2>
+                <div className="space-y-5">
+                  {/* Always show date and time */}
+                  <div className="flex items-start p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                    <Calendar className="h-6 w-6 mr-4 mt-1 text-purple-600" />
+                    <div>
+                      {isMultiDay ? (
+                        /* Multi-day event: Show date range */
+                        <>
+                          <div className="font-bold text-gray-900">
+                            {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+                          </div>
+                          <div className="text-purple-600 font-semibold text-sm mt-1">
+                            {formattedStartTime} to {formattedEndTime} {timezoneAbbr}
+                          </div>
+                        </>
                       ) : (
-                        <Users className="h-4 w-4" />
+                        /* Single day event: Show date with time range */
+                        <>
+                          <div className="font-bold text-gray-900">{formattedStartDate}</div>
+                          <div className="text-purple-600 font-semibold">
+                            {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime} {timezoneAbbr}
+                          </div>
+                        </>
                       )}
-                      {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
-                    </button>
+                    </div>
                   </div>
-                ) : (
-                  /* Full details for members */
-                  <>
-                    {event?.difficultyLevel && (
-                      <div className="flex items-start p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
-                        <TrendingUp className="h-6 w-6 mr-4 mt-1 text-orange-600" />
-                        <div>
-                          <div className="text-sm text-gray-600">Difficulty Level</div>
-                          <div className="font-bold text-gray-900">{event?.difficultyLevel}</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {event?.distanceKm && (
-                      <div className="flex items-start p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
-                        <Clock className="h-6 w-6 mr-4 mt-1 text-green-600" />
-                        <div>
-                          <div className="text-sm text-gray-600">Distance</div>
-                          <div className="font-bold text-gray-900">{event?.distanceKm} km</div>
-                          {event?.estimatedDurationHours && (
-                            <div className="text-sm text-gray-600 mt-1">Duration: ~{event?.estimatedDurationHours} hours</div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {event?.elevationGainM && (
-                      <div className="flex items-start p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl">
-                        <ArrowUp className="h-6 w-6 mr-4 mt-1 text-blue-600" />
-                        <div>
-                          <div className="text-sm text-gray-600">Elevation Gain</div>
-                          <div className="font-bold text-gray-900">{event?.elevationGainM} m</div>
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Event Description (members only) */}
+                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Details</h2>
+                  <div className="prose prose-lg max-w-none text-gray-700 whitespace-pre-wrap">
+                    <ReactMarkdown
+                      components={{
+                        p: ({node, ...props}) => <p className="mb-4" {...props} />
+                      }}
+                    >
+                      {event?.description || ''}
+                    </ReactMarkdown>
+                  </div>
+                </div>
 
-            {/* Requirements Section (members only) */}
-            {!isAccessDenied && event?.requirements && event?.requirements.length > 0 && (
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">⚠️ Requirements</h2>
-                <ul className="space-y-3">
-                  {Array.from(event?.requirements || []).map((req, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span className="text-gray-700">{req}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Included Items Section (members only) */}
-            {!isAccessDenied && event?.includedItems && event?.includedItems.length > 0 && (
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">✨ What's Included</h2>
-                <ul className="space-y-3">
-                  {Array.from(event?.includedItems || []).map((item, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="inline-block w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      <span className="text-gray-700">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Attendees/Participants Section (members only) */}
-            {!isAccessDenied && (
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
-                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-                  <Users className="inline h-7 w-7 mr-2 mb-1" />
-                  Attendees ({event?.currentParticipants || 0}{event?.maxParticipants ? `/${event?.maxParticipants}` : ''})
-                </h2>
-                {participantsData?.data && participantsData.data.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {participantsData.data.map((participant) => (
-                      <div 
-                        key={participant.id}
-                        onClick={() => navigate(`/members/${participant.id}`)}
-                        className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1"
-                      >
-                        <ProfileAvatar 
-                          member={participant} 
-                          size="lg" 
-                          className="group-hover:scale-110 transition-transform"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
-                            {participant.displayName || participant.email.split('@')[0]}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            Joined {new Date(participant.joinedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        {event?.hostMemberId && participant.id === event.hostMemberId && (
-                          <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Host</span>
+                {/* Event Details (date/time always visible, rest members only) */}
+                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Event Details</h2>
+                  <div className="space-y-5">
+                    {/* Always show date and time */}
+                    <div className="flex items-start p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                      <Calendar className="h-6 w-6 mr-4 mt-1 text-purple-600" />
+                      <div>
+                        {isMultiDay ? (
+                          /* Multi-day event: Show date range */
+                          <>
+                            <div className="font-bold text-gray-900">
+                              {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+                            </div>
+                            <div className="text-purple-600 font-semibold text-sm mt-1">
+                              {formattedStartTime} to {formattedEndTime} {timezoneAbbr}
+                            </div>
+                          </>
+                        ) : (
+                          /* Single day event: Show date with time range */
+                          <>
+                            <div className="font-bold text-gray-900">{formattedStartDate}</div>
+                            <div className="text-purple-600 font-semibold">
+                              {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime} {timezoneAbbr}
+                            </div>
+                          </>
                         )}
                       </div>
-                    ))}
+                    </div>
+
+                    {/* Full details for members */}
+                    <>
+                      {event?.difficultyLevel && (
+                        <div className="flex items-start p-4 bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl">
+                          <TrendingUp className="h-6 w-6 mr-4 mt-1 text-orange-600" />
+                          <div>
+                            <div className="text-sm text-gray-600">Difficulty Level</div>
+                            <div className="font-bold text-gray-900">{event?.difficultyLevel}</div>
+                          </div>
+                        </div>
+                      )}
+
+                      {event?.distanceKm && (
+                        <div className="flex items-start p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl">
+                          <Clock className="h-6 w-6 mr-4 mt-1 text-green-600" />
+                          <div>
+                            <div className="text-sm text-gray-600">Distance</div>
+                            <div className="font-bold text-gray-900">{event?.distanceKm} km</div>
+                            {event?.estimatedDurationHours && (
+                              <div className="text-sm text-gray-600 mt-1">Duration: ~{event?.estimatedDurationHours} hours</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {event?.elevationGainM && (
+                        <div className="flex items-start p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl">
+                          <ArrowUp className="h-6 w-6 mr-4 mt-1 text-blue-600" />
+                          <div>
+                            <div className="text-sm text-gray-600">Elevation Gain</div>
+                            <div className="font-bold text-gray-900">{event?.elevationGainM} m</div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   </div>
-                ) : (
-                  <div className="text-center py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
-                    <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                    <p className="text-gray-600">No attendees yet. Be the first to join!</p>
+                </div>
+
+                {/* Requirements Section (members only) */}
+                {event?.requirements && event?.requirements.length > 0 && (
+                  <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4">⚠️ Requirements</h2>
+                    <ul className="space-y-3">
+                      {Array.from(event?.requirements || []).map((req, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="inline-block w-2 h-2 bg-gradient-to-r from-red-500 to-orange-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <span className="text-gray-700">{req}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                 )}
-              </div>
+
+                {/* Included Items Section (members only) */}
+                {event?.includedItems && event?.includedItems.length > 0 && (
+                  <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                    <h2 className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">✨ What's Included</h2>
+                    <ul className="space-y-3">
+                      {Array.from(event?.includedItems || []).map((item, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="inline-block w-2 h-2 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full mt-2 mr-3 flex-shrink-0"></span>
+                          <span className="text-gray-700">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Attendees/Participants Section (members only) */}
+                <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+                    <Users className="inline h-7 w-7 mr-2 mb-1" />
+                    Attendees ({event?.currentParticipants || 0}{event?.maxParticipants ? `/${event?.maxParticipants}` : ''})
+                  </h2>
+                  {participantsData?.data && participantsData.data.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {participantsData.data.map((participant) => (
+                        <div 
+                          key={participant.id}
+                          onClick={() => navigate(`/members/${participant.id}`)}
+                          className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1"
+                        >
+                          <ProfileAvatar 
+                            member={participant} 
+                            size="lg" 
+                            className="group-hover:scale-110 transition-transform"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
+                              {participant.displayName || participant.email.split('@')[0]}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">
+                              Joined {new Date(participant.joinedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          {event?.hostMemberId && participant.id === event.hostMemberId && (
+                            <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Host</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                      <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                      <p className="text-gray-600">No attendees yet. Be the first to join!</p>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
 
           </div>
@@ -1000,8 +989,8 @@ export default function EventDetailPage() {
                 )}
               </div>
 
-              {/* Location Map Section (members only) */}
-              {!isAccessDenied && event?.location && (
+              {/* Location Map Section (members only) - Only show if location features are enabled */}
+              {!isAccessDenied && event?.location && isEventLocationEnabled() && isGoogleMapsEnabled() && (
                 <div className="pt-6 border-t border-gray-200">
                   <div className="space-y-3">
                     <div className="flex items-center gap-2 mb-3">
@@ -1018,17 +1007,28 @@ export default function EventDetailPage() {
                       }}
                       className="relative w-full h-40 rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02]"
                     >
-                      {/* Static Map from Google Maps */}
-                      <img
-                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event?.location || '')}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event?.location || '')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
-                        alt={`Map of ${event?.location || 'Event location'}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
-                        onError={(e) => {
-                          e.target.style.opacity = '0'
-                        }}
-                      />
+                      {/* Static Map from Google Maps - Only show if static maps are enabled */}
+                      {isStaticMapsEnabled() && (
+                        <img
+                          src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event?.location || '')}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event?.location || '')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
+                          alt={`Map of ${event?.location || 'Event location'}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            e.target.style.opacity = '0'
+                          }}
+                        />
+                      )}
+                      {/* Fallback content when static maps are disabled */}
+                      {!isStaticMapsEnabled() && (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <div className="text-center">
+                            <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-600 font-medium">{event?.location}</p>
+                          </div>
+                        </div>
+                      )}
                       {/* Overlay with icon */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                         <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transform scale-95 group-hover:scale-100 transition-transform duration-300">

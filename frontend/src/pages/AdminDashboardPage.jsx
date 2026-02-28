@@ -1,10 +1,15 @@
-import { useQuery } from '@tanstack/react-query';
-import { adminAPI } from '../lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { adminAPI, featureFlagsAPI } from '../lib/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus } from 'lucide-react';
+import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
+import { useState } from 'react';
+import toast from 'react-hot-toast';
 
 export default function AdminDashboardPage() {
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState('dashboard');
+
   // Fetch user statistics
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['adminStats'],
@@ -20,6 +25,30 @@ export default function AdminDashboardPage() {
     queryFn: async () => {
       const response = await adminAPI.getRecentUsers(20);
       return response.data;
+    },
+  });
+
+  // Fetch feature flags
+  const { data: featureFlags, isLoading: flagsLoading, error: flagsError } = useQuery({
+    queryKey: ['adminFeatureFlags'],
+    queryFn: async () => {
+      const response = await featureFlagsAPI.getAllFeatureFlags();
+      return response;
+    },
+  });
+
+  // Update feature flag mutation
+  const updateFlagMutation = useMutation({
+    mutationFn: async ({ flagKey, isEnabled }) => {
+      return await featureFlagsAPI.updateFeatureFlag(flagKey, isEnabled);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries(['adminFeatureFlags']);
+      queryClient.invalidateQueries(['featureFlags']);
+      toast.success(`Feature flag "${variables.flagKey}" ${variables.isEnabled ? 'enabled' : 'disabled'} successfully`);
+    },
+    onError: (error) => {
+      toast.error('Failed to update feature flag: ' + (error.message || 'Unknown error'));
     },
   });
 
@@ -100,11 +129,42 @@ export default function AdminDashboardPage() {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-2">
             Admin Dashboard
           </h1>
-          <p className="text-gray-600 text-lg">Monitor platform growth and user activity</p>
+          <p className="text-gray-600 text-lg">Monitor platform growth and manage system settings</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <nav className="flex space-x-8">
+            <button
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'dashboard'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Dashboard
+            </button>
+            <button
+              onClick={() => setActiveTab('feature-flags')}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'feature-flags'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              Feature Flags
+            </button>
+          </nav>
+        </div>
+
+        {/* Dashboard Tab Content */}
+        {activeTab === 'dashboard' && (
+          <>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {statCards.map((stat, index) => {
             const Icon = stat.icon;
             return (
@@ -275,6 +335,113 @@ export default function AdminDashboardPage() {
             </table>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Feature Flags Tab Content */}
+        {activeTab === 'feature-flags' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Feature Flag Management</h2>
+                <div className="flex items-center text-sm text-gray-500">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Control platform features
+                </div>
+              </div>
+              
+              {flagsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  <span className="ml-3 text-gray-600">Loading feature flags...</span>
+                </div>
+              ) : flagsError ? (
+                <div className="text-center py-12">
+                  <div className="text-red-600 text-4xl mb-4">⚠️</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load feature flags</h3>
+                  <p className="text-gray-600">Please try refreshing the page.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {featureFlags?.map((flag) => (
+                    <div
+                      key={flag.flagKey}
+                      className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">{flag.flagName}</h3>
+                          <span className="text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                            {flag.flagKey}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 text-sm">{flag.description}</p>
+                        {flag.updatedByEmail && (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Last updated by {flag.updatedByEmail} on{' '}
+                            {format(new Date(flag.updatedAt), 'MMM dd, yyyy at h:mm a')}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 ml-6">
+                        <div className="flex items-center gap-2">
+                          {flag.isEnabled ? (
+                            <Eye className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <EyeOff className="w-4 h-4 text-gray-400" />
+                          )}
+                          <span className={`text-sm font-medium ${flag.isEnabled ? 'text-green-600' : 'text-gray-500'}`}>
+                            {flag.isEnabled ? 'Enabled' : 'Disabled'}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => updateFlagMutation.mutate({
+                            flagKey: flag.flagKey,
+                            isEnabled: !flag.isEnabled
+                          })}
+                          disabled={updateFlagMutation.isLoading}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            flag.isEnabled ? 'bg-purple-600' : 'bg-gray-200'
+                          }`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                              flag.isEnabled ? 'translate-x-5' : 'translate-x-0'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {featureFlags?.length === 0 && (
+                    <div className="text-center py-12">
+                      <Settings className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">No feature flags found</h3>
+                      <p className="text-gray-600">Feature flags will appear here when they are created.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Feature Flag Legend */}
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <div className="bg-blue-500 rounded-full p-1">
+                  <Settings className="w-4 h-4 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-900 mb-1">Feature Flag Information</h4>
+                  <p className="text-xs text-blue-700 leading-relaxed">
+                    Toggle feature flags to enable or disable platform features in real-time. Changes take effect immediately 
+                    across the application. Use caution when disabling core features as it may affect user experience.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

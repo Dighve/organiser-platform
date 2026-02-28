@@ -212,4 +212,29 @@ export const notificationsAPI = {
     api.delete(`/notifications/${notificationId}`),
 }
 
+// Feature Flags API
+export const featureFlagsAPI = {
+  // Get feature flags as a map for frontend consumption (public endpoint)
+  getFeatureFlagsMap: async () => {
+    const response = await api.get('/admin/feature-flags/map')
+    return response.data
+  },
+  
+  // Admin endpoints for managing feature flags
+  getAllFeatureFlags: async () => {
+    const response = await api.get('/admin/feature-flags')
+    return response.data
+  },
+  
+  getFeatureFlagByKey: async (flagKey) => {
+    const response = await api.get(`/admin/feature-flags/${flagKey}`)
+    return response.data
+  },
+  
+  updateFeatureFlag: async (flagKey, isEnabled) => {
+    const response = await api.put(`/admin/feature-flags/${flagKey}`, { isEnabled })
+    return response.data
+  },
+}
+
 export default api

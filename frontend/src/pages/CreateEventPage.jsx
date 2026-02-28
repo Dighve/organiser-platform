@@ -13,6 +13,7 @@ import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import { useAuthStore } from '../store/authStore'
+import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 
 // ============================================================
 // CONSTANTS
@@ -120,6 +121,7 @@ export default function CreateEventPage() {
   const copiedEventData = location.state?.eventData
   const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
   const { isAuthenticated } = useAuthStore()
+  const { isEventLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
   
   // ============================================================
   // QUERIES
@@ -270,14 +272,28 @@ export default function CreateEventPage() {
   // Navigate to next step in form
   const nextStep = () => {
     if (currentStep < STEPS.REVIEW) {
-      setCurrentStep(prev => prev + 1)
+      let nextStepValue = currentStep + 1
+      
+      // Skip LOCATION step if location features are disabled
+      if (nextStepValue === STEPS.LOCATION && (!isEventLocationEnabled() || !isGoogleMapsEnabled())) {
+        nextStepValue = STEPS.DETAILS
+      }
+      
+      setCurrentStep(nextStepValue)
     }
   }
 
   // Navigate to previous step in form
   const prevStep = () => {
     if (currentStep > STEPS.BASICS) {
-      setCurrentStep(prev => prev - 1)
+      let prevStepValue = currentStep - 1
+      
+      // Skip LOCATION step if location features are disabled
+      if (prevStepValue === STEPS.LOCATION && (!isEventLocationEnabled() || !isGoogleMapsEnabled())) {
+        prevStepValue = STEPS.BASICS
+      }
+      
+      setCurrentStep(prevStepValue)
     }
   }
   
@@ -301,8 +317,8 @@ export default function CreateEventPage() {
   
   // Handle submission of individual step (save data and proceed to next)
   const onStepSubmit = (data) => {
-    // Validate location step has coordinates before proceeding
-    if (currentStep === STEPS.LOCATION) {
+    // Validate location step has coordinates before proceeding (only if location features are enabled)
+    if (currentStep === STEPS.LOCATION && isEventLocationEnabled() && isGoogleMapsEnabled()) {
       if (!data.latitude || !data.longitude) {
         toast.error('⚠️ Please select a location from the dropdown to set coordinates', {
           duration: 4000,
@@ -323,8 +339,8 @@ export default function CreateEventPage() {
       return
     }
     
-    // Validate location has coordinates
-    if (!data.latitude || !data.longitude) {
+    // Validate location has coordinates (only if location features are enabled)
+    if ((isEventLocationEnabled() && isGoogleMapsEnabled()) && (!data.latitude || !data.longitude)) {
       toast.error('⚠️ Please select a valid location from Google Maps with coordinates')
       setCurrentStep(STEPS.LOCATION)
       return
@@ -1130,7 +1146,10 @@ export default function CreateEventPage() {
       case STEPS.BASICS:
         return renderBasicsStep()
       case STEPS.LOCATION:
-        return renderLocationStep()
+        // Only show location step if location features are enabled
+        return (isEventLocationEnabled() && isGoogleMapsEnabled()) 
+          ? renderLocationStep() 
+          : renderDetailsStep() // Skip to details if location disabled
       case STEPS.DETAILS:
         return renderDetailsStep()
       case STEPS.REVIEW:
@@ -1152,20 +1171,7 @@ export default function CreateEventPage() {
           </h1>
           <p className="text-gray-600 text-xl font-medium mb-6">Plan an amazing hiking adventure for your group</p>
           
-          {/* Coming Soon Activities Banner */}
-          <div className="max-w-2xl mx-auto">
-            <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 border-2 border-purple-200 rounded-2xl p-4">
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <span className="text-gray-700 font-semibold text-sm">Currently:</span>
-                <span className="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-bold shadow-lg">🥾 Hiking</span>
-                <span className="text-gray-400 text-sm">|</span>
-                <span className="text-gray-700 font-semibold text-sm">Coming Soon:</span>
-                <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏃 Running</span>
-                <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🧗 Climbing</span>
-                <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏊 Swimming</span>
-              </div>
-            </div>
-          </div>
+          {/* Coming Soon Activities Banner removed */}
         </div>
         
         {renderProgressBar()}

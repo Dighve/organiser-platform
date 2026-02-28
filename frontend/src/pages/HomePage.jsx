@@ -120,6 +120,17 @@ export default function HomePage() {
   // EFFECTS
   // ============================================================
   
+  // Handle welcome URL parameter on mount
+  useEffect(() => {
+    if (showDiscover) {
+      const currentUrl = new URL(window.location)
+      if (!currentUrl.searchParams.has('welcome')) {
+        currentUrl.searchParams.set('welcome', 'true')
+        navigate(`/?welcome=true`, { replace: true })
+      }
+    }
+  }, [showDiscover, navigate])
+  
   // Smart tab selection: Auto-select organiser tab if user has organised groups
   useEffect(() => {
     if (!hasInitializedTab && !organisedGroupsLoading && user?.hasOrganiserRole) {
@@ -140,7 +151,9 @@ export default function HomePage() {
   const handleDiscoverClick = () => {
     localStorage.setItem('hasDiscovered', 'true')
     setShowDiscover(false)
-    // Remove welcome parameter from URL
+    // Clean URL by removing welcome parameter
+    window.history.replaceState({}, '', '/')
+    // Also use navigate to ensure React Router state is updated
     navigate('/', { replace: true })
   }
 
@@ -148,12 +161,6 @@ export default function HomePage() {
   // HERO VIEW - First-time visitor landing page
   // ============================================================
   if (showDiscover) {
-    // Add welcome parameter to URL for header logic
-    const currentUrl = new URL(window.location)
-    if (!currentUrl.searchParams.has('welcome')) {
-      currentUrl.searchParams.set('welcome', 'true')
-      navigate(`/?welcome=true`, { replace: true })
-    }
     return <WelcomeScreen onDiscoverClick={handleDiscoverClick} />
   }
 
@@ -165,7 +172,7 @@ export default function HomePage() {
       <div className="flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-8 py-10">
         
         {/* ========== LEFT SIDEBAR: YOUR GROUPS ========== */}
-        <div className={`w-full lg:w-1/4 ${!isAuthenticated ? 'order-3 lg:order-1' : 'order-1'}`}>
+        <div className="hidden md:block w-full lg:w-1/4 order-3 lg:order-1">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Groups</h2>
             <button
@@ -394,20 +401,13 @@ export default function HomePage() {
         </div>
 
         {/* ========== RIGHT CONTENT: EVENTS ========== */}
-        <div className={`w-full lg:w-3/4 flex flex-col gap-12 ${!isAuthenticated ? 'order-1 lg:order-2' : 'order-2'}`}>
+        <div className="w-full lg:w-3/4 flex flex-col gap-12 order-1 lg:order-2">
           
           {/* ========== DISCOVER EVENTS SECTION (FIRST ON MOBILE FOR UNAUTHENTICATED) ========== */}
           <div className={!isAuthenticated ? 'order-1' : 'order-2'}>
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">Discover Events</h2>
-                <button
-                  onClick={() => navigate('/events')}
-                  className="md:hidden p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                  aria-label="Search events"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
               </div>
               <span className="text-sm text-gray-500 font-medium">{discoverEvents.length} event{discoverEvents.length !== 1 ? 's' : ''}</span>
             </div>
@@ -599,12 +599,13 @@ export default function HomePage() {
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              Join OutMeets
+              Sign in
               <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse" />
             </button>
           </div>
         </div>
       )}
+
 
       {/* Login Modal */}
       <LoginModal 

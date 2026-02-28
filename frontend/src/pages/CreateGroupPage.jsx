@@ -9,6 +9,7 @@ import { useAuthStore } from '../store/authStore'
 import { ArrowLeft, Upload } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
+import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 
 // ============================================================
 // MAIN COMPONENT
@@ -19,6 +20,7 @@ export default function CreateGroupPage() {
   // ============================================================
   const navigate = useNavigate()
   const { isAuthenticated } = useAuthStore()  // Global auth state
+  const { isGroupLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
   const queryClient = useQueryClient()  // React Query cache
   
   // ============================================================
@@ -254,22 +256,24 @@ export default function CreateGroupPage() {
             </p>
           </div>
           
-          {/* LOCATION FIELD (Optional) - Google Places Autocomplete */}
-          <div>
-            <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
-              📍 Location
-            </label>
-            <GooglePlacesAutocomplete
-              onPlaceSelect={(locationData) => {
-                setFormData(prev => ({
-                  ...prev,
-                  location: locationData.address
-                }))
-              }}
-              error={errors.location}
-              placeholder="e.g., Peak District, UK"
-            />
-          </div>
+          {/* LOCATION FIELD (Optional) - Google Places Autocomplete - Only show if location features are enabled */}
+          {isGroupLocationEnabled() && isGoogleMapsEnabled() && (
+            <div>
+              <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
+                📍 Location
+              </label>
+              <GooglePlacesAutocomplete
+                onPlaceSelect={(locationData) => {
+                  setFormData(prev => ({
+                    ...prev,
+                    location: locationData.address
+                  }))
+                }}
+                error={errors.location}
+                placeholder="e.g., Peak District, UK"
+              />
+            </div>
+          )}
           
           {/* MAX MEMBERS FIELD (Optional) */}
           <div>

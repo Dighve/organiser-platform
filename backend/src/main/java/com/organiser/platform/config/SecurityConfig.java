@@ -69,6 +69,11 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/activities/*", "GET")
                         ).permitAll()
                         
+                        // Public READ-ONLY endpoint for feature flags map
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/admin/feature-flags/map", "GET")
+                        ).permitAll()
+                        
                         // Event write operations - require authentication
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/events", "POST"),

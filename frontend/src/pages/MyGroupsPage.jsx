@@ -120,7 +120,7 @@ export default function MyGroupsPage() {
   // MAIN RENDER
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8 pb-24 md:pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ========== PAGE HEADER ========== */}
@@ -394,6 +394,25 @@ export default function MyGroupsPage() {
             )}
           </>
         )}
+      </div>
+
+      {/* Mobile Fixed Explore Groups Button */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+        {/* Overlay backdrop */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/10 to-transparent pointer-events-none" />
+        {/* Explore Groups button */}
+        <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-200/50 px-4 py-4 safe-area-pb">
+          <button
+            onClick={() => navigate('/browse-groups')}
+            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-3 text-lg"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A2 2 0 013 15.382V5.618a2 2 0 011.553-1.948L9 1m0 19l6-3m-6 3V1m6 15l5.447-2.724A2 2 0 0021 11.382V3.618a2 2 0 00-1.553-1.948L15 1m0 15V1m0 0L9 4" />
+            </svg>
+            Explore Groups
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse" />
+          </button>
+        </div>
       </div>
     </div>
   )
