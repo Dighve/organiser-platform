@@ -108,13 +108,11 @@ export default function Layout() {
               <Link to="/" className="flex items-center">
                 {/* Modern Logo with text */}
                 <div className="flex items-center gap-3">
-                  <div className="relative">
+                  <div className="relative w-10 h-10">
                     <img 
                       src="/favicon1.svg" 
                       alt="OutMeets" 
-                      width="40" 
-                      height="40" 
-                      className="drop-shadow-lg"
+                      className="w-full h-full object-contain drop-shadow-lg"
                     />
                   </div>
                   <span className="text-2xl font-extrabold text-white drop-shadow-md hidden sm:block">OutMeets</span>
