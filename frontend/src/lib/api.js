@@ -185,6 +185,13 @@ export const legalAPI = {
   acceptUserAgreement: (data) => api.post('/legal/accept-user-agreement', data),
   
   hasAcceptedUserAgreement: () => api.get('/legal/has-accepted-user-agreement'),
+  
+  // New agreement text endpoints for frontend validation
+  getCurrentOrganiserAgreement: () => api.get('/agreements/organiser/current'),
+  
+  getCurrentUserAgreement: () => api.get('/agreements/user/current'),
+  
+  verifyAgreementHash: (data) => api.post('/agreements/verify-hash', data),
 }
 
 // Admin API
@@ -194,6 +201,16 @@ export const adminAPI = {
   getRecentUsers: (limit = 50) => api.get('/admin/users/recent', { params: { limit } }),
   
   checkAdminStatus: () => api.get('/admin/check'),
+  
+  // Agreement Management APIs
+  getAllAgreements: () => api.get('/admin/agreements'),
+  
+  getCurrentAgreement: (agreementType) => api.get(`/admin/agreements/${agreementType}/current`),
+  
+  updateAgreement: (data) => api.put('/admin/agreements', data),
+  
+  getAgreementHistory: (agreementType, limit = 10) => 
+    api.get(`/admin/agreements/${agreementType}/history?limit=${limit}`),
 }
 
 // Notifications API

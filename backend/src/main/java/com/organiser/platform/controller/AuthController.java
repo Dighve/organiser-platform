@@ -52,7 +52,7 @@ public class AuthController {
             );
         }
         
-        log.info("Magic link request accepted - IP: {}, Email: {}", clientIp, request.getEmail());
+        log.debug("Magic link request accepted - IP: {}, Email: {}", clientIp, request.getEmail());
         authService.requestMagicLink(request);
         
         Map<String, String> response = new HashMap<>();
@@ -93,7 +93,7 @@ public class AuthController {
             );
         }
         
-        log.info("Google OAuth request accepted - IP: {}", clientIp);
+        log.debug("Google OAuth request accepted - IP: {}", clientIp);
         return ResponseEntity.ok(googleOAuth2Service.authenticateWithGoogle(request));
     }
     

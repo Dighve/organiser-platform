@@ -247,6 +247,16 @@ export default function Layout() {
                   >
                     My Groups
                   </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="block text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold flex items-center space-x-2"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Shield className="h-4 w-4" />
+                      <span>Admin Dashboard</span>
+                    </Link>
+                  )}
                   {!memberData?.hasAcceptedOrganiserAgreement && (
                     <button
                       onClick={handleBecomeOrganiser}

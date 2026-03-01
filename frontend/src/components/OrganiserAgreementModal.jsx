@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import { X, AlertTriangle, FileText } from 'lucide-react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
+import { X, AlertTriangle, FileText, Loader2 } from 'lucide-react'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { legalAPI } from '../lib/api'
 import toast from 'react-hot-toast'
 
@@ -9,6 +9,34 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
   const [understandsInsurance, setUnderstandsInsurance] = useState(false)
   const [scrolledToBottom, setScrolledToBottom] = useState(false)
   const queryClient = useQueryClient()
+
+  // Fetch current organiser agreement from backend
+  const {
+    data: agreementData,
+    isLoading: isLoadingAgreement,
+    error: agreementError,
+    refetch: refetchAgreement
+  } = useQuery({
+    queryKey: ['currentOrganiserAgreement'],
+    queryFn: async () => {
+      console.log('🔄 Fetching current organiser agreement from backend...')
+      const response = await legalAPI.getCurrentOrganiserAgreement()
+      console.log('✅ Organiser agreement data fetched:', response.data)
+      return response.data
+    },
+    enabled: isOpen, // Only fetch when modal is open
+    staleTime: 5 * 60 * 1000, // 5 minutes cache
+    retry: 3
+  })
+
+  // Reset states when modal opens/closes
+  useEffect(() => {
+    if (isOpen) {
+      setHasRead(false)
+      setUnderstandsInsurance(false)
+      setScrolledToBottom(false)
+    }
+  }, [isOpen])
 
   const acceptMutation = useMutation({
     mutationFn: async () => {
@@ -67,6 +95,38 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
 
   if (!isOpen) return null
 
+  // Show error state if agreement failed to load
+  if (agreementError && !isLoadingAgreement) {
+    return (
+      <div className="fixed inset-0 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
+        <div className="flex min-h-full items-center justify-center p-4">
+          <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center">
+              <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Failed to Load Agreement</h3>
+              <p className="text-gray-600 mb-4">Unable to fetch the current organiser agreement. Please try again.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => refetchAgreement()}
+                  className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                >
+                  Retry
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
@@ -103,108 +163,52 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
             </div>
           </div>
 
-          {/* Scrollable Agreement Content */}
+          {/* Scrollable Agreement Content - Dynamic from Backend */}
           <div 
-            className="flex-1 overflow-y-auto border-2 border-gray-200 rounded-xl p-6 mb-6 prose prose-sm max-w-none"
+            className="flex-1 overflow-y-auto border-2 border-gray-200 rounded-xl p-6 mb-6"
             onScroll={handleScroll}
           >
-            <div className="space-y-4 text-gray-700">
-              <h3 className="text-lg font-bold text-gray-900">OutMeets Organiser Agreement</h3>
-              
-              <p className="text-sm text-gray-500">Last Updated: December 9, 2025</p>
-              
-              <h4 className="font-bold text-gray-900 mt-6">1. ACCEPTANCE OF ORGANISER RESPONSIBILITIES</h4>
-              <p>By creating a group or event, you:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Agree to be bound by this Organiser Agreement</li>
-                <li>Accept full responsibility for the safety and conduct of your events</li>
-                <li>Acknowledge that you are NOT an employee or agent of OutMeets</li>
-                <li>Understand that OutMeets is NOT liable for your events</li>
-              </ul>
-
-              <h4 className="font-bold text-gray-900 mt-6">2. YOUR RESPONSIBILITIES</h4>
-              <p>As an Organiser, you must:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li><strong>Duty of Care:</strong> Ensure participant safety at all times</li>
-                <li><strong>Risk Assessment:</strong> Evaluate hazards before and during events</li>
-                <li><strong>Qualifications:</strong> Have adequate experience and training (First Aid recommended)</li>
-                <li><strong>Emergency Preparedness:</strong> Carry first aid kit, communication device, emergency contacts</li>
-                <li><strong>Accurate Information:</strong> Provide truthful event descriptions and difficulty ratings</li>
-                <li><strong>Weather Monitoring:</strong> Cancel events in dangerous conditions</li>
-              </ul>
-
-              <h4 className="font-bold text-gray-900 mt-6">3. LIABILITY & INSURANCE</h4>
-              <p className="font-bold text-red-600">YOU ARE PERSONALLY LIABLE for:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Injuries or deaths of participants</li>
-                <li>Property damage caused by you or participants</li>
-                <li>Negligent route planning or decision-making</li>
-                <li>Failure to provide adequate supervision</li>
-              </ul>
-
-              <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 my-4">
-                <p className="font-bold text-yellow-900">🛡️ INSURANCE REQUIREMENTS</p>
-                <p className="text-sm text-yellow-800 mt-2">You MUST obtain adequate insurance coverage:</p>
-                <ul className="list-disc pl-5 text-sm text-yellow-800 mt-2 space-y-1">
-                  <li><strong>Public Liability:</strong> £5,000,000+ (STRONGLY RECOMMENDED)</li>
-                  <li><strong>Personal Accident:</strong> £100,000+</li>
-                  <li><strong>Professional Indemnity:</strong> £1,000,000+ (if charging fees)</li>
-                </ul>
-                <p className="text-sm text-yellow-800 mt-2">
-                  <strong>Where to get insurance:</strong> British Mountaineering Council (BMC), Ramblers Association
-                </p>
+            {isLoadingAgreement ? (
+              // Loading state
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 text-purple-600 animate-spin mx-auto mb-4" />
+                  <p className="text-gray-600">Loading organiser agreement...</p>
+                </div>
               </div>
+            ) : agreementData ? (
+              // Dynamic content from backend
+              <div className="prose prose-sm max-w-none">
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-purple-600" />
+                  OutMeets Organiser Agreement
+                </h3>
+                
+                <div className="text-sm text-gray-600 mb-4">
+                  <strong>Effective Date:</strong> {agreementData.effectiveDate ? new Date(agreementData.effectiveDate).toLocaleDateString() : 'N/A'} | 
+                  <strong> Version:</strong> {agreementData.version || 'N/A'}
+                  <br />
+                  <strong>Agreement Type:</strong> {agreementData.agreementType || 'ORGANISER'}
+                </div>
 
-              <h4 className="font-bold text-gray-900 mt-6">4. WHAT OUTMEETS IS NOT RESPONSIBLE FOR</h4>
-              <p>OutMeets is NOT LIABLE for:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Your actions or decisions as an Organiser</li>
-                <li>Injuries or damages arising from your events</li>
-                <li>Your failure to obtain insurance</li>
-                <li>Your violation of laws or regulations</li>
-              </ul>
+                {/* Dynamic Agreement Text */}
+                <div className="space-y-4 text-gray-700 whitespace-pre-wrap">
+                  {agreementData.agreementText || 'Agreement text not available.'}
+                </div>
 
-              <h4 className="font-bold text-gray-900 mt-6">5. INDEMNIFICATION</h4>
-              <p className="font-bold">You agree to INDEMNIFY and HOLD HARMLESS OutMeets from:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>All claims, damages, losses, and expenses (including legal fees)</li>
-                <li>Arising from your events or activities</li>
-                <li>Caused by your negligence or breach of this agreement</li>
-              </ul>
-
-              <h4 className="font-bold text-gray-900 mt-6">6. EMERGENCY PROCEDURES</h4>
-              <p>Before every event, you must:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Carry a first aid kit</li>
-                <li>Carry a communication device (mobile phone)</li>
-                <li>Have emergency contacts for all participants</li>
-                <li>Know the location of nearest emergency services</li>
-                <li>Have a contingency plan (escape routes, bad weather plan)</li>
-              </ul>
-
-              <h4 className="font-bold text-gray-900 mt-6">7. PROHIBITED ACTIVITIES</h4>
-              <p>You must NOT:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li>Lead activities beyond your competence</li>
-                <li>Misrepresent your qualifications or experience</li>
-                <li>Organise events while under the influence of alcohol or drugs</li>
-                <li>Discriminate against participants</li>
-                <li>Endanger participants through reckless behavior</li>
-              </ul>
-
-              <div className="bg-red-50 border-l-4 border-red-400 p-4 my-4">
-                <p className="font-bold text-red-900">🚨 CRITICAL WARNING</p>
-                <p className="text-sm text-red-800 mt-2">
-                  By accepting this agreement, you acknowledge that outdoor activities carry inherent risks including 
-                  serious injury or death. You are solely responsible for participant safety. OutMeets provides a 
-                  platform only and assumes no responsibility for your events.
-                </p>
+                {/* Footer with metadata */}
+                <div className="text-xs text-gray-500 mt-6 pt-4 border-t border-gray-200 text-center space-y-1">
+                  <p>Version: {agreementData.version} | Hash: {agreementData.agreementHash?.substring(0, 8)}...</p>
+                  <p>This agreement text is dynamically loaded and cryptographically verified</p>
+                </div>
               </div>
-
-              <p className="text-sm text-gray-500 mt-8">
-                For the full Organiser Agreement, visit: /legal/organiser-agreement
-              </p>
-            </div>
+            ) : (
+              // Fallback state
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No agreement content available</p>
+              </div>
+            )}
           </div>
 
           {!scrolledToBottom && (

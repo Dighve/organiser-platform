@@ -1,14 +1,40 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI, featureFlagsAPI } from '../lib/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff } from 'lucide-react';
+import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 export default function AdminDashboardPage() {
+  const getNextVersion = (currentVersion) => {
+    if (!currentVersion) return '1.0';
+    const parts = currentVersion.split('.');
+    const nums = parts.map(p => Number.isFinite(Number(p)) ? Number(p) : p);
+    // Increment last numeric segment
+    for (let i = parts.length - 1; i >= 0; i--) {
+      const n = Number(parts[i]);
+      if (!Number.isNaN(n)) {
+        const next = n + 1;
+        return [...parts.slice(0, i), String(next), ...parts.slice(i + 1)].join('.');
+      }
+    }
+    // Fallback: append .1
+    return `${currentVersion}.1`;
+  };
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  // Agreement management state
+  const [selectedAgreement, setSelectedAgreement] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    agreementText: '',
+    version: '',
+    changeDescription: ''
+  });
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyType, setHistoryType] = useState('USER');
 
   // Fetch user statistics
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -37,6 +63,35 @@ export default function AdminDashboardPage() {
     },
   });
 
+  // Agreement queries
+  const { data: currentUserAgreement } = useQuery({
+    queryKey: ['admin-current-agreement', 'USER'],
+    queryFn: async () => {
+      const response = await adminAPI.getCurrentAgreement('USER');
+      return response.data;
+    },
+    enabled: activeTab === 'agreements' && !isEditing,
+  });
+
+  const { data: currentOrganiserAgreement } = useQuery({
+    queryKey: ['admin-current-agreement', 'ORGANISER'],
+    queryFn: async () => {
+      const response = await adminAPI.getCurrentAgreement('ORGANISER');
+      return response.data;
+    },
+    enabled: activeTab === 'agreements' && !isEditing,
+  });
+
+  // Fetch history when requested
+  const { data: historyData, isLoading: loadingHistory } = useQuery({
+    queryKey: ['admin-agreement-history', historyType],
+    queryFn: async () => {
+      const response = await adminAPI.getAgreementHistory(historyType, 20);
+      return response.data;
+    },
+    enabled: showHistory && activeTab === 'agreements',
+  });
+
   // Update feature flag mutation
   const updateFlagMutation = useMutation({
     mutationFn: async ({ flagKey, isEnabled }) => {
@@ -51,6 +106,77 @@ export default function AdminDashboardPage() {
       toast.error('Failed to update feature flag: ' + (error.message || 'Unknown error'));
     },
   });
+
+  // Update agreement mutation
+  const updateAgreementMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await adminAPI.updateAgreement(data);
+      return response.data;
+    },
+    onSuccess: () => {
+      toast.success('Agreement updated successfully!');
+      setIsEditing(false);
+      setSelectedAgreement(null);
+      queryClient.invalidateQueries(['admin-current-agreement']);
+    },
+    onError: (error) => {
+      console.error('Update error:', error);
+      toast.error(error.response?.data?.message || 'Failed to update agreement');
+    }
+  });
+
+  // Agreement management functions
+  const handleEdit = (agreement) => {
+    setSelectedAgreement(agreement);
+    setEditForm({
+      agreementText: agreement.agreementText,
+      version: '',
+      changeDescription: ''
+    });
+    setIsEditing(true);
+  };
+
+  const handleSave = () => {
+    if (!selectedAgreement || !editForm.agreementText.trim()) {
+      toast.error('Agreement text is required');
+      return;
+    }
+
+    const updateData = {
+      agreementType: selectedAgreement.agreementType,
+      agreementText: editForm.agreementText,
+      version: editForm.version || undefined,
+      changeDescription: editForm.changeDescription || undefined
+    };
+
+    updateAgreementMutation.mutate(updateData);
+  };
+
+  const handleCancel = () => {
+    setIsEditing(false);
+    setSelectedAgreement(null);
+    setEditForm({ agreementText: '', version: '', changeDescription: '' });
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getAgreementTypeIcon = (type) => {
+    return type === 'USER' ? <User className="w-5 h-5" /> : <Users className="w-5 h-5" />;
+  };
+
+  const getAgreementTypeColor = (type) => {
+    return type === 'USER' 
+      ? 'from-purple-500 to-pink-500' 
+      : 'from-orange-500 to-pink-500';
+  };
 
   if (statsLoading || usersLoading) {
     return (
@@ -156,6 +282,17 @@ export default function AdminDashboardPage() {
             >
               <Settings className="w-4 h-4 mr-2" />
               Feature Flags
+            </button>
+            <button
+              onClick={() => setActiveTab('agreements')}
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                activeTab === 'agreements'
+                  ? 'bg-white text-purple-600 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              Agreements
             </button>
           </nav>
         </div>
@@ -439,6 +576,263 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Agreements Tab Content */}
+        {activeTab === 'agreements' && (
+          <div className="space-y-6">
+            {/* Current Agreements */}
+            {!isEditing && (
+              <div className="grid md:grid-cols-2 gap-6 mb-8">
+                {/* User Agreement Card */}
+                {currentUserAgreement && (
+                  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 bg-gradient-to-br ${getAgreementTypeColor('USER')} rounded-lg flex items-center justify-center`}>
+                          {getAgreementTypeIcon('USER')}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">User Agreement</h3>
+                          <p className="text-sm text-gray-500">Version {currentUserAgreement.version}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleEdit(currentUserAgreement)}
+                        className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>Edit</span>
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>Effective: {formatDate(currentUserAgreement.effectiveDate)}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Created: {formatDate(currentUserAgreement.createdAt)}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {currentUserAgreement.agreementText.substring(0, 200)}...
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Organiser Agreement Card */}
+                {currentOrganiserAgreement && (
+                  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-8 h-8 bg-gradient-to-br ${getAgreementTypeColor('ORGANISER')} rounded-lg flex items-center justify-center`}>
+                          {getAgreementTypeIcon('ORGANISER')}
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900">Organiser Agreement</h3>
+                          <p className="text-sm text-gray-500">Version {currentOrganiserAgreement.version}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleEdit(currentOrganiserAgreement)}
+                        className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:from-orange-600 hover:to-pink-700 transition-all"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>Edit</span>
+                      </button>
+                    </div>
+                    
+                    <div className="space-y-2 text-sm text-gray-600">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>Effective: {formatDate(currentOrganiserAgreement.effectiveDate)}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Clock className="w-4 h-4" />
+                        <span>Created: {formatDate(currentOrganiserAgreement.createdAt)}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {currentOrganiserAgreement.agreementText.substring(0, 200)}...
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Edit Form */}
+            {isEditing && selectedAgreement && (
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-8 h-8 bg-gradient-to-br ${getAgreementTypeColor(selectedAgreement.agreementType)} rounded-lg flex items-center justify-center`}>
+                      {getAgreementTypeIcon(selectedAgreement.agreementType)}
+                    </div>
+                    <h3 className="text-xl font-semibold text-gray-900">
+                      Edit {selectedAgreement.agreementType === 'USER' ? 'User' : 'Organiser'} Agreement
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleCancel}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Cancel</span>
+                    </button>
+                    <button
+                      onClick={handleSave}
+                      disabled={updateAgreementMutation.isLoading}
+                      className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50"
+                    >
+                      <Save className="w-4 h-4" />
+                      <span>{updateAgreementMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Version and Description */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Version (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.version}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, version: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Auto-generated if empty"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Leave empty for auto-generated timestamp version</p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Change Description (optional)
+                      </label>
+                      <input
+                        type="text"
+                        value={editForm.changeDescription}
+                        onChange={(e) => setEditForm(prev => ({ ...prev, changeDescription: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        placeholder="Brief description of changes"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Agreement Text */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Agreement Text <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      value={editForm.agreementText}
+                      onChange={(e) => setEditForm(prev => ({ ...prev, agreementText: e.target.value }))}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent font-mono text-sm"
+                      rows={20}
+                      placeholder="Enter the agreement text..."
+                    />
+                    <div className="flex items-center justify-between mt-2">
+                      <p className="text-xs text-gray-500">
+                        Supports Markdown formatting
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {editForm.agreementText.length} characters
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* History Section */}
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-semibold text-gray-900">Agreement History</h3>
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setHistoryType('USER')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      historyType === 'USER'
+                        ? 'bg-purple-100 text-purple-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    User
+                  </button>
+                  <button
+                    onClick={() => setHistoryType('ORGANISER')}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                      historyType === 'ORGANISER'
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Organiser
+                  </button>
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    <History className="w-4 h-4" />
+                    <span>{showHistory ? 'Hide History' : 'View History'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {showHistory && (
+                <>
+                  {loadingHistory ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                      <span className="ml-3 text-gray-600">Loading history...</span>
+                    </div>
+                  ) : historyData?.length > 0 ? (
+                    <div className="space-y-4">
+                      {historyData.map((version) => (
+                        <div key={version.version} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center space-x-3">
+                              <div className={`w-6 h-6 bg-gradient-to-br ${getAgreementTypeColor(version.agreementType)} rounded flex items-center justify-center`}>
+                                <CheckCircle className="w-3 h-3 text-white" />
+                              </div>
+                              <div>
+                                <span className="font-medium text-gray-900">Version {version.version}</span>
+                                {version.changeDescription && (
+                                  <span className="ml-2 text-sm text-gray-600">- {version.changeDescription}</span>
+                                )}
+                              </div>
+                            </div>
+                            <span className="text-sm text-gray-500">{formatDate(version.effectiveDate)}</span>
+                          </div>
+                          <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                            {version.agreementText.substring(0, 150)}...
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No history found for {historyType.toLowerCase()} agreements</p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}

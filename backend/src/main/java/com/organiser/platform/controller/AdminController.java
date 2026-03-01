@@ -2,9 +2,13 @@ package com.organiser.platform.controller;
 
 import com.organiser.platform.dto.admin.RecentUserDTO;
 import com.organiser.platform.dto.admin.UserStatsDTO;
+import com.organiser.platform.dto.admin.UpdateAgreementRequest;
+import com.organiser.platform.dto.admin.AgreementVersionDTO;
 import com.organiser.platform.dto.FeatureFlagDTO;
+import com.organiser.platform.enums.AgreementType;
 import com.organiser.platform.service.AdminService;
 import com.organiser.platform.service.FeatureFlagService;
+import com.organiser.platform.service.LegalAgreementService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -25,6 +29,7 @@ public class AdminController {
     
     private final AdminService adminService;
     private final FeatureFlagService featureFlagService;
+    private final LegalAgreementService legalAgreementService;
     
     /**
      * Get comprehensive user statistics for dashboard
@@ -160,6 +165,91 @@ public class AdminController {
         }
     }
     
+    /**
+     * Get all agreement versions for admin dashboard
+     * Requires admin role
+     */
+    @GetMapping("/agreements")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<AgreementVersionDTO>> getAllAgreements(Authentication authentication) {
+        Long memberId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(memberId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        List<AgreementVersionDTO> agreements = legalAgreementService.getAllAgreementVersions();
+        return ResponseEntity.ok(agreements);
+    }
+    
+    /**
+     * Get current agreement version by type
+     * Requires admin role
+     */
+    @GetMapping("/agreements/{agreementType}/current")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AgreementVersionDTO> getCurrentAgreement(
+            @PathVariable AgreementType agreementType,
+            Authentication authentication
+    ) {
+        Long memberId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(memberId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        try {
+            AgreementVersionDTO agreement = legalAgreementService.getCurrentAgreement(agreementType);
+            return ResponseEntity.ok(agreement);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Update agreement text and create new version
+     * Requires admin role
+     */
+    @PutMapping("/agreements")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AgreementVersionDTO> updateAgreement(
+            @RequestBody @jakarta.validation.Valid UpdateAgreementRequest request,
+            Authentication authentication
+    ) {
+        Long memberId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(memberId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        try {
+            String adminEmail = authentication.getName(); // JWT contains email
+            AgreementVersionDTO updatedAgreement = legalAgreementService.updateAgreement(request, adminEmail);
+            return ResponseEntity.ok(updatedAgreement);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    /**
+     * Get agreement version history
+     * Requires admin role
+     */
+    @GetMapping("/agreements/{agreementType}/history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<AgreementVersionDTO>> getAgreementHistory(
+            @PathVariable AgreementType agreementType,
+            @RequestParam(defaultValue = "10") int limit,
+            Authentication authentication
+    ) {
+        Long memberId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(memberId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        List<AgreementVersionDTO> history = legalAgreementService.getAgreementHistory(agreementType, limit);
+        return ResponseEntity.ok(history);
+    }
+
     /**
      * Extract user ID from authentication
      */

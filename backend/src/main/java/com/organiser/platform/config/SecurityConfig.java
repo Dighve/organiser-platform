@@ -74,6 +74,13 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/admin/feature-flags/map", "GET")
                         ).permitAll()
                         
+                        // Public READ-ONLY endpoints for agreement texts (users need to read before authentication)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/agreements/user/current", "GET"),
+                                new AntPathRequestMatcher("/api/v1/agreements/organiser/current", "GET"),
+                                new AntPathRequestMatcher("/api/v1/agreements/verify-hash", "POST")
+                        ).permitAll()
+                        
                         // Event write operations - require authentication
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/events", "POST"),
@@ -118,7 +125,9 @@ public class SecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/check", "GET")).authenticated()
                         
                         // Other admin endpoints - require ADMIN role
-                        .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**")).hasRole("ADMIN")
+                        .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**"),
+                                         new AntPathRequestMatcher("/api/v1/admin/agreements", "PUT")
+                                        ).hasRole("ADMIN")
                         
                         // Organiser endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/organiser/**")).hasAnyRole("ORGANISER", "ADMIN")

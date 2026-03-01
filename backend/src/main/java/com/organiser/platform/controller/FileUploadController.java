@@ -34,7 +34,7 @@ public class FileUploadController {
             Authentication authentication
     ) {
         try {
-            log.info("Received file upload request: {} (size: {} bytes)", 
+            log.debug("Received file upload request: {} (size: {} bytes)", 
                     file.getOriginalFilename(), file.getSize());
 
             // Upload to Cloudinary in "events" folder
@@ -74,7 +74,7 @@ public class FileUploadController {
             Authentication authentication
     ) {
         try {
-            log.info("Received group banner upload request: {} (size: {} bytes)", 
+            log.debug("Received group banner upload request: {} (size: {} bytes)", 
                     file.getOriginalFilename(), file.getSize());
 
             // Upload to Cloudinary in "groups" folder
@@ -114,7 +114,7 @@ public class FileUploadController {
             Authentication authentication
     ) {
         try {
-            log.info("Received profile photo upload request: {} (size: {} bytes)", 
+            log.debug("Received profile photo upload request: {} (size: {} bytes)", 
                     file.getOriginalFilename(), file.getSize());
 
             // Upload to Cloudinary in "profiles" folder

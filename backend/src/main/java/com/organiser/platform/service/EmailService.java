@@ -68,26 +68,26 @@ public class EmailService {
             }
         }
         
-        log.info("Sending magic link to: {} (with redirect: {})", email, redirectUrl != null);
+        log.debug("Sending magic link to: {} (with redirect: {})", email, redirectUrl != null);
         
         if (resendApiKey == null || resendApiKey.isEmpty()) {
             // Development mode - just log the magic link
-            log.info("=".repeat(80));
-            log.info("Magic Link for: {}", email);
-            log.info("Link: {}", magicLink);
-            log.info("=".repeat(80));
+            log.debug("=".repeat(80));
+            log.debug("Magic Link for: {}", email);
+            log.debug("Link: {}", magicLink);
+            log.debug("=".repeat(80));
         } else {
             // Production mode - send via Resend
             try {
                 sendEmailViaResend(email, magicLink);
-                log.info("Email sent successfully to: {}", email);
+                log.debug("Email sent successfully to: {}", email);
             } catch (Exception e) {
                 log.error("Failed to send email via Resend to: {}", email, e);
                 // Fallback: log the magic link
-                log.info("=".repeat(80));
-                log.info("FALLBACK - Magic Link for: {}", email);
-                log.info("Link: {}", magicLink);
-                log.info("=".repeat(80));
+                log.debug("=".repeat(80));
+                log.debug("FALLBACK - Magic Link for: {}", email);
+                log.debug("Link: {}", magicLink);
+                log.debug("=".repeat(80));
             }
         }
     }
