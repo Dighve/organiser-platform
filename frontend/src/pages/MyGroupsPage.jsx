@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { Users, Plus, Calendar } from 'lucide-react'
+import { Users, Plus, Calendar, Compass } from 'lucide-react'
 
 // ============================================================
 // MAIN COMPONENT
@@ -89,7 +89,7 @@ export default function MyGroupsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">👥 My Groups</h1>
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">👥 Your Groups</h1>
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-lg text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
             <p className="text-gray-700 font-medium">Loading your groups...</p>
@@ -106,7 +106,7 @@ export default function MyGroupsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">👥 My Groups</h1>
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">👥 Your Groups</h1>
           <div className="bg-red-50 backdrop-blur-sm rounded-3xl p-8 border-2 border-red-200 shadow-lg">
             <div className="text-5xl mb-4">⚠️</div>
             <p className="text-red-600 font-semibold">Error loading groups: {error.message}</p>
@@ -120,49 +120,52 @@ export default function MyGroupsPage() {
   // MAIN RENDER
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8 pb-24 md:pb-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-6 pb-20 md:pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ========== PAGE HEADER ========== */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 My Groups</h1>
-          <div className="flex gap-3">
-            {user?.hasOrganiserRole && (
-              <button
-                onClick={() => navigate('/groups/create')}
-                className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
-              >
-                <Plus className="h-5 w-5" />
-                Create Group
-              </button>
-            )}
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 Your Groups</h1>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/browse-groups')}
+              className="h-11 w-11 sm:h-auto sm:px-3 sm:rounded-xl rounded-full bg-white/80 border border-purple-100 text-purple-700 shadow-md flex items-center justify-center sm:gap-2 hover:bg-white transition"
+              aria-label="Explore groups"
+            >
+              <Compass className="h-5 w-5" />
+              <span className="hidden sm:inline text-sm font-semibold pl-1">Explore</span>
+            </button>
           </div>
         </div>
         
         {/* ========== TAB NAVIGATION ========== */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 inline-flex gap-2 border border-gray-100 shadow-lg">
             {user?.hasOrganiserRole && (
               <button
                 onClick={() => setActiveTab('organiser')}
-                className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+                className={`px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                   activeTab === 'organiser'
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
+                aria-label="Organiser groups"
               >
-                💼 Organiser
+                <span className="text-lg">💼</span>
+                <span className="hidden sm:inline">Organiser</span>
               </button>
             )}
             <button
               onClick={() => setActiveTab('subscribed')}
-              className={`px-6 py-3 rounded-xl font-semibold transition-all ${
+              className={`px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                 activeTab === 'subscribed'
                   ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
+              aria-label="Member groups"
             >
-              🌟 Member
+              <span className="text-lg">🌟</span>
+              <span className="hidden sm:inline">Member</span>
             </button>
           </div>
         </div>
@@ -184,14 +187,14 @@ export default function MyGroupsPage() {
               <p className="text-sm text-gray-500">Browse groups on the home page to get started.</p>
             </div>
           ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {groups.map(group => (
             <div onClick={() => navigate(`/groups/${group.id}`)}
               key={group.id}
-              className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer transform hover:scale-105 border border-gray-100"
+              className="bg-white/60 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer hover:scale-[1.02] border border-gray-100"
             >
               {/* Group Banner */}
-              <div className="relative h-40 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 overflow-hidden">
+              <div className="relative h-28 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 overflow-hidden">
                 <img 
                   src={group.bannerImage || [
                     'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
@@ -205,24 +208,23 @@ export default function MyGroupsPage() {
                   className="w-full h-full object-cover"
                 />
               </div>
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-lg text-gray-900 mb-1">{group.name}</h3>
-                    <p className="text-sm text-gray-600 mb-2">{group.activityName}</p>
+              <div className="p-3 sm:p-4">
+                <div className="flex items-start justify-between mb-2.5">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-base sm:text-lg text-gray-900 leading-tight line-clamp-2">{group.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{group.activityName}</p>
                   </div>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
+                  <span className={`ml-3 px-2 py-1 text-[11px] rounded-full whitespace-nowrap ${
                     group.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                   }`}>
                     {group.active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
                 
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                   {group.description || 'No description'}
                 </p>
-                
-                <div className="space-y-2 text-sm text-gray-700 mb-4">
+                <div className="flex items-center justify-between mb-2 text-xs text-gray-700 gap-3">
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span>{group.currentMembers || 0} members</span>
@@ -230,56 +232,54 @@ export default function MyGroupsPage() {
                       <span className="text-gray-500">/ {group.maxMembers}</span>
                     )}
                   </div>
-                  {group.location && (
-                    <div className="flex items-center gap-2">
-                      <span>📍</span>
-                      <span className="line-clamp-1">{group.location}</span>
-                    </div>
-                  )}
-                  {group.primaryOrganiserName && (
-                    <div className="flex items-center gap-2">
-                      <span>👤</span>
-                      <span>Organiser: {group.primaryOrganiserName}</span>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex gap-2">
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         navigate(`/groups/${group.id}?tab=events`)
                       }}
-                      className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+                      className="h-10 w-10 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white flex items-center justify-center shadow-md shadow-orange-400/40 hover:shadow-lg hover:shadow-orange-400/60 transition-all active:scale-95"
+                      aria-label="View events"
                     >
                       <Calendar className="h-4 w-4" />
-                      View Events
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation()
                         navigate(`/groups/${group.id}`)
                       }}
-                      className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+                      className="h-10 w-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center shadow-md shadow-purple-400/40 hover:shadow-lg hover:shadow-purple-400/60 transition-all active:scale-95"
+                      aria-label="Open group"
                     >
                       <Users className="h-4 w-4" />
-                      View Group
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (window.confirm('Are you sure you want to leave this group?')) {
+                          unsubscribeMutation.mutate(group.id)
+                        }
+                      }}
+                      disabled={unsubscribeMutation.isLoading}
+                      className="h-10 w-10 rounded-lg bg-red-50 text-red-600 border border-red-200 flex items-center justify-center shadow hover:bg-red-100 transition-all disabled:opacity-50 active:scale-95"
+                      aria-label="Leave group"
+                    >
+                      <span className="text-sm font-bold">×</span>
                     </button>
                   </div>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (window.confirm('Are you sure you want to leave this group?')) {
-                        unsubscribeMutation.mutate(group.id)
-                      }
-                    }}
-                    disabled={unsubscribeMutation.isLoading}
-                    className="w-full py-2 px-4 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 border border-red-200 transition-all disabled:opacity-50"
-                  >
-                    Leave
-                  </button>
                 </div>
+                {group.location && (
+                  <div className="text-xs text-gray-600 flex items-center gap-1.5">
+                    <span>📍</span>
+                    <span className="line-clamp-1">{group.location}</span>
+                  </div>
+                )}
+                {group.primaryOrganiserName && (
+                  <div className="text-xs text-gray-600 flex items-center gap-1.5 mt-1">
+                    <span>👤</span>
+                    <span className="line-clamp-1">Organiser: {group.primaryOrganiserName}</span>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -310,18 +310,18 @@ export default function MyGroupsPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {organisedGroups.map(group => (
                   <div
                     key={group.id}
                     onClick={() => navigate(`/groups/${group.id}`)}
-                    className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer transform hover:scale-105 border border-gray-100"
-                  >
-                    {/* Group Banner */}
-                    <div className="relative h-40 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 overflow-hidden">
-                    <img 
-                      src={group.bannerImage || [
-                        'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
+                  className="bg-white/60 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer hover:scale-[1.02] border border-gray-100"
+                >
+                  {/* Group Banner */}
+                  <div className="relative h-28 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 overflow-hidden">
+                  <img 
+                    src={group.bannerImage || [
+                      'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop',
                         'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop',
                         'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop',
                         'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop',
@@ -332,24 +332,23 @@ export default function MyGroupsPage() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg text-gray-900 mb-1">{group.name}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{group.activityName}</p>
+                  <div className="p-3 sm:p-4">
+                    <div className="flex items-start justify-between mb-2.5">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-base sm:text-lg text-gray-900 leading-tight line-clamp-2">{group.name}</h3>
+                        <p className="text-xs text-gray-500 mt-1">{group.activityName}</p>
                       </div>
-                      <span className={`px-2 py-1 text-xs rounded-full ${
+                      <span className={`ml-3 px-2 py-1 text-[11px] rounded-full whitespace-nowrap ${
                         group.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                       }`}>
                         {group.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
                     
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
                       {group.description || 'No description'}
                     </p>
-                    
-                    <div className="space-y-2 text-sm text-gray-700 mb-4">
+                    <div className="flex items-center justify-between mb-2 text-xs text-gray-700 gap-3">
                       <div className="flex items-center gap-2">
                         <Users className="h-4 w-4" />
                         <span>{group.currentMembers || 0} members</span>
@@ -357,63 +356,45 @@ export default function MyGroupsPage() {
                           <span className="text-gray-500">/ {group.maxMembers}</span>
                         )}
                       </div>
-                      {group.location && (
-                        <div className="flex items-center gap-2">
-                          <span>📍</span>
-                          <span className="line-clamp-1">{group.location}</span>
-                        </div>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/create-event?groupId=${group.id}`)
+                        }}
+                        className="h-10 w-10 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white flex items-center justify-center shadow-md shadow-orange-400/40 hover:shadow-lg hover:shadow-orange-400/60 transition-all active:scale-95"
+                        aria-label="Create event"
+                      >
+                        <Calendar className="h-4 w-4" />
+                      </button>
                     </div>
-                    
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/create-event?groupId=${group.id}`)
-                          }}
-                          className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
-                        >
-                          <Calendar className="h-4 w-4" />
-                          Create Event
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            navigate(`/groups/${group.id}`)
-                          }}
-                          className="py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
-                        >
-                          <Users className="h-4 w-4" />
-                          View Group
-                        </button>
+                    {group.location && (
+                      <div className="text-xs text-gray-600 flex items-center gap-1.5">
+                        <span>📍</span>
+                        <span className="line-clamp-1">{group.location}</span>
                       </div>
-                    </div>
+                    )}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
+            </div>
             )}
           </>
         )}
       </div>
 
-      {/* Mobile Fixed Explore Groups Button */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-        {/* Overlay backdrop */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-black/10 to-transparent pointer-events-none" />
-        {/* Explore Groups button */}
-        <div className="relative bg-white/95 backdrop-blur-md border-t border-gray-200/50 px-4 py-4 safe-area-pb">
-          <button
-            onClick={() => navigate('/browse-groups')}
-            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl hover:shadow-lg hover:shadow-purple-500/50 transition-all duration-300 transform active:scale-95 flex items-center justify-center gap-3 text-lg"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A2 2 0 013 15.382V5.618a2 2 0 011.553-1.948L9 1m0 19l6-3m-6 3V1m6 15l5.447-2.724A2 2 0 0021 11.382V3.618a2 2 0 00-1.553-1.948L15 1m0 15V1m0 0L9 4" />
-            </svg>
-            Explore Groups
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-500 rounded-full animate-pulse" />
-          </button>
+      {/* Fixed Create button for organisers */}
+      {user?.hasOrganiserRole && (
+        <div className="fixed inset-x-0 bottom-0 z-40 px-4 sm:px-6 pb-4">
+          <div className="max-w-4xl mx-auto rounded-2xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-xl px-4 sm:px-6 py-3">
+            <button
+              onClick={() => navigate('/groups/create')}
+              className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-400/50 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            >
+              Create group
+            </button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

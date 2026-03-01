@@ -186,7 +186,7 @@ export default function Layout() {
                         to="/my-groups"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
-                        My Groups
+                        Your Groups
                       </Link>
                       {isAdmin && (
                         <Link
@@ -257,7 +257,7 @@ export default function Layout() {
                     className="block text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    My Groups
+                    Your Groups
                   </Link>
                   {isAdmin && (
                     <Link
