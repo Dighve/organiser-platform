@@ -5,6 +5,7 @@ import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, Tog
 import { format } from 'date-fns';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import ReactMarkdown from 'react-markdown';
 
 export default function AdminDashboardPage() {
   const getNextVersion = (currentVersion) => {
@@ -130,7 +131,7 @@ export default function AdminDashboardPage() {
     setSelectedAgreement(agreement);
     setEditForm({
       agreementText: agreement.agreementText,
-      version: '',
+      version: getNextVersion(agreement.version),
       changeDescription: ''
     });
     setIsEditing(true);
@@ -139,6 +140,14 @@ export default function AdminDashboardPage() {
   const handleSave = () => {
     if (!selectedAgreement || !editForm.agreementText.trim()) {
       toast.error('Agreement text is required');
+      return;
+    }
+    if (!editForm.version.trim()) {
+      toast.error('Version is required');
+      return;
+    }
+    if (!editForm.changeDescription.trim()) {
+      toast.error('Change description is required');
       return;
     }
 
@@ -707,7 +716,7 @@ export default function AdminDashboardPage() {
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Version (optional)
+                        Version <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -715,13 +724,14 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setEditForm(prev => ({ ...prev, version: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         placeholder="Auto-generated if empty"
+                        required
                       />
-                      <p className="text-xs text-gray-500 mt-1">Leave empty for auto-generated timestamp version</p>
+                      <p className="text-xs text-gray-500 mt-1">Prefilled with next version; required; supports Markdown in the Agreement Text below.</p>
                     </div>
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Change Description (optional)
+                        Change Description <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
@@ -729,6 +739,7 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setEditForm(prev => ({ ...prev, changeDescription: e.target.value }))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                         placeholder="Brief description of changes"
+                        required
                       />
                     </div>
                   </div>
@@ -752,6 +763,12 @@ export default function AdminDashboardPage() {
                       <p className="text-xs text-gray-500">
                         {editForm.agreementText.length} characters
                       </p>
+                    </div>
+                    <div className="mt-4 border border-gray-200 rounded-lg bg-gray-50 p-4 max-h-96 overflow-y-auto">
+                      <p className="text-sm font-semibold text-gray-700 mb-2">Live Preview</p>
+                      <div className="markdown-preview text-gray-800 text-sm sm:text-base leading-relaxed">
+                        <ReactMarkdown>{editForm.agreementText || '*Preview will appear here*'}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 </div>

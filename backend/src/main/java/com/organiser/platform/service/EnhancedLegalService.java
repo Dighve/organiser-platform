@@ -149,20 +149,41 @@ public class EnhancedLegalService {
                 .orElseThrow(() -> new RuntimeException("Member not found: " + memberId));
         
         // Get the active agreement version
+        log.info("🔍 Searching for active {} agreement version...", agreementType.getValue());
         AgreementVersion activeVersion = agreementVersionRepository
                 .findByAgreementTypeAndIsActive(agreementType.getValue(), true)
                 .orElseThrow(() -> new RuntimeException("No active " + agreementType.getValue() + " agreement version found"));
         
+        log.info("✅ Found active {} agreement - Version: {}, Effective Date: {}, Created At: {}", 
+                agreementType.getValue(), activeVersion.getVersion(), activeVersion.getEffectiveDate(), activeVersion.getCreatedAt());
+        
         // Check if user has already accepted this specific version
+        log.info("🔍 Checking if member {} has already accepted {} version {}", 
+                memberId, agreementType.getValue(), activeVersion.getVersion());
+                
         Optional<LegalAgreement> existingAcceptance = legalAgreementRepository
                 .findTopByMemberIdAndAgreementTypeAndAgreementVersionOrderByAcceptedAtDesc(
                     memberId, agreementType.getValue(), activeVersion.getVersion());
+        
+        if (existingAcceptance.isPresent()) {
+            LegalAgreement existing = existingAcceptance.get();
+            log.info("📋 Found existing acceptance record for member {}: version={}, withdrawn={}, acceptedAt={}", 
+                    memberId, existing.getAgreementVersion(), existing.getIsWithdrawn(), existing.getAcceptedAt());
                     
-        if (existingAcceptance.isPresent() && !existingAcceptance.get().getIsWithdrawn()) {
-            log.info("Member {} already accepted {} agreement version {}", 
-                    memberId, agreementType.getValue(), activeVersion.getVersion());
-            return existingAcceptance.get();
+            if (!existing.getIsWithdrawn()) {
+                log.warn("⚠️ Member {} already accepted {} agreement version {} - returning existing record", 
+                        memberId, agreementType.getValue(), activeVersion.getVersion());
+                return existing;
+            } else {
+                log.info("🔄 Found withdrawn acceptance - will create new record");
+            }
+        } else {
+            log.info("✅ No existing acceptance found for member {} version {} - proceeding with new acceptance", 
+                    memberId, activeVersion.getVersion());
         }
+        
+        log.info("🆕 Creating NEW {} agreement acceptance record for member {} version {}", 
+                agreementType.getValue(), memberId, activeVersion.getVersion());
         
         // Create new legal agreement record with full audit trail
         LegalAgreement agreement = LegalAgreement.builder()
@@ -190,8 +211,33 @@ public class EnhancedLegalService {
         
         LegalAgreement savedAgreement = legalAgreementRepository.save(agreement);
         
-        log.info("Successfully recorded {} agreement acceptance for member: {} with audit ID: {}", 
-                agreementType.getValue(), memberId, savedAgreement.getId());
+        log.info("Successfully recorded {} agreement acceptance for member: {} with audit ID: {} version: {}", 
+                agreementType.getValue(), memberId, savedAgreement.getId(), savedAgreement.getAgreementVersion());
+        
+        // Update member flags so hasAcceptedUserAgreement / hasAcceptedOrganiserAgreement returns true
+        if (agreementType == AgreementType.USER) {
+            member.setHasAcceptedUserAgreement(true);
+            member.setUserAgreementAcceptedAt(LocalDateTime.now());
+            log.info("✅ Updated member {} hasAcceptedUserAgreement=true, userAgreementAcceptedAt=now", memberId);
+        } else if (agreementType == AgreementType.ORGANISER) {
+            member.setHasAcceptedOrganiserAgreement(true);
+            member.setOrganiserAgreementAcceptedAt(LocalDateTime.now());
+            log.info("✅ Updated member {} hasAcceptedOrganiserAgreement=true, organiserAgreementAcceptedAt=now", memberId);
+        }
+        memberRepository.save(member);
+        
+        // Immediately verify the record was saved correctly
+        Optional<LegalAgreement> verifyRecord = legalAgreementRepository
+                .findTopByMemberIdAndAgreementTypeAndAgreementVersionOrderByAcceptedAtDesc(
+                    memberId, agreementType.getValue(), savedAgreement.getAgreementVersion());
+        
+        if (verifyRecord.isPresent()) {
+            log.info("✅ Verification: Acceptance record found immediately after save - member: {}, type: {}, version: {}", 
+                    memberId, agreementType.getValue(), savedAgreement.getAgreementVersion());
+        } else {
+            log.error("❌ Verification FAILED: Acceptance record NOT found after save - member: {}, type: {}, version: {}", 
+                    memberId, agreementType.getValue(), savedAgreement.getAgreementVersion());
+        }
                 
         return savedAgreement;
     }
@@ -210,14 +256,32 @@ public class EnhancedLegalService {
             return false;
         }
         
+        String currentVersion = activeVersion.get().getVersion();
+        log.debug("Checking if member {} accepted current {} agreement version: {}", 
+                memberId, agreementType, currentVersion);
+        
         // Check if user has accepted this specific version
         Optional<LegalAgreement> currentAcceptance = legalAgreementRepository
                 .findTopByMemberIdAndAgreementTypeAndAgreementVersionOrderByAcceptedAtDesc(
-                    memberId, agreementType, activeVersion.get().getVersion());
+                    memberId, agreementType, currentVersion);
         
-        return currentAcceptance.isPresent() && !currentAcceptance.get().getIsWithdrawn();
+        boolean hasAccepted = currentAcceptance.isPresent() && !currentAcceptance.get().getIsWithdrawn();
+        
+        log.debug("Member {} acceptance status for {} version {}: {} (found record: {})", 
+                memberId, agreementType, currentVersion, hasAccepted, currentAcceptance.isPresent());
+        
+        if (currentAcceptance.isPresent()) {
+            log.debug("Found acceptance record - version: {}, withdrawn: {}, accepted at: {}", 
+                    currentAcceptance.get().getAgreementVersion(), 
+                    currentAcceptance.get().getIsWithdrawn(),
+                    currentAcceptance.get().getAcceptedAt());
+        } else {
+            log.debug("No acceptance record found for member {} and {} version {}", 
+                    memberId, agreementType, currentVersion);
+        }
+        
+        return hasAccepted;
     }
-
     /**
      * Get complete audit trail for a member
      */
@@ -340,6 +404,40 @@ public class EnhancedLegalService {
         }
         
         return true;
+    }
+
+    /**
+     * Validate that provided agreement text matches current active version
+     */
+    public void validateAgreementText(String providedText, AgreementType agreementType) {
+        log.info("🔍 Validating agreement text for type: {}", agreementType.getValue());
+        
+        AgreementVersion currentVersion = getCurrentAgreementVersion(agreementType);
+        log.info("📋 Current active version: {}, created: {}", currentVersion.getVersion(), currentVersion.getCreatedAt());
+        
+        if (providedText == null || providedText.trim().isEmpty()) {
+            log.warn("❌ Agreement text validation failed - provided text is empty");
+            throw new RuntimeException("Agreement text cannot be empty");
+        }
+        
+        // Log text details for debugging
+        log.info("📝 Frontend text length: {}", providedText.length());
+        log.info("📝 Backend text length: {}", currentVersion.getAgreementText().length());
+        log.info("🔤 Frontend text preview: {}", providedText.substring(0, Math.min(100, providedText.length())));
+        log.info("🔤 Backend text preview: {}", currentVersion.getAgreementText().substring(0, Math.min(100, currentVersion.getAgreementText().length())));
+        
+        String providedHash = calculateAgreementHash(providedText.trim());
+        String currentHash = currentVersion.getAgreementHash();
+        
+        log.info("🔐 Hash comparison - Provided: {} vs Current: {}", providedHash, currentHash);
+        
+        if (!providedHash.equals(currentHash)) {
+            log.warn("❌ Agreement text validation failed - hash mismatch for {} agreement", agreementType.getValue());
+            log.warn("❌ This suggests frontend has cached/different agreement text than current active version");
+            throw new RuntimeException("Provided agreement text does not match current active version");
+        }
+        
+        log.info("✅ Agreement text validation passed for {} agreement", agreementType.getValue());
     }
 
     // Legacy methods for backward compatibility

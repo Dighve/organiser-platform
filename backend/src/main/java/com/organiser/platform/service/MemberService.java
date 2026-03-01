@@ -27,6 +27,7 @@ public class MemberService {
     // ============================================================
     
     private final MemberRepository memberRepository;
+    private final EnhancedLegalService enhancedLegalService;
     
     // ============================================================
     // PUBLIC MEMBER OPERATIONS
@@ -147,11 +148,21 @@ public class MemberService {
     
     /**
      * Convert Member entity to DTO.
+     * Now properly checks current active agreement versions instead of outdated flags.
      *
      * @param member The Member entity to convert
      * @return MemberDTO containing member information
      */
     private MemberDTO convertToDTO(Member member) {
+        // Check if member has accepted CURRENT active versions
+        boolean hasAcceptedCurrentUserAgreement = enhancedLegalService
+                .hasAcceptedCurrentVersion(member.getId(), "USER");
+        boolean hasAcceptedCurrentOrganiserAgreement = enhancedLegalService
+                .hasAcceptedCurrentVersion(member.getId(), "ORGANISER");
+        
+        log.info("🔍 Member {} - Current User Agreement: {}, Current Organiser Agreement: {} (convertToDTO called)", 
+                member.getId(), hasAcceptedCurrentUserAgreement, hasAcceptedCurrentOrganiserAgreement);
+        
         return MemberDTO.builder()
                 .id(member.getId())
                 .email(member.getEmail())
@@ -160,9 +171,10 @@ public class MemberService {
                 .imagePosition(member.getImagePosition())
                 .hasOrganiserRole(member.getHasOrganiserRole())
                 .isAdmin(member.getIsAdmin())
-                .hasAcceptedOrganiserAgreement(member.getHasAcceptedOrganiserAgreement())
+                // Use current version checking instead of outdated boolean flags
+                .hasAcceptedOrganiserAgreement(hasAcceptedCurrentOrganiserAgreement)
                 .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())
-                .hasAcceptedUserAgreement(member.getHasAcceptedUserAgreement())
+                .hasAcceptedUserAgreement(hasAcceptedCurrentUserAgreement)
                 .userAgreementAcceptedAt(member.getUserAgreementAcceptedAt())
                 .build();
     }

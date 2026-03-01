@@ -1,6 +1,9 @@
 package com.organiser.platform.controller;
 
 import com.organiser.platform.dto.AcceptOrganiserAgreementRequest;
+import com.organiser.platform.dto.AcceptUserAgreementRequest;
+import com.organiser.platform.enums.AgreementType;
+import com.organiser.platform.service.EnhancedLegalService;
 import com.organiser.platform.service.LegalService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -15,14 +18,21 @@ import java.util.Map;
 @RequestMapping("/api/v1/legal")
 @RequiredArgsConstructor
 public class LegalController {
-    
+
     private final LegalService legalService;
-    
+    private final EnhancedLegalService enhancedLegalService;
+
     @PostMapping("/accept-organiser-agreement")
     public ResponseEntity<Map<String, String>> acceptOrganiserAgreement(
             @RequestBody AcceptOrganiserAgreementRequest request,
             Authentication authentication,
             HttpServletRequest httpRequest) {
+
+        System.out.println(" Accept Organiser Agreement endpoint called");
+        System.out.println(" Request body: " + request);
+        System.out.println(" Authentication: " + authentication);
+        System.out.println(" Authentication name: " + authentication.getName());
+
         
         System.out.println("🔄 Accept Organiser Agreement endpoint called");
         System.out.println("📝 Request body: " + request);
@@ -70,7 +80,7 @@ public class LegalController {
     
     @PostMapping("/accept-user-agreement")
     public ResponseEntity<Map<String, String>> acceptUserAgreement(
-            @RequestBody AcceptOrganiserAgreementRequest request,
+            @RequestBody AcceptUserAgreementRequest request,
             Authentication authentication,
             HttpServletRequest httpRequest) {
         
@@ -83,6 +93,7 @@ public class LegalController {
         
         Long memberId = getUserIdFromAuth(authentication);
         System.out.println("✅ Member ID: " + memberId);
+        System.out.println("📝 Agreement text received (length: " +  request.getAgreementText().length());
         
         String ipAddress = request.getIpAddress();
         if (ipAddress == null || ipAddress.isEmpty()) {
@@ -94,7 +105,17 @@ public class LegalController {
             userAgent = httpRequest.getHeader("User-Agent");
         }
         
-        legalService.acceptUserAgreement(memberId, ipAddress, userAgent);
+        // Use enhanced service - always saves current active version from DB
+        enhancedLegalService.acceptAgreement(
+            AgreementType.USER, 
+            memberId, 
+            ipAddress, 
+            userAgent, 
+            request.getSessionId(), 
+            request.getReferrerUrl(), 
+            request.getBrowserFingerprint()
+        );
+        
         System.out.println("✅ User Agreement accepted successfully");
         
         return ResponseEntity.ok(Map.of("message", "User Agreement accepted successfully"));
@@ -105,7 +126,9 @@ public class LegalController {
             Authentication authentication) {
         
         Long memberId = getUserIdFromAuth(authentication);
-        boolean hasAccepted = legalService.hasAcceptedUserAgreement(memberId);
+        // Use enhanced service - checks if member accepted CURRENT active version, not just any version
+        boolean hasAccepted = enhancedLegalService.hasAcceptedUserAgreement(memberId);
+        System.out.println("✅ hasAcceptedUserAgreement for member " + memberId + ": " + hasAccepted);
         
         return ResponseEntity.ok(Map.of("hasAccepted", hasAccepted));
     }

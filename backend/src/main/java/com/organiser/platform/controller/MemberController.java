@@ -30,7 +30,6 @@ public class MemberController {
     public ResponseEntity<MemberDTO> getCurrentMember(Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         MemberDTO member = memberService.getMemberDTOById(userId);
-        log.debug("member-details {}", member.toString());
         return ResponseEntity.ok(member);
     }
     

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { AlertTriangle, FileText, Loader2 } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { legalAPI } from '../lib/api'
 import toast from 'react-hot-toast'
@@ -41,10 +42,20 @@ export default function UserAgreementModal({ isOpen, onClose, onAccept }) {
       console.log('🔄 Accepting user agreement...')
       console.log('📡 API Base URL:', import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1')
       
+      if (!agreementData?.agreementText) {
+        throw new Error('Agreement text not available - cannot proceed with acceptance')
+      }
+
+      console.log('📝 Sending agreement text for validation (length: ${agreementData.agreementText.length})')
+      
       try {
         const response = await legalAPI.acceptUserAgreement({
+          agreementText: agreementData.agreementText, // Send exact text user saw for validation
           ipAddress: null, // Backend will extract from request
-          userAgent: navigator.userAgent || 'Unknown'
+          userAgent: navigator.userAgent || 'Unknown',
+          sessionId: null, // Optional - for enhanced tracking
+          referrerUrl: window.location.href,
+          browserFingerprint: null // Optional - for enhanced tracking
         })
         console.log('✅ User Agreement accepted:', response)
         return response
@@ -190,73 +201,16 @@ export default function UserAgreementModal({ isOpen, onClose, onAccept }) {
                     <strong>Agreement Type:</strong> {agreementData.agreementType || 'USER'}
                   </div>
 
-                  {/* Dynamic Agreement Text - Formatted */}
+                  {/* Dynamic Agreement Text - Markdown */}
                   <div className="space-y-4 text-gray-700">
                     {agreementData.agreementText ? (
-                      <div className="formatted-agreement">
-                        {agreementData.agreementText.split('\n').map((line, index) => {
-                          // Handle different markdown elements
-                          if (line.startsWith('# ')) {
-                            return (
-                              <h1 key={index} className="text-2xl font-bold text-gray-900 mt-8 mb-4 pb-2 border-b-2 border-purple-200">
-                                {line.replace('# ', '')}
-                              </h1>
-                            )
-                          } else if (line.startsWith('## ')) {
-                            return (
-                              <h2 key={index} className="text-xl font-bold text-purple-800 mt-6 mb-3">
-                                {line.replace('## ', '')}
-                              </h2>
-                            )
-                          } else if (line.startsWith('### ')) {
-                            return (
-                              <h3 key={index} className="text-lg font-semibold text-purple-700 mt-4 mb-2">
-                                {line.replace('### ', '')}
-                              </h3>
-                            )
-                          } else if (line.startsWith('**') && line.endsWith('**')) {
-                            return (
-                              <p key={index} className="font-bold text-gray-800 mt-3 mb-2">
-                                {line.replace(/\*\*/g, '')}
-                              </p>
-                            )
-                          } else if (line.startsWith('- ') || line.startsWith('• ')) {
-                            return (
-                              <li key={index} className="ml-6 text-gray-700 mb-1.5 pl-2 relative before:content-['•'] before:text-purple-600 before:font-bold before:absolute before:-left-4">
-                                {line.replace(/^[-•]\s/, '')}
-                              </li>
-                            )
-                          } else if (line.startsWith('---')) {
-                            return <hr key={index} className="my-6 border-t-2 border-gray-200" />
-                          } else if (line.trim() === '') {
-                            return <div key={index} className="h-2" />
-                          } else if (line.includes('**') && !line.startsWith('**')) {
-                            // Handle inline bold text
-                            const parts = line.split(/(\*\*.*?\*\*)/g)
-                            return (
-                              <p key={index} className="text-gray-700 mb-2 leading-relaxed">
-                                {parts.map((part, partIndex) => {
-                                  if (part.startsWith('**') && part.endsWith('**')) {
-                                    return <strong key={partIndex} className="font-bold text-gray-900">{part.replace(/\*\*/g, '')}</strong>
-                                  }
-                                  return part
-                                })}
-                              </p>
-                            )
-                          } else {
-                            return (
-                              <p key={index} className="text-gray-700 mb-2 leading-relaxed">
-                                {line}
-                              </p>
-                            )
-                          }
-                        })}
+                      <div className="markdown-preview text-gray-800 text-sm sm:text-base leading-relaxed">
+                        <ReactMarkdown>{agreementData.agreementText}</ReactMarkdown>
                       </div>
                     ) : (
                       <p className="text-gray-600">Agreement text not available.</p>
                     )}
                   </div>
-
                   {/* Footer with metadata */}
                   <div className="text-xs text-gray-500 mt-6 pt-4 border-t border-gray-200 text-center space-y-1">
                     <p>Version: {agreementData.version} | Hash: {agreementData.agreementHash?.substring(0, 8)}...</p>
