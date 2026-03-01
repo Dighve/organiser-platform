@@ -169,7 +169,7 @@ export default function HomePage() {
   // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30">
-      <div className="flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-8 py-10">
+      <div className="flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-10 pb-10">
         
         {/* ========== LEFT SIDEBAR: YOUR GROUPS ========== */}
         <div className="hidden md:block w-full lg:w-1/4 order-3 lg:order-1">

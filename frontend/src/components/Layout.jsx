@@ -15,7 +15,7 @@ export default function Layout() {
   const [searchQuery, setSearchQuery] = useState('')
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [showOrganiserModal, setShowOrganiserModal] = useState(false)
-  const [showUserAgreementModal, setShowUserAgreementModal] = useState(false)
+  const [showUserAgreementModal, setShowUserAgreementModal] = useState(true)
   const { isAuthenticated, user, logout, updateUser, clearReturnUrl } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
