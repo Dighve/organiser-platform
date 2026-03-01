@@ -52,4 +52,5 @@ public class EventDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Set<Long> participantIds;
+    private Boolean userIsGroupMember; // Whether current user is a member of the group
 }

@@ -221,13 +221,8 @@ public class EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
-        // If group is public, show full event details to everyone
-        if (event.getGroup().getIsPublic()) {
-            return convertToDTO(event);
-        }
-        
-        // For private groups, check if user is a member
-        // If not a member, return partial event data (title, date, organiser, activity only)
+        // Check group membership - hide details for non-members regardless of public/private group
+        // If not authenticated or not a group member, return partial event data (title, date, organiser, activity only)
         if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
             return convertToPartialDTO(event);
         }
@@ -567,6 +562,96 @@ public class EventService {
                 .totalReviews(event.getTotalReviews() != null ? event.getTotalReviews() : 0)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
+                .userIsGroupMember(true) // Default true for backward compatibility
+                .build();
+    }
+    
+    /**
+     * Convert Event entity to EventDTO with group membership status.
+     */
+    private EventDTO convertToDTO(Event event, boolean isGroupMember) {
+        if (event == null) {
+            return null;
+        }
+        
+        // Get the group
+        Group group = event.getGroup();
+        if (group == null) {
+            throw new IllegalStateException("Event must belong to a group");
+        }
+        
+        // Get the primary organiser from the group
+        Member primaryOrganiser = group.getPrimaryOrganiser();
+        if (primaryOrganiser == null) {
+            throw new IllegalStateException("Group must have a primary organiser");
+        }
+        
+        // Get the activity from the group
+        Activity activity = group.getActivity();
+        if (activity == null) {
+            throw new IllegalStateException("Group must be associated with an activity");
+        }
+        
+        // Get participants count
+        int participantCount = event.getParticipants() != null ? event.getParticipants().size() : 0;
+        
+        // Get participant IDs for the DTO
+        Set<Long> participantIds = event.getParticipants() != null ?
+                event.getParticipants().stream()
+                        .map(p -> p.getMember().getId())
+                        .collect(Collectors.toSet()) :
+                new HashSet<>();
+        
+        // Get host member info if present
+        Long hostMemberId = null;
+        String hostMemberName = null;
+        if (event.getHostMember() != null) {
+            hostMemberId = event.getHostMember().getId();
+            hostMemberName = event.getHostMember().getDisplayName() != null && !event.getHostMember().getDisplayName().isEmpty()
+                    ? event.getHostMember().getDisplayName()
+                    : event.getHostMember().getEmail();
+        }
+        
+        return EventDTO.builder()
+                .id(event.getId())
+                .title(event.getTitle())
+                .description(event.getDescription())
+                .organiserId(primaryOrganiser.getId())
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
+                        ? primaryOrganiser.getDisplayName() 
+                        : primaryOrganiser.getEmail())
+                .activityTypeId(activity.getId())
+                .activityTypeName(activity.getName())
+                .groupId(group.getId())
+                .groupName(group.getName())
+                .hostMemberId(hostMemberId)
+                .hostMemberName(hostMemberName)
+                .eventDate(event.getEventDate())
+                .endDate(event.getEndDate())
+                .registrationDeadline(event.getRegistrationDeadline())
+                .location(event.getLocation())
+                .latitude(event.getLatitude())
+                .longitude(event.getLongitude())
+                .maxParticipants(event.getMaxParticipants())
+                .minParticipants(event.getMinParticipants())
+                .currentParticipants(participantCount)
+                .participantIds(participantIds)
+                .price(event.getPrice())
+                .status(event.getStatus())
+                .difficultyLevel(event.getDifficultyLevel())
+                .distanceKm(event.getDistanceKm())
+                .elevationGainM(event.getElevationGainM())
+                .estimatedDurationHours(event.getEstimatedDurationHours())
+                .imageUrl(event.getImageUrl())
+                .additionalImages(event.getAdditionalImages() != null ? new HashSet<>(event.getAdditionalImages()) : new HashSet<>())
+                .requirements(event.getRequirements() != null ? new HashSet<>(event.getRequirements()) : new HashSet<>())
+                .includedItems(event.getIncludedItems() != null ? new HashSet<>(event.getIncludedItems()) : new HashSet<>())
+                .cancellationPolicy(event.getCancellationPolicy())
+                .averageRating(event.getAverageRating() != null ? new BigDecimal(event.getAverageRating()) : BigDecimal.ZERO)
+                .totalReviews(event.getTotalReviews() != null ? event.getTotalReviews() : 0)
+                .createdAt(event.getCreatedAt())
+                .updatedAt(event.getUpdatedAt())
+                .userIsGroupMember(isGroupMember)
                 .build();
     }
     
@@ -607,7 +692,7 @@ public class EventService {
                 .groupId(group.getId())
                 .groupName(group.getName())
                 .eventDate(event.getEventDate())
-                .imageUrl(event.getImageUrl())
+                .imageUrl(null) // Hide image from non-members
                 .status(event.getStatus())
                 .createdAt(event.getCreatedAt())
                 // All other fields are null/empty for non-members
