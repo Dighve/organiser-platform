@@ -38,7 +38,7 @@ public class AgreementVersion {
     @Column(name = "agreement_text", nullable = false, columnDefinition = "TEXT")
     private String agreementText;
     
-    @Column(name = "agreement_hash", nullable = false, length = 64)
+    @Column(name = "agreement_hash", nullable = false, length = 80)
     private String agreementHash;
     
     @Column(name = "created_by", length = 100)

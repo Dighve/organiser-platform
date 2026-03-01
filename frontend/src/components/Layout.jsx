@@ -1,6 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, X, LogOut, Search, Shield } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { membersAPI, adminAPI } from '../lib/api'
@@ -17,6 +17,8 @@ export default function Layout() {
   const [showOrganiserModal, setShowOrganiserModal] = useState(false)
   const [showUserAgreementModal, setShowUserAgreementModal] = useState(false)
   const { isAuthenticated, user, logout, updateUser, clearReturnUrl } = useAuthStore()
+  const userAgreementShownRef = useRef(false)
+  const organiserAgreementShownRef = useRef(false)
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
@@ -42,6 +44,14 @@ export default function Layout() {
     enabled: isAuthenticated,
   })
 
+  // Reset session refs on logout so modals re-trigger on next login if still not accepted
+  useEffect(() => {
+    if (!isAuthenticated) {
+      userAgreementShownRef.current = false
+      organiserAgreementShownRef.current = false
+    }
+  }, [isAuthenticated])
+
   // Sync memberData with auth store - CRITICAL for organiser features!
   useEffect(() => {
     if (memberData && isAuthenticated) {
@@ -53,20 +63,22 @@ export default function Layout() {
         displayName: memberData.displayName,
         profilePhotoUrl: memberData.profilePhotoUrl,
       })
-      // console.log('🔄 Auth store updated with member data:', {
-      //   hasOrganiserRole: memberData.hasOrganiserRole,
-      //   hasAcceptedOrganiserAgreement: memberData.hasAcceptedOrganiserAgreement,
-      //   hasAcceptedUserAgreement: memberData.hasAcceptedUserAgreement,
-      //   isAdmin: memberData.isAdmin
-      // })
       
-      // Show user agreement modal if not accepted
-      if (!memberData.hasAcceptedUserAgreement) {
+      // Show user agreement modal if not accepted - only once per session
+      if (!memberData.hasAcceptedUserAgreement && !userAgreementShownRef.current) {
         console.log('⚠️ User has not accepted User Agreement - showing modal')
+        userAgreementShownRef.current = true
         setShowUserAgreementModal(true)
       }
+      
+      // Show organiser agreement modal if user has organiser role but hasn't accepted current agreement - only once per session
+      if (memberData.hasOrganiserRole && !memberData.hasAcceptedOrganiserAgreement && !organiserAgreementShownRef.current) {
+        console.log('⚠️ Existing organiser has not accepted current Organiser Agreement - showing modal')
+        organiserAgreementShownRef.current = true
+        setShowOrganiserModal(true)
+      }
     }
-  }, [memberData, isAuthenticated, updateUser])
+  }, [memberData, isAuthenticated]) // updateUser intentionally omitted - stable Zustand action
 
   // Handle becoming an organiser - show modal
   const handleBecomeOrganiser = () => {
@@ -185,7 +197,7 @@ export default function Layout() {
                           <span>Admin Dashboard</span>
                         </Link>
                       )}
-                      {!memberData?.hasAcceptedOrganiserAgreement && (
+                      {!memberData?.hasOrganiserRole && (
                         <button
                           onClick={handleBecomeOrganiser}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -257,7 +269,7 @@ export default function Layout() {
                       <span>Admin Dashboard</span>
                     </Link>
                   )}
-                  {!memberData?.hasAcceptedOrganiserAgreement && (
+                  {!memberData?.hasOrganiserRole && (
                     <button
                       onClick={handleBecomeOrganiser}
                       className="block w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"

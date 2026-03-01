@@ -28,15 +28,8 @@ public class LegalController {
             Authentication authentication,
             HttpServletRequest httpRequest) {
 
-        System.out.println(" Accept Organiser Agreement endpoint called");
-        System.out.println(" Request body: " + request);
-        System.out.println(" Authentication: " + authentication);
-        System.out.println(" Authentication name: " + authentication.getName());
-
-        
         System.out.println("🔄 Accept Organiser Agreement endpoint called");
         System.out.println("📝 Request body: " + request);
-        System.out.println("👤 Authentication: " + authentication);
         System.out.println("👤 Authentication name: " + authentication.getName());
         
         if (authentication == null) {
@@ -62,7 +55,16 @@ public class LegalController {
         }
         System.out.println("🖥️ User Agent: " + userAgent);
         
-        legalService.acceptOrganiserAgreement(memberId, ipAddress, userAgent);
+        // Use enhanced service - always saves current active version from DB
+        enhancedLegalService.acceptAgreement(
+            AgreementType.ORGANISER, 
+            memberId, 
+            ipAddress, 
+            userAgent, 
+            null, // sessionId 
+            null, // referrerUrl
+            null  // browserFingerprint
+        );
         System.out.println("✅ Agreement accepted successfully");
         
         return ResponseEntity.ok(Map.of("message", "Organiser Agreement accepted successfully"));
@@ -72,8 +74,10 @@ public class LegalController {
     public ResponseEntity<Map<String, Boolean>> hasAcceptedOrganiserAgreement(
             Authentication authentication) {
         
-        Long memberId = Long.parseLong(authentication.getName());
-        boolean hasAccepted = legalService.hasAcceptedOrganiserAgreement(memberId);
+        Long memberId = getUserIdFromAuth(authentication);
+        // Use enhanced service - checks if member accepted CURRENT active version, not just any version
+        boolean hasAccepted = enhancedLegalService.hasAcceptedOrganiserAgreement(memberId);
+        System.out.println("✅ hasAcceptedOrganiserAgreement for member " + memberId + ": " + hasAccepted);
         
         return ResponseEntity.ok(Map.of("hasAccepted", hasAccepted));
     }
@@ -93,7 +97,7 @@ public class LegalController {
         
         Long memberId = getUserIdFromAuth(authentication);
         System.out.println("✅ Member ID: " + memberId);
-        System.out.println("📝 Agreement text received (length: " +  request.getAgreementText().length());
+        System.out.println("📝 Agreement text received (length: " + (request.getAgreementText() != null ? request.getAgreementText().length() : "null") + ")");
         
         String ipAddress = request.getIpAddress();
         if (ipAddress == null || ipAddress.isEmpty()) {

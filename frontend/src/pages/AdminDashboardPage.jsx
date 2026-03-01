@@ -764,7 +764,7 @@ export default function AdminDashboardPage() {
                         {editForm.agreementText.length} characters
                       </p>
                     </div>
-                    <div className="mt-4 border border-gray-200 rounded-lg bg-gray-50 p-4 max-h-96 overflow-y-auto">
+                    <div className="mt-4 border border-gray-200 rounded-lg bg-gray-50 p-4 max-h-[70vh] min-h-[40vh] overflow-y-auto">
                       <p className="text-sm font-semibold text-gray-700 mb-2">Live Preview</p>
                       <div className="markdown-preview text-gray-800 text-sm sm:text-base leading-relaxed">
                         <ReactMarkdown>{editForm.agreementText || '*Preview will appear here*'}</ReactMarkdown>
