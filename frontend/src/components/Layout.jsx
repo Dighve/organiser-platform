@@ -106,10 +106,10 @@ export default function Layout() {
           <div className="flex justify-between items-center h-16 gap-4">
             {/* Logo */}
             <div className="flex items-center flex-shrink-0">
-              <Link to="/" className="flex items-center">
+              <Link to="/" className="flex items-center h-10">
                 {/* Modern Logo with text */}
                 <div className="flex items-center gap-3">
-                  <div className="relative w-10 h-10">
+                  <div className="relative w-10 h-10 md:w-11 md:h-11">
                     <img 
                       src="/favicon1.svg" 
                       alt="OutMeets" 
@@ -123,7 +123,7 @@ export default function Layout() {
 
             {/* Search Bar - Mobile & Desktop - Hide on welcome screen */}
             {!(location.pathname === '/' && location.search.includes('welcome=true')) && (
-              <div className="flex-1 max-w-md mx-4">
+              <div className="flex-1 max-w-md mx-4 flex items-center">
                 <form onSubmit={handleSearch} className="w-full">
                   <div className="relative">
                     <input

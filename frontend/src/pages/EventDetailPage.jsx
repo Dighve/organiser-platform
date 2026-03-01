@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -42,6 +42,8 @@ export default function EventDetailPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
+  const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false)
+  const [isManageOpen, setIsManageOpen] = useState(false)
   const [heroImageError, setHeroImageError] = useState(false)
   const [heroImageLoaded, setHeroImageLoaded] = useState(false)
   const [isJoiningFlow, setIsJoiningFlow] = useState(false) // Track entire join flow until modal opens
@@ -357,6 +359,18 @@ export default function EventDetailPage() {
     participantIds: [],
     currentParticipants: 0,
   }
+  const hasHost = Boolean(event?.hostMemberId || displayEvent?.hostMemberName)
+  const hasEventDetails = Boolean(
+    event?.difficultyLevel ||
+    event?.distanceKm ||
+    event?.elevationGainM ||
+    event?.estimatedDurationHours
+  )
+  const canOpenCalendar = Boolean(calendarData)
+  const cleanedDescription = (event?.description || '')
+    .replace(/^\s*\|\s*$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
 
   // Calculate if event is multi-day
   const startDate = event ? new Date(event?.eventDate) : null
@@ -497,36 +511,19 @@ export default function EventDetailPage() {
             </div>
           ) : isAuthenticated ? (
             isEventOrganiser ? (
-              !isPastEvent ? (
-                <button
-                  onClick={() => navigate(`/events/${id}/edit`)}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                >
-                  <Edit className="h-5 w-5" />
-                  Edit Event
-                </button>
-              ) : (
-                <button
-                  onClick={handleCopyEvent}
-                  className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-2"
-                >
-                  <Copy className="h-5 w-5" />
-                  Copy Event
-                </button>
-              )
-            ) : hasJoined ? (
               <button
-                onClick={() => leaveMutation.mutate()}
-                disabled={leaveMutation.isLoading}
-                className={`w-full py-3 px-4 font-bold rounded-lg shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm ${
-                  leaveMutation.isLoading 
-                    ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 active:scale-95'
-                }`}
+                onClick={() => setIsManageOpen(true)}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-2"
               >
-                {leaveMutation.isLoading && <Loader className="h-5 w-5 animate-spin" />}
-                {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
+                <MoreHorizontal className="h-5 w-5" />
+                Manage Event
               </button>
+            ) : hasJoined ? (
+              !isPastEvent ? (
+                <div className="w-full py-3 px-4 font-bold rounded-lg shadow-lg bg-gray-100 text-gray-700 text-center text-sm">
+                  You are registered
+                </div>
+              ) : null
             ) : (
               <button
                 onClick={handleJoinClick}
@@ -555,7 +552,104 @@ export default function EventDetailPage() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 pb-20 lg:pb-0">
+        {/* ============================================ */}
+        {/* MOBILE MANAGE SHEET - Organiser only */}
+        {/* ============================================ */}
+        {isManageOpen && isEventOrganiser && (
+          <div className="lg:hidden fixed inset-0 z-[60] flex items-end justify-center">
+            <button
+              type="button"
+              aria-label="Close manage menu"
+              onClick={() => setIsManageOpen(false)}
+              className="absolute inset-0 bg-black/40"
+            />
+            <div
+              role="dialog"
+              aria-modal="true"
+              className="relative w-full mx-4 mb-4 bg-white rounded-3xl shadow-2xl overflow-hidden"
+            >
+              <div className="flex items-center justify-center pt-3">
+                <div className="h-1.5 w-12 bg-gray-300 rounded-full" />
+              </div>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setIsManageOpen(false)}
+                className="absolute right-4 top-3 text-gray-500 hover:text-gray-800"
+              >
+                <span className="text-2xl leading-none">×</span>
+              </button>
+              <div className="px-4 pb-4 pt-6">
+                <div className="space-y-1">
+                  <button
+                    onClick={() => {
+                      setIsManageOpen(false)
+                      navigate(`/events/${id}/edit`)
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                  >
+                    <Edit className="h-5 w-5 text-purple-600" />
+                    Edit event
+                  </button>
+                  <div className="h-px bg-gray-200 mx-3" />
+                  <button
+                    onClick={() => {
+                      setIsManageOpen(false)
+                      handleCopyEvent()
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                  >
+                    <Copy className="h-5 w-5 text-blue-600" />
+                    Copy event
+                  </button>
+                  <div className="h-px bg-gray-200 mx-3" />
+                  <button
+                    onClick={() => {
+                      setIsManageOpen(false)
+                      handleDelete()
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-red-700 hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="h-5 w-5 text-red-600" />
+                    Delete event
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================ */}
+        {/* CALENDAR PICKER - Simple list (no success modal) */}
+        {/* ============================================ */}
+        {isCalendarPickerOpen && calendarData && (
+          <div className="fixed inset-0 z-[55] flex items-end sm:items-center justify-center">
+            <button
+              type="button"
+              aria-label="Close calendar picker"
+              onClick={() => setIsCalendarPickerOpen(false)}
+              className="absolute inset-0 bg-black/40"
+            />
+            <div className="relative w-full mx-4 mb-4 sm:mb-0 sm:max-w-md bg-white rounded-3xl shadow-2xl">
+              <div className="flex items-center justify-between px-5 pt-4">
+                <h3 className="text-base font-bold text-gray-900">Add to calendar</h3>
+                <button
+                  type="button"
+                  aria-label="Close"
+                  onClick={() => setIsCalendarPickerOpen(false)}
+                  className="text-gray-500 hover:text-gray-800"
+                >
+                  <span className="text-2xl leading-none">×</span>
+                </button>
+              </div>
+              <div className="px-4 pb-4 pt-3">
+                <AddToCalendar calendarData={calendarData} variant="list" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8 pb-4 lg:pb-0">
           {/* ============================================ */}
           {/* MAIN CONTENT - Event details, participants */}
           {/* ============================================ */}
@@ -566,20 +660,18 @@ export default function EventDetailPage() {
             {/* ============================================ */}
             {displayEvent.groupName && (
               <div 
-                className="bg-white rounded-xl lg:rounded-2xl shadow-md lg:shadow-lg overflow-hidden border border-gray-200 cursor-pointer hover:shadow-lg lg:hover:shadow-xl hover:border-purple-200 hover:bg-gray-50/50 transition-all duration-200"
+                className="bg-white rounded-2xl lg:rounded-3xl shadow-md lg:shadow-lg border border-gray-200 cursor-pointer hover:shadow-lg lg:hover:shadow-xl hover:border-purple-200 hover:bg-purple-50/40 transition-all duration-200 p-3 lg:p-4"
                 onClick={() => navigate(`/groups/${displayEvent.groupId}`)}
               >
-                {/* Mobile/Desktop Layout - Image left, details right */}
-                <div className="flex flex-row h-12 lg:h-16">
-                  
-                  {/* Group Image - Left side */}
-                  <div className="w-32 lg:w-48 flex-shrink-0">
-                    <div className="relative h-12 lg:h-16 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-l-xl lg:rounded-l-2xl">
+                <div className="flex items-center gap-4">
+                  {/* Group Image */}
+                  <div className="w-20 h-16 lg:w-24 lg:h-18 flex-shrink-0">
+                    <div className="relative w-full h-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-xl lg:rounded-2xl overflow-hidden p-1.5">
                       {event?.group?.bannerUrl ? (
                         <img 
                           src={event.group.bannerUrl} 
                           alt={displayEvent.groupName}
-                          className="w-full h-full object-cover rounded-l-xl lg:rounded-l-2xl"
+                          className="w-full h-full object-cover rounded-lg lg:rounded-xl"
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center">
@@ -589,15 +681,10 @@ export default function EventDetailPage() {
                     </div>
                   </div>
                   
-                  {/* Group Details - Right side */}
-                  <div className="flex-1 p-2 lg:p-3 flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      {/* Group Name */}
-                      <h2 className="text-sm lg:text-base font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
-                    </div>
-                    
-                    {/* Privacy Badge - Right side */}
-                    <span className="ml-2 px-1.5 py-0.5 lg:px-2 lg:py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-full flex-shrink-0">
+                  {/* Group Details */}
+                  <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
+                    <h2 className="text-base lg:text-lg font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-gray-300 text-gray-600 text-[11px] font-semibold flex-shrink-0">
                       {event?.group?.isPublic === false ? 'Private Group' : 'Public Group'}
                     </span>
                   </div>
@@ -606,103 +693,131 @@ export default function EventDetailPage() {
             )}
 
             {/* ============================================ */}
-            {/* EVENT DETAILS SECTION - Always at top after group */}
+            {/* DATE + LOCATION CARD - Always at top after group */}
             {/* ============================================ */}
-            {isAccessDenied ? (
-              /* Non-members: Show only date/time */
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
-                <div className="space-y-3 lg:space-y-5">
-                  {/* Always show date and time */}
-                  <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
-                    <Calendar className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-purple-600" />
-                    <div>
-                      {isMultiDay ? (
-                        /* Multi-day event: Show date range */
-                        <>
-                          <div className="font-bold text-gray-900">
-                            {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
-                          </div>
-                          <div className="text-purple-600 font-semibold text-sm mt-1">
-                            {formattedStartTime} to {formattedEndTime} {timezoneAbbr}
-                          </div>
-                        </>
-                      ) : (
-                        /* Single day event: Show date with time range */
-                        <>
-                          <div className="font-bold text-gray-900">{formattedStartDate}</div>
-                          <div className="text-purple-600 font-semibold">
-                            {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime} {timezoneAbbr}
-                          </div>
-                        </>
-                      )}
-                    </div>
+            <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
+              <div className="space-y-3 lg:space-y-5">
+                {/* Date & Time */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (canOpenCalendar) {
+                      setIsCalendarPickerOpen(true)
+                    }
+                  }}
+                  disabled={!canOpenCalendar}
+                  className={`w-full flex items-start p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl text-left transition-all ${
+                    canOpenCalendar ? 'hover:shadow-md' : 'opacity-80 cursor-default'
+                  }`}
+                >
+                  <Calendar className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-purple-600" />
+                  <div>
+                    {isMultiDay ? (
+                      <>
+                        <div className="font-bold text-gray-900">
+                          {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
+                        </div>
+                        <div className="text-purple-600 font-semibold text-sm mt-1">
+                          {formattedStartTime} to {formattedEndTime} {timezoneAbbr}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="font-bold text-gray-900">{formattedStartDate}</div>
+                        <div className="text-purple-600 font-semibold">
+                          {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime} {timezoneAbbr}
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
-              </div>
-            ) : (
-              /* Members: Show full event details */
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
-                <div className="space-y-3 lg:space-y-5">
-                  {/* Always show date and time */}
-                  <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
-                    <Calendar className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-purple-600" />
-                    <div>
-                      {isMultiDay ? (
-                        /* Multi-day event: Show date range */
-                        <>
-                          <div className="font-bold text-gray-900">
-                            {format(startDate, 'MMM dd, yyyy')} - {format(endDate, 'MMM dd, yyyy')}
-                          </div>
-                          <div className="text-purple-600 font-semibold text-sm mt-1">
-                            {formattedStartTime} to {formattedEndTime} {timezoneAbbr}
-                          </div>
-                        </>
-                      ) : (
-                        /* Single day event: Show date with time range */
-                        <>
-                          <div className="font-bold text-gray-900">{formattedStartDate}</div>
-                          <div className="text-purple-600 font-semibold">
-                            {formattedEndTime ? `${formattedStartTime} - ${formattedEndTime}` : formattedStartTime} {timezoneAbbr}
-                          </div>
-                        </>
+                </button>
+
+                {/* Location (members only) */}
+                {!isAccessDenied && event?.location && isEventLocationEnabled() && isGoogleMapsEnabled() && (
+                  <div className="space-y-3">
+                    <div className="h-px bg-gradient-to-r from-purple-100 via-pink-100 to-orange-100" />
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <MapPin className="h-5 w-5 text-purple-600" />
+                      <span className="truncate">{event?.location}</span>
+                    </div>
+                    <div className="px-2">
+                    <button
+                      onClick={() => {
+                        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event?.location || '')}`
+                        window.open(googleMapsUrl, '_blank')
+                      }}
+                      className="relative w-full h-24 md:h-32 rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01]"
+                    >
+                      {isStaticMapsEnabled() && (
+                        <img
+                          src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event?.location || '')}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event?.location || '')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
+                          alt={`Map of ${event?.location || 'Event location'}`}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e) => {
+                            e.target.style.opacity = '0'
+                          }}
+                        />
                       )}
-                    </div>
-                  </div>
-
-                  {/* Difficulty Level */}
-                  {event?.difficultyLevel && (
-                    <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg lg:rounded-xl">
-                      <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-orange-600" />
-                      <div>
-                        <div className="font-bold text-gray-900 text-sm lg:text-base">Difficulty</div>
-                        <div className="text-orange-600 font-semibold text-sm lg:text-base">{event.difficultyLevel}</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Distance & Elevation */}
-                  {(event?.distanceKm || event?.elevationGainM) && (
-                    <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg lg:rounded-xl">
-                      <ArrowUp className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-blue-600" />
-                      <div>
-                        <div className="font-bold text-gray-900 text-sm lg:text-base">📊 Stats</div>
-                        <div className="text-blue-600 text-xs lg:text-sm">
-                          {event.distanceKm && `${event.distanceKm}km`}
-                          {event.distanceKm && event.elevationGainM && ' • '}
-                          {event.elevationGainM && `${event.elevationGainM}m ↗️`}
-                          {event.estimatedDurationHours && ` • ${event.estimatedDurationHours}h ⏱️`}
+                      {!isStaticMapsEnabled() && (
+                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                          <div className="text-center">
+                            <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                            <p className="text-sm text-gray-600 font-medium">{event?.location}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transform scale-95 group-hover:scale-100 transition-transform duration-300">
+                          <MapPin className="h-4 w-4 text-pink-600" />
+                          <span className="font-semibold text-gray-900 text-sm">Open Maps</span>
                         </div>
                       </div>
+                    </button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
+
+                {/* Event Details (members only) */}
+                {!isAccessDenied && hasEventDetails && (
+                  <div className="space-y-3 lg:space-y-5">
+                    <div className="h-px bg-gradient-to-r from-purple-100 via-pink-100 to-orange-100" />
+                    {/* Difficulty Level */}
+                    {event?.difficultyLevel && (
+                      <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg lg:rounded-xl">
+                        <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-orange-600" />
+                        <div>
+                          <div className="font-bold text-gray-900 text-sm lg:text-base">Difficulty</div>
+                          <div className="text-orange-600 font-semibold text-sm lg:text-base">{event.difficultyLevel}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Distance & Elevation */}
+                    {(event?.distanceKm || event?.elevationGainM) && (
+                      <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg lg:rounded-xl">
+                        <ArrowUp className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-blue-600" />
+                        <div>
+                          <div className="font-bold text-gray-900 text-sm lg:text-base">📊 Stats</div>
+                          <div className="text-blue-600 text-xs lg:text-sm">
+                            {event.distanceKm && `${event.distanceKm}km`}
+                            {event.distanceKm && event.elevationGainM && ' • '}
+                            {event.elevationGainM && `${event.elevationGainM}m ↗️`}
+                            {event.estimatedDurationHours && ` • ${event.estimatedDurationHours}h ⏱️`}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* ============================================ */}
             {/* EVENT DESCRIPTION - Members only */}
             {/* ============================================ */}
-            {!isAccessDenied && event?.description && (
+            {!isAccessDenied && cleanedDescription && (
               <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
                 <h2 className="text-lg lg:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">📝 Details</h2>
                 <div className="prose prose-sm lg:prose-lg max-w-none text-gray-700 whitespace-pre-wrap">
@@ -711,7 +826,7 @@ export default function EventDetailPage() {
                       p: ({node, ...props}) => <p className="mb-3 lg:mb-4 text-sm lg:text-base" {...props} />
                     }}
                   >
-                    {event?.description || ''}
+                    {cleanedDescription}
                   </ReactMarkdown>
                 </div>
               </div>
@@ -752,100 +867,96 @@ export default function EventDetailPage() {
             )}
 
             {/* ============================================ */}
-            {/* HOST SECTION - Members only */}
-            {/* ============================================ */}
-            {!isAccessDenied && event?.hostMemberId && (
-              <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
-                <h2 className="text-lg lg:text-2xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
-                  🏕️ Host
-                </h2>
-                {(() => {
-                  const hostParticipant = participantsData?.data?.find(p => p.id === event?.hostMemberId);
-                  if (hostParticipant) {
-                    return (
-                      <div 
-                        onClick={() => navigate(`/members/${hostParticipant.id}`)}
-                        className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1 border-2 border-orange-200"
-                      >
-                        <ProfileAvatar 
-                          member={hostParticipant} 
-                          size="lg" 
-                          className="group-hover:scale-110 transition-transform"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-orange-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
-                            {hostParticipant.displayName || hostParticipant.email.split('@')[0]}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            Event Host
-                          </p>
-                        </div>
-                        <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-3 py-1 rounded-full font-bold">Host</span>
-                      </div>
-                    );
-                  } else if (displayEvent.hostMemberName) {
-                    return (
-                      <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl border-2 border-orange-200">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
-                          {displayEvent.hostMemberName.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-gray-900 truncate">
-                            {displayEvent.hostMemberName}
-                          </p>
-                          <p className="text-xs text-gray-500 truncate">
-                            Event Host
-                          </p>
-                        </div>
-                        <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-3 py-1 rounded-full font-bold">Host</span>
-                      </div>
-                    );
-                  }
-                  return null;
-                })()}
-              </div>
-            )}
-
-            {/* ============================================ */}
-            {/* ATTENDEES SECTION - Members only */}
+            {/* HOST + ATTENDEES COMBINED CARD - Members only */}
             {/* ============================================ */}
             {!isAccessDenied && (
               <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
-                <h2 className="text-lg lg:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
-                  <Users className="inline h-5 w-5 lg:h-7 lg:w-7 mr-1.5 lg:mr-2 mb-0.5 lg:mb-1" />
-                  👥 Attendees ({event?.currentParticipants ? (event.currentParticipants - 1) : 0}{event?.maxParticipants ? `/${event?.maxParticipants - 1}` : ''})
-                </h2>
-                {participantsData?.data && participantsData.data.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
-                    {participantsData.data.filter(participant => participant.id !== event?.hostMemberId).map((participant) => (
-                      <div 
-                        key={participant.id}
-                        onClick={() => navigate(`/members/${participant.id}`)}
-                        className="flex items-center space-x-2 lg:space-x-3 p-2.5 lg:p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl hover:shadow-md lg:hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-0.5 lg:hover:-translate-y-1"
-                      >
-                          <ProfileAvatar 
-                            member={participant} 
-                            size="md" 
-                            className="group-hover:scale-105 lg:group-hover:scale-110 transition-transform"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all text-sm lg:text-base">
-                              {participant.displayName || participant.email.split('@')[0]}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              {new Date(participant.joinedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 lg:py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
-                      <Users className="h-8 w-8 lg:h-12 lg:w-12 mx-auto mb-2 lg:mb-3 text-gray-400" />
-                      <p className="text-gray-600 text-sm lg:text-base">No attendees yet. Be the first to join!</p>
+                <div className={`grid gap-6 ${hasHost ? 'lg:grid-cols-[1fr_2fr]' : ''}`}>
+                  {/* Host */}
+                  {hasHost && (
+                    <div>
+                      <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
+                        <span className="text-lg lg:text-xl">🏕️</span>
+                        <span>Host</span>
+                      </h2>
+                      {(() => {
+                        const hostParticipant = participantsData?.data?.find(p => p.id === event?.hostMemberId);
+                        if (hostParticipant) {
+                          return (
+                            <div 
+                              onClick={() => navigate(`/members/${hostParticipant.id}`)}
+                              className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1"
+                            >
+                              <ProfileAvatar 
+                                member={hostParticipant} 
+                                size="lg" 
+                                className="group-hover:scale-110 transition-transform"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-orange-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
+                                  {hostParticipant.displayName || hostParticipant.email.split('@')[0]}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        } else if (displayEvent.hostMemberName) {
+                          return (
+                            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl">
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                                {displayEvent.hostMemberName.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 truncate">
+                                  {displayEvent.hostMemberName}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
                     </div>
                   )}
+
+                  {/* Attendees */}
+                  <div className={hasHost ? '' : 'lg:col-span-2'}>
+                    <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
+                      <span className="text-lg lg:text-xl">👥</span>
+                      <span>Attendees ({event?.currentParticipants ? (event.currentParticipants - 1) : 0}{event?.maxParticipants ? `/${event?.maxParticipants - 1}` : ''})</span>
+                    </h2>
+                    {participantsData?.data && participantsData.data.length > 0 ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+                        {participantsData.data.filter(participant => participant.id !== event?.hostMemberId).map((participant) => (
+                          <div 
+                            key={participant.id}
+                            onClick={() => navigate(`/members/${participant.id}`)}
+                            className="flex items-center space-x-2 lg:space-x-3 p-2.5 lg:p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl hover:shadow-md lg:hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-0.5 lg:hover:-translate-y-1"
+                          >
+                            <ProfileAvatar 
+                              member={participant} 
+                              size="md" 
+                              className="group-hover:scale-105 lg:group-hover:scale-110 transition-transform"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all text-sm lg:text-base">
+                                {participant.displayName || participant.email.split('@')[0]}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {new Date(participant.joinedAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 lg:py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
+                        <Users className="h-8 w-8 lg:h-12 lg:w-12 mx-auto mb-2 lg:mb-3 text-gray-400" />
+                        <p className="text-gray-600 text-sm lg:text-base">No attendees yet. Be the first to join!</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              </div>
             )}
 
           </div>
@@ -854,23 +965,9 @@ export default function EventDetailPage() {
           {/* SIDEBAR - Price, actions, location, group info */}
           {/* ============================================ */}
           <div className="order-3 lg:order-2 lg:col-span-1">
-            <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 sticky top-20 lg:top-24 border border-gray-100 shadow-md lg:shadow-lg space-y-4 lg:space-y-6">
+            <div className="hidden lg:block bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 sticky top-20 lg:top-24 border border-gray-100 shadow-md lg:shadow-lg space-y-4 lg:space-y-6">
 
-              {!isAccessDenied && (
-                <>
-                  <div>
-                    <p className="text-sm text-gray-500 font-semibold mb-2">PRICE</p>
-                    {event?.price > 0 ? (
-                      <div className="flex items-center text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                        <DollarSign className="h-10 w-10 text-purple-600" />
-                        <span>{event?.price}</span>
-                      </div>
-                    ) : (
-                      <div className="text-4xl font-extrabold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">Free</div>
-                    )}
-                  </div>
-                </>
-              )}
+              {/* Price section removed */}
 
               {/* Action Buttons Section - Varies based on user status */}
               {/* Hide sidebar buttons on mobile - mobile has sticky action bar */}
@@ -1007,30 +1104,19 @@ export default function EventDetailPage() {
                       )}
                     </div>
                   ) : hasJoined ? (
-                    /* REGISTERED USER VIEW - Show Add to Calendar and Leave button */
-                    <div className="space-y-3">
-                      <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-                        <p className="text-green-700 font-semibold text-center">✅ You're registered!</p>
+                    /* REGISTERED USER VIEW - Show Add to Calendar (future only) */
+                    !isPastEvent ? (
+                      <div className="space-y-3">
+                        <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                          <p className="text-green-700 font-semibold text-center">✅ You're registered!</p>
+                        </div>
+                        
+                        {/* Add to Calendar Button */}
+                        {calendarData && (
+                          <AddToCalendar calendarData={calendarData} />
+                        )}
                       </div>
-                      
-                      {/* Add to Calendar Button */}
-                      {!isPastEvent && calendarData && (
-                        <AddToCalendar calendarData={calendarData} />
-                      )}
-                      
-                      <button
-                        onClick={() => leaveMutation.mutate()}
-                        disabled={leaveMutation.isLoading}
-                        className={`w-full py-3 px-6 font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 ${
-                          leaveMutation.isLoading 
-                            ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white' 
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        {leaveMutation.isLoading && <Loader className="h-4 w-4 animate-spin" />}
-                        {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
-                      </button>
-                    </div>
+                    ) : null
                   ) : (
                     /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
                     <button
@@ -1073,58 +1159,7 @@ export default function EventDetailPage() {
                 )}
               </div>
 
-              {/* Location Map Section (members only) - Only show if location features are enabled */}
-              {!isAccessDenied && event?.location && isEventLocationEnabled() && isGoogleMapsEnabled() && (
-                <div className="pt-6 border-t border-gray-200">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 mb-3">
-                      <MapPin className="h-5 w-5 text-pink-600" />
-                      <h3 className="font-bold text-gray-900">Location</h3>
-                    </div>
-                    <p className="text-sm text-gray-700 mb-3">{event?.location}</p>
-                    
-                    {/* Clickable Compact Map Preview */}
-                    <button
-                      onClick={() => {
-                        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event?.location || '')}`
-                        window.open(googleMapsUrl, '_blank')
-                      }}
-                      className="relative w-full h-40 rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-xl hover:scale-[1.02]"
-                    >
-                      {/* Static Map from Google Maps - Only show if static maps are enabled */}
-                      {isStaticMapsEnabled() && (
-                        <img
-                          src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event?.location || '')}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event?.location || '')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
-                          alt={`Map of ${event?.location || 'Event location'}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(e) => {
-                            e.target.style.opacity = '0'
-                          }}
-                        />
-                      )}
-                      {/* Fallback content when static maps are disabled */}
-                      {!isStaticMapsEnabled() && (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                          <div className="text-center">
-                            <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600 font-medium">{event?.location}</p>
-                          </div>
-                        </div>
-                      )}
-                      {/* Overlay with icon */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transform scale-95 group-hover:scale-100 transition-transform duration-300">
-                          <MapPin className="h-4 w-4 text-pink-600" />
-                          <span className="font-semibold text-gray-900 text-sm">Open Maps</span>
-                        </div>
-                      </div>
-                    </button>
-                    <p className="text-xs text-gray-500 text-center">📍 Click to open in Google Maps</p>
-                  </div>
-                </div>
-              )}
+              {/* Location Map Section moved to Date + Location card */}
 
             </div>
           </div>
@@ -1134,7 +1169,7 @@ export default function EventDetailPage() {
         {/* COMMENTS SECTION - Full width below main content (members only) */}
         {/* ============================================ */}
         {!isAccessDenied && (
-          <div className="mt-8 pb-24 lg:pb-0">
+          <div className="mt-4 lg:mt-6 pb-24 lg:pb-0">
             <CommentSection eventId={id} />
           </div>
         )}

@@ -12,7 +12,7 @@ import {
  * Beautiful dropdown button that allows users to add events to their preferred calendar
  * Supports: Google Calendar, Apple Calendar, Outlook, Yahoo, and ICS download
  */
-export default function AddToCalendar({ calendarData, className = '' }) {
+export default function AddToCalendar({ calendarData, className = '', variant = 'button' }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
 
@@ -87,6 +87,28 @@ export default function AddToCalendar({ calendarData, className = '' }) {
       color: 'from-green-600 to-emerald-600'
     }
   ]
+
+  if (variant === 'list') {
+    return (
+      <div className={`space-y-2 ${className}`}>
+        {calendarOptions.map((option) => (
+          <button
+            key={option.id}
+            onClick={() => handleCalendarClick(option.id)}
+            className="group w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 transition-all text-left"
+          >
+            <div className={`flex items-center justify-center w-9 h-9 rounded-lg bg-gradient-to-br ${option.color} text-white shadow-sm`}>
+              <span className="text-lg">{option.icon}</span>
+            </div>
+            <span className="flex-1 font-semibold text-gray-800">{option.name}</span>
+            {option.id === 'ics' && (
+              <Download className="h-4 w-4 text-gray-400 group-hover:text-green-600 transition-colors" />
+            )}
+          </button>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
