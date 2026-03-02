@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { Mountain, Mail, CheckCircle, X } from 'lucide-react'
 import { useGoogleLogin } from '@react-oauth/google'
@@ -15,13 +15,19 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const [isLoading, setIsLoading] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [showMagicLink, setShowMagicLink] = useState(false)
+  const googleSignInInProgress = useRef(false)
   
   const email = watch('email')
 
-  // Auto-close modal when user logs in from another tab
+  // Auto-close modal when user logs in from another tab (magic link)
+  // Skipped when Google OAuth handles the flow directly
   useEffect(() => {
     if (isAuthenticated && isOpen) {
-      // User logged in (possibly from another tab)
+      if (googleSignInInProgress.current) {
+        googleSignInInProgress.current = false
+        return
+      }
+      // User logged in from another tab via magic link
       toast.success('✅ Successfully logged in!')
       setEmailSent(false)
       setShowMagicLink(false)
@@ -45,6 +51,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         })
         
         const { token, userId, email, role, isOrganiser } = response.data
+        googleSignInInProgress.current = true
         login({ id: userId, userId, email, role, isOrganiser }, token)
         
         toast.success('🎉 Signed in with Google!')

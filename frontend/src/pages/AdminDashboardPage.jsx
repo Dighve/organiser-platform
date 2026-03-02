@@ -269,40 +269,26 @@ export default function AdminDashboardPage() {
 
         {/* Tab Navigation */}
         <div className="mb-8">
-          <nav className="flex space-x-8">
-            <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'dashboard'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Dashboard
-            </button>
-            <button
-              onClick={() => setActiveTab('feature-flags')}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'feature-flags'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              Feature Flags
-            </button>
-            <button
-              onClick={() => setActiveTab('agreements')}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                activeTab === 'agreements'
-                  ? 'bg-white text-purple-600 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              <Shield className="w-4 h-4 mr-2" />
-              Agreements
-            </button>
+          <nav className="flex gap-2">
+            {[
+              { key: 'dashboard', icon: TrendingUp, label: 'Dashboard' },
+              { key: 'feature-flags', icon: Settings, label: 'Feature Flags' },
+              { key: 'agreements', icon: Shield, label: 'Agreements' },
+            ].map(({ key, icon: Icon, label }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex items-center justify-center px-3 sm:px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === key
+                    ? 'bg-white text-purple-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+                aria-label={label}
+              >
+                <Icon className="w-4 h-4" />
+                <span className="hidden sm:inline ml-2">{label}</span>
+              </button>
+            ))}
           </nav>
         </div>
 
@@ -412,23 +398,23 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Recent Users Table */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white rounded-2xl shadow-lg p-4 sm:p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">Recent User Signups</h2>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
+            <table className="min-w-full divide-y divide-gray-200 text-sm">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Activity</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Email</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Activity</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {recentUsers?.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
                           {user.profilePhotoUrl ? (
@@ -439,20 +425,20 @@ export default function AdminDashboardPage() {
                             </div>
                           )}
                         </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{user.displayName || 'Anonymous'}</div>
+                        <div className="ml-3">
+                          <div className="text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{user.displayName || 'Anonymous'}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden sm:table-cell">
+                      <div className="text-sm text-gray-900 truncate max-w-[200px]">{user.email}</div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500">
                         {format(new Date(user.createdAt), 'MMM dd, yyyy')}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                       {user.hasOrganiserRole ? (
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-800">
                           Organiser
@@ -508,20 +494,20 @@ export default function AdminDashboardPage() {
                   <p className="text-gray-600">Please try refreshing the page.</p>
                 </div>
               ) : (
-                <div className="grid gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   {featureFlags?.map((flag) => (
                     <div
                       key={flag.flagKey}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors"
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 sm:p-5 border border-gray-200 rounded-xl hover:border-gray-300 transition-colors"
                     >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{flag.flagName}</h3>
-                          <span className="text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                      <div className="flex-1 min-w-0 space-y-1">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{flag.flagName}</h3>
+                          <span className="text-[11px] sm:text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
                             {flag.flagKey}
                           </span>
                         </div>
-                        <p className="text-gray-600 text-sm">{flag.description}</p>
+                        <p className="text-gray-600 text-sm line-clamp-2">{flag.description}</p>
                         {flag.updatedByEmail && (
                           <p className="text-xs text-gray-500 mt-2">
                             Last updated by {flag.updatedByEmail} on{' '}
@@ -529,8 +515,8 @@ export default function AdminDashboardPage() {
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 ml-6">
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-between sm:justify-end gap-3 ml-0 sm:ml-6">
+                        <div className="flex items-center gap-1.5">
                           {flag.isEnabled ? (
                             <Eye className="w-4 h-4 text-green-600" />
                           ) : (
@@ -594,11 +580,11 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             {/* Current Agreements */}
             {!isEditing && (
-              <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 {/* User Agreement Card */}
                 {currentUserAgreement && (
-                  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                    <div className="flex items-center justify-between mb-4">
+                  <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <div className="flex items-center space-x-3">
                         <div className={`w-8 h-8 bg-gradient-to-br ${getAgreementTypeColor('USER')} rounded-lg flex items-center justify-center`}>
                           {getAgreementTypeIcon('USER')}
@@ -610,7 +596,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <button
                         onClick={() => handleEdit(currentUserAgreement)}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all w-full sm:w-auto"
                       >
                         <Edit3 className="w-4 h-4" />
                         <span>Edit</span>
@@ -628,18 +614,16 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                     
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {currentUserAgreement.agreementText.substring(0, 200)}...
-                      </p>
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg max-h-32 overflow-y-auto text-sm text-gray-700 whitespace-pre-wrap">
+                      {currentUserAgreement.agreementText}
                     </div>
                   </div>
                 )}
 
                 {/* Organiser Agreement Card */}
                 {currentOrganiserAgreement && (
-                  <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                    <div className="flex items-center justify-between mb-4">
+                  <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                       <div className="flex items-center space-x-3">
                         <div className={`w-8 h-8 bg-gradient-to-br ${getAgreementTypeColor('ORGANISER')} rounded-lg flex items-center justify-center`}>
                           {getAgreementTypeIcon('ORGANISER')}
@@ -651,7 +635,7 @@ export default function AdminDashboardPage() {
                       </div>
                       <button
                         onClick={() => handleEdit(currentOrganiserAgreement)}
-                        className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:from-orange-600 hover:to-pink-700 transition-all"
+                        className="flex items-center justify-center space-x-2 px-3 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:from-orange-600 hover:to-pink-700 transition-all w-full sm:w-auto"
                       >
                         <Edit3 className="w-4 h-4" />
                         <span>Edit</span>
@@ -669,10 +653,8 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
                     
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg max-h-40 overflow-y-auto">
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
-                        {currentOrganiserAgreement.agreementText.substring(0, 200)}...
-                      </p>
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg max-h-32 overflow-y-auto text-sm text-gray-700 whitespace-pre-wrap">
+                      {currentOrganiserAgreement.agreementText}
                     </div>
                   </div>
                 )}
@@ -681,8 +663,8 @@ export default function AdminDashboardPage() {
 
             {/* Edit Form */}
             {isEditing && selectedAgreement && (
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200 mb-8">
-                <div className="flex items-center justify-between mb-6">
+              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200 mb-8">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                   <div className="flex items-center space-x-3">
                     <div className={`w-8 h-8 bg-gradient-to-br ${getAgreementTypeColor(selectedAgreement.agreementType)} rounded-lg flex items-center justify-center`}>
                       {getAgreementTypeIcon(selectedAgreement.agreementType)}
@@ -695,7 +677,7 @@ export default function AdminDashboardPage() {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={handleCancel}
-                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                      className="flex items-center space-x-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors w-full sm:w-auto justify-center"
                     >
                       <X className="w-4 h-4" />
                       <span>Cancel</span>
@@ -703,7 +685,7 @@ export default function AdminDashboardPage() {
                     <button
                       onClick={handleSave}
                       disabled={updateAgreementMutation.isLoading}
-                      className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50"
+                      className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 w-full sm:w-auto justify-center"
                     >
                       <Save className="w-4 h-4" />
                       <span>{updateAgreementMutation.isLoading ? 'Saving...' : 'Save Changes'}</span>
@@ -776,14 +758,14 @@ export default function AdminDashboardPage() {
             )}
 
             {/* History Section */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-6">
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-200">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <h3 className="text-xl font-semibold text-gray-900">Agreement History</h3>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={() => setHistoryType('USER')}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 py-1 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       historyType === 'USER'
                         ? 'bg-purple-100 text-purple-700'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
@@ -793,20 +775,21 @@ export default function AdminDashboardPage() {
                   </button>
                   <button
                     onClick={() => setHistoryType('ORGANISER')}
-                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 py-1 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       historyType === 'ORGANISER'
                         ? 'bg-orange-100 text-orange-700'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    Organiser
+                    Org
                   </button>
                   <button
                     onClick={() => setShowHistory(!showHistory)}
-                    className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                   >
                     <History className="w-4 h-4" />
-                    <span>{showHistory ? 'Hide History' : 'View History'}</span>
+                    <span className="hidden sm:inline">{showHistory ? 'Hide History' : 'View History'}</span>
+                    <span className="sm:hidden">{showHistory ? 'Hide' : 'Show'}</span>
                   </button>
                 </div>
               </div>
@@ -819,25 +802,23 @@ export default function AdminDashboardPage() {
                       <span className="ml-3 text-gray-600">Loading history...</span>
                     </div>
                   ) : historyData?.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       {historyData.map((version) => (
-                        <div key={version.version} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center space-x-3">
+                        <div key={version.version} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50 transition-colors">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                            <div className="flex items-center space-x-2">
                               <div className={`w-6 h-6 bg-gradient-to-br ${getAgreementTypeColor(version.agreementType)} rounded flex items-center justify-center`}>
                                 <CheckCircle className="w-3 h-3 text-white" />
                               </div>
-                              <div>
-                                <span className="font-medium text-gray-900">Version {version.version}</span>
-                                {version.changeDescription && (
-                                  <span className="ml-2 text-sm text-gray-600">- {version.changeDescription}</span>
-                                )}
-                              </div>
+                              <span className="font-medium text-gray-900">v{version.version}</span>
+                              {version.changeDescription && (
+                                <span className="text-xs text-gray-600 line-clamp-1">· {version.changeDescription}</span>
+                              )}
                             </div>
-                            <span className="text-sm text-gray-500">{formatDate(version.effectiveDate)}</span>
+                            <span className="text-xs sm:text-sm text-gray-500">{formatDate(version.effectiveDate)}</span>
                           </div>
-                          <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            {version.agreementText.substring(0, 150)}...
+                          <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded line-clamp-3 sm:line-clamp-4">
+                            {version.agreementText}
                           </p>
                         </div>
                       ))}

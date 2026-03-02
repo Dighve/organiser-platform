@@ -339,11 +339,21 @@ export default function CreateEventPage() {
       return
     }
     
-    // Validate location has coordinates (only if location features are enabled)
-    if ((isEventLocationEnabled() && isGoogleMapsEnabled()) && (!data.latitude || !data.longitude)) {
-      toast.error('⚠️ Please select a valid location from Google Maps with coordinates')
-      setCurrentStep(STEPS.LOCATION)
-      return
+    // Validate location requirements based on Google Maps availability
+    if (isGoogleMapsEnabled()) {
+      // When Google Maps is enabled, require coordinates
+      if (!data.latitude || !data.longitude) {
+        toast.error('⚠️ Please select a valid location from Google Maps with coordinates')
+        setCurrentStep(STEPS.LOCATION)
+        return
+      }
+    } else {
+      // When Google Maps is disabled, just require location text
+      if (!data.location || data.location.trim() === '') {
+        toast.error('⚠️ Please enter a hiking location')
+        setCurrentStep(STEPS.DETAILS)
+        return
+      }
     }
     
     // Validate event date is in the future (with 1 minute buffer for server processing)
@@ -735,14 +745,40 @@ export default function CreateEventPage() {
   const renderDetailsStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
       <div className="text-center mb-10 animate-fade-in">
-        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-400 rounded-3xl mb-6 shadow-2xl shadow-green-500/30 hover:scale-105 transition-transform duration-300">
-          <Compass className="h-12 w-12 text-white" />
+        <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-500 via-emerald-500 to-teal-400 rounded-3xl mb-6 shadow-2xl shadow-emerald-500/30 hover:scale-105 transition-transform duration-300">
+          <Activity className="h-12 w-12 text-white" />
         </div>
-        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-500 to-teal-500 mb-3">
-          Add hike details
+        <h2 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-green-600 via-emerald-600 to-teal-500 mb-3">
+          Tell us about your hike
         </h2>
-        <p className="text-gray-600 text-lg">Help hikers prepare for your adventure</p>
+        <p className="text-gray-600 text-lg">Add details to help hikers prepare for the adventure</p>
       </div>
+
+      {/* Location fallback when Google Maps is disabled */}
+      {!isGoogleMapsEnabled() && (
+        <div>
+          <label htmlFor="location" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-orange-500 shadow-lg">
+              <MapPin className="h-4 w-4 text-white" />
+            </div>
+            Hiking Location <span className="text-red-500">*</span>
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <input
+              {...register('location', { required: 'Location is required' })}
+              type="text"
+              className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-pink-300 bg-white"
+              placeholder="e.g., Peak District National Park, UK"
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500">
+              <MapPin className="h-6 w-6" />
+            </div>
+          </div>
+          {errors.location && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.location.message}</p>}
+          <p className="text-sm text-gray-500 mt-2 ml-1">💡 Enter the name of the hiking area or trail</p>
+        </div>
+      )}
 
       {/* ========== DIFFICULTY LEVEL ========== */}
       <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-6 border-2 border-orange-200">
@@ -933,7 +969,8 @@ export default function CreateEventPage() {
         </button>
         <button
           type="submit"
-          className="py-4 px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
+          className="py-4 px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center gap-2"
+          disabled={!isGoogleMapsEnabled() && (!watchedLocation || watchedLocation.trim() === '')}
         >
           Continue <ArrowRight className="h-5 w-5" />
         </button>

@@ -16,6 +16,12 @@ if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
   console.error('⚠️ Google OAuth will not work! Add VITE_GOOGLE_CLIENT_ID to your .env file')
 }
 
+// Disable browser's automatic scroll restoration before any rendering
+// This prevents the browser from restoring scroll position from previous visits
+if ('scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual'
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

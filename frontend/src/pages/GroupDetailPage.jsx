@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, ChevronRight } from 'lucide-react'
+import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
@@ -54,7 +54,7 @@ const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
       }`} />
 
       {/* Square thumbnail */}
-      <div className={`w-[60px] h-[60px] rounded-xl overflow-hidden flex-shrink-0 ml-1.5 shadow-sm bg-gradient-to-br from-orange-400 via-pink-500 to-purple-500 ${
+      <div className={`w-[48px] h-[48px] rounded-xl overflow-hidden flex-shrink-0 ml-1.5 shadow-sm bg-gradient-to-br from-orange-400 via-pink-500 to-purple-500 ${
         isPast ? 'grayscale' : ''
       }`}>
         <img
@@ -82,11 +82,6 @@ const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
               {event.difficultyLevel}
             </span>
           )}
-          {isPast && (
-            <span className="inline-flex items-center text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-gray-100 text-gray-400">
-              ✓ Past
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2.5 flex-wrap">
           <span className={`flex items-center gap-0.5 text-[11px] ${
@@ -112,10 +107,6 @@ const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
         </div>
       </div>
 
-      {/* Chevron */}
-      <ChevronRight className={`w-4 h-4 flex-shrink-0 ${
-        isPast ? 'text-gray-300' : 'text-orange-400'
-      }`} />
     </div>
   )
 }

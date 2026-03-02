@@ -126,7 +126,8 @@ public class SecurityConfig {
                         
                         // Other admin endpoints - require ADMIN role
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/admin/**"),
-                                         new AntPathRequestMatcher("/api/v1/admin/agreements", "PUT")
+                                         new AntPathRequestMatcher("/api/v1/admin/agreements", "PUT"),
+                                         new AntPathRequestMatcher("/api/v1/admin/feature-flags/*", "PUT")
                                         ).hasRole("ADMIN")
                         
                         // Organiser endpoints

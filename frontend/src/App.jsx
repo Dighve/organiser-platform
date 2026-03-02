@@ -1,5 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
@@ -34,6 +34,23 @@ function PageLoader() {
   )
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    // Disable browser's built-in scroll restoration which overrides manual scrollTo
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual'
+    }
+  }, [])
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' })
+  }, [pathname])
+
+  return null
+}
+
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
   return isAuthenticated ? children : <Navigate to="/" />
@@ -42,6 +59,7 @@ function PrivateRoute({ children }) {
 function App() {
   return (
     <FeatureFlagProvider>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />  

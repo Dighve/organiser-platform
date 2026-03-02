@@ -32,7 +32,7 @@ export default function HomePage() {
     const hasDiscovered = localStorage.getItem('hasDiscovered')
     return hasDiscovered !== 'true'
   })
-  
+
   // ============================================================
   // DATA FETCHING
   // ============================================================
@@ -169,7 +169,7 @@ export default function HomePage() {
   // ============================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30">
-      <div className="flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 lg:pt-10 pb-10">
+      <div className="flex flex-col lg:flex-row gap-8 px-4 sm:px-6 lg:px-8 pt-6 pb-10">
         
         {/* ========== LEFT SIDEBAR: YOUR GROUPS ========== */}
         <div className="hidden md:block w-full lg:w-1/4 order-3 lg:order-1">
@@ -515,7 +515,7 @@ export default function HomePage() {
                       onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
                     >
                       {/* Event Image */}
-                      <div className="relative w-full h-48 overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500">
+                      <div className="relative w-full h-28 sm:h-48 overflow-hidden bg-gradient-to-br from-purple-500 to-pink-500">
                         {/* Mountain icon placeholder when no image */}
                         {!event.imageUrl && (
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -544,11 +544,18 @@ export default function HomePage() {
                       <div className="p-5">
                         <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">{event.title}</h3>
                         <div className="space-y-2 mb-4">
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                          <div className="flex items-center justify-between gap-2 text-sm text-gray-600">
+                            <div className="flex items-center gap-2">
+                              <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                              </svg>
+                              <span className="font-medium">{new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                            </div>
+                            {/* Mobile: human emoji + count on right. Desktop: nothing */}
+                            <div className="sm:hidden flex items-center gap-1 text-xs text-gray-600">
+                              <span>👤</span>
+                              <span className="font-semibold">{event.currentParticipants}</span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <svg className="w-4 h-4 text-pink-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -559,13 +566,15 @@ export default function HomePage() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                          <div className="flex items-center gap-2">
-                            <div className="flex -space-x-2">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
-                            </div>
+                          {/* Desktop: badge + text on left */}
+                          <div className="hidden sm:flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
                             <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants} going</span>
                           </div>
-                          <svg className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          {/* Mobile: empty space on left */}
+                          <div className="sm:hidden"></div>
+                          {/* Desktop: arrow on right */}
+                          <svg className="hidden sm:block w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                           </svg>
                         </div>

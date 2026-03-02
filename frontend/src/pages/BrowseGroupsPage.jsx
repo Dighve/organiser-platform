@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { Users, Search, Plus, Calendar, MapPin, ChevronRight } from 'lucide-react'
+import { Users, Search, Plus, Calendar, MapPin } from 'lucide-react'
 import LoginModal from '../components/LoginModal'
 import toast from 'react-hot-toast'
 
@@ -546,52 +546,33 @@ function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscr
     switch (mode) {
       case 'member':
         return (
-          <div className="flex items-center gap-1" onClick={stopPropagation}>
+          <div onClick={stopPropagation}>
             <button
               onClick={() => navigate(`/groups/${group.id}?tab=events`)}
               className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
             >
               <Calendar className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => navigate(`/groups/${group.id}`)}
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
         )
       case 'organiser':
         return (
-          <div className="flex items-center gap-1" onClick={stopPropagation}>
+          <div onClick={stopPropagation}>
             <button
               onClick={() => navigate(`/create-event?groupId=${group.id}`)}
               className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
             >
               <Calendar className="w-4 h-4" />
             </button>
-            <button
-              onClick={() => navigate(`/groups/${group.id}`)}
-              className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
         )
       case 'explore':
         return (
           <div onClick={stopPropagation}>
-            {isSubscribed ? (
-              <button
-                onClick={() => navigate(`/groups/${group.id}`)}
-                className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 text-purple-600 flex items-center justify-center active:scale-95 transition-all"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            ) : (
+            {!isSubscribed && (
               <button
                 onClick={() => onSubscribe(group.id)}
-                className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white flex items-center justify-center shadow-lg shadow-purple-400/40 active:scale-95 transition-all"
+                className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white flex items-center justify-center shadow-lg shadow-purple-400/40 active:scale-95 transition-all"
               >
                 <Plus className="w-5 h-5" />
               </button>
@@ -637,9 +618,6 @@ function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscr
             {group.name}
           </h3>
           <div className="flex items-center gap-2 mt-1">
-            <span className="inline-flex items-center text-[10px] font-semibold text-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 rounded-full px-2 py-0.5 leading-none">
-              {group.activityName}
-            </span>
             <span className="inline-flex items-center gap-0.5">
               <Users className="w-3 h-3 text-purple-400" />
               <span className="font-semibold text-gray-700 text-[11px]">{group.currentMembers || 0}</span>

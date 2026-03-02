@@ -120,7 +120,7 @@ export default function MyGroupsPage() {
   // MAIN RENDER
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 pt-12 pb-20 md:pb-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 pb-20 md:pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         
         {/* ========== PAGE HEADER ========== */}
