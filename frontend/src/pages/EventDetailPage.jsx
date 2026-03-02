@@ -1185,7 +1185,7 @@ export default function EventDetailPage() {
                       {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
                     </button>
                   ) : null
-                ) : (
+                ) : !isPastEvent ? (
                   /* NOT AUTHENTICATED - Show login prompt */
                   <div className="space-y-3">
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
@@ -1200,6 +1200,10 @@ export default function EventDetailPage() {
                     >
                       Login to Join
                     </button>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center text-sm text-gray-600">
+                    Event has ended
                   </div>
                 )}
 
