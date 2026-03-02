@@ -3,12 +3,14 @@ import { useForm } from 'react-hook-form'
 import { Mountain, Mail, CheckCircle, X } from 'lucide-react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
 export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { setPendingEmail, returnUrl, login, isAuthenticated, clearReturnUrl } = useAuthStore()
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm()
   
@@ -41,6 +43,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
 
   // Google OAuth login with custom button - using access token
   const googleLogin = useGoogleLogin({
+    // Force Google to always show the account picker so users are never silently logged
+    // in with a previously cached Google account (critical on Safari iOS shared devices)
+    prompt: 'select_account',
     onSuccess: async (tokenResponse) => {
       setIsLoading(true)
       try {
@@ -52,6 +57,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         
         const { token, userId, email, role, isOrganiser } = response.data
         googleSignInInProgress.current = true
+        // Clear ALL React Query cache before logging in so no stale data from a previous
+        // user's session bleeds into this new session (critical for shared devices / Safari)
+        queryClient.clear()
         login({ id: userId, userId, email, role, isOrganiser }, token)
         
         toast.success('🎉 Signed in with Google!')

@@ -1,6 +1,7 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
 import { Menu, X, LogOut, Search, Shield } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
+import { googleLogout } from '@react-oauth/google'
 import { useAuthStore } from '../store/authStore'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { membersAPI, adminAPI } from '../lib/api'
@@ -59,6 +60,15 @@ export default function Layout() {
   // Sync memberData with auth store - CRITICAL for organiser features!
   useEffect(() => {
     if (memberData && isAuthenticated) {
+      // Safety guard: if memberData email/id doesn't match the current JWT user, the cache is
+      // stale from a previous session. Invalidate and bail out – the re-fetch will provide
+      // the correct data.  This prevents Safari (and all browsers) from bleeding one user's
+      // identity into another after a logout/login cycle.
+      if (user?.id && memberData.id && String(memberData.id) !== String(user.id)) {
+        queryClient.invalidateQueries({ queryKey: ['currentMember'] })
+        queryClient.invalidateQueries({ queryKey: ['isAdmin'] })
+        return
+      }
       // Update auth store with latest member data
       updateUser({
         hasOrganiserRole: memberData.hasOrganiserRole,
@@ -91,6 +101,10 @@ export default function Layout() {
   }
 
   const handleLogout = () => {
+    queryClient.clear() // Clear ALL React Query cache so stale data from previous user never bleeds into next session
+    // Revoke the Google OAuth session so Safari doesn't silently reuse the previous
+    // Google account the next time "Continue with Google" is clicked
+    try { googleLogout() } catch (e) { /* ignore if no Google session active */ }
     logout()
     navigate('/')
   }

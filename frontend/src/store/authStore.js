@@ -67,7 +67,16 @@ export const useAuthStore = create(
           tokenExpiry: null,
           isAuthenticated: false,
           pendingEmail: null,
+          returnUrl: null, // Always clear returnUrl on logout so it doesn't bleed into the next user's session
         })
+        
+        // Explicitly wipe the persisted auth key from localStorage so Safari doesn't
+        // serve a stale snapshot when the next user opens the app on the same device.
+        try {
+          localStorage.removeItem('auth-storage')
+        } catch (e) {
+          // localStorage may be unavailable in some private-browsing contexts
+        }
       },
       
       setPendingEmail: (email) => {

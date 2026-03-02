@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Loader2, CheckCircle, XCircle } from 'lucide-react'
+import { useQueryClient } from '@tanstack/react-query'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
@@ -10,6 +11,7 @@ export default function VerifyMagicLinkPage() {
   const [error, setError] = useState('')
   const [savedReturnUrl, setSavedReturnUrl] = useState(null)
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { login, clearReturnUrl } = useAuthStore()
 
   useEffect(() => {
@@ -30,6 +32,9 @@ export default function VerifyMagicLinkPage() {
       const response = await authAPI.verifyMagicLink(token)
       const { token: jwtToken, userId, email, role, hasOrganiserRole } = response.data
       
+      // Clear ALL React Query cache before logging in so no stale data from a previous
+      // user's session bleeds into this new session (critical for shared devices / Safari)
+      queryClient.clear()
       login({ id: userId, userId, email, role, hasOrganiserRole }, jwtToken)
       
       // Priority: URL param (cross-browser) > localStorage (same browser)
