@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { Users, Search, Plus, Calendar } from 'lucide-react'
+import { Users, Search, Plus, Calendar, MapPin, ChevronRight } from 'lucide-react'
 import LoginModal from '../components/LoginModal'
 import toast from 'react-hot-toast'
 
@@ -25,7 +25,7 @@ export default function BrowseGroupsPage() {
   // LOCAL STATE
   // ============================================================
   const [searchQuery, setSearchQuery] = useState('')  // Search input for explore tab
-  const [activeTab, setActiveTab] = useState('explore')  // Current tab: 'explore', 'member', or 'organiser'
+  const [activeTab, setActiveTab] = useState('explore')  // Forced to explore (tabs removed)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)  // Login modal state
   const [pendingGroupId, setPendingGroupId] = useState(null)  // Group to join after login
   const [showSuccessModal, setShowSuccessModal] = useState(false)  // Success modal after joining
@@ -172,10 +172,10 @@ export default function BrowseGroupsPage() {
     }
   }
   
-  // Apply search filter to groups (only active in explore tab)
+  // Apply search filter to groups (always explore now)
   const getFilteredGroups = () => {
     const groups = getTabGroups()
-    if (activeTab === 'explore' && searchQuery) {
+    if (searchQuery) {
       return groups.filter(group =>
         group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         group.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -287,124 +287,42 @@ export default function BrowseGroupsPage() {
         </div>
       )}
       
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-4 sm:py-6 pb-32">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Discover Groups</h1>
+          <h1 className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Discover Groups</h1>
           {user?.isOrganiser && (
             <button
               onClick={() => navigate('/groups/create')}
-              className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center gap-2"
+              className="hidden sm:inline-flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:-translate-y-0.5"
             >
               <Plus className="h-5 w-5" />
-              Create Group
+              <span className="hidden sm:inline">Create Group</span>
             </button>
           )}
         </div>
         
-        {/* ========== TAB NAVIGATION ========== */}
-        <div className="mb-8">
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-2 inline-flex gap-2 border border-gray-100 shadow-lg">
-            {user?.isOrganiser && (
-              <button
-                onClick={() => setActiveTab('organiser')}
-                className={`px-6 py-3 font-semibold rounded-xl transition-all ${
-                  activeTab === 'organiser'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                💼 Organiser
-              </button>
-            )}
-            {isAuthenticated && (
-              <button
-                onClick={() => setActiveTab('member')}
-                className={`px-6 py-3 font-semibold rounded-xl transition-all ${
-                  activeTab === 'member'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                🌟 Member
-              </button>
-            )}
-            
-            <button
-              onClick={() => setActiveTab('explore')}
-              className={`px-6 py-3 font-semibold rounded-xl transition-all ${
-                activeTab === 'explore'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              🔍 Explore
-            </button>
+        {/* No tabs on Discover; default to explore */}
+
+        {/* Desktop search bar */}
+        <div className="hidden md:block mb-8">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search groups by name, activity, or description..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-14 pr-6 py-4 bg-white/60 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-lg shadow-lg"
+            />
           </div>
         </div>
-        
-        {/* ========== SEARCH BAR (Explore Tab Only) ========== */}
-        {activeTab === 'explore' && (
-          <div className="mb-8">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-6 w-6 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search groups by name, activity, or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-14 pr-6 py-4 bg-white/60 backdrop-blur-sm border-2 border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium text-lg shadow-lg"
-              />
-            </div>
-          </div>
-        )}
-      
+
         {/* ========== TAB CONTENT ========== */}
         
         {/* MEMBER TAB - User's subscribed groups */}
-        {activeTab === 'member' && (
-          <TabContent
-            loading={myGroupsLoading}
-            groups={filteredGroups}
-            emptyMessage="You haven't joined any groups yet. Start exploring!"
-            emptyAction={() => setActiveTab('explore')}
-            emptyActionText="Explore Groups"
-          >
-            {filteredGroups.map(group => (
-              <GroupCard
-                key={group.id}
-                group={group}
-                mode="member"
-                navigate={navigate}
-                onUnsubscribe={handleUnsubscribe}
-              />
-            ))}
-          </TabContent>
-        )}
-        
-        {/* ORGANISER TAB - User's managed groups */}
-        {activeTab === 'organiser' && user?.isOrganiser && (
-          <TabContent
-            loading={organisedLoading}
-            groups={filteredGroups}
-            emptyMessage="Start building your community by creating a group."
-            emptyAction={() => navigate('/groups/create')}
-            emptyActionText="Create Group"
-            emptyIcon={<Plus className="h-5 w-5" />}
-          >
-            {filteredGroups.map(group => (
-              <GroupCard
-                key={group.id}
-                group={group}
-                mode="organiser"
-                navigate={navigate}
-              />
-            ))}
-          </TabContent>
-        )}
-        
-        {/* EXPLORE TAB - Discover new groups */}
-        {activeTab === 'explore' && (() => {
+        {/* EXPLORE ONLY - Discover new groups */}
+        {(() => {
           const allGroups = data?.data || []
           const hasGroupsButAllFiltered = allGroups.length > 0 && filteredGroups.length === 0
           
@@ -440,6 +358,32 @@ export default function BrowseGroupsPage() {
             </TabContent>
           )
         })()}
+      </div>
+    </div>
+    {user?.isOrganiser && (
+      <div className="sm:hidden fixed bottom-20 right-4 z-40">
+        <button
+          onClick={() => navigate('/groups/create')}
+          className="h-14 w-14 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl shadow-purple-400/50 flex items-center justify-center active:scale-95 transition-all"
+          aria-label="Create group"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
+      </div>
+    )}
+    {/* Fixed bottom search bar (mobile only) */}
+    <div className="md:hidden fixed inset-x-0 bottom-0 z-30 px-4 pb-4 pt-3 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-12px_30px_-18px_rgba(0,0,0,0.35)]">
+      <div className="max-w-7xl mx-auto">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search groups..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
+          />
+        </div>
       </div>
     </div>
     </>
@@ -509,7 +453,7 @@ function TabContent({ loading, groups, emptyMessage, emptyAction, emptyActionTex
     )
   }
   
-  return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">{children}</div>
+  return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-6">{children}</div>
 }
 
 // GROUP CARD - Reusable card component with mode-specific actions
@@ -522,68 +466,71 @@ function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscr
     switch (mode) {
       case 'member':
         return (
-          <div className="space-y-2" onClick={stopPropagation}>
-            <div className="flex gap-2">
+          <div className="space-y-1.5" onClick={stopPropagation}>
+            <div className="flex items-center justify-end gap-1.5">
               <button
                 onClick={() => navigate(`/groups/${group.id}?tab=events`)}
-                className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+                className="h-10 w-10 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white flex items-center justify-center shadow-md shadow-orange-400/40 hover:shadow-lg hover:shadow-orange-400/60 transition-all active:scale-95 sm:flex-1 sm:h-auto sm:py-2 sm:px-4 sm:gap-1"
               >
                 <Calendar className="h-4 w-4" />
-                View Events
+                <span className="hidden sm:inline">Events</span>
               </button>
               <button
                 onClick={() => navigate(`/groups/${group.id}`)}
-                className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+                className="h-10 w-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center shadow-md shadow-purple-400/40 hover:shadow-lg hover:shadow-purple-400/60 transition-all active:scale-95 sm:flex-1 sm:h-auto sm:py-2 sm:px-4 sm:gap-1"
               >
                 <Users className="h-4 w-4" />
-                View Group
+                <span className="hidden sm:inline">Open</span>
+              </button>
+              <button
+                onClick={() => onUnsubscribe(group.id)}
+                className="h-10 w-10 rounded-lg bg-red-50 text-red-600 border border-red-200 flex items-center justify-center shadow hover:bg-red-100 transition-all active:scale-95 sm:w-auto sm:px-4 sm:py-2 sm:flex-0 sm:min-w-[48px]"
+              >
+                <span className="text-sm font-bold">×</span>
+                <span className="hidden sm:inline font-semibold ml-1">Leave</span>
               </button>
             </div>
-            <button
-              onClick={() => onUnsubscribe(group.id)}
-              className="w-full py-2 px-4 bg-red-50 text-red-600 font-semibold rounded-lg hover:bg-red-100 border border-red-200 transition-all"
-            >
-              Leave
-            </button>
           </div>
         )
       
       case 'organiser':
         return (
-          <div className="flex gap-2" onClick={stopPropagation}>
+          <div className="flex gap-1.5 justify-end" onClick={stopPropagation}>
             <button
               onClick={() => navigate(`/create-event?groupId=${group.id}`)}
-              className="flex-1 py-2 px-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+              className="h-10 w-10 rounded-lg bg-gradient-to-r from-orange-500 to-pink-600 text-white flex items-center justify-center shadow-md shadow-orange-400/40 hover:shadow-lg hover:shadow-orange-400/60 transition-all active:scale-95 sm:flex-1 sm:h-auto sm:py-2 sm:px-4 sm:gap-1"
             >
               <Calendar className="h-4 w-4" />
-              Create Event
+              <span className="hidden sm:inline">Create</span>
             </button>
             <button
               onClick={() => navigate(`/groups/${group.id}`)}
-              className="py-2 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-1"
+              className="h-10 w-10 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center shadow-md shadow-purple-400/40 hover:shadow-lg hover:shadow-purple-400/60 transition-all active:scale-95 sm:flex-1 sm:h-auto sm:py-2 sm:px-4 sm:gap-1"
             >
               <Users className="h-4 w-4" />
-              View Group
+              <span className="hidden sm:inline">Open</span>
             </button>
           </div>
         )
       
       case 'explore':
         return (
-          <div className="flex gap-2" onClick={stopPropagation}>
+          <div className="flex gap-1.5 justify-end" onClick={stopPropagation}>
             {isSubscribed ? (
               <button
                 onClick={() => navigate(`/groups/${group.id}`)}
-                className="w-full py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-lg hover:bg-gray-200 transition-all"
+                className="h-10 w-10 sm:flex-1 sm:h-auto sm:py-2 sm:px-4 sm:gap-1 rounded-lg bg-gray-100 text-gray-700 font-semibold flex items-center justify-center hover:bg-gray-200 transition-all"
               >
-                View Group
+                <Users className="h-4 w-4" />
+                <span className="hidden sm:inline">Open</span>
               </button>
             ) : (
               <button
                 onClick={() => onSubscribe(group.id)}
-                className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+                className="h-10 w-10 sm:flex-1 sm:h-auto sm:py-2 sm:px-4 sm:gap-1 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold flex items-center justify-center shadow-lg shadow-purple-400/40 hover:shadow-xl hover:shadow-purple-500/50 transition-all active:scale-95"
               >
-                Join Group
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Join</span>
               </button>
             )}
           </div>
@@ -594,69 +541,190 @@ function GroupCard({ group, mode, navigate, onSubscribe, onUnsubscribe, isSubscr
     }
   }
   
-  return (
-    <div
-      className="group bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-2"
-      onClick={() => navigate(`/groups/${group.id}`)}
-    >
-      {/* Group Banner */}
-      <div className="relative h-48 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-40" />
-        <img 
-          src={group.imageUrl || [
-            'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=600&h=300&fit=crop&q=80',
-            'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop&q=80'
-          ][Number.parseInt(group.id) % 6]}
-          alt={`${group.name} banner`}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 mix-blend-overlay"
-        />
-        <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold shadow-lg">
-          <span className={group.active ? 'text-green-600' : 'text-gray-600'}>
-            {group.active ? '✓ Active' : 'Inactive'}
-          </span>
-        </div>
-      </div>
-      <div className="p-6">
-        <div className="mb-4">
-          <h3 className="font-bold text-xl text-gray-900 mb-2 group-hover:text-purple-600 transition-colors">{group.name}</h3>
-          <div className="inline-block px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-semibold">
-            {group.activityName}
+  const renderMobileAction = () => {
+    const stopPropagation = (e) => e.stopPropagation()
+    switch (mode) {
+      case 'member':
+        return (
+          <div className="flex items-center gap-1" onClick={stopPropagation}>
+            <button
+              onClick={() => navigate(`/groups/${group.id}?tab=events`)}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate(`/groups/${group.id}`)}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-        </div>
-        
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-          {group.description || 'No description'}
-        </p>
-        
-        <div className="space-y-2 text-sm text-gray-700 mb-5">
-          <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg">
-            <Users className="h-4 w-4 text-purple-600" />
-            <span className="font-semibold">{group.currentMembers || 0}</span>
-            <span className="text-gray-500">members</span>
-            {group.maxMembers && (
-              <span className="text-gray-400">/ {group.maxMembers}</span>
+        )
+      case 'organiser':
+        return (
+          <div className="flex items-center gap-1" onClick={stopPropagation}>
+            <button
+              onClick={() => navigate(`/create-event?groupId=${group.id}`)}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => navigate(`/groups/${group.id}`)}
+              className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-sm active:scale-95 transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )
+      case 'explore':
+        return (
+          <div onClick={stopPropagation}>
+            {isSubscribed ? (
+              <button
+                onClick={() => navigate(`/groups/${group.id}`)}
+                className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 text-purple-600 flex items-center justify-center active:scale-95 transition-all"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => onSubscribe(group.id)}
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 text-white flex items-center justify-center shadow-lg shadow-purple-400/40 active:scale-95 transition-all"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
             )}
           </div>
-          {group.location && (
-            <div className="flex items-center gap-2 text-gray-600">
-              <span className="text-pink-500">📍</span>
-              <span className="line-clamp-1">{group.location}</span>
-            </div>
-          )}
-          {group.primaryOrganiserName && (
-            <div className="flex items-center gap-2 text-gray-600">
-              <span className="text-orange-500">👤</span>
-              <span className="text-xs">By {group.primaryOrganiserName}</span>
+        )
+      default:
+        return null
+    }
+  }
+
+  return (
+    <>
+      {/* ===== MOBILE: Compact horizontal card ===== */}
+      <div
+        className="sm:hidden flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-2xl p-3 border border-gray-100 shadow-md active:scale-[0.98] transition-all duration-200 overflow-hidden relative cursor-pointer"
+        onClick={() => navigate(`/groups/${group.id}`)}
+      >
+        {/* Left gradient accent strip */}
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-purple-500 via-pink-500 to-orange-400 rounded-l-2xl" />
+        
+        {/* Square thumbnail with gradient fallback */}
+        <div className="w-[60px] h-[60px] rounded-xl overflow-hidden flex-shrink-0 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 ml-1.5 shadow-md shadow-purple-300/30">
+          {group.imageUrl ? (
+            <img
+              src={group.imageUrl}
+              alt={group.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
+              onError={(e) => { e.target.style.display = 'none' }}
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-white font-bold text-2xl select-none">
+              {group.name?.charAt(0)?.toUpperCase() || '?'}
             </div>
           )}
         </div>
         
-        {renderActions()}
+        {/* Group info */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-bold text-gray-900 text-sm leading-tight truncate">
+            {group.name}
+          </h3>
+          <div className="flex items-center gap-2 mt-1">
+            <span className="inline-flex items-center text-[10px] font-semibold text-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100 rounded-full px-2 py-0.5 leading-none">
+              {group.activityName}
+            </span>
+            <span className="inline-flex items-center gap-0.5">
+              <Users className="w-3 h-3 text-purple-400" />
+              <span className="font-semibold text-gray-700 text-[11px]">{group.currentMembers || 0}</span>
+            </span>
+          </div>
+          {group.location && (
+            <div className="flex items-center gap-0.5 mt-0.5">
+              <MapPin className="w-3 h-3 text-pink-400 flex-shrink-0" />
+              <span className="text-[11px] text-gray-500 truncate">{group.location}</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Mobile action button */}
+        <div className="flex-shrink-0 pl-1">
+          {renderMobileAction()}
+        </div>
       </div>
-    </div>
+
+      {/* ===== DESKTOP: Original full card (untouched) ===== */}
+      <div
+        className="hidden sm:block group bg-white/60 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl border border-gray-100 overflow-hidden cursor-pointer transition-all duration-300 hover:-translate-y-1.5"
+        onClick={() => navigate(`/groups/${group.id}`)}
+      >
+        {/* Group Banner */}
+        <div className="relative h-32 sm:h-48 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-40" />
+          <img 
+            src={group.imageUrl || [
+              'https://images.unsplash.com/photo-1551632811-561732d1e306?w=600&h=300&fit=crop&q=80',
+              'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=300&fit=crop&q=80',
+              'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=300&fit=crop&q=80',
+              'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?w=600&h=300&fit=crop&q=80',
+              'https://images.unsplash.com/photo-1483728642387-6c3bdd6c93e5?w=600&h=300&fit=crop&q=80',
+              'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=600&h=300&fit=crop&q=80'
+            ][Number.parseInt(group.id) % 6]}
+            alt={`${group.name} banner`}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 mix-blend-overlay"
+          />
+          <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold shadow-lg">
+            <span className={group.active ? 'text-green-600' : 'text-gray-600'}>
+              {group.active ? '✓ Active' : 'Inactive'}
+            </span>
+          </div>
+        </div>
+        <div className="p-4 sm:p-6">
+          <div className="mb-3 sm:mb-4 flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-lg sm:text-xl text-gray-900 mb-1 group-hover:text-purple-600 transition-colors line-clamp-2">{group.name}</h3>
+              <div className="inline-flex px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 rounded-full text-xs font-semibold">
+                {group.activityName}
+              </div>
+            </div>
+          </div>
+
+          <p className="text-sm text-gray-600 mb-2 sm:mb-3 line-clamp-2 leading-relaxed">
+            {group.description || 'No description'}
+          </p>
+          
+          <div className="space-y-1 text-sm text-gray-700 mb-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-purple-600" />
+              <span className="font-semibold">{group.currentMembers || 0}</span>
+              <span className="text-gray-500">members</span>
+              {group.maxMembers && (
+                <span className="text-gray-400">/ {group.maxMembers}</span>
+              )}
+            </div>
+            {group.location && (
+              <div className="flex items-center gap-1.5 text-gray-600">
+                <span className="text-pink-500">📍</span>
+                <span className="line-clamp-1">{group.location}</span>
+              </div>
+            )}
+            {group.primaryOrganiserName && (
+              <div className="flex items-center gap-1.5 text-gray-600 text-xs">
+                <span className="text-orange-500">👤</span>
+                <span className="line-clamp-1">By {group.primaryOrganiserName}</span>
+              </div>
+            )}
+          </div>
+          
+          {renderActions()}
+        </div>
+      </div>
+    </>
   )
 }

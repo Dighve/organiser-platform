@@ -120,20 +120,29 @@ export default function MyGroupsPage() {
   // MAIN RENDER
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-6 pb-20 md:pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 pt-12 pb-20 md:pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         
         {/* ========== PAGE HEADER ========== */}
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 Your Groups</h1>
-          <div className="flex gap-2">
+          <h1 className="text-2xl sm:text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">👥 Your Groups</h1>
+          <div className="flex gap-2 items-center">
+            {user?.hasOrganiserRole && (
+              <button
+                onClick={() => navigate('/groups/create')}
+                className="hidden md:inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-400/40 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              >
+                <Plus className="h-5 w-5" />
+                <span className="hidden sm:inline">Create group</span>
+              </button>
+            )}
             <button
               onClick={() => navigate('/browse-groups')}
-              className="h-11 w-11 sm:h-auto sm:px-3 sm:rounded-xl rounded-full bg-white/80 border border-purple-100 text-purple-700 shadow-md flex items-center justify-center sm:gap-2 hover:bg-white transition"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold shadow-lg shadow-orange-400/40 hover:shadow-xl hover:-translate-y-0.5 transition-all"
               aria-label="Explore groups"
             >
               <Compass className="h-5 w-5" />
-              <span className="hidden sm:inline text-sm font-semibold pl-1">Explore</span>
+              <span className="hidden sm:inline text-sm font-semibold">Explore</span>
             </button>
           </div>
         </div>
@@ -382,9 +391,9 @@ export default function MyGroupsPage() {
         )}
       </div>
 
-      {/* Fixed Create button for organisers */}
+      {/* Fixed Create button for organisers (mobile) */}
       {user?.hasOrganiserRole && (
-        <div className="fixed inset-x-0 bottom-0 z-40 px-4 sm:px-6 pb-4">
+        <div className="md:hidden fixed inset-x-0 bottom-0 z-40 px-4 sm:px-6 pb-4">
           <div className="max-w-4xl mx-auto rounded-2xl border border-slate-200 bg-white/95 shadow-2xl backdrop-blur-xl px-4 sm:px-6 py-3">
             <button
               onClick={() => navigate('/groups/create')}
