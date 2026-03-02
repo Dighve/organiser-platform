@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X } from 'lucide-react'
+import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, ChevronRight } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
@@ -36,85 +36,86 @@ const DEFAULT_EVENT_IMAGES = [
 // Used for displaying events in both About and Events tabs
 // ============================================
 const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
-  // Use event's image or fallback to default based on event ID
   const imageUrl = event.imageUrl || DEFAULT_EVENT_IMAGES[parseInt(event.id) % DEFAULT_EVENT_IMAGES.length]
-  
+
   return (
     <div
-      className={`group bg-white/60 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-2xl border overflow-hidden cursor-pointer transition-all duration-300 ${
-        isPast ? 'border-gray-200 opacity-75 hover:opacity-90' : 'border-gray-100 hover:-translate-y-2'
+      className={`flex items-center gap-3 bg-white/90 backdrop-blur-sm rounded-2xl p-3 border shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-200 overflow-hidden relative cursor-pointer ${
+        isPast ? 'border-gray-100 opacity-80' : 'border-gray-100 hover:-translate-y-0.5'
       }`}
       onClick={onClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onClick()}
     >
-      {/* Event Image */}
-      <div className="relative h-44 overflow-hidden">
-        <div className={`absolute inset-0 opacity-30 ${
-          isPast ? 'bg-gray-500' : 'bg-gradient-to-br from-orange-500 to-pink-500 opacity-20'
-        }`} />
-        <img 
+      {/* Left gradient accent strip */}
+      <div className={`absolute left-0 top-0 bottom-0 w-[3px] rounded-l-2xl ${
+        isPast ? 'bg-gradient-to-b from-gray-300 to-gray-200' : 'bg-gradient-to-b from-orange-500 via-pink-500 to-purple-400'
+      }`} />
+
+      {/* Square thumbnail */}
+      <div className={`w-[60px] h-[60px] rounded-xl overflow-hidden flex-shrink-0 ml-1.5 shadow-sm bg-gradient-to-br from-orange-400 via-pink-500 to-purple-500 ${
+        isPast ? 'grayscale' : ''
+      }`}>
+        <img
           src={imageUrl}
-          alt={event.title} 
-          className={`w-full h-full object-cover transition-all duration-500 ${
-            isPast ? 'grayscale group-hover:grayscale-0' : 'group-hover:scale-110'
-          }`}
+          alt={event.title}
+          className="w-full h-full object-cover"
+          loading="lazy"
+          decoding="async"
+          onError={(e) => { e.target.style.display = 'none' }}
         />
-        {/* Completion badge for past events */}
-        {isPast && (
-          <div className="absolute top-3 left-3 px-3 py-1 bg-gray-600/90 backdrop-blur-sm rounded-full text-xs font-bold text-white shadow-lg">
-            ✓ Completed
-          </div>
-        )}
-        {/* Difficulty badge */}
-        <div className={`absolute top-3 right-3 px-3 py-1 backdrop-blur-sm rounded-full text-xs font-bold shadow-lg ${
-          isPast ? 'bg-white/80 text-gray-600' : 'bg-white/95 text-orange-600'
-        }`}>
-          {event.difficultyLevel}
-        </div>
       </div>
-      
-      {/* Event Details */}
-      <div className="p-5">
-        <h3 className={`font-bold text-lg mb-3 line-clamp-1 transition-colors ${
-          isPast ? 'text-gray-700 group-hover:text-gray-900' : 'text-gray-900 group-hover:text-orange-600'
+
+      {/* Event info */}
+      <div className="flex-1 min-w-0">
+        <h3 className={`font-bold text-sm leading-tight truncate mb-1 ${
+          isPast ? 'text-gray-500' : 'text-gray-900'
         }`}>
           {event.title}
         </h3>
-        {/* Date and Location */}
-        <div className="space-y-2">
-          <div className={`flex items-center gap-2 text-sm ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
-            <Calendar className={`h-4 w-4 ${isPast ? 'text-gray-400' : 'text-orange-500'}`} />
-            <span className="font-medium">
-              {new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        <div className="flex items-center gap-1.5 flex-wrap mb-1">
+          {event.difficultyLevel && (
+            <span className={`inline-flex items-center text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${
+              isPast ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-600 border border-orange-100'
+            }`}>
+              {event.difficultyLevel}
             </span>
-          </div>
-          {/* Only show location if location features are enabled */}
-          {showLocation && event.location && (
-            <div className={`flex items-center gap-2 text-sm ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
-              <MapPin className={`h-4 w-4 ${isPast ? 'text-gray-400' : 'text-pink-500'}`} />
-              <span className="truncate">{event.location}</span>
-            </div>
+          )}
+          {isPast && (
+            <span className="inline-flex items-center text-[10px] font-semibold rounded-full px-1.5 py-0.5 bg-gray-100 text-gray-400">
+              ✓ Past
+            </span>
           )}
         </div>
-        {/* Participants count */}
-        <div className={`flex items-center justify-between pt-3 mt-3 border-t ${isPast ? 'border-gray-200' : 'border-gray-100'}`}>
-          <div className="flex items-center gap-2">
-            <div className={`w-7 h-7 rounded-full border-2 border-white flex items-center justify-center text-white text-xs font-bold ${
-              isPast ? 'bg-gradient-to-br from-gray-400 to-gray-500' : 'bg-gradient-to-br from-orange-400 to-pink-400'
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <span className={`flex items-center gap-0.5 text-[11px] ${
+            isPast ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            <Calendar className="w-3 h-3 flex-shrink-0" />
+            {new Date(event.eventDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+          </span>
+          <span className={`flex items-center gap-0.5 text-[11px] ${
+            isPast ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            <Users className="w-3 h-3 flex-shrink-0" />
+            {event.currentParticipants}/{event.maxParticipants}
+          </span>
+          {showLocation && event.location && (
+            <span className={`flex items-center gap-0.5 text-[11px] min-w-0 ${
+              isPast ? 'text-gray-400' : 'text-gray-500'
             }`}>
-              {event.currentParticipants}
-            </div>
-            <span className={`text-sm font-medium ${isPast ? 'text-gray-500' : 'text-gray-600'}`}>
-              {event.currentParticipants}/{event.maxParticipants}
+              <MapPin className="w-3 h-3 flex-shrink-0" />
+              <span className="truncate">{event.location}</span>
             </span>
-          </div>
-          <svg className={`w-5 h-5 group-hover:translate-x-1 transition-transform ${isPast ? 'text-gray-500' : 'text-orange-600'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
+          )}
         </div>
       </div>
+
+      {/* Chevron */}
+      <ChevronRight className={`w-4 h-4 flex-shrink-0 ${
+        isPast ? 'text-gray-300' : 'text-orange-400'
+      }`} />
     </div>
   )
 }
@@ -372,7 +373,7 @@ export default function GroupDetailPage() {
   // RENDER - Main component JSX
   // ============================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8 pb-28 lg:pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back button */}
         <button
@@ -387,7 +388,7 @@ export default function GroupDetailPage() {
           {/* ============================================ */}
           {/* HERO BANNER with group info */}
           {/* ============================================ */}
-          <div className="relative h-80 overflow-hidden">
+          <div className="relative h-40 sm:h-56 lg:h-80 overflow-hidden">
             {/* Gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-purple-500 to-pink-500 opacity-60" />
             
@@ -402,28 +403,28 @@ export default function GroupDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
             
             {/* Header Content Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 px-8 pb-8">
+            <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 lg:px-8 lg:pb-8">
               <div className="flex items-end justify-between">
-                <div className="flex-1">
-                  <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white font-semibold text-sm mb-4">
+                <div className="flex-1 min-w-0">
+                  <div className="hidden sm:inline-block px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-white font-semibold text-sm mb-2 lg:mb-4">
                     {displayGroup.activityName}
                   </div>
-                  <h1 className="text-5xl font-extrabold text-white mb-4 drop-shadow-2xl">{displayGroup.name}</h1>
-                  <div className="flex items-center gap-6 text-white/90">
-                    <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                      <Users className="h-5 w-5" />
+                  <h1 className="text-xl sm:text-3xl lg:text-5xl font-extrabold text-white mb-1.5 lg:mb-4 drop-shadow-2xl leading-tight line-clamp-2 lg:line-clamp-none">{displayGroup.name}</h1>
+                  <div className="flex items-center gap-2 lg:gap-6 text-white/90">
+                    <div className="flex items-center gap-1.5 lg:gap-2 bg-white/10 backdrop-blur-sm px-2 py-1 lg:px-4 lg:py-2 rounded-full text-xs lg:text-base">
+                      <Users className="h-3.5 w-3.5 lg:h-5 lg:w-5" />
                       <span className="font-semibold">{displayGroup.currentMembers || 0}</span>
                       <span className="text-white/70">members</span>
                     </div>
                     {displayGroup.location && isGroupLocationEnabled() && isGoogleMapsEnabled() && (
-                      <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full">
-                        <MapPin className="h-5 w-5" />
-                        <span>{displayGroup.location}</span>
+                      <div className="hidden sm:flex items-center gap-2 bg-white/10 backdrop-blur-sm px-2 py-1 lg:px-4 lg:py-2 rounded-full text-xs lg:text-base">
+                        <MapPin className="h-3.5 w-3.5 lg:h-5 lg:w-5" />
+                        <span className="truncate max-w-[120px] lg:max-w-none">{displayGroup.location}</span>
                       </div>
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
+                <div className="hidden lg:flex flex-col gap-2 ml-4">
                   <span className={`px-4 py-2 rounded-full text-sm font-bold shadow-lg ${
                     displayGroup.isPublic ? 'bg-green-500 text-white' : 'bg-gray-700 text-white'
                   }`}>
@@ -440,13 +441,13 @@ export default function GroupDetailPage() {
           </div>
 
         {/* Content */}
-        <div className="px-8 py-6">
+        <div className="px-4 py-4 lg:px-8 lg:py-6">
           {/* Tabs */}
-          <div className="mb-8 border-b border-gray-200">
-            <div className="flex gap-8">
+          <div className="mb-4 lg:mb-8 border-b border-gray-200">
+            <div className="flex gap-4 lg:gap-8">
               <button
                 onClick={() => setActiveTab('about')}
-                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
+                className={`pb-3 lg:pb-4 px-1 lg:px-2 font-semibold text-sm lg:text-lg transition-all relative ${
                   activeTab === 'about'
                     ? 'text-purple-600'
                     : 'text-gray-500 hover:text-gray-700'
@@ -459,7 +460,7 @@ export default function GroupDetailPage() {
               </button>
               <button
                 onClick={() => setActiveTab('events')}
-                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
+                className={`pb-3 lg:pb-4 px-1 lg:px-2 font-semibold text-sm lg:text-lg transition-all relative ${
                   activeTab === 'events'
                     ? 'text-purple-600'
                     : 'text-gray-500 hover:text-gray-700'
@@ -472,7 +473,7 @@ export default function GroupDetailPage() {
               </button>
               <button
                 onClick={() => setActiveTab('members')}
-                className={`pb-4 px-2 font-semibold text-lg transition-all relative ${
+                className={`pb-3 lg:pb-4 px-1 lg:px-2 font-semibold text-sm lg:text-lg transition-all relative ${
                   activeTab === 'members'
                     ? 'text-purple-600'
                     : 'text-gray-500 hover:text-gray-700'
@@ -503,10 +504,10 @@ export default function GroupDetailPage() {
                       {/* Upcoming Events Section */}
                       {upcomingEvents.length > 0 && (
                         <div>
-                          <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">
+                          <h2 className="text-base font-semibold text-gray-700 mb-3">
                             Upcoming Events ({upcomingEvents.length})
                           </h2>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
                             {upcomingEvents.map(event => (
                               <EventCard
                                 key={event.id}
@@ -523,10 +524,10 @@ export default function GroupDetailPage() {
                       {/* Past Events Section */}
                       {pastEvents.length > 0 && (
                         <div>
-                          <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-600 to-gray-400 bg-clip-text text-transparent mb-6">
+                          <h2 className="text-base font-semibold text-gray-500 mb-3">
                             Past Events ({pastEvents.length})
                           </h2>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
                             {pastEvents.map(event => (
                               <EventCard
                                 key={event.id}
@@ -565,41 +566,41 @@ export default function GroupDetailPage() {
               {activeTab === 'about' && (
                 <div>
                   {/* Group description header with edit button (organiser only) */}
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">About This Group</h2>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold text-gray-900">About This Group</h2>
                     {isGroupOrganiser && (
                       <button
                         onClick={handleOpenEditModal}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-md transition-all"
                       >
-                        <Edit className="h-4 w-4" />
-                        Edit Group
+                        <Edit className="h-3.5 w-3.5" />
+                        Edit
                       </button>
                     )}
                   </div>
                   
                   {/* Group description text */}
-                  <p className="text-gray-700 text-lg leading-relaxed whitespace-pre-wrap mb-8">
+                  <p className="text-gray-600 text-base leading-relaxed whitespace-pre-wrap mb-5">
                     {displayGroup.description || 'No description available.'}
                   </p>
                   
                   {/* Group creation date */}
                   {displayGroup.createdAt && (
-                    <div className="flex items-center gap-2 text-gray-500 text-sm pb-8 border-t border-gray-200 pt-8 mb-8">
+                    <div className="flex items-center gap-2 text-gray-400 text-xs pb-4 border-t border-gray-100 pt-4 mb-4">
                       <Calendar className="h-4 w-4" />
                       <span>Created on {new Date(displayGroup.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                     </div>
                   )}
 
                   {/* Upcoming Events Preview (About tab only shows upcoming events) */}
-                  <div className="mt-8">
-                    <h2 className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-6">Upcoming Events</h2>
+                  <div className="mt-4">
+                    <h2 className="text-base font-semibold text-gray-700 mb-3">Upcoming Events</h2>
                     {eventsLoading ? (
                       <div className="flex items-center justify-center py-12">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
                       </div>
                     ) : upcomingEvents.length > 0 ? (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
                         {upcomingEvents.map(event => (
                           <EventCard
                             key={event.id}
@@ -634,8 +635,7 @@ export default function GroupDetailPage() {
               {/* ============================================ */}
               {activeTab === 'members' && (
                 <div>
-                  <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">
-                    <Users className="inline h-8 w-8 mr-2 mb-1" />
+                  <h2 className="text-lg font-semibold text-gray-900 mb-4">
                     Group Members ({membersData?.data?.length || 0})
                   </h2>
                   
@@ -738,7 +738,7 @@ export default function GroupDetailPage() {
               )}
 
               {/* Group Actions Card - Sticky sidebar with action buttons */}
-              <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg">
+              <div className="hidden lg:block bg-white/60 backdrop-blur-sm rounded-2xl p-6 sticky top-24 border border-gray-100 shadow-lg">
                 <h3 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">Group Actions</h3>
                 
                 {isAuthenticated ? (
@@ -822,6 +822,67 @@ export default function GroupDetailPage() {
           </div>
         </div>
       </div>
+      </div>
+
+      {/* ============================================ */}
+      {/* MOBILE STICKY ACTION BAR - Bottom of screen */}
+      {/* ============================================ */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3">
+        {isAuthenticated ? (
+          isGroupOrganiser ? (
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigate(`/create-event?groupId=${id}`)}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-pink-600 text-white py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+              >
+                <Plus className="h-5 w-5" />
+                Create Event
+              </button>
+              <button
+                onClick={handleOpenEditModal}
+                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
+                aria-label="Edit group"
+              >
+                <Edit className="h-5 w-5" />
+              </button>
+            </div>
+          ) : isSubscribed ? (
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('events')}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-pink-600 text-white py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+              >
+                <Calendar className="h-5 w-5" />
+                View Events
+              </button>
+              <button
+                onClick={handleUnsubscribe}
+                disabled={unsubscribeMutation.isLoading}
+                className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all disabled:opacity-50"
+                aria-label="Leave group"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleSubscribe}
+              disabled={subscribeMutation.isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            >
+              <Users className="h-5 w-5" />
+              {subscribeMutation.isLoading ? 'Joining...' : 'Join Group'}
+            </button>
+          )
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
+          >
+            <LogIn className="h-5 w-5" />
+            Login to Join
+          </button>
+        )}
       </div>
 
       {/* ============================================ */}
