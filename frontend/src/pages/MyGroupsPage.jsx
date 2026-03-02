@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { Users, Plus, Calendar, Compass } from 'lucide-react'
+import { Users, Plus, Calendar, Compass, X } from 'lucide-react'
 
 // ============================================================
 // MAIN COMPONENT
@@ -164,18 +164,20 @@ export default function MyGroupsPage() {
                 <span className="hidden sm:inline">Organiser</span>
               </button>
             )}
-            <button
-              onClick={() => setActiveTab('subscribed')}
-              className={`px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
-                activeTab === 'subscribed'
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-              aria-label="Member groups"
-            >
-              <span className="text-lg">🌟</span>
-              <span className="hidden sm:inline">Member</span>
-            </button>
+            {user?.hasOrganiserRole && (
+              <button
+                onClick={() => setActiveTab('subscribed')}
+                className={`px-4 sm:px-6 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
+                  activeTab === 'subscribed'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+                aria-label="Member groups"
+              >
+                <span className="text-lg">🌟</span>
+                <span className="hidden sm:inline">Member</span>
+              </button>
+            )}
           </div>
         </div>
       
@@ -270,10 +272,10 @@ export default function MyGroupsPage() {
                         }
                       }}
                       disabled={unsubscribeMutation.isLoading}
-                      className="h-10 w-10 rounded-lg bg-red-50 text-red-600 border border-red-200 flex items-center justify-center shadow hover:bg-red-100 transition-all disabled:opacity-50 active:scale-95"
+                      className="h-10 w-10 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white flex items-center justify-center shadow-md shadow-red-400/40 hover:shadow-lg hover:shadow-red-400/60 transition-all active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                       aria-label="Leave group"
                     >
-                      <span className="text-sm font-bold">×</span>
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>

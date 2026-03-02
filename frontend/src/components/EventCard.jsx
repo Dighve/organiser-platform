@@ -12,9 +12,9 @@ export default function EventCard({ event }) {
   const { isEventLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
 
   return (
-    <Link to={`/events/${event.id}`} className="card hover:shadow-lg transition-shadow duration-200">
+    <Link to={`/events/${event.id}`} className="card hover:shadow-lg transition-shadow duration-200 sm:p-0">
       {/* Event Image */}
-      <div className="relative h-48 mb-4 rounded-lg overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200">
+      <div className="relative h-28 sm:h-48 mb-3 sm:mb-4 rounded-2xl overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200">
         {/* Always show gradient background with icon when no image or image failed */}
         {(!event.imageUrl || imageError || !imageLoaded) && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -48,55 +48,74 @@ export default function EventCard({ event }) {
         )}
       </div>
 
-      {/* Event Details */}
-      <div>
-        <div className="flex items-center text-sm text-gray-500 mb-2">
-          <span className="bg-primary-100 text-primary-700 px-2 py-1 rounded text-xs font-medium">
-            {event.activityTypeName}
-          </span>
-        </div>
+      {/* Event Details with padding (desktop only) */}
+      <div className="px-0 pb-0 sm:px-4 sm:pb-4">
+        {/* Event Details - Mobile (unchanged) */}
+        <div className="sm:hidden">
+          <h3 className="text-base font-semibold mb-2 line-clamp-2 leading-snug">{event.title}</h3>
 
-        <h3 className="text-xl font-semibold mb-2 line-clamp-2">{event.title}</h3>
-
-        <div className="space-y-2 text-sm text-gray-600">
-          <div className="flex items-center">
-            <Calendar className="h-4 w-4 mr-2" />
-            <span>{formattedDate} at {formattedTime}</span>
-          </div>
-
-          {/* Only show location if location features are enabled */}
-          {isEventLocationEnabled() && isGoogleMapsEnabled() && (
-            <div className="flex items-center">
-              <MapPin className="h-4 w-4 mr-2" />
-              <span className="line-clamp-1">{event.location}</span>
+          <div className="space-y-1.5 text-xs text-gray-600">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-2" />
+                <span>{formattedDate} at {formattedTime}</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-gray-600">
+                <span role="img" aria-label="attendees">👤</span>
+                <span className="font-semibold">{event.currentParticipants}</span>
+              </div>
             </div>
-          )}
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Users className="h-4 w-4 mr-2" />
-              <span>
-                {event.currentParticipants}
-                {event.maxParticipants && `/${event.maxParticipants}`} joined
-              </span>
-            </div>
+            {isEventLocationEnabled() && isGoogleMapsEnabled() && (
+              <div className="flex items-center">
+                <MapPin className="h-4 w-4 mr-2" />
+                <span className="line-clamp-1">{event.location}</span>
+              </div>
+            )}
 
             {event.price > 0 && (
-              <div className="flex items-center font-semibold text-primary-600">
-                <DollarSign className="h-4 w-4" />
-                <span>{event.price}</span>
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-xs text-gray-500">Price</span>
+                <div className="flex items-center font-semibold text-primary-600">
+                  <DollarSign className="h-4 w-4" />
+                  <span>{event.price}</span>
+                </div>
               </div>
             )}
           </div>
         </div>
 
-        {event.organiserName && (
-          <div className="mt-4 pt-4 border-t border-gray-200">
-            <p className="text-sm text-gray-500">
-              Organized by <span className="font-medium text-gray-700">{event.organiserName}</span>
-            </p>
+        {/* Event Details - Desktop (mirrors Home page desktop card) */}
+        <div className="hidden sm:block">
+          <h3 className="font-bold text-lg text-gray-900 mb-3 line-clamp-2 leading-snug">{event.title}</h3>
+          <div className="space-y-2 mb-4">
+            <div className="flex items-center justify-between gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-purple-500" />
+                <span className="font-medium">{formattedDate}</span>
+              </div>
+            </div>
+            {isEventLocationEnabled() && isGoogleMapsEnabled() && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <MapPin className="w-4 h-4 text-pink-500" />
+                <span className="truncate">{event.location}</span>
+              </div>
+            )}
           </div>
-        )}
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">
+                {event.currentParticipants}
+              </div>
+              <span className="text-sm text-gray-600 font-medium">
+                {event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going
+              </span>
+            </div>
+            <svg className="w-5 h-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
       </div>
     </Link>
   )

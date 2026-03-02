@@ -104,18 +104,18 @@ export default function EventsPage() {
         
         {/* LOADING STATE - Skeleton cards */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 animate-pulse border border-gray-100 shadow-lg">
-                <div className="h-48 bg-gradient-to-br from-purple-200 to-pink-200 rounded-xl mb-4"></div>
-                <div className="h-6 bg-gray-200 rounded-lg w-3/4 mb-3"></div>
-                <div className="h-4 bg-gray-200 rounded-lg w-1/2"></div>
+              <div key={i} className="bg-white/60 backdrop-blur-sm rounded-xl p-4 animate-pulse border border-gray-100 shadow-lg">
+                <div className="h-32 sm:h-44 bg-gradient-to-br from-purple-200 to-pink-200 rounded-lg mb-3"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-1/2"></div>
               </div>
             ))}
           </div>
         ) : events.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
               {events.map((event) => (
                 <EventCard key={event.id} event={event} />
               ))}

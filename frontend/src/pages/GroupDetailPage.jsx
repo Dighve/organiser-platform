@@ -320,11 +320,16 @@ export default function GroupDetailPage() {
     subscribeMutation.mutate()
   }
 
-  // Leave group (with confirmation dialog)
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
+
+  // Leave group (with in-app confirmation)
   const handleUnsubscribe = () => {
-    if (confirm('Are you sure you want to leave this group?')) {
-      unsubscribeMutation.mutate()
-    }
+    setShowLeaveModal(true)
+  }
+
+  const handleConfirmLeave = () => {
+    unsubscribeMutation.mutate()
+    setShowLeaveModal(false)
   }
 
   // ============================================
@@ -814,6 +819,38 @@ export default function GroupDetailPage() {
         </div>
       </div>
       </div>
+
+      {showLeaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLeaveModal(false)} />
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 text-white grid place-items-center shadow">
+                <X className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900">Leave this group?</h3>
+                <p className="text-sm text-gray-600">You’ll stop receiving updates and event invites from this group.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+              >
+                Stay
+              </button>
+              <button
+                onClick={handleConfirmLeave}
+                disabled={unsubscribeMutation.isLoading}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold shadow hover:shadow-lg transition-all disabled:opacity-60"
+              >
+                {unsubscribeMutation.isLoading ? 'Leaving...' : 'Leave group'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ============================================ */}
       {/* MOBILE STICKY ACTION BAR - Bottom of screen */}

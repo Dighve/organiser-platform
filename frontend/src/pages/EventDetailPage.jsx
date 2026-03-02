@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, X } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -38,6 +38,7 @@ export default function EventDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { isAuthenticated, user, setReturnUrl } = useAuthStore()
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const { isEventLocationEnabled, isGoogleMapsEnabled, isStaticMapsEnabled } = useFeatureFlags()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
@@ -160,6 +161,7 @@ export default function EventDetailPage() {
   const leaveMutation = useMutation({
     mutationFn: () => eventsAPI.leaveEvent(id),
     onSuccess: async () => {
+      setShowLeaveConfirm(false)
       // Show toast immediately for instant feedback
       toast.success('Successfully left the event')
       
@@ -318,11 +320,19 @@ export default function EventDetailPage() {
   const event = data?.data
   
   // Check user's relationship to this event
+  const participantIds = [
+    ...(event?.participantIds || []),
+    ...((participantsData?.data || []).map(p => p.id) || []),
+  ].map(id => Number(id))
   const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
-  const hasJoined = event && isAuthenticated && event?.participantIds?.includes(user?.id)
+  const hasJoined = isAuthenticated && participantIds.includes(Number(user?.id))
   
   // Check if event is in the past
-  const isPastEvent = event ? new Date(event?.eventDate) < new Date() : false
+  const eventStart = event ? new Date(event?.eventDate) : null
+  const eventEnd = event ? (event?.endDate ? new Date(event.endDate) : eventStart) : null
+  const now = new Date()
+  const isPastEvent = eventStart ? eventEnd < now : false
+  const isOngoingEvent = eventStart ? eventStart <= now && now <= (eventEnd || eventStart) : false
   
   // Check if access is denied (non-member trying to view members-only event)
   // The backend returns partial data for non-group members
@@ -339,15 +349,15 @@ export default function EventDetailPage() {
     event.location === null || 
     event.maxParticipants === null
   )
-  // Organisers always have full access, regardless of backend response
-  const isAccessDenied = !isEventOrganiser && (is403Error || 
+  // Organisers or participants always have access
+  const isAccessDenied = (!isEventOrganiser && !hasJoined) && (is403Error || 
     !event || 
     !event?.title || 
     isPartialData)
   
   // Create display event for access-denied cases (partial data)
   const displayEvent = event || {
-    title: 'Members Only Event',
+    title: 'Attendees Only Event',
     activityTypeName: null,
     organiserName: 'Event Organiser',
     imageUrl: null,
@@ -487,28 +497,34 @@ export default function EventDetailPage() {
           </h1>
         </div>
 
+        {/* Members-only notice on mobile (separate from sticky bar) */}
+        {isAccessDenied && (
+          <div className="lg:hidden mb-4">
+          <div className="w-full p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 text-center">
+            <Lock className="h-6 w-6 mx-auto mb-1.5 text-gray-400" />
+            <p className="text-xs font-semibold text-gray-600 mb-0.5">Attendees Only</p>
+            <p className="text-xs text-gray-500">Join event to view full details</p>
+          </div>
+        </div>
+        )}
+
         {/* ============================================ */}
         {/* MOBILE STICKY ACTION BAR - Bottom of screen */}
         {/* ============================================ */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3">
-          {isAccessDenied ? (
-            <div className="space-y-3">
-              {/* Members Only Content Banner - Mobile */}
-              <div className="w-full p-2.5 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 text-center">
-                <Lock className="h-6 w-6 mx-auto mb-1.5 text-gray-400" />
-                <p className="text-xs font-semibold text-gray-600 mb-0.5">Members Only</p>
-                <p className="text-xs text-gray-500">Join group to view details</p>
-              </div>
-              
-              <button
-                onClick={handleJoinClick}
-                disabled={joinMutation.isLoading || isJoiningFlow}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-2"
-              >
-                <Users className="h-5 w-5" />
-                Join Group
-              </button>
+          {isPastEvent ? (
+            <div className="w-full py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
+              Event has ended
             </div>
+          ) : isAccessDenied ? (
+            <button
+              onClick={handleJoinClick}
+              disabled={joinMutation.isLoading || isJoiningFlow}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-2"
+            >
+              <Users className="h-5 w-5" />
+              {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
+            </button>
           ) : isAuthenticated ? (
             isEventOrganiser ? (
               <button
@@ -519,11 +535,27 @@ export default function EventDetailPage() {
                 Manage Event
               </button>
             ) : hasJoined ? (
-              !isPastEvent ? (
-                <div className="w-full py-3 px-4 font-bold rounded-lg shadow-lg bg-gray-100 text-gray-700 text-center text-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex-1 py-3 px-3 font-bold rounded-lg shadow bg-gray-100 text-gray-700 text-center text-sm">
                   You are registered
                 </div>
-              ) : null
+                <button
+                  onClick={() => setShowLeaveConfirm(true)}
+                  disabled={leaveMutation.isLoading}
+                  className={`h-12 w-12 rounded-lg flex items-center justify-center transition-all ${
+                    leaveMutation.isLoading
+                      ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                      : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                  }`}
+                  aria-label="Leave event"
+                >
+                  {leaveMutation.isLoading ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <X className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleJoinClick}
@@ -972,13 +1004,21 @@ export default function EventDetailPage() {
               {/* Action Buttons Section - Varies based on user status */}
               {/* Hide sidebar buttons on mobile - mobile has sticky action bar */}
               <div className={`hidden lg:block ${!isAccessDenied ? "pt-6 border-t border-gray-200" : ""}`}>
-                {isAccessDenied ? (
+                {isPastEvent ? (
+                  <div className="space-y-4">
+                    <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
+                      <Clock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
+                      <p className="text-sm font-semibold text-gray-600 mb-1">Event has ended</p>
+                      <p className="text-xs text-gray-500">Joining is disabled for past events.</p>
+                    </div>
+                  </div>
+                ) : isAccessDenied ? (
                   /* NON-MEMBER VIEW - Show Join Group button */
                   <div className="space-y-4">
                     <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
                       <Lock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-                      <p className="text-sm font-semibold text-gray-600 mb-1">Members Only Content</p>
-                      <p className="text-xs text-gray-500">Only group members can view full event details</p>
+                      <p className="text-sm font-semibold text-gray-600 mb-1">Attendees Only</p>
+                      <p className="text-xs text-gray-500">Join the event to unlock full details.</p>
                     </div>
                     <button
                       onClick={handleJoinClick}
@@ -1025,7 +1065,7 @@ export default function EventDetailPage() {
                             <p className="text-green-700 font-semibold text-center text-sm">✅ You're also attending</p>
                           </div>
                           <button
-                            onClick={() => leaveMutation.mutate()}
+                            onClick={() => setShowLeaveConfirm(true)}
                             disabled={leaveMutation.isLoading}
                             className={`w-full py-2 px-4 font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm ${
                               leaveMutation.isLoading 
@@ -1039,7 +1079,7 @@ export default function EventDetailPage() {
                         </div>
                       )}
                       
-                      {!isPastEvent ? (
+                      {!isPastEvent || isOngoingEvent ? (
                         /* FUTURE EVENT - Show Publish (if DRAFT), Edit and Delete buttons */
                         <>
                           {event?.status === 'DRAFT' && (
@@ -1115,9 +1155,22 @@ export default function EventDetailPage() {
                         {calendarData && (
                           <AddToCalendar calendarData={calendarData} />
                         )}
+
+                        <button
+                          onClick={() => setShowLeaveConfirm(true)}
+                          disabled={leaveMutation.isLoading}
+                          className={`w-full py-3 px-6 font-semibold rounded-xl transition-all flex items-center justify-center gap-2 text-sm ${
+                            leaveMutation.isLoading
+                              ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
+                              : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
+                          }`}
+                        >
+                          {leaveMutation.isLoading && <Loader className="h-4 w-4 animate-spin" />}
+                          {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
+                        </button>
                       </div>
                     ) : null
-                  ) : (
+                  ) : !isPastEvent ? (
                     /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
                     <button
                       onClick={handleJoinClick}
@@ -1131,7 +1184,7 @@ export default function EventDetailPage() {
                       )}
                       {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
                     </button>
-                  )
+                  ) : null
                 ) : (
                   /* NOT AUTHENTICATED - Show login prompt */
                   <div className="space-y-3">
@@ -1189,12 +1242,15 @@ export default function EventDetailPage() {
       {/* ============================================ */}
       {/* ADD TO CALENDAR MODAL - Opens after successful join */}
       {/* ============================================ */}
-      <AddToCalendarModal
-        isOpen={isCalendarModalOpen}
-        onClose={() => setIsCalendarModalOpen(false)}
-        calendarData={calendarData}
-        eventTitle={event?.title || 'this event'}
-      />
+      {/* Desktop/Tablet only success modal; hidden on mobile */}
+      <div className="hidden sm:block">
+        <AddToCalendarModal
+          isOpen={isCalendarModalOpen}
+          onClose={() => setIsCalendarModalOpen(false)}
+          calendarData={calendarData}
+          eventTitle={event?.title || 'this event'}
+        />
+      </div>
 
       {/* ============================================ */}
       {/* GROUP TERMS MODAL - Opens before joining if group has terms */}
@@ -1207,6 +1263,41 @@ export default function EventDetailPage() {
         terms={event?.group?.termsAndConditions || ''}
         isLoading={joinMutation.isLoading}
       />
+
+      {/* ============================================ */}
+      {/* LEAVE CONFIRMATION MODAL */}
+      {/* ============================================ */}
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowLeaveConfirm(false)} />
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white grid place-items-center shadow">
+                <X className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900">Leave this event?</h3>
+                <p className="text-sm text-gray-600">You’ll lose your spot and any updates for this event.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowLeaveConfirm(false)}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+              >
+                Stay
+              </button>
+              <button
+                onClick={() => leaveMutation.mutate()}
+                disabled={leaveMutation.isLoading}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold shadow hover:shadow-lg transition-all disabled:opacity-60"
+              >
+                {leaveMutation.isLoading ? 'Leaving...' : 'Leave event'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
