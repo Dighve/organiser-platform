@@ -11,6 +11,7 @@ export default function GooglePlacesAutocomplete({
   placeholder = "Search for hiking trails, mountains, national parks...",
   error 
 }) {
+  const inputRef = useRef(null)
   const autocompleteRef = useRef(null)
   const [inputValue, setInputValue] = useState(value || '')
 
@@ -19,125 +20,74 @@ export default function GooglePlacesAutocomplete({
     libraries,
   })
 
-  // Set initial value only once
+  // Sync external value changes (e.g. pre-filling on edit)
   useEffect(() => {
-    if (value !== undefined && inputValue === '') {
+    if (value !== undefined && value !== inputValue && inputRef.current) {
       setInputValue(value)
+      inputRef.current.value = value
     }
   }, [value])
 
   useEffect(() => {
-    if (!isLoaded || !autocompleteRef.current) return
+    if (!isLoaded || !inputRef.current) return
 
-    // Create input element that the autocomplete will attach to
-    const inputElement = document.createElement('input')
-    inputElement.type = 'text'
-    inputElement.placeholder = placeholder
-    inputElement.value = inputValue || ''
-    inputElement.className = `w-full pl-12 pr-4 py-3 border-2 ${
-      error ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'
-    } rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`
-
-    // Clear container and add input
-    autocompleteRef.current.innerHTML = ''
-    autocompleteRef.current.appendChild(inputElement)
-
-    // Try new API first, fallback to old if needed
-    let autocompleteInstance
-    
-    try {
-      // Try the new PlaceAutocompleteElement API
-      if (window.google?.maps?.places?.PlaceAutocompleteElement) {
-        console.log('Using new PlaceAutocompleteElement API')
-        
-        const autocompleteElement = new window.google.maps.places.PlaceAutocompleteElement()
-        autocompleteElement.placeholder = placeholder
-        autocompleteElement.className = inputElement.className
-        
-        autocompleteElement.addEventListener('gmp-placeselect', (event) => {
-          console.log('New API - Place selected:', event.place)
-          handlePlaceSelect(event.place)
-        })
-        
-        // Replace input with autocomplete element
-        autocompleteRef.current.innerHTML = ''
-        autocompleteRef.current.appendChild(autocompleteElement)
-        
-        if (inputValue) {
-          autocompleteElement.value = inputValue
-        }
-        
-        autocompleteInstance = autocompleteElement
-      } else {
-        throw new Error('PlaceAutocompleteElement not available')
+    // Always use the classic Autocomplete API - it synchronously provides geometry
+    // The new PlaceAutocompleteElement API requires async fetchFields() for geometry
+    // and injects its own inner input element causing the "blue box" visual bug.
+    const autocomplete = new window.google.maps.places.Autocomplete(
+      inputRef.current,
+      {
+        types: ['geocode', 'establishment'],
+        fields: ['formatted_address', 'geometry', 'name'],
       }
-    } catch (error) {
-      console.log('Falling back to old Autocomplete API:', error.message)
-      
-      // Fallback to the old API
-      autocompleteInstance = new window.google.maps.places.Autocomplete(
-        inputElement,
-        {
-          types: ['geocode', 'establishment'],
-          fields: ['formatted_address', 'geometry', 'name', 'address_components'],
-        }
-      )
+    )
 
-      autocompleteInstance.addListener('place_changed', () => {
-        const place = autocompleteInstance.getPlace()
-        console.log('Old API - Place selected:', place)
-        handlePlaceSelect(place)
-      })
-      
-      // Handle input changes
-      inputElement.addEventListener('input', (event) => {
-        const newValue = event.target.value
-        setInputValue(newValue)
-      })
-    }
+    autocompleteRef.current = autocomplete
 
-    // Common place selection handler
-    function handlePlaceSelect(place) {
-      if (place && place.geometry) {
-        let displayValue = place.formatted_address || place.name
-        if (place.name && place.formatted_address && 
-            !place.formatted_address.toLowerCase().startsWith(place.name.toLowerCase())) {
-          displayValue = `${place.name}, ${place.formatted_address}`
-        } else if (place.name && !place.formatted_address) {
-          displayValue = place.name
-        }
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace()
 
-        const locationData = {
-          address: displayValue,
-          latitude: place.geometry.location.lat(),
-          longitude: place.geometry.location.lng(),
-          name: place.name || '',
-        }
-
-        console.log('Location data captured:', locationData)
-
-        setInputValue(displayValue)
-        
-        if (onPlaceSelect) {
-          onPlaceSelect(locationData)
-        }
+      if (!place || !place.geometry) {
+        return
       }
-    }
+
+      let displayValue = place.formatted_address || place.name || ''
+      if (
+        place.name &&
+        place.formatted_address &&
+        !place.formatted_address.toLowerCase().startsWith(place.name.toLowerCase())
+      ) {
+        displayValue = `${place.name}, ${place.formatted_address}`
+      }
+
+      const locationData = {
+        address: displayValue,
+        latitude: place.geometry.location.lat(),
+        longitude: place.geometry.location.lng(),
+        name: place.name || '',
+      }
+
+      setInputValue(displayValue)
+
+      if (onPlaceSelect) {
+        onPlaceSelect(locationData)
+      }
+    })
 
     return () => {
-      if (autocompleteInstance) {
-        if (typeof autocompleteInstance.unbindAll === 'function') {
-          autocompleteInstance.unbindAll()
-        }
-        if (window.google?.maps?.event?.clearInstanceListeners) {
-          window.google.maps.event.clearInstanceListeners(autocompleteInstance)
-        }
-      }
       if (autocompleteRef.current) {
-        autocompleteRef.current.innerHTML = ''
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current)
+        autocompleteRef.current = null
       }
     }
-  }, [isLoaded, onPlaceSelect, placeholder, error])
+  }, [isLoaded, onPlaceSelect])
+
+  const handleInputChange = (e) => {
+    setInputValue(e.target.value)
+    if (onChange) {
+      onChange(e.target.value)
+    }
+  }
 
   if (loadError) {
     return (
@@ -159,10 +109,19 @@ export default function GooglePlacesAutocomplete({
   return (
     <div className="relative">
       <div className="relative">
-        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-20">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none z-10">
           <MapPin className="h-5 w-5 text-purple-500" />
         </div>
-        <div ref={autocompleteRef} className="relative z-10" />
+        <input
+          ref={inputRef}
+          type="text"
+          value={inputValue}
+          onChange={handleInputChange}
+          placeholder={placeholder}
+          className={`w-full pl-12 pr-4 py-3 border-2 ${
+            error ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'
+          } rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`}
+        />
       </div>
       {error && (
         <p className="text-red-500 text-sm mt-2 flex items-center gap-1">
