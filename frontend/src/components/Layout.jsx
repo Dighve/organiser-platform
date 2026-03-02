@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, LogOut, Search, Shield } from 'lucide-react'
+import { Menu, X, LogOut, Search, Shield, User, Users } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { googleLogout } from '@react-oauth/google'
 import { useAuthStore } from '../store/authStore'
@@ -93,6 +93,8 @@ export default function Layout() {
       }
     }
   }, [memberData, isAuthenticated]) // updateUser intentionally omitted - stable Zustand action
+
+  // Close bell when menu closes
 
   // Handle becoming an organiser - show modal
   const handleBecomeOrganiser = () => {
@@ -242,12 +244,13 @@ export default function Layout() {
                 </button>
               )}
             </div>
-            {/* Mobile menu button - only show for authenticated users */}
+            {/* Mobile actions */}
             {isAuthenticated && (
-              <div className="md:hidden flex items-center">
+              <div className="md:hidden flex items-center gap-3">
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="text-white hover:text-white/80 transition-colors"
+                  aria-label="Open menu"
                 >
                   {mobileMenuOpen ? (
                     <X className="h-6 w-6" />
@@ -265,33 +268,53 @@ export default function Layout() {
                 <>
                   <Link
                     to="/profile"
-                    className="block text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                    className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Profile
+                    <User className="h-5 w-5 text-white" />
+                    <span>Profile</span>
                   </Link>
                   <Link
                     to="/my-groups"
-                    className="block text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                    className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
                     onClick={() => setMobileMenuOpen(false)}
                   >
-                    Your Groups
+                    <Users className="h-5 w-5 text-white" />
+                    <span>Your Groups</span>
                   </Link>
+                  <div
+                    className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                    onClick={() => {
+                      setMobileMenuOpen(false)
+                      navigate('/notifications')
+                    }}
+                  >
+                    <NotificationBell
+                      className="flex-shrink-0 translate-y-[2px]"
+                      buttonClassName="text-white hover:text-white/80 p-0"
+                      iconClassName="text-white h-5 w-5"
+                      size="compact"
+                      disableDropdown
+                      showBadge
+                    />
+                    <span>Notifications</span>
+                  </div>
                   {isAdmin && (
                     <Link
                       to="/admin"
-                      className="block text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold flex items-center space-x-2"
+                      className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
                       onClick={() => setMobileMenuOpen(false)}
                     >
-                      <Shield className="h-4 w-4" />
+                      <Shield className="h-5 w-5 text-white" />
                       <span>Admin Dashboard</span>
                     </Link>
                   )}
                   {!memberData?.hasOrganiserRole && !featureFlags?.DISABLE_BECOME_ORGANISER_BUTTON && (
                     <button
                       onClick={handleBecomeOrganiser}
-                      className="block w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                      className="flex items-center gap-3 w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
                     >
+                      <Shield className="h-5 w-5 text-white" />
                       Become Organiser
                     </button>
                   )}
@@ -300,9 +323,10 @@ export default function Layout() {
                       handleLogout()
                       setMobileMenuOpen(false)
                     }}
-                    className="block w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                    className="flex items-center gap-3 w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
                   >
-                    Logout
+                    <LogOut className="h-5 w-5 text-white" />
+                    <span>Logout</span>
                   </button>
                 </>
               ) : null}

@@ -1,17 +1,34 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bell, X, Check, CheckCheck } from 'lucide-react'
+import { Bell, X, CheckCheck } from 'lucide-react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { notificationsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { useNavigate } from 'react-router-dom'
 import { formatDistanceToNow } from 'date-fns'
 
-export default function NotificationBell() {
+export default function NotificationBell({
+  buttonClassName = 'text-gray-600 hover:text-purple-600',
+  iconClassName = '',
+  showBadge = true,
+  className = '',
+  size = 'md', // 'md', 'sm', or 'compact'
+  open: controlledOpen,
+  onOpenChange,
+  disableDropdown = false,
+}) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
   const { isAuthenticated } = useAuthStore()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+
+  const isControlled = controlledOpen !== undefined
+  const isOpenState = isControlled ? controlledOpen : isOpen
+
+  const setOpen = (val) => {
+    if (!isControlled) setIsOpen(val)
+    if (onOpenChange) onOpenChange(val)
+  }
 
   // Fetch unread count
   const { data: unreadData } = useQuery({
@@ -26,7 +43,7 @@ export default function NotificationBell() {
   const { data: notificationsData, isLoading } = useQuery({
     queryKey: ['notifications'],
     queryFn: () => notificationsAPI.getNotifications(0, 10),
-    enabled: isAuthenticated && isOpen,
+    enabled: isAuthenticated && !disableDropdown && isOpenState,
     select: (response) => response.data,
   })
 
@@ -48,19 +65,22 @@ export default function NotificationBell() {
     },
   })
 
+  const iconSize = size === 'sm' || size === 'compact' ? 'w-5 h-5' : 'w-6 h-6'
+  const buttonPadding = size === 'compact' ? 'p-0' : size === 'sm' ? 'p-1.5' : 'p-2'
+
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsOpen(false)
+        setOpen(false)
       }
     }
 
-    if (isOpen) {
+    if (!disableDropdown && isOpenState) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isOpen])
+  }, [isOpenState, disableDropdown])
 
   if (!isAuthenticated) return null
 
@@ -76,7 +96,7 @@ export default function NotificationBell() {
     // Navigate to related content
     if (notification.relatedEventId) {
       navigate(`/events/${notification.relatedEventId}`)
-      setIsOpen(false)
+      setOpen(false)
     }
   }
 
@@ -85,14 +105,14 @@ export default function NotificationBell() {
   }
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Bell Icon Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors rounded-full hover:bg-purple-50"
+        onClick={disableDropdown ? undefined : () => setOpen(!isOpenState)}
+        className={`relative inline-flex items-center justify-center ${buttonPadding} transition-colors rounded-full hover:bg-purple-50 ${buttonClassName}`}
       >
-        <Bell className="w-6 h-6" />
-        {unreadCount > 0 && (
+        <Bell className={`${iconSize} ${iconClassName}`} />
+        {showBadge && unreadCount > 0 && (
           <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-pink-500 rounded-full">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
@@ -100,7 +120,7 @@ export default function NotificationBell() {
       </button>
 
       {/* Dropdown Panel */}
-      {isOpen && (
+      {!disableDropdown && isOpenState && (
         <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
@@ -120,7 +140,7 @@ export default function NotificationBell() {
                 </button>
               )}
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => setOpen(false)}
                 className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
               >
                 <X className="w-5 h-5" />
