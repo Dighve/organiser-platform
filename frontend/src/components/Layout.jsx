@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useAuthStore } from '../store/authStore'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { membersAPI, adminAPI } from '../lib/api'
+import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import ProfileAvatar from './ProfileAvatar'
 import LoginModal from './LoginModal'
 import OrganiserAgreementModal from './OrganiserAgreementModal'
@@ -22,6 +23,7 @@ export default function Layout() {
   const navigate = useNavigate()
   const location = useLocation()
   const queryClient = useQueryClient()
+  const { featureFlags } = useFeatureFlags()
 
   // Sync search query with URL parameters
   useEffect(() => {
@@ -43,6 +45,8 @@ export default function Layout() {
     queryFn: () => adminAPI.checkAdminStatus().then(res => res.data),
     enabled: isAuthenticated,
   })
+
+  const isNewUser = false // no longer used
 
   // Reset session refs on logout so modals re-trigger on next login if still not accepted
   useEffect(() => {
@@ -197,7 +201,7 @@ export default function Layout() {
                           <span>Admin Dashboard</span>
                         </Link>
                       )}
-                      {!memberData?.hasOrganiserRole && (
+                      {!memberData?.hasOrganiserRole && !featureFlags?.DISABLE_BECOME_ORGANISER_BUTTON && (
                         <button
                           onClick={handleBecomeOrganiser}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -269,7 +273,7 @@ export default function Layout() {
                       <span>Admin Dashboard</span>
                     </Link>
                   )}
-                  {!memberData?.hasOrganiserRole && (
+                  {!memberData?.hasOrganiserRole && !featureFlags?.DISABLE_BECOME_ORGANISER_BUTTON && (
                     <button
                       onClick={handleBecomeOrganiser}
                       className="block w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"

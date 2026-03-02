@@ -262,7 +262,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="absolute top-4 right-4 z-10 flex items-center justify-center h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-300/50 hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              className="absolute top-4 left-4 z-10 flex items-center justify-center h-11 w-11 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-300/50 hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:brightness-90 transition-all"
               aria-label="Edit profile"
             >
               <Edit2 className="h-5 w-5" />
@@ -273,7 +273,7 @@ export default function ProfilePage() {
             <button
               type="button"
               onClick={handleCancel}
-              className="absolute top-4 right-4 z-10 flex items-center justify-center h-11 w-11 rounded-2xl bg-white text-slate-700 border border-slate-200 shadow-lg hover:-translate-y-0.5 transition-all"
+              className="absolute top-4 right-4 z-10 flex items-center justify-center h-11 w-11 rounded-2xl bg-white text-slate-700 border border-slate-200 shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:bg-slate-100 transition-all"
               aria-label="Cancel editing"
             >
               <X className="h-5 w-5" />
@@ -354,9 +354,6 @@ export default function ProfilePage() {
           <div className="relative border-t border-slate-100 px-5 sm:px-8 py-6 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Account details</h3>
-              {!isEditing && (
-                <span className="text-[11px] text-slate-400">Visible on mobile cards</span>
-              )}
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {[

@@ -31,6 +31,7 @@ public class FeatureFlagService {
     public static final String EVENT_LOCATION_ENABLED = "EVENT_LOCATION_ENABLED";
     public static final String GROUP_LOCATION_ENABLED = "GROUP_LOCATION_ENABLED";
     public static final String STATIC_MAPS_ENABLED = "STATIC_MAPS_ENABLED";
+    public static final String DISABLE_BECOME_ORGANISER_BUTTON = "DISABLE_BECOME_ORGANISER_BUTTON";
     
     /**
      * Check if a specific feature is enabled

@@ -18,6 +18,7 @@ export const FeatureFlagProvider = ({ children }) => {
     EVENT_LOCATION_ENABLED: true,
     GROUP_LOCATION_ENABLED: true,
     STATIC_MAPS_ENABLED: true,
+    DISABLE_BECOME_ORGANISER_BUTTON: false,
   })
 
   const { data: flagsData, isLoading, error } = useQuery({
