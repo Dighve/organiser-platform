@@ -585,7 +585,6 @@ export default function EditEventPage() {
                     error={errors.description?.message}
                   />
                   <input type="hidden" {...register('description')} />
-                  <p className="text-sm text-gray-500 mt-2 ml-1">💡 Supports bold, italics, bullets, numbers, and links (Markdown).</p>
                 </div>
               </div>
             )}

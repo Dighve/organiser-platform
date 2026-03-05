@@ -7,6 +7,7 @@ import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import CommentSection from '../components/CommentSection'
 import ProfileAvatar from '../components/ProfileAvatar'
 import LoginModal from '../components/LoginModal'
@@ -855,6 +856,7 @@ export default function EventDetailPage() {
                 <h2 className="text-lg lg:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">📝 Details</h2>
                 <div className="prose prose-sm lg:prose-lg max-w-none text-gray-700 whitespace-pre-wrap">
                   <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
                     components={{
                       p: ({node, ...props}) => <p className="mb-3 lg:mb-4 text-sm lg:text-base" {...props} />,
                       a: ({node, ...props}) => (
@@ -865,6 +867,9 @@ export default function EventDetailPage() {
                           {...props}
                         />
                       ),
+                      ul: ({node, ...props}) => <ul className="list-disc ml-5 mb-3 text-sm lg:text-base" {...props} />,
+                      ol: ({node, ...props}) => <ol className="list-decimal ml-5 mb-3 text-sm lg:text-base" {...props} />,
+                      li: ({node, ...props}) => <li className="mb-1" {...props} />,
                     }}
                   >
                     {cleanedDescription}
