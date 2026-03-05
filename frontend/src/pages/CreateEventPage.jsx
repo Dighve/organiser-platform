@@ -12,8 +12,10 @@ import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
 import ImageUpload from '../components/ImageUpload'
+import MarkdownEditor from '../components/MarkdownEditor'
 import { useAuthStore } from '../store/authStore'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
+import ReactMarkdown from 'react-markdown'
 
 // ============================================================
 // CONSTANTS
@@ -480,6 +482,8 @@ export default function CreateEventPage() {
   }
 
   // STEP 1: BASICS - Event title, date, time, description, and featured photo
+  const watchedDescription = watch('description', '')
+
   const renderBasicsStep = () => (
     <form onSubmit={handleSubmit(onStepSubmit)} className="space-y-8">
       <div className="text-center mb-10 animate-fade-in">
@@ -645,16 +649,18 @@ export default function CreateEventPage() {
           </div>
           Event Description
         </label>
-        <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-          <textarea 
-            {...register('description')} 
-            className="relative w-full px-6 py-5 text-base border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-cyan-300 bg-white min-h-[140px] resize-none" 
-            placeholder="Describe your hike, meeting point, what to expect..."
-          />
-        </div>
+        <MarkdownEditor
+          value={watchedDescription}
+          onChange={(val) => {
+            setValue('description', val)
+            updateFormData({ description: val })
+          }}
+          placeholder="Describe your hike, meeting point, what to expect..."
+          error={errors.description?.message}
+        />
+        <input type="hidden" {...register('description')} />
         <p className="text-sm text-gray-500 mt-2 ml-1">
-          💡 Help hikers know what to expect. Use **bold** for emphasis, *italic* for notes
+          💡 Supports bold, italics, bullets, numbers, and links (Markdown).
         </p>
       </div>
 
@@ -1030,7 +1036,9 @@ export default function CreateEventPage() {
               )}
               
               {formData.description && (
-                <p className="text-gray-600 mt-3 bg-gray-50 p-3 rounded-lg">{formData.description}</p>
+                <div className="mt-3 bg-gray-50 p-3 rounded-lg text-gray-700 prose prose-sm max-w-none">
+                  <ReactMarkdown>{formData.description}</ReactMarkdown>
+                </div>
               )}
             </div>
           </div>

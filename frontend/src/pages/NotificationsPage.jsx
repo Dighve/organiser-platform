@@ -38,10 +38,23 @@ export default function NotificationsPage() {
     },
   })
 
-  const handleNotificationClick = (notification) => {
-    if (!notification.isRead) {
-      markAsReadMutation.mutate(notification.id)
-    }
+  const deleteMutation = useMutation({
+    mutationFn: (id) => notificationsAPI.deleteNotification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notifications'])
+      queryClient.invalidateQueries(['notifications', 'unread-count'])
+      queryClient.invalidateQueries(['notifications', 'mobile'])
+    },
+  })
+
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.isRead) {
+        await markAsReadMutation.mutateAsync(notification.id)
+      }
+      await deleteMutation.mutateAsync(notification.id)
+    } catch (_) { /* ignore */ }
+
     if (notification.relatedEventId) {
       navigate(`/events/${notification.relatedEventId}`)
     }
@@ -79,7 +92,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
         {isLoading || isFetching ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
@@ -94,22 +107,22 @@ export default function NotificationsPage() {
           notifications.map((notification) => (
             <div
               key={notification.id}
-              className={`rounded-xl p-4 shadow-sm border ${
-                notification.isRead ? 'bg-white/80 border-white/70' : 'bg-blue-50 border-blue-100'
+              className={`rounded-xl p-3 shadow-sm border ${
+                notification.isRead ? 'bg-white border-white/70' : 'bg-blue-50 border-blue-100'
               }`}
               role="button"
               tabIndex={0}
               onClick={() => handleNotificationClick(notification)}
               onKeyDown={(e) => e.key === 'Enter' && handleNotificationClick(notification)}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2.5">
                 <div className="mt-0.5">
-                  <Bell className="h-5 w-5 text-purple-500" />
+                  <Bell className="h-4 w-4 text-purple-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-gray-900 text-sm mb-1">{notification.title}</p>
-                  <p className="text-sm text-gray-600 mb-1">{notification.message}</p>
-                  <p className="text-xs text-gray-400">
+                  <p className="font-semibold text-gray-900 text-sm mb-0.5">{notification.title}</p>
+                  <p className="text-xs text-gray-600 mb-1">{notification.message}</p>
+                  <p className="text-[11px] text-gray-400">
                     {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                   </p>
                 </div>

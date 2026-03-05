@@ -12,6 +12,7 @@ import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import TagInput from '../components/TagInput'
 import MemberAutocomplete from '../components/MemberAutocomplete'
 import ImageUpload from '../components/ImageUpload'
+import MarkdownEditor from '../components/MarkdownEditor'
 
 // ============================================================
 // CONSTANTS
@@ -69,6 +70,7 @@ export default function EditEventPage() {
   const watchedLatitude = watch('latitude')
   const watchedLongitude = watch('longitude')
   const watchedHostName = watch('hostName')
+  const watchedDescription = watch('description', '')
   const watchedDifficultyLevel = watch('difficultyLevel')
   const selectedDate = watch('eventDate')
   const selectedEndDate = watch('endDate')
@@ -390,7 +392,7 @@ export default function EditEventPage() {
   // MAIN COMPONENT RETURN
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4 pb-24 sm:pb-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-10">
@@ -573,14 +575,17 @@ export default function EditEventPage() {
                     </div>
                     About This Event
                   </label>
-                  <div className="relative group">
-                    <textarea
-                      {...register('description')}
-                      className="relative w-full px-6 py-5 text-base border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-cyan-500/20 focus:border-cyan-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-cyan-300 bg-white min-h-[140px] resize-none"
-                      placeholder="Describe your hike, meeting point, what to expect..."
-                    />
-                  </div>
-                  <p className="text-sm text-gray-500 mt-2 ml-1">💡 Help hikers know what to expect on this adventure</p>
+                  <MarkdownEditor
+                    value={watchedDescription}
+                    onChange={(val) => {
+                      setValue('description', val)
+                      updateFormData({ description: val })
+                    }}
+                    placeholder="Describe your hike, meeting point, what to expect..."
+                    error={errors.description?.message}
+                  />
+                  <input type="hidden" {...register('description')} />
+                  <p className="text-sm text-gray-500 mt-2 ml-1">💡 Supports bold, italics, bullets, numbers, and links (Markdown).</p>
                 </div>
               </div>
             )}
@@ -961,7 +966,8 @@ export default function EditEventPage() {
             )}
 
             {/* Navigation Buttons */}
-            <div className="flex justify-between mt-8 pt-6 border-t-2 border-gray-100">
+            {/* Desktop / Tablet */}
+            <div className="hidden sm:flex justify-between mt-8 pt-6 border-t-2 border-gray-100">
               {currentStep > STEPS.BASICS && (
                 <button
                   type="button"
@@ -992,6 +998,34 @@ export default function EditEventPage() {
                     <ArrowRight className="h-5 w-5" />
                   </>
                 )}
+              </button>
+            </div>
+
+            {/* Mobile sticky icon-only controls */}
+            <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
+              {currentStep > STEPS.BASICS ? (
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  className="h-12 w-12 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center shadow-sm border border-gray-200"
+                  aria-label="Back"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+              ) : (
+                <div className="h-12 w-12" />
+              )}
+
+              <button
+                type="submit"
+                className={`flex-1 h-12 rounded-xl text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all ${
+                  currentStep === STEPS.REVIEW
+                    ? 'bg-gradient-to-r from-green-600 to-emerald-600'
+                    : 'bg-gradient-to-r from-purple-600 to-pink-600'
+                }`}
+                aria-label={currentStep === STEPS.REVIEW ? 'Update event' : 'Continue'}
+              >
+                {currentStep === STEPS.REVIEW ? <Check className="h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
               </button>
             </div>
           </form>

@@ -65,6 +65,15 @@ export default function NotificationBell({
     },
   })
 
+  // Delete notification mutation
+  const deleteMutation = useMutation({
+    mutationFn: (notificationId) => notificationsAPI.deleteNotification(notificationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['notifications'])
+      queryClient.invalidateQueries(['notifications', 'unread-count'])
+    },
+  })
+
   const iconSize = size === 'sm' || size === 'compact' ? 'w-5 h-5' : 'w-6 h-6'
   const buttonPadding = size === 'compact' ? 'p-0' : size === 'sm' ? 'p-1.5' : 'p-2'
 
@@ -87,13 +96,16 @@ export default function NotificationBell({
   const unreadCount = unreadData?.count || 0
   const notifications = notificationsData?.content || []
 
-  const handleNotificationClick = (notification) => {
-    // Mark as read
-    if (!notification.isRead) {
-      markAsReadMutation.mutate(notification.id)
+  const handleNotificationClick = async (notification) => {
+    try {
+      if (!notification.isRead) {
+        await markAsReadMutation.mutateAsync(notification.id)
+      }
+      await deleteMutation.mutateAsync(notification.id)
+    } catch (err) {
+      // ignore failures; deletion is best-effort
     }
 
-    // Navigate to related content
     if (notification.relatedEventId) {
       navigate(`/events/${notification.relatedEventId}`)
       setOpen(false)
@@ -121,10 +133,10 @@ export default function NotificationBell({
 
       {/* Dropdown Panel */}
       {!disableDropdown && isOpenState && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[600px] flex flex-col">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-200 z-50 max-h-[520px] flex flex-col">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
-            <h3 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-pink-50">
+            <h3 className="text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Notifications
             </h3>
             <div className="flex items-center gap-2">
@@ -132,7 +144,7 @@ export default function NotificationBell({
                 <button
                   onClick={handleMarkAllAsRead}
                   disabled={markAllAsReadMutation.isPending}
-                  className="flex items-center gap-1 px-3 py-1 text-sm text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded-lg transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-100 rounded-lg transition-colors"
                   title="Mark all as read"
                 >
                   <CheckCheck className="w-4 h-4" />
@@ -152,7 +164,7 @@ export default function NotificationBell({
           <div className="overflow-y-auto flex-1">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
               </div>
             ) : notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -168,29 +180,29 @@ export default function NotificationBell({
                   <button
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`w-full text-left p-4 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all ${
-                      !notification.isRead ? 'bg-blue-50' : ''
+                    className={`w-full text-left p-3 hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all ${
+                      !notification.isRead ? 'bg-blue-50' : 'bg-white'
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-2.5">
                       {/* Notification Icon */}
-                      <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
+                      <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
                         notification.notificationType === 'NEW_EVENT'
                           ? 'bg-gradient-to-br from-purple-500 to-pink-500'
                           : 'bg-gradient-to-br from-orange-500 to-pink-500'
                       }`}>
-                        <Bell className="w-5 h-5 text-white" />
+                        <Bell className="w-4 h-4 text-white" />
                       </div>
 
                       {/* Notification Content */}
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm mb-1">
+                        <p className="font-semibold text-gray-900 text-sm mb-0.5">
                           {notification.title}
                         </p>
-                        <p className="text-sm text-gray-600 line-clamp-2">
+                        <p className="text-xs text-gray-600 line-clamp-2">
                           {notification.message}
                         </p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-[11px] text-gray-400 mt-1">
                           {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                         </p>
                       </div>

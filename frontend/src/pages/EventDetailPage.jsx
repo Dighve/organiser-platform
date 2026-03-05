@@ -297,7 +297,7 @@ export default function EventDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center overflow-x-hidden">
         <div className="max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="animate-pulse bg-white/60 backdrop-blur-sm rounded-3xl p-8 space-y-6">
             <div className="h-96 bg-gradient-to-br from-purple-200 to-pink-200 rounded-2xl"></div>
@@ -369,7 +369,8 @@ export default function EventDetailPage() {
     participantIds: [],
     currentParticipants: 0,
   }
-  const hasHost = Boolean(event?.hostMemberId || displayEvent?.hostMemberName)
+  const hostName = event?.hostMemberName || displayEvent?.hostMemberName
+  const hasHost = Boolean(hostName)
   const hasEventDetails = Boolean(
     event?.difficultyLevel ||
     event?.distanceKm ||
@@ -438,7 +439,7 @@ export default function EventDetailPage() {
   // RENDER - Main component JSX
   // ============================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8 overflow-x-hidden">
       {/* Loading overlay while joining event - stays visible until calendar modal opens */}
       {isJoiningFlow && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -855,7 +856,15 @@ export default function EventDetailPage() {
                 <div className="prose prose-sm lg:prose-lg max-w-none text-gray-700 whitespace-pre-wrap">
                   <ReactMarkdown
                     components={{
-                      p: ({node, ...props}) => <p className="mb-3 lg:mb-4 text-sm lg:text-base" {...props} />
+                      p: ({node, ...props}) => <p className="mb-3 lg:mb-4 text-sm lg:text-base" {...props} />,
+                      a: ({node, ...props}) => (
+                        <a
+                          className="text-purple-600 underline decoration-2 hover:text-pink-600"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          {...props}
+                        />
+                      ),
                     }}
                   >
                     {cleanedDescription}
@@ -912,40 +921,19 @@ export default function EventDetailPage() {
                         <span>Host</span>
                       </h2>
                       {(() => {
-                        const hostParticipant = participantsData?.data?.find(p => p.id === event?.hostMemberId);
-                        if (hostParticipant) {
-                          return (
-                            <div 
-                              onClick={() => navigate(`/members/${hostParticipant.id}`)}
-                              className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1"
-                            >
-                              <ProfileAvatar 
-                                member={hostParticipant} 
-                                size="lg" 
-                                className="group-hover:scale-110 transition-transform"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-orange-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
-                                  {hostParticipant.displayName || hostParticipant.email.split('@')[0]}
-                                </p>
-                              </div>
+                        const hostNameFallback = hostName
+                        return (
+                          <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl">
+                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                              {hostNameFallback.charAt(0).toUpperCase()}
                             </div>
-                          );
-                        } else if (displayEvent.hostMemberName) {
-                          return (
-                            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl">
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
-                                {displayEvent.hostMemberName.charAt(0).toUpperCase()}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-gray-900 truncate">
-                                  {displayEvent.hostMemberName}
-                                </p>
-                              </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-bold text-gray-900 truncate">
+                                {hostNameFallback}
+                              </p>
                             </div>
-                          );
-                        }
-                        return null;
+                          </div>
+                        )
                       })()}
                     </div>
                   )}

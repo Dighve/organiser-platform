@@ -6,6 +6,8 @@ import toast from 'react-hot-toast'
 import { commentsAPI, membersAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import ProfileAvatar from './ProfileAvatar'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function CommentSection({ eventId }) {
   const queryClient = useQueryClient()
@@ -199,6 +201,28 @@ export default function CommentSection({ eventId }) {
     return () => mediaQuery.removeListener(update)
   }, [])
 
+  const renderMarkdown = (text) => (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        a: ({node, ...props}) => (
+          <a
+            className="text-purple-600 underline decoration-2 hover:text-pink-600"
+            target="_blank"
+            rel="noopener noreferrer"
+            {...props}
+          />
+        ),
+        p: ({node, ...props}) => <p className="mb-1 text-sm sm:text-base leading-relaxed" {...props} />,
+        ul: ({node, ...props}) => <ul className="list-disc ml-5 mb-1 text-sm sm:text-base" {...props} />,
+        ol: ({node, ...props}) => <ol className="list-decimal ml-5 mb-1 text-sm sm:text-base" {...props} />,
+        li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
+      }}
+    >
+      {text}
+    </ReactMarkdown>
+  )
+
   return (
     <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
       <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 lg:mb-6">
@@ -338,7 +362,9 @@ export default function CommentSection({ eventId }) {
                         </div>
                       </form>
                     ) : (
-                      <p className="text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                      <div className="text-gray-700 whitespace-pre-wrap">
+                        {renderMarkdown(comment.content)}
+                      </div>
                     )}
 
                     {isAuthenticated && editingComment !== comment.id && (
@@ -439,7 +465,9 @@ export default function CommentSection({ eventId }) {
                                       </div>
                                     </form>
                                   ) : (
-                                    <p className="text-gray-700 text-sm whitespace-pre-wrap">{reply.content}</p>
+                                    <div className="text-gray-700 text-sm whitespace-pre-wrap">
+                                      {renderMarkdown(reply.content)}
+                                    </div>
                                   )}
                                 </div>
                               </div>
