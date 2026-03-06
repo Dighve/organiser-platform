@@ -517,10 +517,13 @@ public class EventService {
         Long hostMemberId = null;
         String hostMemberName = null;
         if (event.getHostMember() != null) {
-            hostMemberId = event.getHostMember().getId();
-            hostMemberName = event.getHostMember().getDisplayName() != null && !event.getHostMember().getDisplayName().isEmpty()
-                    ? event.getHostMember().getDisplayName()
-                    : event.getHostMember().getEmail();
+            boolean hostDeleted = Boolean.FALSE.equals(event.getHostMember().getActive());
+            hostMemberId = hostDeleted ? null : event.getHostMember().getId();
+            hostMemberName = hostDeleted
+                    ? "Deleted user"
+                    : (event.getHostMember().getDisplayName() != null && !event.getHostMember().getDisplayName().isEmpty()
+                        ? event.getHostMember().getDisplayName()
+                        : event.getHostMember().getEmail());
         }
         
         return EventDTO.builder()
@@ -606,10 +609,13 @@ public class EventService {
         Long hostMemberId = null;
         String hostMemberName = null;
         if (event.getHostMember() != null) {
-            hostMemberId = event.getHostMember().getId();
-            hostMemberName = event.getHostMember().getDisplayName() != null && !event.getHostMember().getDisplayName().isEmpty()
-                    ? event.getHostMember().getDisplayName()
-                    : event.getHostMember().getEmail();
+            boolean hostDeleted = Boolean.FALSE.equals(event.getHostMember().getActive());
+            hostMemberId = hostDeleted ? null : event.getHostMember().getId();
+            hostMemberName = hostDeleted
+                    ? "Deleted user"
+                    : (event.getHostMember().getDisplayName() != null && !event.getHostMember().getDisplayName().isEmpty()
+                        ? event.getHostMember().getDisplayName()
+                        : event.getHostMember().getEmail());
         }
         
         return EventDTO.builder()
@@ -739,13 +745,14 @@ public class EventService {
         
         return event.getParticipants().stream()
                 .map(participant -> com.organiser.platform.dto.MemberDTO.builder()
-                        .id(participant.getMember().getId())
-                        .email(participant.getMember().getEmail())
-                        .displayName(participant.getMember().getDisplayName())
-                        .profilePhotoUrl(participant.getMember().getProfilePhotoUrl())
+                        .id(Boolean.FALSE.equals(participant.getMember().getActive()) ? null : participant.getMember().getId())
+                        .email(Boolean.FALSE.equals(participant.getMember().getActive()) ? null : participant.getMember().getEmail())
+                        .displayName(Boolean.FALSE.equals(participant.getMember().getActive()) ? "Deleted user" : participant.getMember().getDisplayName())
+                        .profilePhotoUrl(Boolean.FALSE.equals(participant.getMember().getActive()) ? null : participant.getMember().getProfilePhotoUrl())
                         // Check if this participant is the organiser of THIS event
                         .isOrganiser(participant.getMember().getId().equals(eventOrganiserId))
                         .joinedAt(participant.getRegistrationDate())
+                        .deleted(Boolean.FALSE.equals(participant.getMember().getActive()))
                         .build())
                 .collect(Collectors.toList());
     }
@@ -812,5 +819,17 @@ public class EventService {
                     : event.getGroup().getPrimaryOrganiser().getEmail())
                 .eventUrl("https://www.outmeets.com/events/" + eventId)
                 .build();
+    }
+
+    // ============================================================
+    // SUPPORT: Member deletion helpers
+    // ============================================================
+    public boolean isHostOfUpcomingEvents(Long memberId) {
+        return eventRepository.existsByHostMemberIdAndEventDateAfter(memberId, Instant.now());
+    }
+
+    @Transactional
+    public void removeFutureParticipationsForMember(Long memberId) {
+        eventParticipantRepository.deleteFutureParticipations(memberId, Instant.now());
     }
 }

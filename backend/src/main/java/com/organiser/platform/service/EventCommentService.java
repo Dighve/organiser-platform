@@ -221,16 +221,22 @@ public class EventCommentService {
         List<ReplyDTO> replies = comment.getReplies().stream()
                 .map(this::convertReplyToDTO)
                 .collect(Collectors.toList());
+
+        Member author = comment.getMember();
+        boolean deleted = author == null || Boolean.FALSE.equals(author.getActive());
+        String name = deleted ? "Deleted user" : (author.getDisplayName() != null 
+                        ? author.getDisplayName() 
+                        : author.getEmail().split("@")[0]);
+        String photo = deleted ? null : author.getProfilePhotoUrl();
         
         return CommentDTO.builder()
                 .id(comment.getId())
                 .eventId(comment.getEvent().getId())
-                .memberId(comment.getMember().getId())
-                .memberName(comment.getMember().getDisplayName() != null 
-                        ? comment.getMember().getDisplayName() 
-                        : comment.getMember().getEmail().split("@")[0])
-                .memberEmail(comment.getMember().getEmail())
-                .memberPhotoUrl(comment.getMember().getProfilePhotoUrl())
+                .memberId(deleted ? null : author.getId())
+                .memberName(name)
+                .memberEmail(deleted ? null : author.getEmail())
+                .memberPhotoUrl(photo)
+                .deleted(deleted)
                 .content(comment.getContent())
                 .edited(comment.getEdited())
                 .createdAt(comment.getCreatedAt())
@@ -244,15 +250,21 @@ public class EventCommentService {
      * Convert EventCommentReply entity to ReplyDTO.
      */
     private ReplyDTO convertReplyToDTO(EventCommentReply reply) {
+        Member author = reply.getMember();
+        boolean deleted = author == null || Boolean.FALSE.equals(author.getActive());
+        String name = deleted ? "Deleted user" : (author.getDisplayName() != null 
+                        ? author.getDisplayName() 
+                        : author.getEmail().split("@")[0]);
+        String photo = deleted ? null : author.getProfilePhotoUrl();
+
         return ReplyDTO.builder()
                 .id(reply.getId())
                 .commentId(reply.getComment().getId())
-                .memberId(reply.getMember().getId())
-                .memberName(reply.getMember().getDisplayName() != null 
-                        ? reply.getMember().getDisplayName() 
-                        : reply.getMember().getEmail().split("@")[0])
-                .memberEmail(reply.getMember().getEmail())
-                .memberPhotoUrl(reply.getMember().getProfilePhotoUrl())
+                .memberId(deleted ? null : author.getId())
+                .memberName(name)
+                .memberEmail(deleted ? null : author.getEmail())
+                .memberPhotoUrl(photo)
+                .deleted(deleted)
                 .content(reply.getContent())
                 .edited(reply.getEdited())
                 .createdAt(reply.getCreatedAt())

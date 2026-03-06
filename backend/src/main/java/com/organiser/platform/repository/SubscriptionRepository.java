@@ -24,4 +24,6 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     
     // Admin dashboard queries
     Long countByMemberId(Long memberId);
+
+    void deleteByMemberId(Long memberId);
 }

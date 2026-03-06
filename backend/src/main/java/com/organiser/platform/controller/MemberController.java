@@ -42,6 +42,17 @@ public class MemberController {
         MemberDTO member = memberService.getMemberDTOById(memberId);
         return ResponseEntity.ok(member);
     }
+
+    /**
+     * Delete current user's profile.
+     * Guards: organisers/hosts of future events are blocked with 409.
+     */
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteCurrentMember(Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        memberService.deleteCurrentMember(userId);
+        return ResponseEntity.noContent().build();
+    }
     
     /**
      * Update current user's profile (display name, photo URL)

@@ -7,11 +7,15 @@ import com.organiser.platform.dto.MemberDTO;
 import com.organiser.platform.dto.UpdateMemberProfileRequest;
 import com.organiser.platform.model.Member;
 import com.organiser.platform.repository.MemberRepository;
+import com.organiser.platform.service.GroupService;
+import com.organiser.platform.service.EventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 // ============================================================
 // SERVICE CLASS
@@ -28,6 +32,8 @@ public class MemberService {
     
     private final MemberRepository memberRepository;
     private final EnhancedLegalService enhancedLegalService;
+    private final GroupService groupService;
+    private final EventService eventService;
     
     // ============================================================
     // PUBLIC MEMBER OPERATIONS
@@ -141,6 +147,38 @@ public class MemberService {
         
         return convertToDTO(updatedMember);
     }
+
+    /**
+     * Delete current member profile with organiser/host safeguards.
+     */
+    @Transactional
+    @CacheEvict(value = {"members", "groups", "events"}, allEntries = true)
+    public void deleteCurrentMember(Long memberId) {
+        Member member = getMemberById(memberId);
+
+        // Block if organiser of any group
+        if (groupService.isOrganiserOfAnyGroup(memberId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You are an organiser. Please transfer ownership via support@outmeets.com before deleting your profile.");
+        }
+
+        // Block if host of upcoming events
+        if (eventService.isHostOfUpcomingEvents(memberId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You are host of upcoming events. Please remove yourself as host before deleting your profile.");
+        }
+
+        // Remove future event participations
+        eventService.removeFutureParticipationsForMember(memberId);
+
+        // Remove group subscriptions
+        groupService.removeAllSubscriptionsForMember(memberId);
+
+        // Soft delete member and scrub PII
+        member.setActive(false);
+        member.setDisplayName("Deleted user");
+        member.setProfilePhotoUrl(null);
+        member.setHasOrganiserRole(false);
+        memberRepository.save(member);
+    }
     
     // ============================================================
     // PRIVATE DATA CONVERSION METHODS
@@ -176,6 +214,7 @@ public class MemberService {
                 .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())
                 .hasAcceptedUserAgreement(hasAcceptedCurrentUserAgreement)
                 .userAgreementAcceptedAt(member.getUserAgreementAcceptedAt())
+                .deleted(!member.getActive())
                 .build();
     }
 }

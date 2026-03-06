@@ -20,6 +20,7 @@ public class CommentDTO {
     private String memberName;
     private String memberEmail;
     private String memberPhotoUrl;
+    private Boolean deleted;
     private String content;
     private Boolean edited;
     private LocalDateTime createdAt;

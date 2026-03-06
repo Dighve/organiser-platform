@@ -344,6 +344,16 @@ public class GroupService {
         Optional<Subscription> subscription = subscriptionRepository.findByMemberIdAndGroupId(memberId, groupId);
         return subscription.isPresent() && subscription.get().getStatus() == Subscription.SubscriptionStatus.ACTIVE;
     }
+
+    public boolean isOrganiserOfAnyGroup(Long memberId) {
+        return groupRepository.countByPrimaryOrganiserId(memberId) > 0
+                || groupRepository.existsByCoOrganisers_Id(memberId);
+    }
+
+    @Transactional
+    public void removeAllSubscriptionsForMember(Long memberId) {
+        subscriptionRepository.deleteByMemberId(memberId);
+    }
     
     // ============================================================
     // PUBLIC METHODS - Group Members

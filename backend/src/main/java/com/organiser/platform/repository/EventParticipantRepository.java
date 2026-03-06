@@ -2,7 +2,12 @@ package com.organiser.platform.repository;
 
 import com.organiser.platform.model.EventParticipant;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.Instant;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,4 +27,8 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     
     // Admin dashboard queries
     Long countByMemberId(Long memberId);
+
+    @Modifying
+    @Query("DELETE FROM EventParticipant ep WHERE ep.member.id = :memberId AND ep.event.eventDate > :cutoff")
+    void deleteFutureParticipations(@Param("memberId") Long memberId, @Param("cutoff") Instant cutoff);
 }

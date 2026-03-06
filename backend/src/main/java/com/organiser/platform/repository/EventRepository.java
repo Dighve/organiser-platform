@@ -78,4 +78,6 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     // Admin dashboard queries
     @Query("SELECT COUNT(e) FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId")
     Long countByOrganiserId(@Param("organiserId") Long organiserId);
+
+    boolean existsByHostMemberIdAndEventDateAfter(Long hostMemberId, Instant dateTime);
 }

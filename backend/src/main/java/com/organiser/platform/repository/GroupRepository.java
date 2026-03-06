@@ -19,4 +19,6 @@ public interface GroupRepository extends JpaRepository<Group, Long> {
     
     // Admin dashboard queries
     Long countByPrimaryOrganiserId(Long organiserId);
+
+    boolean existsByCoOrganisers_Id(Long organiserId);
 }

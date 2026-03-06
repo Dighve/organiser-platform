@@ -31,4 +31,5 @@ public class MemberDTO {
     private Boolean hasAcceptedUserAgreement;
     private LocalDateTime userAgreementAcceptedAt;
     private LocalDateTime joinedAt; // For event participants: registrationDate, for group members: subscription date
+    private Boolean deleted;
 }

@@ -174,6 +174,8 @@ export const membersAPI = {
   getMemberById: (memberId) => api.get(`/members/${memberId}`),
   
   updateProfile: (data) => api.put('/members/me', data),
+
+  deleteProfile: () => api.delete('/members/me'),
 }
 
 // Legal API
