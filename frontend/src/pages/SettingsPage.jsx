@@ -52,8 +52,14 @@ export default function SettingsPage() {
   const eventsCandidate = myEventsData?.data?.content ?? myEventsData?.data ?? myEventsData ?? []
   const rawEvents = Array.isArray(eventsCandidate) ? eventsCandidate : []
 
+  const now = Date.now()
   const hostingEvents = rawEvents.filter(
-    (ev) => ev.hostMemberId && memberData?.id && Number(ev.hostMemberId) === Number(memberData.id)
+    (ev) =>
+      ev.hostMemberId &&
+      memberData?.id &&
+      Number(ev.hostMemberId) === Number(memberData.id) &&
+      ev.eventDate &&
+      new Date(ev.eventDate).getTime() > now
   )
 
   const formatDate = (iso) => {
@@ -116,7 +122,9 @@ export default function SettingsPage() {
                         {group.name?.charAt(0)?.toUpperCase() || 'G'}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-900 truncate">{group.name}</p>
+                        <p className="font-semibold text-slate-900 whitespace-normal break-words leading-snug line-clamp-2">
+                          {group.name}
+                        </p>
                         <p className="text-sm text-slate-500 truncate">Organiser</p>
                       </div>
                     </a>
@@ -132,13 +140,15 @@ export default function SettingsPage() {
                       <a
                         key={ev.id}
                         href={`/events/${ev.id}`}
-                        className="flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-3 py-3 shadow-sm hover:border-purple-200 hover:shadow-md transition"
+                        className="w-full flex items-center gap-3 rounded-2xl border border-slate-100 bg-white px-3 py-3 shadow-sm hover:border-purple-200 hover:shadow-md transition"
                       >
                         <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white grid place-items-center">
                           <Calendar className="h-6 w-6" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-slate-900 truncate">{ev.title}</p>
+                          <p className="font-semibold text-slate-900 whitespace-normal break-words leading-snug line-clamp-2">
+                            {ev.title}
+                          </p>
                           <p className="text-sm text-slate-500 truncate">{formatDate(ev.eventDate)}</p>
                         </div>
                       </a>
