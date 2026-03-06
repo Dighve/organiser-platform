@@ -213,6 +213,22 @@ export const adminAPI = {
   
   getAgreementHistory: (agreementType, limit = 10) => 
     api.get(`/admin/agreements/${agreementType}/history?limit=${limit}`),
+
+  // Feedback
+  getFeedback: () => api.get('/feedback/admin'),
+  updateFeedback: (id, params) => api.patch(`/feedback/admin/${id}`, null, { params }),
+}
+
+// Feedback API (user)
+export const feedbackAPI = {
+  submit: (data) => api.post('/feedback', data),
+  uploadScreenshot: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return api.post('/files/upload/feedback', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+  },
 }
 
 // Notifications API

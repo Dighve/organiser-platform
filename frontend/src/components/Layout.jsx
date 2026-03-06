@@ -11,6 +11,7 @@ import LoginModal from './LoginModal'
 import OrganiserAgreementModal from './OrganiserAgreementModal'
 import UserAgreementModal from './UserAgreementModal'
 import NotificationBell from './NotificationBell'
+import FeedbackWidget from './FeedbackWidget'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -206,7 +207,13 @@ export default function Layout() {
                         to="/my-groups"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
-                        Your Groups
+                        Groups
+                      </Link>
+                      <Link
+                        to="/settings"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Settings
                       </Link>
                       {isAdmin && (
                         <Link
@@ -214,7 +221,7 @@ export default function Layout() {
                           className="block px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 font-semibold flex items-center space-x-2"
                         >
                           <Shield className="h-4 w-4" />
-                          <span>Admin Dashboard</span>
+                          <span>Admin </span>
                         </Link>
                       )}
                       {!memberData?.hasOrganiserRole && !featureFlags?.DISABLE_BECOME_ORGANISER_BUTTON && (
@@ -261,14 +268,26 @@ export default function Layout() {
               </div>
             )}
           </div>
-          {/* Mobile Navigation */}
+          {/* Mobile Navigation - side drawer */}
           {mobileMenuOpen && isAuthenticated && (
-            <div className="md:hidden py-4 space-y-2 bg-white/10 backdrop-blur-md rounded-b-2xl mt-2">
-              {isAuthenticated ? (
-                <>
+            <div className="fixed inset-0 z-[1100] md:hidden">
+              <button
+                aria-label="Close menu"
+                className="absolute inset-0 w-full h-full bg-[rgba(0,0,0,0.5)] backdrop-blur-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <div className="absolute right-0 top-0 h-full w-80 max-w-[80%] bg-gradient-to-b from-purple-600 via-pink-600 to-orange-500 shadow-2xl flex flex-col">
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="self-end p-3 text-white hover:text-white/80"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+                <div className="flex-1 overflow-y-auto pb-4 space-y-1">
                   <Link
                     to="/profile"
-                    className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                    className={`flex items-center gap-3 pl-5 pr-4 py-3 text-base font-semibold text-white hover:bg-white/10 ${location.pathname === '/profile' ? 'bg-white/10' : ''}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <User className="h-5 w-5 text-white" />
@@ -276,43 +295,54 @@ export default function Layout() {
                   </Link>
                   <Link
                     to="/my-groups"
-                    className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                    className={`flex items-center gap-3 pl-5 pr-4 py-3 text-base font-semibold text-white hover:bg-white/10 ${location.pathname === '/my-groups' ? 'bg-white/10' : ''}`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     <Users className="h-5 w-5 text-white" />
-                    <span>Your Groups</span>
+                    <span>Groups</span>
                   </Link>
-                  <div
-                    className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                  <Link
+                    to="/settings"
+                    className={`flex items-center gap-3 pl-5 pr-4 py-3 text-base font-semibold text-white hover:bg-white/10 ${location.pathname === '/settings' ? 'bg-white/10' : ''}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <User className="h-5 w-5 text-white" />
+                    <span>Settings</span>
+                  </Link>
+                  <button
+                    className="flex w-full items-center gap-3 pl-5 pr-4 py-3 text-base font-semibold text-white hover:bg-white/10"
                     onClick={() => {
                       setMobileMenuOpen(false)
                       navigate('/notifications')
                     }}
                   >
                     <NotificationBell
-                      className="flex-shrink-0 translate-y-[2px]"
-                      buttonClassName="text-white hover:text-white/80 p-0"
-                      iconClassName="text-white h-5 w-5"
+                      className="flex-shrink-0"
+                      buttonClassName="p-0 text-white hover:text-white"
+                      iconClassName="h-5 w-5"
                       size="compact"
                       disableDropdown
                       showBadge
                     />
                     <span>Notifications</span>
-                  </div>
+                  </button>
                   {isAdmin && (
                     <Link
                       to="/admin"
-                      className="flex items-center gap-3 text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                      className={`flex items-center gap-3 pl-5 pr-4 py-3 text-base font-semibold text-white hover:bg-white/10 ${location.pathname.startsWith('/admin') ? 'bg-white/10' : ''}`}
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <Shield className="h-5 w-5 text-white" />
-                      <span>Admin Dashboard</span>
+                      <span>Admin</span>
                     </Link>
                   )}
                   {!memberData?.hasOrganiserRole && !featureFlags?.DISABLE_BECOME_ORGANISER_BUTTON && (
                     <button
-                      onClick={handleBecomeOrganiser}
-                      className="flex items-center gap-3 w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                      onClick={() => {
+                        handleBecomeOrganiser()
+                        setMobileMenuOpen(false)
+                      }}
+                      className="flex items-center gap-3 w-full text-left pl-5 pr-4 py-3 text-base font-semibold text-white hover:bg-white/10"
                     >
                       <Shield className="h-5 w-5 text-white" />
                       Become Organiser
@@ -323,13 +353,13 @@ export default function Layout() {
                       handleLogout()
                       setMobileMenuOpen(false)
                     }}
-                    className="flex items-center gap-3 w-full text-left text-white hover:text-white/80 px-3 py-2 rounded-md text-base font-semibold"
+                    className="flex items-center gap-3 w-full text-left pl-5 pr-4 py-3 text-base font-semibold text-white hover:bg-white/10"
                   >
                     <LogOut className="h-5 w-5 text-white" />
                     <span>Logout</span>
                   </button>
-                </>
-              ) : null}
+                </div>
+              </div>
             </div>
           )}
         </nav>
@@ -372,6 +402,9 @@ export default function Layout() {
           queryClient.invalidateQueries(['currentMember'])
         }}
       />
+
+      {/* Feedback floating button */}
+      {isAuthenticated && <FeedbackWidget />}
     </div>
   )
 }

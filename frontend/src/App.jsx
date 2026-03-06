@@ -22,6 +22,7 @@ const HikingGradeFAQPage = lazy(() => import('./pages/HikingGradeFAQPage'))
 const MemberDetailPage = lazy(() => import('./pages/MemberDetailPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -146,6 +147,16 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <SettingsPage />
               </Suspense>
             </PrivateRoute>
           }

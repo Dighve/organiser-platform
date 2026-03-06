@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore'
 import { membersAPI } from '../lib/api'
 import ImagePositionModal from '../components/ImagePositionModal'
 import toast from 'react-hot-toast'
-import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Trash2, AlertTriangle } from 'lucide-react'
+import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield } from 'lucide-react'
 import axios from 'axios'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
@@ -33,8 +33,6 @@ export default function ProfilePage() {
   const [tempImageUrl, setTempImageUrl] = useState('')  // Temporary image for positioning
   const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 })  // Image focus position
   const fileInputRef = useRef(null)  // File input reference
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [deleting, setDeleting] = useState(false)
 
   // ============================================================
   // DATA FETCHING
@@ -189,21 +187,6 @@ export default function ProfilePage() {
     setProfilePhotoUrl(tempImageUrl)
     setShowPositionModal(false)
     toast.success('Photo position saved! Click "Save Changes" to update your profile.')
-  }
-
-  const handleDeleteProfile = async () => {
-    setDeleting(true)
-    try {
-      await membersAPI.deleteProfile()
-      toast.success('Profile deleted. You have been logged out.')
-      logout()
-      window.location.href = '/'
-    } catch (error) {
-      toast.error(error.response?.data?.message || 'Unable to delete profile. See instructions above.')
-    } finally {
-      setDeleting(false)
-      setShowDeleteModal(false)
-    }
   }
 
   // ============================================================
@@ -393,20 +376,6 @@ export default function ProfilePage() {
               ))}
             </div>
 
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(true)}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-red-200 bg-red-50 text-red-700 font-semibold hover:bg-red-100 transition"
-              >
-                <Trash2 className="h-5 w-5" />
-                Delete Profile
-              </button>
-              <p className="text-xs text-slate-500 mt-2">
-                If you are an organiser, please email support@outmeets.com to transfer ownership before deletion.
-              </p>
-            </div>
-
             {isEditing && (
               <div className="hidden sm:block pt-2">
                 <button
@@ -444,44 +413,6 @@ export default function ProfilePage() {
               )}
               <span className="text-xs uppercase tracking-wide">{updateProfileMutation.isLoading ? 'Saving' : 'Save'}</span>
             </button>
-          </div>
-        </div>
-      )}
-
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowDeleteModal(false)} />
-          <div className="relative max-w-lg w-full bg-white rounded-2xl shadow-2xl p-6 space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-red-50 rounded-full">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-gray-900">Delete your profile?</h3>
-                <p className="text-sm text-gray-600">
-                  This removes you from all future events and groups. Past activity will show as “Deleted user”.
-                </p>
-                <ul className="text-sm text-gray-600 list-disc ml-5 space-y-1">
-                  <li>If you are an organiser, please email support@outmeets.com to transfer ownership first.</li>
-                  <li>If you host upcoming events, remove yourself as host before deletion.</li>
-                </ul>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteProfile}
-                disabled={deleting}
-                className="px-5 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition disabled:opacity-50"
-              >
-                {deleting ? 'Deleting...' : 'Delete Profile'}
-              </button>
-            </div>
           </div>
         </div>
       )}

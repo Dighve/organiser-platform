@@ -22,6 +22,39 @@ public class FileUploadController {
 
     private final FileUploadService fileUploadService;
 
+    @PostMapping(value = "/upload/feedback", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadFeedbackScreenshot(
+            @RequestParam("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        try {
+            log.debug("Received feedback screenshot upload request: {} (size: {} bytes)",
+                    file.getOriginalFilename(), file.getSize());
+
+            String imageUrl = fileUploadService.uploadImage(file, "hikehub/feedback");
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("imageUrl", imageUrl);
+            response.put("message", "Screenshot uploaded successfully");
+
+            return ResponseEntity.ok(response);
+
+        } catch (IOException e) {
+            log.error("Failed to upload feedback screenshot", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            log.error("Unexpected error during feedback screenshot upload", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("error", "An unexpected error occurred");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
     /**
      * Upload an event feature photo
      * @param file The image file to upload

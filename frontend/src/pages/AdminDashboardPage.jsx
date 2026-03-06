@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI, featureFlagsAPI } from '../lib/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle } from 'lucide-react';
+import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle, MessageSquare, Flag } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -62,6 +62,15 @@ export default function AdminDashboardPage() {
       const response = await featureFlagsAPI.getAllFeatureFlags();
       return response;
     },
+  });
+
+  const { data: feedbackList } = useQuery({
+    queryKey: ['adminFeedback'],
+    queryFn: async () => {
+      const response = await adminAPI.getFeedback();
+      return response.data || response;
+    },
+    enabled: activeTab === 'feedback',
   });
 
   // Agreement queries
@@ -274,6 +283,7 @@ export default function AdminDashboardPage() {
               { key: 'dashboard', icon: TrendingUp, label: 'Dashboard' },
               { key: 'feature-flags', icon: Settings, label: 'Feature Flags' },
               { key: 'agreements', icon: Shield, label: 'Agreements' },
+              { key: 'feedback', icon: MessageSquare, label: 'Feedback' },
             ].map(({ key, icon: Icon, label }) => (
               <button
                 key={key}
@@ -831,6 +841,107 @@ export default function AdminDashboardPage() {
                   )}
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'feedback' && (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-600">Feedback inbox</p>
+                <p className="text-xs text-gray-500">Submissions from the in-app feedback button.</p>
+              </div>
+              <Flag className="h-5 w-5 text-purple-600" />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left">
+                <thead>
+                  <tr className="text-gray-500 border-b">
+                    <th className="py-2 pr-4">Created</th>
+                    <th className="py-2 pr-4">Type</th>
+                    <th className="py-2 pr-4">Summary</th>
+                    <th className="py-2 pr-4">Status</th>
+                    <th className="py-2 pr-4">Priority</th>
+                    <th className="py-2 pr-4">Reporter</th>
+                    <th className="py-2">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {feedbackList?.map((fb) => (
+                    <tr key={fb.id} className="border-b last:border-0">
+                      <td className="py-2 pr-4 text-gray-700">{fb.createdAt ? new Date(fb.createdAt).toLocaleString() : ''}</td>
+                      <td className="py-2 pr-4 font-semibold text-purple-700">{fb.type}</td>
+                      <td className="py-2 pr-4 text-gray-800">{fb.summary}</td>
+                      <td className="py-2 pr-4">
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">{fb.status}</span>
+                      </td>
+                      <td className="py-2 pr-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          fb.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                          fb.priority === 'LOW' ? 'bg-emerald-100 text-emerald-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {fb.priority}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4 text-gray-700">{fb.memberName || fb.email || 'Anonymous'}</td>
+                      <td className="py-2 pr-4 flex items-center gap-2">
+                        <select
+                          className="border border-gray-200 rounded-md text-xs px-2 py-1"
+                          value={fb.status}
+                          onChange={async (e) => {
+                            try {
+                              await adminAPI.updateFeedback(fb.id, { status: e.target.value })
+                              queryClient.invalidateQueries(['adminFeedback'])
+                              toast.success('Status updated')
+                            } catch {
+                              toast.error('Update failed')
+                            }
+                          }}
+                        >
+                          <option value="NEW">NEW</option>
+                          <option value="TRIAGING">TRIAGING</option>
+                          <option value="RESOLVED">RESOLVED</option>
+                          <option value="WONT_FIX">WONT_FIX</option>
+                        </select>
+                        <select
+                          className="border border-gray-200 rounded-md text-xs px-2 py-1"
+                          value={fb.priority}
+                          onChange={async (e) => {
+                            try {
+                              await adminAPI.updateFeedback(fb.id, { priority: e.target.value })
+                              queryClient.invalidateQueries(['adminFeedback'])
+                              toast.success('Priority updated')
+                            } catch {
+                              toast.error('Update failed')
+                            }
+                          }}
+                        >
+                          <option value="LOW">LOW</option>
+                          <option value="MEDIUM">MEDIUM</option>
+                          <option value="HIGH">HIGH</option>
+                        </select>
+                        {fb.screenshotUrl && (
+                          <a
+                            href={fb.screenshotUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-purple-700 hover:underline"
+                          >
+                            Screenshot
+                          </a>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {!feedbackList?.length && (
+                    <tr>
+                      <td colSpan={7} className="py-6 text-center text-gray-500">No feedback yet</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         )}
