@@ -34,6 +34,13 @@ export default function Layout() {
     setSearchQuery(urlSearch)
   }, [location.search])
 
+  // Listen for global requests to open the login modal
+  useEffect(() => {
+    const handler = () => setLoginModalOpen(true)
+    window.addEventListener('open-login-modal', handler)
+    return () => window.removeEventListener('open-login-modal', handler)
+  }, [])
+
   // Fetch current member data for profile photo
   const { data: memberData } = useQuery({
     queryKey: ['currentMember'],

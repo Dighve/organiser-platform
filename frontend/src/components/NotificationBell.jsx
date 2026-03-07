@@ -119,9 +119,21 @@ export default function NotificationBell({
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Bell Icon Button */}
-      <button
-        onClick={disableDropdown ? undefined : () => setOpen(!isOpenState)}
-        className={`relative inline-flex items-center justify-center ${buttonPadding} transition-colors rounded-full hover:bg-purple-50 ${buttonClassName}`}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={disableDropdown ? () => navigate('/notifications') : () => setOpen(!isOpenState)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            if (disableDropdown) {
+              navigate('/notifications')
+            } else {
+              setOpen(!isOpenState)
+            }
+          }
+        }}
+        className={`relative inline-flex items-center justify-center ${buttonPadding} transition-colors rounded-full hover:bg-purple-50 cursor-pointer ${buttonClassName}`}
       >
         <Bell className={`${iconSize} ${iconClassName}`} />
         {showBadge && unreadCount > 0 && (
@@ -129,7 +141,7 @@ export default function NotificationBell({
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
-      </button>
+      </div>
 
       {/* Dropdown Panel */}
       {!disableDropdown && isOpenState && (

@@ -370,8 +370,8 @@ export default function EventDetailPage() {
     participantIds: [],
     currentParticipants: 0,
   }
-  const hostName = event?.hostMemberName || displayEvent?.hostMemberName
-  const hasHost = Boolean(hostName)
+  const hostName = event?.hostMemberName || event?.hostName || displayEvent?.hostMemberName
+  const hasHost = Boolean((event?.hostMemberId !== null && event?.hostMemberId !== undefined) || (hostName && hostName.trim()))
   const hasEventDetails = Boolean(
     event?.difficultyLevel ||
     event?.distanceKm ||

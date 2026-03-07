@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { Mountain, Mail, CheckCircle, X } from 'lucide-react'
+import { Mail, CheckCircle, X } from 'lucide-react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
@@ -141,12 +141,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       />
       
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-8 transform transition-all">
+      <div className="flex min-h-full items-end sm:items-center justify-center p-3 sm:p-4">
+        <div className="relative bg-white sm:bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl shadow-lg sm:shadow-2xl w-full max-w-xl sm:max-w-md sm:px-8 sm:py-8 px-5 py-6 pb-8 sm:pb-8 transform transition-all">
           {/* Close button */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -192,33 +192,28 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                   Close
                 </button>
               </div>
-            </div>
-          ) : (
-            // Login form
-            <div>
-              <div className="flex justify-center">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-500 rounded-2xl blur-xl opacity-50" />
-                  <div className="relative bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-2xl">
-                    <Mountain className="h-8 w-8 text-white" />
-                  </div>
-                </div>
               </div>
-              <h2 className="mt-6 text-center text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+          ) : (
+              // Login form
+            <div>
+              {/* mobile drag handle */}
+              <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-gray-300 sm:hidden" />
+
+              <h2 className="text-center text-xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Sign in to join
               </h2>
-              <p className="mt-2 text-center text-sm text-gray-600">
+              <p className="mt-2 text-center text-xs sm:text-sm text-gray-600 px-2">
                 {showMagicLink ? '🔐 No password needed! We\'ll send you a secure magic link.' : '⚡ Quick and secure sign-in'}
               </p>
 
               {!showMagicLink ? (
                 // Google OAuth primary option
-                <div className="mt-6 space-y-4">
+                <div className="mt-5 sm:mt-6 space-y-3 sm:space-y-4">
                   <button
                     type="button"
                     onClick={() => googleLogin()}
                     disabled={isLoading}
-                    className="w-full py-3 px-6 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full py-2.5 sm:py-3 px-5 sm:px-6 bg-white border border-gray-200 shadow-sm text-gray-700 text-sm sm:text-base font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600" />
@@ -245,13 +240,13 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                   <button
                     type="button"
                     onClick={() => setShowMagicLink(true)}
-                    className="w-full py-3 px-6 bg-white border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3"
+                    className="w-full py-2.5 sm:py-3 px-5 sm:px-6 bg-white border border-gray-200 shadow-sm text-gray-700 text-sm sm:text-base font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3"
                   >
                     <Mail className="h-5 w-5 text-purple-600" />
                     <span>Continue with Email</span>
                   </button>
 
-                  <div className="mt-4 text-center text-xs text-gray-500 pt-4 border-t border-gray-200">
+                  <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs text-gray-500 pt-4 border-t border-gray-200">
                     <p>
                       ✨ <strong>Instant sign-in</strong> with Google or secure magic link
                     </p>
@@ -260,7 +255,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
               ) : (
                 // Magic link fallback
                 <div>
-                <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
+                <form className="mt-5 sm:mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)}>
                 <div>
                   <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
                     Email Address *

@@ -102,6 +102,17 @@ public class AuthService {
         
         // Get user
         Member member = magicLink.getUser();
+
+        // Reactivate soft-deleted accounts on successful login
+        if (Boolean.FALSE.equals(member.getActive())) {
+            member.setActive(true);
+            // If the display name was scrubbed, set a sensible default from email
+            if (member.getDisplayName() == null || "Deleted user".equalsIgnoreCase(member.getDisplayName().trim())) {
+                String localPart = member.getEmail() != null ? member.getEmail().split("@")[0] : "User";
+                member.setDisplayName(localPart);
+            }
+            memberRepository.save(member);
+        }
         
         // Mark user as verified
         if (!member.getVerified()) {

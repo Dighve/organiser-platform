@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -120,6 +120,7 @@ export default function GroupDetailPage() {
   // ============================================
   const { id } = useParams() // Get group ID from URL
   const navigate = useNavigate()
+  const location = useLocation()
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
   const { isGroupLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
@@ -311,10 +312,11 @@ export default function GroupDetailPage() {
     updateGroupMutation.mutate(updateData)
   }
 
-  // Join group (redirect to login if not authenticated)
+  // Join group (open login modal if not authenticated)
   const handleSubscribe = () => {
     if (!isAuthenticated) {
-      navigate('/login')
+      useAuthStore.getState().setReturnUrl(location.pathname + location.search)
+      window.dispatchEvent(new CustomEvent('open-login-modal'))
       return
     }
     subscribeMutation.mutate()
@@ -798,7 +800,10 @@ export default function GroupDetailPage() {
                       <p className="text-sm text-gray-600">🔐 Login to join this group and participate in events</p>
                     </div>
                     <button
-                      onClick={() => navigate('/login')}
+                      onClick={() => {
+                        useAuthStore.getState().setReturnUrl(location.pathname + location.search)
+                        window.dispatchEvent(new CustomEvent('open-login-modal'))
+                      }}
                       className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
                     >
                       Login
@@ -904,7 +909,10 @@ export default function GroupDetailPage() {
           )
         ) : (
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => {
+              useAuthStore.getState().setReturnUrl(location.pathname + location.search)
+              window.dispatchEvent(new CustomEvent('open-login-modal'))
+            }}
             className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
           >
             <LogIn className="h-5 w-5" />

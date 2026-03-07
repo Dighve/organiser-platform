@@ -53,14 +53,13 @@ export default function SettingsPage() {
   const rawEvents = Array.isArray(eventsCandidate) ? eventsCandidate : []
 
   const now = Date.now()
-  const hostingEvents = rawEvents.filter(
-    (ev) =>
-      ev.hostMemberId &&
-      memberData?.id &&
-      Number(ev.hostMemberId) === Number(memberData.id) &&
-      ev.eventDate &&
-      new Date(ev.eventDate).getTime() > now
-  )
+  const hostingEvents = rawEvents.filter((ev) => {
+    if (!(ev.hostMemberId && memberData?.id && Number(ev.hostMemberId) === Number(memberData.id))) return false
+    if (!ev.eventDate) return true
+    const ts = Date.parse(ev.eventDate)
+    if (Number.isNaN(ts)) return true
+    return ts > now
+  })
 
   const formatDate = (iso) => {
     try {
