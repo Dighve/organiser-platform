@@ -36,16 +36,22 @@ export default function GroupTermsModal({ isOpen, onClose, onAccept, groupName, 
             <p className="text-gray-600">
               Please review and accept the terms for <span className="font-semibold text-gray-900">{groupName}</span>
             </p>
+            <p className="mt-2 text-xs text-gray-500 sm:hidden">
+              Tip: swipe/scroll through the terms; the accept button is below.
+            </p>
           </div>
 
           {/* Terms Content - Scrollable */}
-          <div className="flex-1 overflow-y-auto border-2 border-gray-200 rounded-xl p-6 mb-6 bg-gray-50">
+          <div className="flex-1 overflow-y-auto border-2 border-gray-200 rounded-xl p-6 mb-6 bg-gray-50 relative">
             <div className="flex items-center gap-2 mb-4">
               <FileText className="h-5 w-5 text-purple-600" />
               <h3 className="text-lg font-bold text-gray-900">Terms You Must Accept</h3>
             </div>
             <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap leading-relaxed">
               {terms}
+            </div>
+            <div className="sticky bottom-0 left-0 right-0 mt-6 -mx-6 px-6 py-2 bg-gradient-to-t from-gray-50 via-gray-50/90 to-transparent text-center text-xs text-gray-500 sm:hidden">
+              Swipe up to finish reading and reveal the accept button.
             </div>
           </div>
 
