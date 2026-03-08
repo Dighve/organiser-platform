@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus } from 'lucide-react'
+import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
@@ -522,9 +522,18 @@ export default function GroupDetailPage() {
                       {/* Past Events Section */}
                       {pastEvents.length > 0 && (
                         <div>
-                          <h2 className="text-base font-semibold text-gray-500 mb-3">
-                            Past Events ({pastEvents.length})
-                          </h2>
+                          <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-base font-semibold text-gray-500">
+                              Past Events ({pastEvents.length})
+                            </h2>
+                            <button
+                              onClick={() => navigate(`/events?groupId=${id}&past=true&search=:past :group:${id}`)}
+                              className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-purple-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-purple-300 bg-white"
+                            >
+                              <Search className="h-4 w-4" />
+                              Browse past
+                            </button>
+                          </div>
                           <div className="space-y-2">
                             {pastEvents.map(event => (
                               <EventCard

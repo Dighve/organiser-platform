@@ -1,7 +1,7 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
@@ -24,6 +24,30 @@ export default function EventsPage() {
   const [page, setPage] = useState(0)  // Current pagination page (0-indexed)
   const [searchKeyword, setSearchKeyword] = useState(urlSearch)  // Active search query for API
   const [searchInput, setSearchInput] = useState(urlSearch)  // Search input field value
+  const groupIdParam = searchParams.get('groupId')
+  const pastOnlyParam = searchParams.get('past') === 'true'
+
+  // Token parsing: :group:<id> and :past in search string
+  const { plainSearch, tokenGroupId, tokenPast } = useMemo(() => {
+    const tokens = (searchKeyword || '').split(/\s+/).filter(Boolean)
+    let g = null
+    let past = false
+    const remaining = []
+    tokens.forEach((t) => {
+      if (t.startsWith(':group:')) {
+        const maybeId = t.replace(':group:', '')
+        if (maybeId) g = maybeId
+      } else if (t === ':past') {
+        past = true
+      } else {
+        remaining.push(t)
+      }
+    })
+    return { plainSearch: remaining.join(' ').trim(), tokenGroupId: g, tokenPast: past }
+  }, [searchKeyword])
+
+  const groupId = groupIdParam || tokenGroupId
+  const pastOnly = pastOnlyParam || tokenPast
   
   // ============================================================
   // EFFECTS
@@ -43,18 +67,36 @@ export default function EventsPage() {
   
   // Fetch events - either search results or all upcoming events
   const { data, isLoading } = useQuery({
-    queryKey: ['events', page, searchKeyword],
-    queryFn: () => 
-      searchKeyword 
+    queryKey: ['events', page, searchKeyword, groupId, pastOnly],
+    queryFn: () => {
+      if (groupId) {
+        return eventsAPI.getEventsByGroup(groupId, page, 50)
+      }
+      return searchKeyword 
         ? eventsAPI.searchEvents(searchKeyword, page, 20)
-        : eventsAPI.getUpcomingEvents(page, 20),
+        : eventsAPI.getUpcomingEvents(page, 20)
+    },
   })
 
   // ============================================================
   // DERIVED STATE
   // ============================================================
-  const events = data?.data?.content || []  // Extract events array from paginated response
-  const totalPages = data?.data?.totalPages || 0  // Total pages for pagination
+  let events = data?.data?.content || []  // Extract events array from paginated response
+  let totalPages = data?.data?.totalPages || 0  // Total pages for pagination
+
+  // Filter for group + past token, and apply plain text search client-side to keep filters working
+  if (groupId) {
+    events = events.filter((e) => {
+      const isPast = new Date(e.eventDate) < new Date()
+      return pastOnly ? isPast : !isPast
+    }).filter((e) => {
+      if (!plainSearch) return true
+      const haystack = `${e.title || ''} ${e.location || ''}`.toLowerCase()
+      return haystack.includes(plainSearch.toLowerCase())
+    })
+    // static paging for filtered list
+    totalPages = 1
+  }
 
   // ============================================================
   // EVENT HANDLERS

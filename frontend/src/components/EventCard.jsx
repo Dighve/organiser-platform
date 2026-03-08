@@ -4,15 +4,19 @@ import { format } from 'date-fns'
 import { useState } from 'react'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 
-export default function EventCard({ event }) {
+export default function EventCard({ event, isPast = false }) {
   const formattedDate = format(new Date(event.eventDate), 'MMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
+  const isPastLocal = new Date(event.eventDate) < new Date()
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const { isEventLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
 
   return (
-    <Link to={`/events/${event.id}`} className="card hover:shadow-lg transition-shadow duration-200 sm:p-0">
+    <Link
+      to={`/events/${event.id}`}
+      className={`card hover:shadow-lg transition-shadow duration-200 sm:p-0 ${(isPast || isPastLocal) ? 'opacity-80 grayscale-[0.2]' : ''}`}
+    >
       {/* Event Image */}
       <div className="relative h-28 sm:h-48 mb-3 sm:mb-4 rounded-2xl overflow-hidden bg-gradient-to-br from-purple-200 to-pink-200">
         {/* Always show gradient background with icon when no image or image failed */}
@@ -39,6 +43,11 @@ export default function EventCard({ event }) {
         {event.status === 'FULL' && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
             Full
+          </div>
+        )}
+        {(isPast || isPastLocal) && (
+          <div className="absolute top-2 left-2 bg-gray-700/80 text-white px-3 py-1 rounded-full text-sm font-medium">
+            Past
           </div>
         )}
         {event.difficultyLevel && (
