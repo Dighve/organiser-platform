@@ -1,0 +1,23 @@
+{
+  "name": "OutMeets",
+  "short_name": "OutMeets",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#9333EA",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/1.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon1.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

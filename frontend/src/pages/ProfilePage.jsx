@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore'
 import { membersAPI } from '../lib/api'
 import ImagePositionModal from '../components/ImagePositionModal'
 import toast from 'react-hot-toast'
-import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Clock3 } from 'lucide-react'
+import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Calendar } from 'lucide-react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 
@@ -382,9 +382,9 @@ export default function ProfilePage() {
               <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Event history</h3>
               <button
                 onClick={() => navigate('/events?search=:me :past')}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:border-purple-300 hover:text-purple-700 bg-white shadow-sm"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-indigo-100 text-sm font-semibold text-indigo-700 hover:border-indigo-200 hover:text-indigo-800 bg-indigo-50 shadow-sm"
               >
-                <Clock3 className="h-4 w-4" />
+                <Calendar className="h-4 w-4" />
                 Event History
               </button>
             </div>

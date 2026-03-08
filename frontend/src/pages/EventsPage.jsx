@@ -1,7 +1,7 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { Search } from 'lucide-react'
@@ -76,7 +76,19 @@ export default function EventsPage() {
   // Fetch events - either search results or all upcoming events
   const { data, isLoading } = useQuery({
     queryKey: ['events', page, searchKeyword],
-    queryFn: () => eventsAPI.searchAdvancedEvents({ q: searchKeyword, page, size: 50 }),
+    queryFn: () => {
+      const hasMe = searchKeyword.includes(':me')
+      const hasHosting = searchKeyword.includes(':hosting')
+      const hasGroup = searchKeyword.includes(':group:')
+      const hasPast = searchKeyword.includes(':past')
+
+      // Fallback: if it's a simple ":me" (optionally with :past) query, use my-joined endpoint
+      if (hasMe && !hasHosting && !hasGroup) {
+        return eventsAPI.getMyEvents(page, 100, hasPast)
+      }
+
+      return eventsAPI.searchAdvancedEvents({ q: searchKeyword, page, size: 50 })
+    },
   })
 
   // ============================================================

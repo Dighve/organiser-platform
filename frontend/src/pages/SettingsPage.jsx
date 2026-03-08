@@ -23,9 +23,9 @@ export default function SettingsPage() {
     enabled: !!memberData?.hasOrganiserRole,
   })
 
-  const { data: myEventsData } = useQuery({
+  const { data: hostingEventsData } = useQuery({
     queryKey: ['myEventsHosting'],
-    queryFn: () => eventsAPI.getMyEvents(),
+    queryFn: () => eventsAPI.searchAdvancedEvents({ q: ':hosting', page: 0, size: 100 }),
     enabled: !!memberData?.id,
   })
 
@@ -49,17 +49,13 @@ export default function SettingsPage() {
       ? organisedGroupsData
       : []
 
-  const eventsCandidate = myEventsData?.data?.content ?? myEventsData?.data ?? myEventsData ?? []
-  const rawEvents = Array.isArray(eventsCandidate) ? eventsCandidate : []
-
-  const now = Date.now()
-  const hostingEvents = rawEvents.filter((ev) => {
-    if (!(ev.hostMemberId && memberData?.id && Number(ev.hostMemberId) === Number(memberData.id))) return false
-    if (!ev.eventDate) return true
-    const ts = Date.parse(ev.eventDate)
-    if (Number.isNaN(ts)) return true
-    return ts > now
-  })
+  const hostingEvents = Array.isArray(hostingEventsData?.data?.content)
+    ? hostingEventsData.data.content
+    : Array.isArray(hostingEventsData?.data)
+      ? hostingEventsData.data
+      : Array.isArray(hostingEventsData)
+        ? hostingEventsData
+        : []
 
   const formatDate = (iso) => {
     try {

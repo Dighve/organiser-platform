@@ -24,6 +24,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final EventParticipantRepository eventParticipantRepository;
+    private final WebPushService webPushService;
     
     /**
      * Get all notifications for a member with pagination
@@ -102,6 +103,12 @@ public class NotificationService {
                 .build();
             
             notificationRepository.save(notification);
+            webPushService.sendToMember(
+                subscriber.getId(),
+                notification.getTitle(),
+                notification.getMessage(),
+                "/events/" + event.getId()
+            );
             log.info("Created NEW_EVENT notification for member {} for event {}", subscriber.getId(), event.getId());
         }
     }
@@ -138,6 +145,12 @@ public class NotificationService {
                 .build();
             
             notificationRepository.save(notification);
+            webPushService.sendToMember(
+                member.getId(),
+                notification.getTitle(),
+                notification.getMessage(),
+                "/events/" + event.getId()
+            );
             log.info("Created NEW_COMMENT notification for member {} for event {}", member.getId(), event.getId());
         }
     }

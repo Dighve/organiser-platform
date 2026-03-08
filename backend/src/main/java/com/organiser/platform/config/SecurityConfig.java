@@ -80,6 +80,11 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/agreements/organiser/current", "GET"),
                                 new AntPathRequestMatcher("/api/v1/agreements/verify-hash", "POST")
                         ).permitAll()
+
+                        // Public VAPID key endpoint
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/push/vapid-public-key", "GET")
+                        ).permitAll()
                         
                         // Event write operations - require authentication
                         .requestMatchers(
