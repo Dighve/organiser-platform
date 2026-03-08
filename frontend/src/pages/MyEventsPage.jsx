@@ -1,8 +1,8 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -16,15 +16,31 @@ export default function MyEventsPage() {
   // ============================================================
   const navigate = useNavigate()
   const { isAuthenticated } = useAuthStore()  // Global auth state
+  const [searchParams, setSearchParams] = useSearchParams()
   
   // ============================================================
   // DATA FETCHING
   // ============================================================
   
+  const initialTab = searchParams.get('tab') === 'past' ? 'past' : 'upcoming'
+  const [activeTab, setActiveTab] = useState(initialTab) // upcoming | past
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab === 'past' || tab === 'upcoming') {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
+
+  const switchTab = (tab) => {
+    setActiveTab(tab)
+    setSearchParams(tab === 'upcoming' ? {} : { tab })
+  }
+
   // Fetch all events user is registered for
   const { data, isLoading, error } = useQuery({
-    queryKey: ['myEvents'],
-    queryFn: () => eventsAPI.getMyEvents(0, 50),
+    queryKey: ['myEvents', activeTab],
+    queryFn: () => eventsAPI.getMyEvents(0, 200, activeTab === 'past'),
     enabled: isAuthenticated,
   })
   
@@ -96,14 +112,38 @@ export default function MyEventsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* ========== PAGE HEADER ========== */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">🎪 My Events</h1>
-          <button
-            onClick={() => navigate('/create-event')}
-            className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105"
-          >
-            ✨ Create Event
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="flex bg-white/80 border border-gray-200 rounded-full p-1 shadow-sm">
+              <button
+                onClick={() => switchTab('upcoming')}
+                className={`px-4 py-2 text-sm font-semibold rounded-full transition ${
+                  activeTab === 'upcoming'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow'
+                    : 'text-gray-700 hover:text-purple-600'
+                }`}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => switchTab('past')}
+                className={`px-4 py-2 text-sm font-semibold rounded-full transition ${
+                  activeTab === 'past'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow'
+                    : 'text-gray-700 hover:text-purple-600'
+                }`}
+              >
+                Past
+              </button>
+            </div>
+            <button
+              onClick={() => navigate('/create-event')}
+              className="py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105"
+            >
+              ✨ Create Event
+            </button>
+          </div>
         </div>
         
         {/* ========== EVENT LIST ========== */}
@@ -117,67 +157,75 @@ export default function MyEventsPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* EVENT GRID - Display all registered events */}
-            {events.map(event => (
-              <div
-                key={event.id}
-                className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all cursor-pointer transform hover:scale-105 border border-gray-100"
-                onClick={() => navigate(`/events/${event.id}`)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
-              >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-bold text-xl text-gray-900">{event.title}</h3>
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${
-                      event.status === 'PUBLISHED' ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white' :
-                      event.status === 'DRAFT' ? 'bg-gray-200 text-gray-800' :
-                      'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
-                    }`}>
-                      {event.status}
-                    </span>
-                  </div>
-                
-                <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                  {event.description || 'No description'}
-                </p>
-                
-                <div className="space-y-2 text-sm text-gray-700">
-                  <div className="flex items-center gap-2">
-                    <span>📅</span>
-                    <span>{new Date(event.eventDate).toLocaleDateString()}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>⏰</span>
-                    <span>{new Date(event.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>📍</span>
-                    <span className="line-clamp-1">{event.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span>🎯</span>
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
-                      {event.difficultyLevel}
-                    </span>
-                  </div>
-                </div>
-                
-                  <div className="mt-4 pt-4 border-t border-gray-200">
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
-                        👥 {event.currentParticipants} / {event.maxParticipants}
+            {events.map(event => {
+              const isPast = new Date(event.eventDate) < new Date()
+              return (
+                <div
+                  key={event.id}
+                  className={`bg-white/60 backdrop-blur-sm rounded-2xl shadow-lg hover:shadow-2xl transition-all cursor-pointer transform hover:scale-105 border border-gray-100 ${
+                    isPast ? 'opacity-85 grayscale-[0.2]' : ''
+                  }`}
+                  onClick={() => navigate(`/events/${event.id}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && navigate(`/events/${event.id}`)}
+                >
+                  <div className="p-6">
+                    <div className="flex justify-between items-start mb-3">
+                      <h3 className="font-bold text-xl text-gray-900">{event.title}</h3>
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full shadow-sm ${
+                        isPast ? 'bg-gray-200 text-gray-700' :
+                        event.status === 'PUBLISHED' ? 'bg-gradient-to-r from-green-400 to-emerald-500 text-white' :
+                        event.status === 'DRAFT' ? 'bg-gray-200 text-gray-800' :
+                        'bg-gradient-to-r from-yellow-400 to-orange-500 text-white'
+                      }`}>
+                        {isPast ? 'Past' : event.status}
                       </span>
-                      {event.cost > 0 && (
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold">
-                          £{event.cost.toFixed(2)}
+                    </div>
+                  
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                    {event.description || 'No description'}
+                  </p>
+                  
+                  <div className="space-y-2 text-sm text-gray-700">
+                    <div className="flex items-center gap-2">
+                      <span>📅</span>
+                      <span>{new Date(event.eventDate).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>⏰</span>
+                      <span>{new Date(event.eventDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span>📍</span>
+                      <span className="line-clamp-1">{event.location}</span>
+                    </div>
+                    {event.difficultyLevel && (
+                      <div className="flex items-center gap-2">
+                        <span>🎯</span>
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs">
+                          {event.difficultyLevel}
                         </span>
-                      )}
+                      </div>
+                    )}
+                  </div>
+                  
+                    <div className="mt-4 pt-4 border-t border-gray-200">
+                      <div className="flex justify-between items-center text-sm">
+                        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
+                          👥 {event.currentParticipants}{event.maxParticipants ? ` / ${event.maxParticipants}` : ''}
+                        </span>
+                        {event.cost > 0 && (
+                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold">
+                            £{event.cost.toFixed(2)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

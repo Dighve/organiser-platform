@@ -271,21 +271,120 @@ public class EventService {
         return eventRepository.searchEvents(keyword, Instant.now(), pageable)
                 .map(this::convertToDTO);
     }
-    
+
+    /**
+     * Advanced search with tokens.
+     */
+    @Transactional(readOnly = true)
+    public Page<EventDTO> searchEventsAdvanced(String query, int page, int size, Long userId) {
+        SearchTokens tokens = parseTokens(query);
+        Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").ascending());
+
+        Page<Event> results = eventRepository.searchAdvanced(
+                tokens.groupId,
+                tokens.hostingOnly ? userId : null,
+                tokens.memberId != null ? tokens.memberId : (tokens.me ? userId : null),
+                tokens.past,
+                tokens.future,
+                tokens.text,
+                Instant.now(),
+                pageable
+        );
+
+        return results.map(this::convertToDTO);
+    }
+
+    private SearchTokens parseTokens(String query) {
+        if (query == null) query = "";
+        String[] parts = query.split("\\s+");
+        boolean past = false;
+        boolean future = false;
+        boolean me = false;
+        boolean hosting = false;
+        Long groupId = null;
+        Long memberId = null;
+        StringBuilder text = new StringBuilder();
+
+        for (String raw : parts) {
+            if (raw.isBlank()) continue;
+            String t = raw.trim();
+            if (t.equalsIgnoreCase(":past")) {
+                past = true;
+                continue;
+            }
+            if (t.equalsIgnoreCase(":future")) {
+                future = true;
+                continue;
+            }
+            if (t.equalsIgnoreCase(":me")) {
+                me = true;
+                continue;
+            }
+            if (t.equalsIgnoreCase(":hosting")) {
+                hosting = true;
+                continue;
+            }
+            if (t.startsWith(":group:")) {
+                try {
+                    groupId = Long.parseLong(t.replace(":group:", ""));
+                    continue;
+                } catch (NumberFormatException ignored) {}
+            }
+            if (t.startsWith(":member:")) {
+                try {
+                    memberId = Long.parseLong(t.replace(":member:", ""));
+                    continue;
+                } catch (NumberFormatException ignored) {}
+            }
+            text.append(t).append(" ");
+        }
+
+        // default future if neither set
+        if (!past && !future) {
+            future = true;
+        }
+
+        SearchTokens tokens = new SearchTokens();
+        tokens.past = past;
+        tokens.future = future;
+        tokens.me = me;
+        tokens.hostingOnly = hosting;
+        tokens.groupId = groupId;
+        tokens.memberId = memberId;
+        tokens.text = text.toString().trim();
+        return tokens;
+    }
+
+    private static class SearchTokens {
+        boolean past;
+        boolean future;
+        boolean me;
+        boolean hostingOnly;
+        Long groupId;
+        Long memberId;
+        String text;
+    }
+
     /**
      * Get all events organised by a specific member.
      */
     @Transactional(readOnly = true)
-    public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable) {
-        return eventRepository.findByOrganiserId(organiserId, pageable)
-                .map(this::convertToDTO);
+    public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable, boolean past) {
+        Page<Event> page = eventRepository.findByOrganiserId(organiserId, pageable);
+        Instant now = Instant.now();
+        List<EventDTO> filtered = page.getContent().stream()
+                .filter(e -> past ? e.getEventDate().isBefore(now) : e.getEventDate().isAfter(now))
+                .sorted(past ? Comparator.comparing(Event::getEventDate).reversed() : Comparator.comparing(Event::getEventDate))
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        return new PageImpl<>(filtered, pageable, filtered.size());
     }
     
     /**
      * Get all events a member is participating in.
      */
     @Transactional(readOnly = true)
-    public Page<EventDTO> getEventsByParticipant(Long memberId, Pageable pageable) {
+    public Page<EventDTO> getEventsByParticipant(Long memberId, Pageable pageable, boolean past) {
         // Get all event participations for this member
         List<EventParticipant> participations = eventParticipantRepository.findByMemberId(memberId);
         
@@ -300,9 +399,19 @@ public class EventService {
         
         // Get events by IDs
         List<Event> events = eventRepository.findAllById(eventIds);
+
+        Instant now = Instant.now();
+        // Filter by past/upcoming
+        events = events.stream()
+                .filter(e -> past ? e.getEventDate().isBefore(now) : e.getEventDate().isAfter(now))
+                .collect(Collectors.toList());
         
-        // Sort by event date ascending
-        events.sort(Comparator.comparing(Event::getEventDate));
+        // Sort: past desc, upcoming asc
+        Comparator<Event> comparator = Comparator.comparing(Event::getEventDate);
+        if (past) {
+            comparator = comparator.reversed();
+        }
+        events.sort(comparator);
         
         // Convert to DTOs
         List<EventDTO> eventDTOs = events.stream()
@@ -316,7 +425,7 @@ public class EventService {
         
         return new PageImpl<>(pageContent, pageable, eventDTOs.size());
     }
-    
+
     /**
      * Get all events for a specific group.
      */

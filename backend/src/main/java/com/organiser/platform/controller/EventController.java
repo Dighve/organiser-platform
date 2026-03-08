@@ -4,6 +4,7 @@ import com.organiser.platform.dto.CalendarEventDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
 import com.organiser.platform.dto.JoinEventRequest;
+import com.organiser.platform.dto.EventSearchResponse;
 import com.organiser.platform.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -132,22 +133,49 @@ public class EventController {
     public ResponseEntity<Page<EventDTO>> getMyEvents(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "false") boolean past
     ) {
         Long userId = getUserIdFromAuth(authentication);
         Pageable pageable = PageRequest.of(page, size, Sort.by("eventDate").descending());
-        return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable));
+        return ResponseEntity.ok(eventService.getEventsByOrganiser(userId, pageable, past));
     }
     
     @GetMapping("/my-joined-events")
     public ResponseEntity<Page<EventDTO>> getMyJoinedEvents(
             Authentication authentication,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "false") boolean past
     ) {
         Long userId = getUserIdFromAuth(authentication);
         Pageable pageable = PageRequest.of(page, size);
-        return ResponseEntity.ok(eventService.getEventsByParticipant(userId, pageable));
+        return ResponseEntity.ok(eventService.getEventsByParticipant(userId, pageable, past));
+    }
+
+    /**
+     * Flat search endpoint that supports tokens:
+     * :past, :future, :me, :member:<id>, :hosting, :group:<id>
+     * plus free text.
+     */
+    @GetMapping("/search")
+    public ResponseEntity<EventSearchResponse> searchEvents(
+            Authentication authentication,
+            @RequestParam(name = "q", required = false) String query,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        Long userId = authentication != null ? getUserIdFromAuth(authentication) : null;
+        Page<EventDTO> result = eventService.searchEventsAdvanced(query, page, size, userId);
+        EventSearchResponse response = EventSearchResponse.builder()
+                .content(result.getContent())
+                .page(result.getNumber())
+                .size(result.getSize())
+                .totalElements(result.getTotalElements())
+                .totalPages(result.getTotalPages())
+                .pastOnly(query != null && query.contains(":past"))
+                .build();
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/public/{id}/participants")

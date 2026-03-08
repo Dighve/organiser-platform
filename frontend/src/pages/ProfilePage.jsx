@@ -7,8 +7,9 @@ import { useAuthStore } from '../store/authStore'
 import { membersAPI } from '../lib/api'
 import ImagePositionModal from '../components/ImagePositionModal'
 import toast from 'react-hot-toast'
-import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield } from 'lucide-react'
+import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Clock3 } from 'lucide-react'
 import axios from 'axios'
+import { useNavigate } from 'react-router-dom'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -19,6 +20,7 @@ export default function ProfilePage() {
   // ============================================================
   // HOOKS & STATE
   // ============================================================
+  const navigate = useNavigate()
   const { user, logout } = useAuthStore()  // Global auth state
   const queryClient = useQueryClient()  // React Query cache
   
@@ -374,6 +376,17 @@ export default function ProfilePage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            <div className="pt-2">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Event history</h3>
+              <button
+                onClick={() => navigate('/events?search=:me :past')}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:border-purple-300 hover:text-purple-700 bg-white shadow-sm"
+              >
+                <Clock3 className="h-4 w-4" />
+                Event History
+              </button>
             </div>
 
             {isEditing && (

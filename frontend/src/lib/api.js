@@ -78,6 +78,8 @@ export const authAPI = {
 export const eventsAPI = {
   getUpcomingEvents: (page = 0, size = 20) =>
     api.get(`/events/public?page=${page}&size=${size}`),
+  searchAdvancedEvents: ({ q = '', page = 0, size = 20 }) =>
+    api.get(`/events/search`, { params: { q, page, size } }),
   
   getEventById: (id) => api.get(`/events/public/${id}`),
   
@@ -103,8 +105,8 @@ export const eventsAPI = {
   deleteEvent: (id) => api.delete(`/events/${id}`),
   
   // Get events where user is a participant (joined events)
-  getMyEvents: (page = 0, size = 20) =>
-    api.get(`/events/my-joined-events?page=${page}&size=${size}`),
+  getMyEvents: (page = 0, size = 20, past = false) =>
+    api.get(`/events/my-joined-events?page=${page}&size=${size}&past=${past}`),
   
   // Get events created by the organiser
   getMyOrganisedEvents: (page = 0, size = 20) =>

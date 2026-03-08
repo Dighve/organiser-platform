@@ -74,6 +74,33 @@ public interface EventRepository extends JpaRepository<Event, Long> {
            "OR LOWER(e.group.primaryOrganiser.email) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "ORDER BY e.eventDate ASC")
     Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") Instant now, Pageable pageable);
+
+    @Query("""
+        SELECT DISTINCT e FROM Event e
+        LEFT JOIN e.participants p
+        LEFT JOIN e.hostMember h
+        WHERE (:groupId IS NULL OR e.group.id = :groupId)
+          AND (:hostingId IS NULL OR h.id = :hostingId)
+          AND (:participantId IS NULL OR p.member.id = :participantId)
+          AND (:pastOnly = FALSE OR e.eventDate < :now)
+          AND (:futureOnly = FALSE OR e.eventDate >= :now)
+          AND (
+            :text IS NULL OR :text = '' OR
+            LOWER(e.title) LIKE LOWER(CONCAT('%', :text, '%')) OR
+            LOWER(e.description) LIKE LOWER(CONCAT('%', :text, '%')) OR
+            LOWER(e.location) LIKE LOWER(CONCAT('%', :text, '%')) OR
+            LOWER(e.group.name) LIKE LOWER(CONCAT('%', :text, '%'))
+          )
+        ORDER BY e.eventDate ASC
+        """)
+    Page<Event> searchAdvanced(@Param("groupId") Long groupId,
+                               @Param("hostingId") Long hostingId,
+                               @Param("participantId") Long participantId,
+                               @Param("pastOnly") boolean pastOnly,
+                               @Param("futureOnly") boolean futureOnly,
+                               @Param("text") String text,
+                               @Param("now") Instant now,
+                               Pageable pageable);
     
     // Admin dashboard queries
     @Query("SELECT COUNT(e) FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId")
