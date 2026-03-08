@@ -3,6 +3,7 @@ package com.organiser.platform.controller;
 import com.organiser.platform.dto.CalendarEventDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
+import com.organiser.platform.dto.JoinEventRequest;
 import com.organiser.platform.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -100,10 +101,12 @@ public class EventController {
     @PostMapping("/{id}/join")
     public ResponseEntity<EventDTO> joinEvent(
             @PathVariable Long id,
+            @RequestBody(required = false) JoinEventRequest request,
             Authentication authentication
     ) {
         Long userId = getUserIdFromAuth(authentication);
-        return ResponseEntity.ok(eventService.joinEvent(id, userId));
+        int guestCount = request != null && request.getGuestCount() != null ? request.getGuestCount() : 0;
+        return ResponseEntity.ok(eventService.joinEvent(id, userId, guestCount, request != null ? request.getGuestNames() : null));
     }
     
     @PostMapping("/{id}/leave")

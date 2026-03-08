@@ -96,7 +96,7 @@ export const eventsAPI = {
   
   publishEvent: (id) => api.post(`/events/${id}/publish`),
   
-  joinEvent: (id) => api.post(`/events/${id}/join`),
+  joinEvent: (id, payload = {}) => api.post(`/events/${id}/join`, payload),
   
   leaveEvent: (id) => api.post(`/events/${id}/leave`),
   

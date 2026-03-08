@@ -364,24 +364,27 @@ public class EventService {
      */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
-    public EventDTO joinEvent(Long eventId, Long memberId) {
+    public EventDTO joinEvent(Long eventId, Long memberId, Integer guestCount, List<String> guestNames) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new RuntimeException("Member not found"));
         
-        // CHECK IF ALREADY REGISTERED (prevent duplicate registrations)
-        // Note: This is expected behavior when users click "Join" multiple times or refresh after joining
-        boolean alreadyRegistered = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId).isPresent();
-        if (alreadyRegistered) {
-            throw new AlreadyRegisteredException("You are already registered for this event");
-        }
+        EventParticipant existing = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId).orElse(null);
         
-        // Check if the event is full
-        if (event.getMaxParticipants() != null && 
-            event.getParticipants().size() >= event.getMaxParticipants()) {
-            throw new RuntimeException("Event is full");
+        int guests = guestCount != null && guestCount > 0 ? guestCount : 0;
+        
+        // Check capacity (account for guests, and delta if already registered)
+        int currentHeadcount = getTotalHeadcount(event);
+        int currentSlotsForUser = existing != null ? 1 + (existing.getGuestCount() != null ? existing.getGuestCount() : 0) : 0;
+        int requestedSlots = 1 + guests;
+        int newTotal = currentHeadcount - currentSlotsForUser + requestedSlots;
+        if (event.getMaxParticipants() != null && newTotal > event.getMaxParticipants()) {
+            int remaining = Math.max(0, event.getMaxParticipants() - (currentHeadcount - currentSlotsForUser));
+            throw new RuntimeException(remaining <= 0
+                    ? "Event is full"
+                    : String.format("Only %d spot%s left", remaining, remaining == 1 ? "" : "s"));
         }
         
         if (event.getStatus() != Event.EventStatus.PUBLISHED) {
@@ -404,20 +407,24 @@ public class EventService {
             }
         }
         
-        // Create a new event participant
-        EventParticipant participant = EventParticipant.builder()
-                .event(event)
-                .member(member)
-                .status(EventParticipant.ParticipationStatus.REGISTERED)
-                .registeredAt(LocalDateTime.now())
-                .build();
-        
-        // Add participant to the event
-        event.getParticipants().add(participant);
+        if (existing != null) {
+            existing.setGuestCount(guests);
+            existing.setNotes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null);
+        } else {
+            EventParticipant participant = EventParticipant.builder()
+                    .event(event)
+                    .member(member)
+                    .status(EventParticipant.ParticipationStatus.REGISTERED)
+                    .registeredAt(LocalDateTime.now())
+                    .guestCount(guests)
+                    .notes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null)
+                    .build();
+            event.getParticipants().add(participant);
+        }
         
         // Update event status if it's now full
-        if (event.getMaxParticipants() != null && 
-            event.getParticipants().size() >= event.getMaxParticipants()) {
+        if (event.getMaxParticipants() != null &&
+            getTotalHeadcount(event) >= event.getMaxParticipants()) {
             event.setStatus(Event.EventStatus.FULL);
         }
         
@@ -445,8 +452,10 @@ public class EventService {
         // Explicitly delete the participant from database
         eventParticipantRepository.delete(participant);
         
-        // If the event was full, change status back to PUBLISHED to allow new registrations
-        if (event.getStatus() == Event.EventStatus.FULL) {
+        // If the event was full, change status back to PUBLISHED when capacity frees up
+        if (event.getStatus() == Event.EventStatus.FULL
+                && event.getMaxParticipants() != null
+                && getTotalHeadcount(event) < event.getMaxParticipants()) {
             event.setStatus(Event.EventStatus.PUBLISHED);
         }
         
@@ -503,8 +512,8 @@ public class EventService {
             throw new IllegalStateException("Group must be associated with an activity");
         }
         
-        // Get participants count
-        int participantCount = event.getParticipants() != null ? event.getParticipants().size() : 0;
+        // Get participants count (including guests)
+        int participantCount = getTotalHeadcount(event);
         
         // Get participant IDs for the DTO
         Set<Long> participantIds = event.getParticipants() != null ?
@@ -595,8 +604,8 @@ public class EventService {
             throw new IllegalStateException("Group must be associated with an activity");
         }
         
-        // Get participants count
-        int participantCount = event.getParticipants() != null ? event.getParticipants().size() : 0;
+        // Get participants count (including guests)
+        int participantCount = getTotalHeadcount(event);
         
         // Get participant IDs for the DTO
         Set<Long> participantIds = event.getParticipants() != null ?
@@ -752,6 +761,7 @@ public class EventService {
                         // Check if this participant is the organiser of THIS event
                         .isOrganiser(participant.getMember().getId().equals(eventOrganiserId))
                         .joinedAt(participant.getRegistrationDate())
+                        .guestCount(participant.getGuestCount())
                         .deleted(Boolean.FALSE.equals(participant.getMember().getActive()))
                         .build())
                 .collect(Collectors.toList());
@@ -819,6 +829,18 @@ public class EventService {
                     : event.getGroup().getPrimaryOrganiser().getEmail())
                 .eventUrl("https://www.outmeets.com/events/" + eventId)
                 .build();
+    }
+
+    /**
+     * Calculates total headcount including guests (participant + guestCount).
+     */
+    private int getTotalHeadcount(Event event) {
+        if (event.getParticipants() == null) {
+            return 0;
+        }
+        return event.getParticipants().stream()
+                .mapToInt(p -> 1 + (p.getGuestCount() != null ? p.getGuestCount() : 0))
+                .sum();
     }
 
     // ============================================================

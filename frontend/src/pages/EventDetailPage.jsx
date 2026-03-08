@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, X } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -49,6 +49,10 @@ export default function EventDetailPage() {
   const [heroImageError, setHeroImageError] = useState(false)
   const [heroImageLoaded, setHeroImageLoaded] = useState(false)
   const [isJoiningFlow, setIsJoiningFlow] = useState(false) // Track entire join flow until modal opens
+  const [isGuestModalOpen, setIsGuestModalOpen] = useState(false)
+  const [guestCount, setGuestCount] = useState(0)
+  const [wantsGuests, setWantsGuests] = useState(false)
+  const [isGuestActionsOpen, setIsGuestActionsOpen] = useState(false)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -112,22 +116,34 @@ export default function EventDetailPage() {
       // Show terms modal first
       setIsTermsModalOpen(true)
     } else {
-      // No terms, join directly
-      setIsJoiningFlow(true)
-      joinMutation.mutate()
+      // No terms, open guest selector
+      openGuestModal()
     }
+  }
+  
+  const openGuestModal = (prefillCount = 0) => {
+    const count = Math.min(maxGuestSelectable, prefillCount)
+    setGuestCount(count)
+    setWantsGuests(count > 0)
+    setIsGuestModalOpen(true)
   }
   
   // Handle accepting terms and joining
   const handleAcceptTerms = () => {
     setIsTermsModalOpen(false)
+    openGuestModal()
+  }
+
+  const handleConfirmGuests = () => {
+    const safeGuestCount = wantsGuests ? guestCount : 0
+    setIsGuestModalOpen(false)
     setIsJoiningFlow(true)
-    joinMutation.mutate()
+    joinMutation.mutate({ guestCount: safeGuestCount })
   }
 
   // Join event (register for event + auto-join group - Meetup.com pattern)
   const joinMutation = useMutation({
-    mutationFn: () => eventsAPI.joinEvent(id),
+    mutationFn: (payload = {}) => eventsAPI.joinEvent(id, payload),
     onSuccess: async () => {
       // Show calendar modal immediately for instant feedback
       // No toast needed - modal itself is the success indicator
@@ -281,7 +297,7 @@ export default function EventDetailPage() {
       
       // Auto-join the event
       setIsJoiningFlow(true) // Start joining flow for auto-join
-      joinMutation.mutate()
+      joinMutation.mutate({ guestCount: 0 })
     }
   }, [isAuthenticated, id])
 
@@ -327,6 +343,25 @@ export default function EventDetailPage() {
   ].map(id => Number(id))
   const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
   const hasJoined = isAuthenticated && participantIds.includes(Number(user?.id))
+  const currentHeadcount = event?.currentParticipants || 0
+
+  // guest info for current user
+  const userParticipant = (participantsData?.data || []).find(
+    (p) => p?.id && user?.id && Number(p.id) === Number(user.id)
+  )
+  const userGuestCount = userParticipant?.guestCount ? Number(userParticipant.guestCount) : 0
+  const displayGuestCount = userGuestCount || guestCount || 0
+
+  // capacity calculations (respect user's existing guests)
+  const remainingSpots = event?.maxParticipants ? Math.max(0, event.maxParticipants - currentHeadcount) : Number.POSITIVE_INFINITY
+  const availableWithUser =
+    event?.maxParticipants != null
+      ? Math.max(0, event.maxParticipants - (currentHeadcount - (1 + userGuestCount)) - 1)
+      : Number.POSITIVE_INFINITY
+  const maxGuestSelectable =
+    availableWithUser === Number.POSITIVE_INFINITY
+      ? Math.max(3, userGuestCount)
+      : Math.max(userGuestCount, Math.min(3, availableWithUser))
   
   // Check if event is in the past
   const eventStart = event ? new Date(event?.eventDate) : null
@@ -527,7 +562,7 @@ export default function EventDetailPage() {
               <Users className="h-5 w-5" />
               {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
             </button>
-          ) : isAuthenticated ? (
+            ) : isAuthenticated ? (
             isEventOrganiser ? (
               <button
                 onClick={() => setIsManageOpen(true)}
@@ -538,24 +573,20 @@ export default function EventDetailPage() {
               </button>
             ) : hasJoined ? (
               <div className="flex items-center gap-2">
-                <div className="flex-1 py-3 px-3 font-bold rounded-lg shadow bg-gray-100 text-gray-700 text-center text-sm">
-                  You are registered
+                <div className="flex-1 py-2.5 px-3 rounded-lg shadow bg-gray-100 text-gray-700">
+                  <p className="text-xs font-semibold">You’re registered</p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {displayGuestCount > 0
+                      ? `You + ${displayGuestCount} guest${displayGuestCount === 1 ? '' : 's'}`
+                      : 'You (no guests)'}
+                  </p>
                 </div>
                 <button
-                  onClick={() => setShowLeaveConfirm(true)}
-                  disabled={leaveMutation.isLoading}
-                  className={`h-12 w-12 rounded-lg flex items-center justify-center transition-all ${
-                    leaveMutation.isLoading
-                      ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white'
-                      : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
-                  }`}
-                  aria-label="Leave event"
+                  onClick={() => setIsGuestActionsOpen(true)}
+                  className="h-12 w-12 rounded-lg flex items-center justify-center bg-white border border-purple-200 text-purple-600 shadow hover:bg-purple-50"
+                  aria-label="Guest actions"
                 >
-                  {leaveMutation.isLoading ? (
-                    <Loader className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <X className="h-4 w-4" />
-                  )}
+                  <MoreVertical className="h-5 w-5" />
                 </button>
               </div>
             ) : (
@@ -966,9 +997,14 @@ export default function EventDetailPage() {
                               <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all text-sm lg:text-base">
                                 {participant.displayName || participant.email.split('@')[0]}
                               </p>
-                              <p className="text-xs text-gray-500 truncate">
-                                {new Date(participant.joinedAt).toLocaleDateString()}
-                              </p>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>{new Date(participant.joinedAt).toLocaleDateString()}</span>
+                                {participant.guestCount > 0 && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/70 border border-purple-100 text-purple-700 font-semibold">
+                                    +{participant.guestCount} guest{participant.guestCount === 1 ? '' : 's'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -1142,6 +1178,30 @@ export default function EventDetailPage() {
                       <div className="space-y-3">
                         <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
                           <p className="text-green-700 font-semibold text-center">✅ You're registered!</p>
+                          <div className="mt-3 flex items-center justify-between rounded-xl bg-white/60 px-3 py-2 border border-green-100">
+                            <p className="text-sm text-gray-800">
+                              {displayGuestCount > 0
+                                ? `You + ${displayGuestCount} guest${displayGuestCount === 1 ? '' : 's'}`
+                                : 'You (no guests)'}
+                            </p>
+                            {!isPastEvent && (
+                              <>
+                                <button
+                                  onClick={() => openGuestModal(displayGuestCount)}
+                                  className="hidden sm:inline text-sm font-semibold text-purple-600 hover:text-purple-700"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  onClick={() => setIsGuestActionsOpen(true)}
+                                  className="sm:hidden h-10 w-10 ml-2 flex items-center justify-center rounded-full bg-white border border-purple-200 text-purple-600 shadow hover:bg-purple-50"
+                                  aria-label="More actions"
+                                >
+                                  <MoreVertical className="h-5 w-5" />
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                         
                         {/* Add to Calendar Button */}
@@ -1235,6 +1295,144 @@ export default function EventDetailPage() {
           toast.success('Check your email for the magic link!')
         }}
       />
+
+      {/* ============================================ */}
+      {/* GUEST PICKER - Shown before confirming join */}
+      {/* ============================================ */}
+      {isGuestModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsGuestModalOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-gray-100 p-5 sm:p-6">
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-gray-300" />
+            <h3 className="text-lg font-bold text-gray-900 text-center">Bringing anyone with you?</h3>
+            <p className="text-sm text-gray-600 text-center mt-1">
+              {maxGuestSelectable > 0
+                ? `You can bring up to ${maxGuestSelectable} guest${maxGuestSelectable === 1 ? '' : 's'}.`
+                : 'All remaining spots are for you only.'}
+            </p>
+
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  setWantsGuests(false)
+                  setGuestCount(0)
+                }}
+                className={`w-full py-3 rounded-xl border text-sm font-semibold transition ${
+                  !wantsGuests
+                    ? 'bg-purple-600 text-white border-purple-600 shadow'
+                    : 'border-gray-200 text-gray-800 hover:border-purple-300'
+                }`}
+              >
+                No guests
+              </button>
+              <button
+                disabled={maxGuestSelectable === 0}
+                onClick={() => {
+                  setWantsGuests(true)
+                  setGuestCount((prev) => {
+                    const next = prev > 0 ? prev : 1
+                    return Math.min(next, maxGuestSelectable)
+                  })
+                }}
+                className={`w-full py-3 rounded-xl border text-sm font-semibold transition ${
+                  wantsGuests
+                    ? 'bg-purple-600 text-white border-purple-600 shadow'
+                    : 'border-gray-200 text-gray-800 hover:border-purple-300'
+                } ${maxGuestSelectable === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                Add guests
+              </button>
+            </div>
+
+            {wantsGuests && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-800">Guests</p>
+                    <p className="text-xs text-gray-500">Max {maxGuestSelectable}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setGuestCount((prev) => Math.max(0, prev - 1))}
+                      disabled={guestCount === 0}
+                      className="h-10 w-10 rounded-full border border-gray-200 text-gray-700 hover:border-purple-300 disabled:opacity-50"
+                      aria-label="Decrease guests"
+                    >
+                      <Minus className="mx-auto h-4 w-4" />
+                    </button>
+                    <span className="w-8 text-center font-semibold text-gray-800">{guestCount}</span>
+                    <button
+                      onClick={() => setGuestCount((prev) => Math.min(maxGuestSelectable, prev + 1))}
+                      disabled={guestCount >= maxGuestSelectable}
+                      className="h-10 w-10 rounded-full border border-gray-200 text-gray-700 hover:border-purple-300 disabled:opacity-50"
+                      aria-label="Increase guests"
+                    >
+                      <Plus className="mx-auto h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 text-right">
+                  {remainingSpots === Number.POSITIVE_INFINITY
+                    ? 'Plenty of space available.'
+                    : `${Math.max(0, remainingSpots - 1)} guest spot${Math.max(0, remainingSpots - 1) === 1 ? '' : 's'} left`}
+                </p>
+              </div>
+            )}
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => setIsGuestModalOpen(false)}
+                className="w-1/2 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300"
+              >
+                Back
+              </button>
+              <button
+                onClick={handleConfirmGuests}
+                disabled={wantsGuests && guestCount === 0}
+                className="w-1/2 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow hover:shadow-lg disabled:opacity-60"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* GUEST ACTIONS SHEET (mobile) */}
+      {/* ============================================ */}
+      {isGuestActionsOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center px-4 sm:hidden">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsGuestActionsOpen(false)}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-t-2xl shadow-2xl p-4">
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-gray-300" />
+            <button
+              onClick={() => {
+                setIsGuestActionsOpen(false)
+                openGuestModal(displayGuestCount)
+              }}
+              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3"
+            >
+              Edit guest count
+            </button>
+            <button
+              onClick={() => {
+                setIsGuestActionsOpen(false)
+                setShowLeaveConfirm(true)
+              }}
+              className="w-full text-left px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 font-semibold hover:bg-red-100"
+            >
+              Leave event
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ============================================ */}
       {/* ADD TO CALENDAR MODAL - Opens after successful join */}

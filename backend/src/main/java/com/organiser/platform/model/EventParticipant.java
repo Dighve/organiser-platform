@@ -66,6 +66,10 @@ public class EventParticipant {
     
     @Column(name = "attended")
     private Boolean attended;
+
+    @Column(name = "guest_count", nullable = false)
+    @Builder.Default
+    private Integer guestCount = 0;
     
     public enum ParticipationStatus {
         REGISTERED,
