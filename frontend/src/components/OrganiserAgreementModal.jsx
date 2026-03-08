@@ -139,6 +139,9 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
                 Updated Organiser Terms
               </h2>
               <p className="text-sm sm:text-base text-gray-600">Please review and accept the updated Organiser Agreement to continue</p>
+              <p className="mt-1 text-xs text-gray-500 sm:hidden">
+                Tip: swipe/scroll through the agreement; the accept button is below.
+              </p>
             </div>
             <button
               type="button"
@@ -151,7 +154,7 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
           </div>
 
           {/* Scrollable Content */}
-          <div className="flex-1 overflow-y-auto px-5 sm:px-8 pt-6 pb-5 space-y-6" onScroll={handleScroll}>
+          <div className="flex-1 overflow-y-auto px-5 sm:px-8 pt-6 pb-5 space-y-6 relative" onScroll={handleScroll}>
             {/* Enhanced Warning Banner */}
             <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-300 rounded-xl p-5 shadow-sm">
               <div className="flex items-start gap-4">
@@ -215,6 +218,9 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
                   <p className="text-gray-600">No agreement content available</p>
                 </div>
               )}
+            </div>
+            <div className="sticky bottom-0 left-0 right-0 -mx-5 sm:-mx-8 px-5 sm:px-8 py-2 bg-gradient-to-t from-white via-white/90 to-transparent text-center text-xs text-gray-500 sm:hidden">
+              Swipe up to finish reading and reveal the accept button.
             </div>
           </div>
 
