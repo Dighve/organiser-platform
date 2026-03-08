@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom'
-import { Menu, X, LogOut, Search, Shield, User, Users } from 'lucide-react'
+import { Menu, X, LogOut, Search, Shield, User, Users, Bug } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { googleLogout } from '@react-oauth/google'
 import { useAuthStore } from '../store/authStore'
@@ -283,7 +283,7 @@ export default function Layout() {
                 className="absolute inset-0 w-full h-full bg-[rgba(0,0,0,0.5)] backdrop-blur-sm"
                 onClick={() => setMobileMenuOpen(false)}
               />
-              <div className="absolute right-0 top-0 h-full w-80 max-w-[80%] bg-gradient-to-b from-purple-600 via-pink-600 to-orange-500 shadow-2xl flex flex-col">
+              <div className="absolute inset-y-0 right-0 left-auto ml-auto h-full w-80 max-w-[80%] bg-gradient-to-b from-purple-600 via-pink-600 to-orange-500 shadow-2xl flex flex-col relative">
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="self-end p-3 text-white hover:text-white/80"
@@ -366,6 +366,20 @@ export default function Layout() {
                     <span>Logout</span>
                   </button>
                 </div>
+                <button
+                  onClick={() => {
+                    const trigger = document.querySelector('[data-feedback-trigger]')
+                    if (trigger) {
+                      setMobileMenuOpen(false)
+                      // wait for drawer close transition (~250ms) before triggering modal for smoother UX
+                      setTimeout(() => trigger.click(), 260)
+                    }
+                  }}
+                  className="absolute right-4 bottom-6 h-12 w-12 rounded-full bg-white text-orange-500 shadow-lg flex items-center justify-center"
+                  aria-label="Feedback"
+                >
+                  <Bug className="h-6 w-6" />
+                </button>
               </div>
             </div>
           )}

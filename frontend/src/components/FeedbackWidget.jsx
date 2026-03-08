@@ -86,7 +86,8 @@ export default function FeedbackWidget() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed right-5 bottom-20 sm:bottom-5 z-[900] rounded-full bg-white/90 backdrop-blur shadow-lg border border-white/60 text-gray-700 hover:-translate-y-0.5 hover:shadow-xl transition flex items-center gap-2 px-4 py-2"
+        data-feedback-trigger
+        className="hidden md:flex fixed right-5 bottom-20 sm:bottom-5 z-[900] rounded-full bg-white/90 backdrop-blur shadow-lg border border-white/60 text-gray-700 hover:-translate-y-0.5 hover:shadow-xl transition flex items-center gap-2 px-4 py-2"
       >
         <Bug className="h-5 w-5 text-gray-600" />
         <span className="font-semibold hidden sm:inline text-gray-700">Feedback</span>
