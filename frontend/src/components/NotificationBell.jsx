@@ -15,6 +15,7 @@ export default function NotificationBell({
   open: controlledOpen,
   onOpenChange,
   disableDropdown = false,
+  onOrganiserInvitationClick, // Callback to open organiser agreement modal
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef(null)
@@ -118,6 +119,16 @@ export default function NotificationBell({
       // ignore failures
     }
 
+    // Handle organiser invitation - open organiser agreement modal
+    if (notification.notificationType === 'ORGANISER_INVITATION') {
+      setOpen(false)
+      if (onOrganiserInvitationClick) {
+        onOrganiserInvitationClick()
+      }
+      return
+    }
+
+    // Navigate to related event if present
     if (notification.relatedEventId) {
       navigate(`/events/${notification.relatedEventId}`)
       setOpen(false)

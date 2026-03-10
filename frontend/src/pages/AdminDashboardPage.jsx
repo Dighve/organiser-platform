@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI, featureFlagsAPI } from '../lib/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle, MessageSquare, Flag } from 'lucide-react';
+import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle, MessageSquare, Flag, MoreVertical } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -36,6 +36,11 @@ export default function AdminDashboardPage() {
   });
   const [showHistory, setShowHistory] = useState(false);
   const [historyType, setHistoryType] = useState('USER');
+  
+  // Invitation modal state
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userMenuOpen, setUserMenuOpen] = useState(null);
 
   // Fetch user statistics
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -63,6 +68,31 @@ export default function AdminDashboardPage() {
       return response;
     },
   });
+
+  // Invite user mutation
+  const inviteMutation = useMutation({
+    mutationFn: (memberId) => adminAPI.inviteUserToOrganiser(memberId),
+    onSuccess: () => {
+      toast.success('Organiser invitation sent!');
+      setInviteModalOpen(false);
+      setSelectedUser(null);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.error || 'Failed to send invitation');
+    },
+  });
+  
+  const handleInviteClick = (user) => {
+    setSelectedUser(user);
+    setInviteModalOpen(true);
+    setUserMenuOpen(null);
+  };
+  
+  const handleConfirmInvite = () => {
+    if (selectedUser) {
+      inviteMutation.mutate(selectedUser.id);
+    }
+  };
 
   const { data: feedbackList } = useQuery({
     queryKey: ['adminFeedback'],
@@ -419,6 +449,7 @@ export default function AdminDashboardPage() {
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                   <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Activity</th>
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -468,6 +499,34 @@ export default function AdminDashboardPage() {
                             <span title="Groups Created">🎯 {user.groupsCreated}</span>
                             <span title="Events Created">✨ {user.eventsCreated}</span>
                           </>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right">
+                      <div className="relative">
+                        <button
+                          onClick={() => setUserMenuOpen(userMenuOpen === user.id ? null : user.id)}
+                          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        >
+                          <MoreVertical className="w-5 h-5 text-gray-500" />
+                        </button>
+                        {userMenuOpen === user.id && (
+                          <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 z-10">
+                            {!user.hasOrganiserRole && (
+                              <button
+                                onClick={() => handleInviteClick(user)}
+                                className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors flex items-center space-x-2 text-sm"
+                              >
+                                <UserPlus className="w-4 h-4 text-purple-600" />
+                                <span className="text-gray-700">Invite to Organiser</span>
+                              </button>
+                            )}
+                            {user.hasOrganiserRole && (
+                              <div className="px-4 py-3 text-sm text-gray-500 italic">
+                                Already an organiser
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                     </td>
@@ -946,6 +1005,70 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Invitation Confirmation Modal */}
+      {inviteModalOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Invite to Organiser</h3>
+              <button
+                onClick={() => setInviteModalOpen(false)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="flex-shrink-0 h-12 w-12">
+                  {selectedUser.profilePhotoUrl ? (
+                    <img className="h-12 w-12 rounded-full" src={selectedUser.profilePhotoUrl} alt="" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                      {selectedUser.displayName?.charAt(0) || selectedUser.email.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-base font-semibold text-gray-900">{selectedUser.displayName || 'Anonymous'}</div>
+                  <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4">
+                <div className="flex items-start space-x-2">
+                  <UserPlus className="w-5 h-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm text-gray-700">
+                    <p className="font-medium mb-1">Send organiser invitation</p>
+                    <p className="text-gray-600">
+                      This user will receive a notification inviting them to become an organiser. 
+                      They'll need to review and accept the organiser agreement before gaining organiser access.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setInviteModalOpen(false)}
+                className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmInvite}
+                disabled={inviteMutation.isLoading}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {inviteMutation.isLoading ? 'Sending...' : 'Send Invitation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

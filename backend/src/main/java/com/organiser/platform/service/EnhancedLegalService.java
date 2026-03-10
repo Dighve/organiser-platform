@@ -171,8 +171,36 @@ public class EnhancedLegalService {
                     memberId, existing.getAgreementVersion(), existing.getIsWithdrawn(), existing.getAcceptedAt());
                     
             if (!existing.getIsWithdrawn()) {
-                log.warn("⚠️ Member {} already accepted {} agreement version {} - returning existing record", 
+                log.warn("⚠️ Member {} already accepted {} agreement version {} - ensuring member flags are set", 
                         memberId, agreementType.getValue(), activeVersion.getVersion());
+                
+                // Ensure member flags are set even if agreement was already accepted
+                // This fixes cases where old acceptances didn't set hasOrganiserRole
+                boolean needsUpdate = false;
+                if (agreementType == AgreementType.USER && !Boolean.TRUE.equals(member.getHasAcceptedUserAgreement())) {
+                    member.setHasAcceptedUserAgreement(true);
+                    member.setUserAgreementAcceptedAt(existing.getAcceptedAt());
+                    needsUpdate = true;
+                    log.info("🔧 Fixed missing hasAcceptedUserAgreement flag for member {}", memberId);
+                } else if (agreementType == AgreementType.ORGANISER) {
+                    if (!Boolean.TRUE.equals(member.getHasAcceptedOrganiserAgreement())) {
+                        member.setHasAcceptedOrganiserAgreement(true);
+                        member.setOrganiserAgreementAcceptedAt(existing.getAcceptedAt());
+                        needsUpdate = true;
+                        log.info("🔧 Fixed missing hasAcceptedOrganiserAgreement flag for member {}", memberId);
+                    }
+                    if (!Boolean.TRUE.equals(member.getHasOrganiserRole())) {
+                        member.setHasOrganiserRole(true);
+                        needsUpdate = true;
+                        log.info("🔧 Fixed missing hasOrganiserRole flag for member {}", memberId);
+                    }
+                }
+                
+                if (needsUpdate) {
+                    memberRepository.save(member);
+                    log.info("✅ Updated member flags for existing acceptance");
+                }
+                
                 return existing;
             } else {
                 log.info("🔄 Found withdrawn acceptance - will create new record");
@@ -226,7 +254,8 @@ public class EnhancedLegalService {
         } else if (agreementType == AgreementType.ORGANISER) {
             member.setHasAcceptedOrganiserAgreement(true);
             member.setOrganiserAgreementAcceptedAt(LocalDateTime.now());
-            log.info("✅ Updated member {} hasAcceptedOrganiserAgreement=true, organiserAgreementAcceptedAt=now", memberId);
+            member.setHasOrganiserRole(true); // Grant organiser role when agreement is accepted
+            log.info("✅ Updated member {} hasAcceptedOrganiserAgreement=true, hasOrganiserRole=true, organiserAgreementAcceptedAt=now", memberId);
         }
         memberRepository.save(member);
         

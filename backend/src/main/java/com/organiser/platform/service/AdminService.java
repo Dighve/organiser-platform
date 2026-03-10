@@ -4,9 +4,11 @@ import com.organiser.platform.dto.admin.DailySignupDTO;
 import com.organiser.platform.dto.admin.RecentUserDTO;
 import com.organiser.platform.dto.admin.UserStatsDTO;
 import com.organiser.platform.model.Member;
+import com.organiser.platform.model.Notification;
 import com.organiser.platform.repository.EventRepository;
 import com.organiser.platform.repository.GroupRepository;
 import com.organiser.platform.repository.MemberRepository;
+import com.organiser.platform.repository.NotificationRepository;
 import com.organiser.platform.repository.SubscriptionRepository;
 import com.organiser.platform.repository.EventParticipantRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class AdminService {
     
     private final MemberRepository memberRepository;
     private final EventRepository eventRepository;
+    private final NotificationRepository notificationRepository;
     private final GroupRepository groupRepository;
     private final SubscriptionRepository subscriptionRepository;
     private final EventParticipantRepository eventParticipantRepository;
@@ -123,5 +126,35 @@ public class AdminService {
         return memberRepository.findById(memberId)
             .map(Member::getIsAdmin)
             .orElse(false);
+    }
+    
+    /**
+     * Send organiser invitation notification to a user
+     */
+    @Transactional
+    public void sendOrganiserInvitation(Long adminId, Long targetMemberId) {
+        // Verify admin exists
+        Member admin = memberRepository.findById(adminId)
+            .orElseThrow(() -> new RuntimeException("Admin not found"));
+        
+        // Verify target member exists
+        Member targetMember = memberRepository.findById(targetMemberId)
+            .orElseThrow(() -> new RuntimeException("User not found"));
+        
+        // Check if user is already an organiser
+        if (Boolean.TRUE.equals(targetMember.getHasOrganiserRole())) {
+            throw new RuntimeException("User is already an organiser");
+        }
+        
+        // Create invitation notification
+        Notification invitation = Notification.builder()
+            .member(targetMember)
+            .notificationType(Notification.NotificationType.ORGANISER_INVITATION)
+            .title("You've been invited to become an Organiser!")
+            .message("An admin has invited you to become an organiser on OutMeets. Review and accept the organiser agreement to get started.")
+            .isRead(false)
+            .build();
+        
+        notificationRepository.save(invitation);
     }
 }

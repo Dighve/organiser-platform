@@ -35,12 +35,13 @@ import java.time.LocalDateTime;
 public class Notification {
     
     public enum NotificationType {
-        NEW_EVENT,           // New event created in subscribed group
-        NEW_COMMENT,         // New comment on event user is attending
-        NEW_REPLY,           // New reply to user's comment
-        EVENT_UPDATE,        // Event details updated
-        EVENT_CANCELLED,     // Event cancelled
-        EVENT_REMINDER       // Event reminder (24h before)
+        NEW_EVENT,              // New event created in subscribed group
+        NEW_COMMENT,            // New comment on event user is attending
+        NEW_REPLY,              // New reply to user's comment
+        EVENT_UPDATE,           // Event details updated
+        EVENT_CANCELLED,        // Event cancelled
+        EVENT_REMINDER,         // Event reminder (24h before)
+        ORGANISER_INVITATION    // Admin invitation to become organiser
     }
     
     @Id

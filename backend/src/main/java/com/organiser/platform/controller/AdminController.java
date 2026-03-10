@@ -30,6 +30,7 @@ public class AdminController {
     private final AdminService adminService;
     private final FeatureFlagService featureFlagService;
     private final LegalAgreementService legalAgreementService;
+    private final com.organiser.platform.service.NotificationService notificationService;
     
     /**
      * Get comprehensive user statistics for dashboard
@@ -138,6 +139,30 @@ public class AdminController {
             return ResponseEntity.ok(updatedFlag);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+    
+    /**
+     * Send organiser invitation to a user
+     * Requires admin role
+     */
+    @PostMapping("/users/{memberId}/invite-organiser")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> inviteUserToOrganiser(
+        @PathVariable Long memberId,
+        Authentication authentication
+    ) {
+        // Verify admin access
+        Long adminId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(adminId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        try {
+            adminService.sendOrganiserInvitation(adminId, memberId);
+            return ResponseEntity.ok(Map.of("message", "Invitation sent successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }
     }
     

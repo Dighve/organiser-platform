@@ -219,6 +219,9 @@ export const adminAPI = {
   // Feedback
   getFeedback: () => api.get('/feedback/admin'),
   updateFeedback: (id, params) => api.patch(`/feedback/admin/${id}`, null, { params }),
+  
+  // User Management
+  inviteUserToOrganiser: (memberId) => api.post(`/admin/users/${memberId}/invite-organiser`),
 }
 
 // Feedback API (user)

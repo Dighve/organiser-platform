@@ -5,7 +5,7 @@ import { legalAPI } from '../lib/api'
 import toast from 'react-hot-toast'
 import ReactMarkdown from 'react-markdown'
 
-export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
+export default function OrganiserAgreementModal({ isOpen, onClose, onAccept, isAlreadyOrganiser = false }) {
   const [hasAgreed, setHasAgreed] = useState(false)
   const [scrolledToBottom, setScrolledToBottom] = useState(false)
   const queryClient = useQueryClient()
@@ -136,9 +136,13 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept }) {
           <div className="flex-shrink-0 flex items-start justify-between gap-4 px-5 sm:px-8 py-5 border-b border-gray-100 bg-white">
             <div>
               <h2 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
-                Updated Organiser Terms
+                {isAlreadyOrganiser ? 'Updated Organiser Terms' : 'Become an Organiser'}
               </h2>
-              <p className="text-sm sm:text-base text-gray-600">Please review and accept the updated Organiser Agreement to continue</p>
+              <p className="text-sm sm:text-base text-gray-600">
+                {isAlreadyOrganiser 
+                  ? 'Please review and accept the updated Organiser Agreement to continue'
+                  : 'Please review and accept the Organiser Agreement to become an organiser'}
+              </p>
               <p className="mt-1 text-xs text-gray-500 sm:hidden">
                 Tip: swipe/scroll through the agreement; the accept button is below.
               </p>

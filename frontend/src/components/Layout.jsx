@@ -194,7 +194,9 @@ export default function Layout() {
               {isAuthenticated ? (
                 <>
                   {/* Notification Bell */}
-                  <NotificationBell />
+                  <NotificationBell 
+                    onOrganiserInvitationClick={() => setShowOrganiserModal(true)}
+                  />
                   
                   <div className="relative group z-[1000]">
                     {/* Invisible bridge to keep dropdown open */}
@@ -327,6 +329,7 @@ export default function Layout() {
                       className="flex-shrink-0"
                       buttonClassName="p-0 text-white hover:text-white"
                       iconClassName="h-5 w-5"
+                      onOrganiserInvitationClick={() => setShowOrganiserModal(true)}
                       size="compact"
                       disableDropdown
                       showBadge
@@ -408,6 +411,7 @@ export default function Layout() {
           // Refresh member data after acceptance
           queryClient.invalidateQueries(['currentMember'])
         }}
+        isAlreadyOrganiser={memberData?.hasOrganiserRole || false}
       />
 
       {/* User Agreement Modal - Cannot be dismissed */}
