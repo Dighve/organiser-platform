@@ -167,6 +167,116 @@ public class AdminController {
     }
     
     /**
+     * Get organiser statistics (group and event counts)
+     * Requires admin role
+     */
+    @GetMapping("/users/{memberId}/organiser-stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getOrganiserStats(
+        @PathVariable Long memberId,
+        Authentication authentication
+    ) {
+        // Verify admin access
+        Long adminId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(adminId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        try {
+            AdminService.OrganiserStats stats = adminService.getOrganiserStats(memberId);
+            return ResponseEntity.ok(Map.of(
+                "groupCount", stats.groupCount,
+                "eventCount", stats.eventCount
+            ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Revoke organiser role from a user
+     * Requires admin role
+     */
+    @PostMapping("/users/{memberId}/revoke-organiser")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> revokeOrganiserRole(
+        @PathVariable Long memberId,
+        Authentication authentication
+    ) {
+        // Verify admin access
+        Long adminId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(adminId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        try {
+            adminService.revokeOrganiserRole(memberId);
+            return ResponseEntity.ok(Map.of("message", "Organiser role revoked successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Transfer groups from one organiser to another and revoke old organiser's role
+     * Requires admin role
+     */
+    @PostMapping("/users/{oldOrganiserId}/transfer-groups")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> transferGroupsAndRevoke(
+        @PathVariable Long oldOrganiserId,
+        @RequestBody Map<String, Long> request,
+        Authentication authentication
+    ) {
+        // Verify admin access
+        Long adminId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(adminId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        Long newOrganiserId = request.get("newOrganiserId");
+        if (newOrganiserId == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "newOrganiserId is required"));
+        }
+        
+        try {
+            adminService.transferGroupsAndRevokeRole(oldOrganiserId, newOrganiserId);
+            return ResponseEntity.ok(Map.of("message", "Groups transferred and role revoked successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
+     * Delete a member from the platform
+     * Requires admin role
+     */
+    @DeleteMapping("/users/{memberId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, String>> deleteMember(
+            @PathVariable Long memberId,
+            Authentication authentication
+    ) {
+        // Verify admin access
+        Long adminId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(adminId)) {
+            return ResponseEntity.status(403).build();
+        }
+        
+        // Prevent admin from deleting themselves
+        if (adminId.equals(memberId)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Cannot delete your own account"));
+        }
+        
+        try {
+            adminService.deleteMember(memberId);
+            return ResponseEntity.ok(Map.of("message", "Member deleted successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    
+    /**
      * Get a specific feature flag by key
      * Requires admin role
      */

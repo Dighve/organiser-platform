@@ -103,6 +103,12 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                Pageable pageable);
     
     // Admin dashboard queries
+    Long countByGroupId(Long groupId);
+    
+    // Count events by organiser (through group relationship)
+    @Query("SELECT COUNT(e) FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId")
+    Long countByGroupPrimaryOrganiserId(@Param("organiserId") Long organiserId);
+
     @Query("SELECT COUNT(e) FROM Event e WHERE e.group.primaryOrganiser.id = :organiserId")
     Long countByOrganiserId(@Param("organiserId") Long organiserId);
 

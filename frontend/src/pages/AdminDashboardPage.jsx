@@ -1,11 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI, featureFlagsAPI } from '../lib/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle, MessageSquare, Flag, MoreVertical } from 'lucide-react';
+import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle, MessageSquare, Flag, MoreVertical, UserMinus, RefreshCw, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import ReactMarkdown from 'react-markdown';
+import { Link } from 'react-router-dom';
 
 export default function AdminDashboardPage() {
   const getNextVersion = (currentVersion) => {
@@ -41,6 +42,16 @@ export default function AdminDashboardPage() {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [userMenuOpen, setUserMenuOpen] = useState(null);
+  
+  // Manage organiser state
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [organiserStats, setOrganiserStats] = useState(null);
+  const [revokeModalOpen, setRevokeModalOpen] = useState(false);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [selectedNewOrganiser, setSelectedNewOrganiser] = useState(null);
+  
+  // Delete member state
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Fetch user statistics
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -86,6 +97,84 @@ export default function AdminDashboardPage() {
     setSelectedUser(user);
     setInviteModalOpen(true);
     setUserMenuOpen(null);
+  };
+
+  // Manage organiser functions
+  const handleManageOrganiserClick = async (user) => {
+    setSelectedUser(user);
+    setUserMenuOpen(null);
+    
+    try {
+      const response = await adminAPI.getOrganiserStats(user.id);
+      setOrganiserStats(response.data);
+      setManageModalOpen(true);
+    } catch (error) {
+      toast.error('Failed to load organiser stats');
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const handleRevokeClick = () => {
+    setManageModalOpen(false);
+    setRevokeModalOpen(true);
+  };
+
+  const handleTransferClick = () => {
+    setManageModalOpen(false);
+    setTransferModalOpen(true);
+  };
+
+  const handleConfirmRevoke = async () => {
+    try {
+      await adminAPI.revokeOrganiserRole(selectedUser.id);
+      toast.success(`Organiser role revoked from ${selectedUser.displayName}`);
+      setRevokeModalOpen(false);
+      setSelectedUser(null);
+      setOrganiserStats(null);
+      queryClient.invalidateQueries(['adminRecentUsers']);
+    } catch (error) {
+      toast.error('Failed to revoke organiser role');
+      console.error('Error revoking role:', error);
+    }
+  };
+
+  const handleConfirmTransfer = async () => {
+    if (!selectedNewOrganiser) {
+      toast.error('Please select a new organiser');
+      return;
+    }
+
+    try {
+      await adminAPI.transferGroupsAndRevoke(selectedUser.id, selectedNewOrganiser.id);
+      toast.success(`Groups transferred to ${selectedNewOrganiser.displayName} and role revoked`);
+      setTransferModalOpen(false);
+      setSelectedUser(null);
+      setSelectedNewOrganiser(null);
+      setOrganiserStats(null);
+      queryClient.invalidateQueries(['adminRecentUsers']);
+    } catch (error) {
+      toast.error('Failed to transfer groups');
+      console.error('Error transferring groups:', error);
+    }
+  };
+
+  const handleDeleteClick = (user) => {
+    setSelectedUser(user);
+    setUserMenuOpen(null);
+    setDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      await adminAPI.deleteMember(selectedUser.id);
+      toast.success(`Member ${selectedUser.displayName} deleted successfully`);
+      setDeleteModalOpen(false);
+      setSelectedUser(null);
+      queryClient.invalidateQueries(['adminRecentUsers']);
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Failed to delete member');
+      console.error('Error deleting member:', error);
+    }
   };
   
   const handleConfirmInvite = () => {
@@ -456,20 +545,20 @@ export default function AdminDashboardPage() {
                 {recentUsers?.map((user) => (
                   <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
-                      <div className="flex items-center">
+                      <Link to={`/members/${user.id}`} className="flex items-center group">
                         <div className="flex-shrink-0 h-10 w-10">
                           {user.profilePhotoUrl ? (
-                            <img className="h-10 w-10 rounded-full" src={user.profilePhotoUrl} alt="" />
+                            <img className="h-10 w-10 rounded-full ring-2 ring-transparent group-hover:ring-purple-500 transition-all" src={user.profilePhotoUrl} alt="" />
                           ) : (
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold ring-2 ring-transparent group-hover:ring-purple-600 transition-all">
                               {user.displayName?.charAt(0) || user.email.charAt(0).toUpperCase()}
                             </div>
                           )}
                         </div>
                         <div className="ml-3">
-                          <div className="text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">{user.displayName || 'Anonymous'}</div>
+                          <div className="text-sm font-medium text-gray-900 group-hover:text-purple-600 transition-colors truncate max-w-[120px] sm:max-w-none">{user.displayName || 'Anonymous'}</div>
                         </div>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-3 sm:px-6 py-3 sm:py-4 whitespace-nowrap hidden sm:table-cell">
                       <div className="text-sm text-gray-900 truncate max-w-[200px]">{user.email}</div>
@@ -522,10 +611,22 @@ export default function AdminDashboardPage() {
                               </button>
                             )}
                             {user.hasOrganiserRole && (
-                              <div className="px-4 py-3 text-sm text-gray-500 italic">
-                                Already an organiser
-                              </div>
+                              <button
+                                onClick={() => handleManageOrganiserClick(user)}
+                                className="w-full text-left px-4 py-3 hover:bg-orange-50 transition-colors flex items-center space-x-2 text-sm"
+                              >
+                                <Settings className="w-4 h-4 text-orange-600" />
+                                <span className="text-gray-700">Manage Organiser</span>
+                              </button>
                             )}
+                            <div className="border-t border-gray-200"></div>
+                            <button
+                              onClick={() => handleDeleteClick(user)}
+                              className="w-full text-left px-4 py-3 hover:bg-red-50 transition-colors flex items-center space-x-2 text-sm"
+                            >
+                              <UserMinus className="w-4 h-4 text-red-600" />
+                              <span className="text-red-700">Delete Member</span>
+                            </button>
                           </div>
                         )}
                       </div>
@@ -1064,6 +1165,289 @@ export default function AdminDashboardPage() {
                 className="flex-1 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {inviteMutation.isLoading ? 'Sending...' : 'Send Invitation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Organiser Modal */}
+      {manageModalOpen && selectedUser && organiserStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Manage Organiser</h3>
+              <button
+                onClick={() => {
+                  setManageModalOpen(false);
+                  setSelectedUser(null);
+                  setOrganiserStats(null);
+                }}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="flex-shrink-0 h-12 w-12">
+                  {selectedUser.profilePhotoUrl ? (
+                    <img className="h-12 w-12 rounded-full" src={selectedUser.profilePhotoUrl} alt="" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                      {selectedUser.displayName?.charAt(0) || selectedUser.email.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-base font-semibold text-gray-900">{selectedUser.displayName || 'Anonymous'}</div>
+                  <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                </div>
+              </div>
+              
+              <div className="bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Organiser Statistics</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Groups managed:</span>
+                    <span className="font-bold text-orange-600">{organiserStats.groupCount}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Events created:</span>
+                    <span className="font-bold text-pink-600">{organiserStats.eventCount}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={handleRevokeClick}
+                  className="w-full px-4 py-3 bg-white border-2 border-red-200 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-medium flex items-center justify-center space-x-2"
+                >
+                  <UserMinus className="w-5 h-5" />
+                  <span>Revoke Organiser Role</span>
+                </button>
+                
+                {organiserStats.groupCount > 0 && (
+                  <button
+                    onClick={handleTransferClick}
+                    className="w-full px-4 py-3 bg-white border-2 border-orange-200 text-orange-700 rounded-lg hover:bg-orange-50 transition-colors font-medium flex items-center justify-center space-x-2"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    <span>Transfer Groups & Revoke</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Revoke Confirmation Modal */}
+      {revokeModalOpen && selectedUser && organiserStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-red-600 flex items-center space-x-2">
+                <AlertTriangle className="w-6 h-6" />
+                <span>Confirm Revoke</span>
+              </h3>
+              <button
+                onClick={() => setRevokeModalOpen(false)}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-800 mb-2">
+                  <strong>Warning:</strong> You are about to revoke the organiser role from <strong>{selectedUser.displayName}</strong>.
+                </p>
+                <p className="text-sm text-red-700">
+                  This user manages <strong>{organiserStats.groupCount} group(s)</strong>. 
+                  {organiserStats.groupCount > 0 && (
+                    <span className="block mt-2 font-semibold">
+                      ⚠️ Their groups will remain but they will lose organiser privileges. Consider transferring groups first.
+                    </span>
+                  )}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setRevokeModalOpen(false)}
+                className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmRevoke}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all font-medium"
+              >
+                Revoke Role
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Groups Modal */}
+      {transferModalOpen && selectedUser && organiserStats && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Transfer Groups</h3>
+              <button
+                onClick={() => {
+                  setTransferModalOpen(false);
+                  setSelectedNewOrganiser(null);
+                }}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <div className="bg-gradient-to-r from-orange-50 to-pink-50 border border-orange-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-gray-700 mb-2">
+                  Transfer <strong>{organiserStats.groupCount} group(s)</strong> from <strong>{selectedUser.displayName}</strong> to another organiser.
+                </p>
+                <p className="text-sm text-orange-700 font-medium">
+                  After transfer, {selectedUser.displayName}'s organiser role will be revoked.
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select New Organiser
+                </label>
+                <select
+                  value={selectedNewOrganiser?.id || ''}
+                  onChange={(e) => {
+                    const user = recentUsers?.find(u => u.id === parseInt(e.target.value));
+                    setSelectedNewOrganiser(user);
+                  }}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                >
+                  <option value="">Choose an organiser...</option>
+                  {recentUsers?.filter(u => u.hasOrganiserRole && u.id !== selectedUser.id).map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.displayName || user.email}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedNewOrganiser && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-sm text-green-800">
+                    ✓ Groups will be transferred to <strong>{selectedNewOrganiser.displayName}</strong>
+                  </p>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setTransferModalOpen(false);
+                  setSelectedNewOrganiser(null);
+                }}
+                className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmTransfer}
+                disabled={!selectedNewOrganiser}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-orange-600 to-pink-600 text-white rounded-lg hover:from-orange-700 hover:to-pink-700 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Transfer & Revoke
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Member Confirmation Modal */}
+      {deleteModalOpen && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-red-600 flex items-center space-x-2">
+                <AlertTriangle className="w-6 h-6" />
+                <span>Delete Member</span>
+              </h3>
+              <button
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setSelectedUser(null);
+                }}
+                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+            
+            <div className="mb-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="flex-shrink-0 h-12 w-12">
+                  {selectedUser.profilePhotoUrl ? (
+                    <img className="h-12 w-12 rounded-full" src={selectedUser.profilePhotoUrl} alt="" />
+                  ) : (
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                      {selectedUser.displayName?.charAt(0) || selectedUser.email.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <div className="text-base font-semibold text-gray-900">{selectedUser.displayName || 'Anonymous'}</div>
+                  <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-red-800 mb-2">
+                  <strong>⚠️ Warning:</strong> This action cannot be undone!
+                </p>
+                <p className="text-sm text-red-700">
+                  Deleting this member will permanently remove:
+                </p>
+                <ul className="text-sm text-red-700 list-disc list-inside mt-2 space-y-1">
+                  <li>User account and profile</li>
+                  <li>Group subscriptions</li>
+                  <li>Event participations</li>
+                  <li>All notifications</li>
+                  <li>All related data</li>
+                </ul>
+                {selectedUser.hasOrganiserRole && (
+                  <p className="text-sm text-red-800 font-bold mt-3">
+                    ⚠️ This user is an organiser. If they have groups, you must transfer them first!
+                  </p>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex space-x-3">
+              <button
+                onClick={() => {
+                  setDeleteModalOpen(false);
+                  setSelectedUser(null);
+                }}
+                className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 px-4 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all font-medium"
+              >
+                Delete Permanently
               </button>
             </div>
           </div>

@@ -222,6 +222,15 @@ export const adminAPI = {
   
   // User Management
   inviteUserToOrganiser: (memberId) => api.post(`/admin/users/${memberId}/invite-organiser`),
+  
+  // Organiser Management
+  getOrganiserStats: (memberId) => api.get(`/admin/users/${memberId}/organiser-stats`),
+  revokeOrganiserRole: (memberId) => api.post(`/admin/users/${memberId}/revoke-organiser`),
+  transferGroupsAndRevoke: (oldOrganiserId, newOrganiserId) => 
+    api.post(`/admin/users/${oldOrganiserId}/transfer-groups`, { newOrganiserId }),
+  
+  // Member Management
+  deleteMember: (memberId) => api.delete(`/admin/users/${memberId}`),
 }
 
 // Feedback API (user)

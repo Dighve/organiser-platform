@@ -3,6 +3,7 @@ package com.organiser.platform.service;
 import com.organiser.platform.dto.admin.DailySignupDTO;
 import com.organiser.platform.dto.admin.RecentUserDTO;
 import com.organiser.platform.dto.admin.UserStatsDTO;
+import com.organiser.platform.model.Group;
 import com.organiser.platform.model.Member;
 import com.organiser.platform.model.Notification;
 import com.organiser.platform.repository.EventRepository;
@@ -156,5 +157,111 @@ public class AdminService {
             .build();
         
         notificationRepository.save(invitation);
+    }
+    
+    /**
+     * Revoke organiser role from a user
+     * Their groups and events remain but they can't create new ones
+     */
+    @Transactional
+    public void revokeOrganiserRole(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+            .orElseThrow(() -> new RuntimeException("Member not found"));
+        
+        if (!Boolean.TRUE.equals(member.getHasOrganiserRole())) {
+            throw new RuntimeException("User is not an organiser");
+        }
+        
+        member.setHasOrganiserRole(false);
+        member.setHasAcceptedOrganiserAgreement(false);
+        member.setOrganiserAgreementAcceptedAt(null);
+        memberRepository.save(member);
+    }
+    
+    /**
+     * Transfer all groups from one organiser to another and revoke old organiser's role
+     */
+    @Transactional
+    public void transferGroupsAndRevokeRole(Long oldOrganiserId, Long newOrganiserId) {
+        Member oldOrganiser = memberRepository.findById(oldOrganiserId)
+            .orElseThrow(() -> new RuntimeException("Old organiser not found"));
+        Member newOrganiser = memberRepository.findById(newOrganiserId)
+            .orElseThrow(() -> new RuntimeException("New organiser not found"));
+        
+        // Verify old organiser has the role
+        if (!Boolean.TRUE.equals(oldOrganiser.getHasOrganiserRole())) {
+            throw new RuntimeException("User is not an organiser");
+        }
+        
+        // Ensure new organiser has the role
+        if (!Boolean.TRUE.equals(newOrganiser.getHasOrganiserRole())) {
+            throw new RuntimeException("New organiser must have organiser role");
+        }
+        
+        // Transfer all groups
+        List<Group> groups = groupRepository.findByPrimaryOrganiserId(oldOrganiserId);
+        for (Group group : groups) {
+            group.setPrimaryOrganiser(newOrganiser);
+            groupRepository.save(group);
+        }
+        
+        // Revoke old organiser's role
+        oldOrganiser.setHasOrganiserRole(false);
+        oldOrganiser.setHasAcceptedOrganiserAgreement(false);
+        oldOrganiser.setOrganiserAgreementAcceptedAt(null);
+        memberRepository.save(oldOrganiser);
+    }
+    
+    /**
+     * Get statistics about an organiser's groups and events
+     */
+    @Transactional(readOnly = true)
+    public OrganiserStats getOrganiserStats(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+            .orElseThrow(() -> new RuntimeException("Member not found"));
+        
+        if (!Boolean.TRUE.equals(member.getHasOrganiserRole())) {
+            throw new RuntimeException("User is not an organiser");
+        }
+        
+        long groupCount = groupRepository.countByPrimaryOrganiserId(memberId);
+        long eventCount = eventRepository.countByGroupPrimaryOrganiserId(memberId);
+        
+        return new OrganiserStats(groupCount, eventCount);
+    }
+    
+    /**
+     * Delete a member from the platform
+     * This will cascade delete all related data (subscriptions, event participants, notifications)
+     * Groups owned by the member will need to be transferred first if they are an organiser
+     */
+    @Transactional
+    public void deleteMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+            .orElseThrow(() -> new RuntimeException("Member not found"));
+        
+        // Check if member is an organiser with groups
+        if (Boolean.TRUE.equals(member.getHasOrganiserRole())) {
+            long groupCount = groupRepository.countByPrimaryOrganiserId(memberId);
+            if (groupCount > 0) {
+                throw new RuntimeException("Cannot delete organiser with groups. Transfer groups first.");
+            }
+        }
+        
+        // Delete member (cascading will handle related entities)
+        memberRepository.delete(member);
+    }
+    
+    /**
+     * Inner class for organiser statistics
+     */
+    public static class OrganiserStats {
+        public final long groupCount;
+        public final long eventCount;
+        
+        public OrganiserStats(long groupCount, long eventCount) {
+            this.groupCount = groupCount;
+            this.eventCount = eventCount;
+        }
     }
 }
