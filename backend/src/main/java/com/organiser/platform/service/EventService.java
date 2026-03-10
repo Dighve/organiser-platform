@@ -52,6 +52,7 @@ public class EventService {
     private final GroupService groupService;
     private final EventParticipantRepository eventParticipantRepository;
     private final NotificationService notificationService;
+    private final BannedMemberRepository bannedMemberRepository;
     
     // ============================================================
     // PUBLIC METHODS - Event CRUD Operations
@@ -114,6 +115,7 @@ public class EventService {
                 .estimatedDurationHours(request.getEstimatedDurationHours())
                 .cancellationPolicy(request.getCancellationPolicy())
                 .imageUrl(request.getImageUrl())
+                .joinQuestion(request.getJoinQuestion())
                 .build();
         
         // Set additional collections if needed
@@ -197,6 +199,7 @@ public class EventService {
         event.setEstimatedDurationHours(request.getEstimatedDurationHours());
         event.setCancellationPolicy(request.getCancellationPolicy());
         event.setImageUrl(request.getImageUrl());
+        event.setJoinQuestion(request.getJoinQuestion());
         
         // Update collections
         if (request.getAdditionalImages() != null) {
@@ -475,7 +478,7 @@ public class EventService {
      */
     @Transactional
     @CacheEvict(value = "events", allEntries = true)
-    public EventDTO joinEvent(Long eventId, Long memberId, Integer guestCount, List<String> guestNames) {
+    public EventDTO joinEvent(Long eventId, Long memberId, Integer guestCount, List<String> guestNames, String joinQuestionAnswer) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
@@ -521,6 +524,9 @@ public class EventService {
         if (existing != null) {
             existing.setGuestCount(guests);
             existing.setNotes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null);
+            if (joinQuestionAnswer != null && !joinQuestionAnswer.isBlank()) {
+                existing.setJoinQuestionAnswer(joinQuestionAnswer);
+            }
         } else {
             EventParticipant participant = EventParticipant.builder()
                     .event(event)
@@ -529,6 +535,7 @@ public class EventService {
                     .registeredAt(LocalDateTime.now())
                     .guestCount(guests)
                     .notes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null)
+                    .joinQuestionAnswer(joinQuestionAnswer != null && !joinQuestionAnswer.isBlank() ? joinQuestionAnswer : null)
                     .build();
             event.getParticipants().add(participant);
         }
@@ -686,6 +693,7 @@ public class EventService {
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(true) // Default true for backward compatibility
+                .joinQuestion(event.getJoinQuestion())
                 .build();
     }
     
@@ -778,6 +786,7 @@ public class EventService {
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(isGroupMember)
+                .joinQuestion(event.getJoinQuestion())
                 .build();
     }
     
@@ -862,19 +871,37 @@ public class EventService {
         
         // Get the primary organiser of the group (who is the event organiser)
         Long eventOrganiserId = event.getGroup().getPrimaryOrganiser().getId();
+        Long groupId = event.getGroup().getId();
         
         return event.getParticipants().stream()
-                .map(participant -> com.organiser.platform.dto.MemberDTO.builder()
-                        .id(Boolean.FALSE.equals(participant.getMember().getActive()) ? null : participant.getMember().getId())
-                        .email(Boolean.FALSE.equals(participant.getMember().getActive()) ? null : participant.getMember().getEmail())
-                        .displayName(Boolean.FALSE.equals(participant.getMember().getActive()) ? "Deleted user" : participant.getMember().getDisplayName())
-                        .profilePhotoUrl(Boolean.FALSE.equals(participant.getMember().getActive()) ? null : participant.getMember().getProfilePhotoUrl())
-                        // Check if this participant is the organiser of THIS event
-                        .isOrganiser(participant.getMember().getId().equals(eventOrganiserId))
-                        .joinedAt(participant.getRegistrationDate())
-                        .guestCount(participant.getGuestCount())
-                        .deleted(Boolean.FALSE.equals(participant.getMember().getActive()))
-                        .build())
+                .map(participant -> {
+                    Member member = participant.getMember();
+                    boolean isDeleted = Boolean.FALSE.equals(member.getActive());
+                    boolean isBanned = bannedMemberRepository.existsByGroupIdAndMemberId(groupId, member.getId());
+                    
+                    // Determine display name: "Deleted user" for deleted, "Former Member" for banned, or actual name
+                    String displayName;
+                    if (isDeleted) {
+                        displayName = "Deleted user";
+                    } else if (isBanned) {
+                        displayName = "Former Member";
+                    } else {
+                        displayName = member.getDisplayName();
+                    }
+                    
+                    return com.organiser.platform.dto.MemberDTO.builder()
+                            .id((isDeleted || isBanned) ? null : member.getId())
+                            .email((isDeleted || isBanned) ? null : member.getEmail())
+                            .displayName(displayName)
+                            .profilePhotoUrl((isDeleted || isBanned) ? null : member.getProfilePhotoUrl())
+                            // Check if this participant is the organiser of THIS event
+                            .isOrganiser(member.getId().equals(eventOrganiserId))
+                            .joinedAt(participant.getRegistrationDate())
+                            .guestCount(participant.getGuestCount())
+                            .joinQuestionAnswer(participant.getJoinQuestionAnswer())
+                            .deleted(isDeleted || isBanned)
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
     

@@ -3,7 +3,7 @@
 // ============================================================
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Type, FileText, Image, Timer, Camera, X, ChevronDown } from 'lucide-react'
+import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Type, FileText, Image, Timer, Camera, X, ChevronDown, MessageSquare } from 'lucide-react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI, membersAPI } from '../lib/api'
@@ -155,6 +155,7 @@ export default function CreateEventPage() {
   const [showPhotoDescription, setShowPhotoDescription] = useState(false) // Mobile: toggle photo/description section
   const [showEndDate, setShowEndDate] = useState(false)                    // Mobile: toggle end date/time fields
   const [showDescriptionModal, setShowDescriptionModal] = useState(false)   // Mobile: full-screen description editor modal
+  const [joinQuestionEnabled, setJoinQuestionEnabled] = useState(false)     // Whether organisers wants to ask attendees a question
   
   // Calculate minimum time allowed based on selected date
   const getMinimumTime = (selectedDate) => {
@@ -424,6 +425,7 @@ export default function CreateEventPage() {
       requirements: selectedRequirements,
       includedItems: data.includedItems ? data.includedItems.split(',').map(s => s.trim()).filter(Boolean) : [],
       cancellationPolicy: data.cancellationPolicy || null,
+      joinQuestion: joinQuestionEnabled ? (data.joinQuestion?.trim() || null) : null,
       hostMemberId: data.hostMemberId ? Number(data.hostMemberId) : null
     }
 
@@ -1939,6 +1941,38 @@ export default function CreateEventPage() {
           {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
           <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>
         </div>
+      </div>
+
+      {/* ========== JOIN QUESTION (Optional) ========== */}
+      <div className="border-2 border-indigo-100 rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg flex-shrink-0">
+              <MessageSquare className="h-4 w-4 text-white" />
+            </div>
+            <div>
+              <p className="font-bold text-gray-900 text-sm sm:text-base">Ask members a question</p>
+              <p className="text-xs text-gray-500">Members answer when they join the event</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setJoinQuestionEnabled(prev => !prev)}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${joinQuestionEnabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${joinQuestionEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+        {joinQuestionEnabled && (
+          <div className="mt-4">
+            <textarea
+              {...register('joinQuestion')}
+              rows={2}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm sm:text-base transition-all bg-white resize-none"
+              placeholder="e.g., What's your experience level with long-distance hikes?"
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex gap-3 sm:justify-between pt-3 sm:pt-4">

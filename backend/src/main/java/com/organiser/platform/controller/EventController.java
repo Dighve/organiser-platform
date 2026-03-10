@@ -107,7 +107,8 @@ public class EventController {
     ) {
         Long userId = getUserIdFromAuth(authentication);
         int guestCount = request != null && request.getGuestCount() != null ? request.getGuestCount() : 0;
-        return ResponseEntity.ok(eventService.joinEvent(id, userId, guestCount, request != null ? request.getGuestNames() : null));
+        String answer = request != null ? request.getJoinQuestionAnswer() : null;
+        return ResponseEntity.ok(eventService.joinEvent(id, userId, guestCount, request != null ? request.getGuestNames() : null, answer));
     }
     
     @PostMapping("/{id}/leave")

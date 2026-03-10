@@ -8,4 +8,5 @@ import java.util.List;
 public class JoinEventRequest {
     private Integer guestCount = 0;
     private List<String> guestNames;
+    private String joinQuestionAnswer;
 }

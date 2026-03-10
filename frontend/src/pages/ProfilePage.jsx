@@ -41,9 +41,11 @@ export default function ProfilePage() {
   // ============================================================
   
   // Fetch current user's member data
-  const { data: memberData, isLoading } = useQuery({
+  const { data: memberData, isLoading, error, refetch } = useQuery({
     queryKey: ['currentMember'],
     queryFn: () => membersAPI.getCurrentMember().then(res => res.data),
+    retry: 3, // Retry failed requests 3 times
+    retryDelay: 1000, // Wait 1 second between retries
   })
 
   // ============================================================
@@ -223,13 +225,55 @@ export default function ProfilePage() {
   // ============================================================
   // ERROR STATE
   // ============================================================
+  if (error) {
+    console.error('Profile load error:', error)
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="text-6xl mb-4">😕</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Profile</h2>
+          <p className="text-gray-600 mb-4">
+            {error.response?.status === 401 
+              ? 'Your session has expired. Please sign in again.' 
+              : error.response?.data?.message || 'There was an error loading your profile.'}
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={() => refetch()}
+              className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+            >
+              Try Again
+            </button>
+            {error.response?.status === 401 && (
+              <button
+                onClick={() => {
+                  logout()
+                  navigate('/')
+                }}
+                className="px-6 py-2.5 bg-white text-gray-700 font-semibold rounded-xl border border-gray-200 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+              >
+                Sign In
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!memberData) {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😕</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Profile</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Profile Data</h2>
           <p className="text-gray-600 mb-6">Please try refreshing the page</p>
+          <button
+            onClick={() => refetch()}
+            className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all"
+          >
+            Refresh
+          </button>
         </div>
       </div>
     )

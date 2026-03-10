@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search } from 'lucide-react'
+import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search, MoreVertical, Ban, UserCheck } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
@@ -140,6 +140,11 @@ export default function GroupDetailPage() {
     maxMembers: '',
     isPublic: true,
   })
+  const [openMenuMemberId, setOpenMenuMemberId] = useState(null)
+  const [removeModalOpen, setRemoveModalOpen] = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState(null)
+  const [removeOption, setRemoveOption] = useState('remove') // 'remove' or 'ban'
+  const [banReason, setBanReason] = useState('')
 
   // Set initial tab from URL parameter (e.g., ?tab=events)
   useEffect(() => {
@@ -216,6 +221,14 @@ export default function GroupDetailPage() {
   // Check user's relationship to this group
   const isGroupOrganiser = organisedGroups.some(g => g.id === parseInt(id))
   const isSubscribed = subscribedGroups.some(g => g.id === parseInt(id))
+
+  // 6. Fetch banned members (organiser only) - MUST be after isGroupOrganiser is defined
+  const { data: bannedMembersData, isLoading: bannedMembersLoading } = useQuery({
+    queryKey: ['bannedMembers', id],
+    queryFn: () => groupsAPI.getBannedMembers(id),
+    enabled: !!id && isGroupOrganiser,
+    staleTime: 0,
+  })
   
   // Split events into upcoming and past for easier rendering
   const now = new Date()
@@ -256,6 +269,58 @@ export default function GroupDetailPage() {
     },
     onError: (error) => {
       alert(error.response?.data?.message || 'Failed to leave group')
+    },
+  })
+
+  // Remove member from group (organiser only)
+  const removeMemberMutation = useMutation({
+    mutationFn: ({ memberId }) => groupsAPI.removeMember(id, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['groupMembers', id])
+      queryClient.invalidateQueries(['group', id])
+      toast.success('Member removed from group')
+      setRemoveModalOpen(false)
+      setMemberToRemove(null)
+      setRemoveOption('remove')
+      setBanReason('')
+      setOpenMenuMemberId(null)
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to remove member')
+    },
+  })
+
+  // Ban member from group (organiser only)
+  const banMemberMutation = useMutation({
+    mutationFn: ({ memberId, reason }) => groupsAPI.banMember(id, memberId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['groupMembers', id])
+      queryClient.invalidateQueries(['bannedMembers', id])
+      queryClient.invalidateQueries(['group', id])
+      toast.success('Member banned from group')
+      setRemoveModalOpen(false)
+      setMemberToRemove(null)
+      setRemoveOption('remove')
+      setBanReason('')
+      setOpenMenuMemberId(null)
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to ban member')
+    },
+  })
+
+  // Unban member from group (organiser only)
+  const unbanMemberMutation = useMutation({
+    mutationFn: ({ groupId, memberId }) => groupsAPI.unbanMember(groupId, memberId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['groupMembers', id])
+      queryClient.invalidateQueries(['bannedMembers', id])
+      queryClient.invalidateQueries(['group', id])
+      toast.success('Member unbanned successfully')
+      setOpenMenuMemberId(null)
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to unban member')
     },
   })
 
@@ -656,26 +721,63 @@ export default function GroupDetailPage() {
                       {membersData.data.map((member) => (
                         <div 
                           key={member.id} 
-                          onClick={() => navigate(`/members/${member.id}`)}
-                          className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-1"
+                          className="flex items-center space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl hover:shadow-lg transition-all group relative"
                         >
-                          <ProfileAvatar 
-                            member={member} 
-                            size="lg" 
-                            className="group-hover:scale-110 transition-transform"
-                            showBadge={member.isOrganiser}
-                            badgeType="organiser"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
-                              {member.displayName || member.email.split('@')[0]}
-                            </p>
-                            <p className="text-xs text-gray-500 truncate">
-                              Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                            </p>
+                          <div 
+                            onClick={() => navigate(`/members/${member.id}`)}
+                            className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer"
+                          >
+                            <ProfileAvatar 
+                              member={member} 
+                              size="lg" 
+                              className="group-hover:scale-110 transition-transform"
+                              showBadge={member.isOrganiser}
+                              badgeType="organiser"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
+                                {member.displayName || member.email.split('@')[0]}
+                              </p>
+                              <p className="text-xs text-gray-500 truncate">
+                                Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                              </p>
+                            </div>
+                            {member.isOrganiser && (
+                              <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Organiser</span>
+                            )}
                           </div>
-                          {member.isOrganiser && (
-                            <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Organiser</span>
+                          
+                          {/* Triple dots menu - Only for organiser, not for themselves or other organisers */}
+                          {isGroupOrganiser && !member.isOrganiser && member.id !== user?.id && (
+                            <div className="relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setOpenMenuMemberId(openMenuMemberId === member.id ? null : member.id)
+                                }}
+                                className="p-2 hover:bg-white/50 rounded-lg transition-colors"
+                              >
+                                <MoreVertical className="h-5 w-5 text-gray-600" />
+                              </button>
+                              
+                              {/* Dropdown menu */}
+                              {openMenuMemberId === member.id && (
+                                <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10 min-w-[180px]">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setMemberToRemove(member)
+                                      setRemoveModalOpen(true)
+                                      setOpenMenuMemberId(null)
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
+                                  >
+                                    <UserCheck className="h-4 w-4" />
+                                    Remove Member
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       ))}
@@ -685,6 +787,72 @@ export default function GroupDetailPage() {
                     <div className="text-center py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
                       <Users className="h-12 w-12 mx-auto mb-3 text-gray-400" />
                       <p className="text-gray-600">No members yet. Be the first to join this group!</p>
+                    </div>
+                  )}
+
+                  {/* ============================================ */}
+                  {/* BANNED MEMBERS SECTION (Organiser only) */}
+                  {/* ============================================ */}
+                  {isGroupOrganiser && bannedMembersData?.data && bannedMembersData.data.length > 0 && (
+                    <div className="mt-12">
+                      <h2 className="text-2xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-6 flex items-center gap-2">
+                        <Ban className="h-6 w-6 text-red-600" />
+                        Banned Members ({bannedMembersData.data.length})
+                      </h2>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {bannedMembersData.data.map((member) => (
+                          <div
+                            key={member.id}
+                            className="bg-red-50/50 backdrop-blur-sm rounded-xl p-4 border border-red-200 hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="flex items-start gap-4">
+                              <ProfileAvatar 
+                                member={member} 
+                                size="lg"
+                                className="opacity-60"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-gray-900 truncate">
+                                  {member.displayName || member.email?.split('@')[0] || 'Unknown'}
+                                </h3>
+                                <p className="text-sm text-gray-600 truncate">{member.email}</p>
+                                
+                                {/* Ban details */}
+                                <div className="mt-2 space-y-1">
+                                  <p className="text-xs text-gray-500">
+                                    Banned by <span className="font-medium text-gray-700">{member.bannedBy}</span>
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {new Date(member.bannedAt).toLocaleDateString('en-US', { 
+                                      year: 'numeric', 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                  {member.banReason && (
+                                    <p className="text-xs text-red-700 mt-2 italic">
+                                      "{member.banReason}"
+                                    </p>
+                                  )}
+                                </div>
+
+                                {/* Unban button */}
+                                <button
+                                  onClick={() => {
+                                    unbanMemberMutation.mutate({ groupId: id, memberId: member.id })
+                                  }}
+                                  className="mt-3 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 transition-all duration-200 shadow-md hover:shadow-lg flex items-center gap-2 text-sm font-medium"
+                                >
+                                  <UserCheck className="h-4 w-4" />
+                                  Unban Member
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1083,6 +1251,158 @@ export default function GroupDetailPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* Remove Member Modal (Meetup-style) */}
+      {removeModalOpen && memberToRemove && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 animate-fade-in">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-orange-100 rounded-full">
+                <UserCheck className="h-6 w-6 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">Remove Member from Group?</h3>
+                <p className="text-sm text-gray-600">Choose how you'd like to proceed</p>
+              </div>
+            </div>
+
+            {/* Member info */}
+            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-3">
+                <ProfileAvatar member={memberToRemove} size="md" />
+                <div>
+                  <p className="font-semibold text-gray-900">
+                    {memberToRemove.displayName || memberToRemove.email?.split('@')[0]}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Member since {new Date(memberToRemove.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Remove Options */}
+            <div className="space-y-3 mb-4">
+              {/* Option 1: Remove Only */}
+              <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${
+                removeOption === 'remove' ? 'border-purple-500 bg-purple-50' : 'border-gray-200'
+              }">
+                <input
+                  type="radio"
+                  name="removeOption"
+                  value="remove"
+                  checked={removeOption === 'remove'}
+                  onChange={(e) => setRemoveOption(e.target.value)}
+                  className="mt-1 h-4 w-4 text-purple-600 focus:ring-purple-500"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900">Remove from Group</p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Member can rejoin the group later if they wish
+                  </p>
+                  <ul className="text-xs text-gray-500 mt-2 space-y-1 ml-4">
+                    <li>• Removed from group immediately</li>
+                    <li>• Future event participations cancelled</li>
+                    <li>• Can rejoin anytime</li>
+                  </ul>
+                </div>
+              </label>
+
+              {/* Option 2: Remove & Ban */}
+              <label className="flex items-start gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all hover:bg-gray-50 ${
+                removeOption === 'ban' ? 'border-red-500 bg-red-50' : 'border-gray-200'
+              }">
+                <input
+                  type="radio"
+                  name="removeOption"
+                  value="ban"
+                  checked={removeOption === 'ban'}
+                  onChange={(e) => setRemoveOption(e.target.value)}
+                  className="mt-1 h-4 w-4 text-red-600 focus:ring-red-500"
+                />
+                <div className="flex-1">
+                  <p className="font-semibold text-gray-900 flex items-center gap-2">
+                    <Ban className="h-4 w-4 text-red-600" />
+                    Remove & Ban from Group
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Permanently prevent this member from rejoining
+                  </p>
+                  <ul className="text-xs text-gray-500 mt-2 space-y-1 ml-4">
+                    <li>• Removed from group immediately</li>
+                    <li>• Future event participations cancelled</li>
+                    <li>• Cannot rejoin unless unbanned</li>
+                    <li>• Past events show "Former Member"</li>
+                  </ul>
+                </div>
+              </label>
+            </div>
+
+            {/* Ban reason (only shown if ban option selected) */}
+            {removeOption === 'ban' && (
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Reason for ban (optional)
+                </label>
+                <textarea
+                  value={banReason}
+                  onChange={(e) => setBanReason(e.target.value)}
+                  placeholder="Enter a reason for banning this member..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                  rows="3"
+                  maxLength="500"
+                />
+                <p className="text-xs text-gray-500 mt-1">{banReason.length}/500 characters</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setRemoveModalOpen(false)
+                  setMemberToRemove(null)
+                  setRemoveOption('remove')
+                  setBanReason('')
+                }}
+                className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                disabled={removeMemberMutation.isPending || banMemberMutation.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (removeOption === 'remove') {
+                    removeMemberMutation.mutate({ memberId: memberToRemove.id })
+                  } else {
+                    banMemberMutation.mutate({
+                      memberId: memberToRemove.id,
+                      reason: banReason.trim() || undefined
+                    })
+                  }
+                }}
+                className={`flex-1 px-6 py-3 text-white font-semibold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+                  removeOption === 'ban' 
+                    ? 'bg-gradient-to-r from-red-600 to-red-700' 
+                    : 'bg-gradient-to-r from-purple-600 to-pink-600'
+                }`}
+                disabled={removeMemberMutation.isPending || banMemberMutation.isPending}
+              >
+                {(removeMemberMutation.isPending || banMemberMutation.isPending) ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    {removeOption === 'ban' ? 'Banning...' : 'Removing...'}
+                  </span>
+                ) : (
+                  removeOption === 'ban' ? 'Remove & Ban' : 'Remove Member'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

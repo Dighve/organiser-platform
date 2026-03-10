@@ -3,7 +3,7 @@
 // ============================================================
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package, X, Camera, ChevronDown, FileText } from 'lucide-react'
+import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package, X, Camera, ChevronDown, FileText, MessageSquare } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
@@ -62,6 +62,7 @@ export default function EditEventPage() {
   const [selectedRequirements, setSelectedRequirements] = useState([])  // Custom gear requirements tags
   const [showPhotoDescription, setShowPhotoDescription] = useState(false) // Mobile: toggle photo/description section
   const [showDescriptionModal, setShowDescriptionModal] = useState(false)  // Mobile: full-screen description editor modal
+  const [joinQuestionEnabled, setJoinQuestionEnabled] = useState(false)    // Whether organiser wants to ask attendees a question
   
   // Watch individual fields for validation and conditional rendering
   const watchedTitle = watch('title')
@@ -134,7 +135,12 @@ export default function EditEventPage() {
         distanceKm: event.distanceKm,
         elevationGainM: event.elevationGainM,
         imageUrl: event.imageUrl,
-        hostName: event.organiserName || ''  // Pre-fill host name
+        hostName: event.organiserName || '',  // Pre-fill host name
+        joinQuestion: event.joinQuestion || ''
+      }
+      
+      if (event.joinQuestion) {
+        setJoinQuestionEnabled(true)
       }
       
       setFormData(initialData)
@@ -235,6 +241,7 @@ export default function EditEventPage() {
       requirements: selectedRequirements,
       includedItems: [],
       cancellationPolicy: null,
+      joinQuestion: joinQuestionEnabled ? (data.joinQuestion?.trim() || null) : null,
       hostMemberId: formData.hostMemberId ? Number(formData.hostMemberId) : null
     }
 
@@ -667,6 +674,36 @@ export default function EditEventPage() {
         <input type="hidden" {...register('hostMemberId')} />
         <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
         {errors.hostName && <p className="text-red-500 text-xs mt-1.5">⚠ {errors.hostName.message}</p>}
+      </div>
+
+      {/* Join question toggle */}
+      <div className="border border-indigo-100 rounded-2xl p-4 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex-shrink-0">
+              <MessageSquare className="h-3.5 w-3.5 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Ask members a question</p>
+              <p className="text-xs text-gray-400">Members answer when they join</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setJoinQuestionEnabled(prev => !prev)}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${joinQuestionEnabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${joinQuestionEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+        {joinQuestionEnabled && (
+          <textarea
+            {...register('joinQuestion')}
+            rows={2}
+            className="mt-3 w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm bg-white resize-none"
+            placeholder="e.g., What's your experience level with long-distance hikes?"
+          />
+        )}
       </div>
     </div>
   )
@@ -1372,6 +1409,38 @@ export default function EditEventPage() {
                 <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
                 {errors.hostName && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.hostName.message}</p>}
                 <p className="text-sm text-gray-500 mt-2">Select from group members or type any name</p>
+              </div>
+
+              {/* ========== JOIN QUESTION (Optional) ========== */}
+              <div className="border-2 border-indigo-100 rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-indigo-50 to-purple-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg flex-shrink-0">
+                      <MessageSquare className="h-4 w-4 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm sm:text-base">Ask members a question</p>
+                      <p className="text-xs text-gray-500">Members answer when they join the event</p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setJoinQuestionEnabled(prev => !prev)}
+                    className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${joinQuestionEnabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
+                  >
+                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${joinQuestionEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                  </button>
+                </div>
+                {joinQuestionEnabled && (
+                  <div className="mt-4">
+                    <textarea
+                      {...register('joinQuestion')}
+                      rows={2}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm sm:text-base transition-all bg-white resize-none"
+                      placeholder="e.g., What's your experience level with long-distance hikes?"
+                    />
+                  </div>
+                )}
               </div>
             </div>
             )}

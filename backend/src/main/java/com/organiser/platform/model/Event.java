@@ -143,6 +143,9 @@ public class Event {
     @Builder.Default
     private Set<String> includedItems = new HashSet<>();
     
+    @Column(name = "join_question", columnDefinition = "TEXT")
+    private String joinQuestion;
+    
     @Column(name = "average_rating")
     private Double averageRating;
     

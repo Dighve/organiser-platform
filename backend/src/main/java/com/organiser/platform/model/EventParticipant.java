@@ -70,6 +70,9 @@ public class EventParticipant {
     @Column(name = "guest_count", nullable = false)
     @Builder.Default
     private Integer guestCount = 0;
+
+    @Column(name = "join_question_answer", columnDefinition = "TEXT")
+    private String joinQuestionAnswer;
     
     public enum ParticipationStatus {
         REGISTERED,

@@ -17,7 +17,9 @@ import com.organiser.platform.repository.EventParticipantRepository;
 import com.organiser.platform.repository.GroupRepository;
 import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.repository.SubscriptionRepository;
+import com.organiser.platform.repository.BannedMemberRepository;
 import com.organiser.platform.model.Subscription;
+import com.organiser.platform.model.BannedMember;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -55,6 +57,8 @@ public class GroupService {
     private final com.organiser.platform.repository.ActivityRepository activityRepository;
     private final EventRepository eventRepository;
     private final EventParticipantRepository eventParticipantRepository;
+    private final BannedMemberRepository bannedMemberRepository;
+    private final NotificationService notificationService;
     
     // ============================================================
     // PUBLIC METHODS - Group CRUD Operations
@@ -393,5 +397,177 @@ public class GroupService {
                     return a.getJoinedAt().compareTo(b.getJoinedAt());
                 })
                 .collect(java.util.stream.Collectors.toList());
+    }
+    
+    // ============================================================
+    // BAN MANAGEMENT METHODS
+    // ============================================================
+    
+    /**
+     * Ban a member from a group (organiser only).
+     * Removes their subscription and all future event participations.
+     */
+    @Transactional
+    @CacheEvict(value = {"groups", "events"}, allEntries = true)
+    public void banMemberFromGroup(Long groupId, Long memberIdToBan, Long organiserId, String reason) {
+        // Verify group exists
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Verify requester is the organiser
+        if (!group.getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("Only the group organiser can ban members");
+        }
+        
+        // Cannot ban yourself
+        if (memberIdToBan.equals(organiserId)) {
+            throw new RuntimeException("Cannot ban yourself from the group");
+        }
+        
+        // Verify member exists
+        Member memberToBan = memberRepository.findById(memberIdToBan)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+        
+        // Check if already banned
+        if (bannedMemberRepository.existsByGroupIdAndMemberId(groupId, memberIdToBan)) {
+            throw new RuntimeException("Member is already banned from this group");
+        }
+        
+        // Create ban record
+        BannedMember ban = BannedMember.builder()
+                .group(group)
+                .member(memberToBan)
+                .bannedBy(group.getPrimaryOrganiser())
+                .bannedAt(LocalDateTime.now())
+                .reason(reason)
+                .build();
+        bannedMemberRepository.save(ban);
+        
+        // Remove their subscription
+        subscriptionRepository.findByMemberIdAndGroupId(memberIdToBan, groupId)
+                .ifPresent(subscriptionRepository::delete);
+        
+        // Remove from all future events in this group
+        List<Event> futureEvents = eventRepository.findByGroupId(groupId, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .filter(event -> event.getEventDate().isAfter(java.time.Instant.now()))
+                .collect(Collectors.toList());
+        
+        for (Event event : futureEvents) {
+            eventParticipantRepository.findByEventIdAndMemberId(event.getId(), memberIdToBan)
+                    .ifPresent(eventParticipantRepository::delete);
+        }
+        
+        // Send notification to banned member
+        notificationService.createBanNotification(memberToBan, group, reason);
+    }
+    
+    /**
+     * Unban a member from a group (organiser only).
+     */
+    @Transactional
+    @CacheEvict(value = {"groups", "events"}, allEntries = true)
+    public void unbanMemberFromGroup(Long groupId, Long memberIdToUnban, Long organiserId) {
+        // Verify group exists
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Verify requester is the organiser
+        if (!group.getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("Only the group organiser can unban members");
+        }
+        
+        // Find and delete ban record
+        BannedMember ban = bannedMemberRepository.findByGroupIdAndMemberId(groupId, memberIdToUnban)
+                .orElseThrow(() -> new RuntimeException("Member is not banned from this group"));
+        
+        bannedMemberRepository.delete(ban);
+    }
+    
+    /**
+     * Check if a member is banned from a group.
+     */
+    public boolean isMemberBanned(Long groupId, Long memberId) {
+        return bannedMemberRepository.existsByGroupIdAndMemberId(groupId, memberId);
+    }
+    
+    /**
+     * Get list of group IDs a member is banned from (for filtering).
+     */
+    public List<Long> getBannedGroupIds(Long memberId) {
+        return bannedMemberRepository.findBannedGroupIdsByMemberId(memberId);
+    }
+    
+    /**
+     * Get all banned members for a group (organiser only).
+     */
+    public List<com.organiser.platform.dto.MemberDTO> getBannedMembers(Long groupId, Long organiserId) {
+        // Verify group exists
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Verify requester is the organiser
+        if (!group.getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("Only the group organiser can view banned members");
+        }
+        
+        // Get all banned members for this group
+        List<BannedMember> bannedMembers = bannedMemberRepository.findByGroupIdOrderByBannedAtDesc(groupId);
+        
+        // Convert to DTOs with ban information
+        return bannedMembers.stream()
+                .map(ban -> com.organiser.platform.dto.MemberDTO.builder()
+                        .id(ban.getMember().getId())
+                        .email(ban.getMember().getEmail())
+                        .displayName(ban.getMember().getDisplayName())
+                        .profilePhotoUrl(ban.getMember().getProfilePhotoUrl())
+                        .bannedAt(ban.getBannedAt())
+                        .bannedBy(ban.getBannedBy().getDisplayName())
+                        .banReason(ban.getReason())
+                        .build())
+                .collect(Collectors.toList());
+    }
+    
+    /**
+     * Remove a member from a group without banning (organiser only).
+     * Member can rejoin the group later.
+     */
+    @Transactional
+    @CacheEvict(value = {"groups", "events"}, allEntries = true)
+    public void removeMemberFromGroup(Long groupId, Long memberIdToRemove, Long organiserId) {
+        // Verify group exists
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Verify requester is the organiser
+        if (!group.getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("Only the group organiser can remove members");
+        }
+        
+        // Cannot remove yourself
+        if (memberIdToRemove.equals(organiserId)) {
+            throw new RuntimeException("Cannot remove yourself from the group");
+        }
+        
+        // Verify member exists
+        Member memberToRemove = memberRepository.findById(memberIdToRemove)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+        
+        // Remove their subscription (if exists)
+        subscriptionRepository.findByMemberIdAndGroupId(memberIdToRemove, groupId)
+                .ifPresent(subscriptionRepository::delete);
+        
+        // Remove from all future events in this group
+        List<Event> futureEvents = eventRepository.findByGroupId(groupId, Pageable.unpaged())
+                .getContent()
+                .stream()
+                .filter(event -> event.getEventDate().isAfter(java.time.Instant.now()))
+                .collect(Collectors.toList());
+        
+        for (Event event : futureEvents) {
+            eventParticipantRepository.findByEventIdAndMemberId(event.getId(), memberIdToRemove)
+                    .ifPresent(eventParticipantRepository::delete);
+        }
     }
 }

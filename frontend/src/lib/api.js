@@ -165,6 +165,17 @@ export const groupsAPI = {
   updateGroup: (groupId, data) => api.put(`/groups/${groupId}`, data),
   
   getGroupMembers: (groupId) => api.get(`/groups/${groupId}/members`),
+  
+  removeMember: (groupId, memberId) => 
+    api.post(`/groups/${groupId}/remove/${memberId}`),
+  
+  banMember: (groupId, memberId, reason) => 
+    api.post(`/groups/${groupId}/ban/${memberId}`, null, { params: { reason } }),
+  
+  unbanMember: (groupId, memberId) => 
+    api.post(`/groups/${groupId}/unban/${memberId}`),
+  
+  getBannedMembers: (groupId) => api.get(`/groups/${groupId}/banned-members`),
 }
 
 // Members API

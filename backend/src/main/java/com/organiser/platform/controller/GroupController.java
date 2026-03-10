@@ -124,4 +124,60 @@ public class GroupController {
             throw new RuntimeException("Unable to extract userId from authentication");
         }
     }
+    
+    /**
+     * Ban a member from a group (organiser only).
+     */
+    @PostMapping("/{groupId}/ban/{memberId}")
+    public ResponseEntity<Void> banMember(
+            @PathVariable Long groupId,
+            @PathVariable Long memberId,
+            @RequestParam(required = false) String reason,
+            Authentication authentication
+    ) {
+        Long organiserId = getUserIdFromAuth(authentication);
+        groupService.banMemberFromGroup(groupId, memberId, organiserId, reason);
+        return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * Unban a member from a group (organiser only).
+     */
+    @PostMapping("/{groupId}/unban/{memberId}")
+    public ResponseEntity<Void> unbanMember(
+            @PathVariable Long groupId,
+            @PathVariable Long memberId,
+            Authentication authentication
+    ) {
+        Long organiserId = getUserIdFromAuth(authentication);
+        groupService.unbanMemberFromGroup(groupId, memberId, organiserId);
+        return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * Get all banned members for a group (organiser only).
+     */
+    @GetMapping("/{groupId}/banned-members")
+    public ResponseEntity<?> getBannedMembers(
+            @PathVariable Long groupId,
+            Authentication authentication
+    ) {
+        Long organiserId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(groupService.getBannedMembers(groupId, organiserId));
+    }
+    
+    /**
+     * Remove a member from a group without banning (organiser only).
+     * Member can rejoin the group later.
+     */
+    @PostMapping("/{groupId}/remove/{memberId}")
+    public ResponseEntity<Void> removeMember(
+            @PathVariable Long groupId,
+            @PathVariable Long memberId,
+            Authentication authentication
+    ) {
+        Long organiserId = getUserIdFromAuth(authentication);
+        groupService.removeMemberFromGroup(groupId, memberId, organiserId);
+        return ResponseEntity.ok().build();
+    }
 }

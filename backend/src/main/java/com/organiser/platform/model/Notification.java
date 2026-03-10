@@ -41,7 +41,8 @@ public class Notification {
         EVENT_UPDATE,           // Event details updated
         EVENT_CANCELLED,        // Event cancelled
         EVENT_REMINDER,         // Event reminder (24h before)
-        ORGANISER_INVITATION    // Admin invitation to become organiser
+        ORGANISER_INVITATION,   // Admin invitation to become organiser
+        MEMBER_BANNED           // Member banned from group
     }
     
     @Id

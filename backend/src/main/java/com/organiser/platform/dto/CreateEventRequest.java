@@ -55,4 +55,5 @@ public class CreateEventRequest {
     private Set<String> requirements;
     private Set<String> includedItems;
     private String cancellationPolicy;
+    private String joinQuestion;
 }

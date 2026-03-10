@@ -169,4 +169,36 @@ public class NotificationService {
         
         notificationRepository.delete(notification);
     }
+    
+    /**
+     * Create notification when a member is banned from a group
+     */
+    @Transactional
+    public void createBanNotification(Member bannedMember, Group group, String reason) {
+        String title = "Removed from " + group.getName();
+        String message = reason != null && !reason.trim().isEmpty()
+            ? "You have been removed from " + group.getName() + ". Reason: " + reason
+            : "You have been removed from " + group.getName() + " by the organiser.";
+        
+        Notification notification = Notification.builder()
+            .member(bannedMember)
+            .notificationType(Notification.NotificationType.MEMBER_BANNED)
+            .title(title)
+            .message(message)
+            .relatedGroup(group)
+            .build();
+        
+        notificationRepository.save(notification);
+        
+        // Send web push notification
+        webPushService.sendToMember(
+            bannedMember.getId(),
+            title,
+            message,
+            "/groups"
+        );
+        
+        log.info("Created MEMBER_BANNED notification for member {} from group {}", 
+            bannedMember.getId(), group.getId());
+    }
 }

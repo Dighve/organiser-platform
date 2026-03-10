@@ -33,4 +33,11 @@ public class MemberDTO {
     private LocalDateTime joinedAt; // For event participants: registrationDate, for group members: subscription date
     private Boolean deleted;
     private Integer guestCount; // optional: populated for event participant listings
+    
+    // Ban information (for banned members list)
+    private LocalDateTime bannedAt;
+    private String bannedBy;
+    private String banReason;
+    private String joinQuestionAnswer;
+    private String notes;
 }

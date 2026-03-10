@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -53,6 +53,10 @@ export default function EventDetailPage() {
   const [guestCount, setGuestCount] = useState(0)
   const [wantsGuests, setWantsGuests] = useState(false)
   const [isGuestActionsOpen, setIsGuestActionsOpen] = useState(false)
+  const [isUpdatingGuests, setIsUpdatingGuests] = useState(false) // Track if this is an update vs new join
+  const [isJoinQuestionModalOpen, setIsJoinQuestionModalOpen] = useState(false)
+  const [joinQuestionAnswer, setJoinQuestionAnswer] = useState('')
+  const [pendingGuestCount, setPendingGuestCount] = useState(0)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -125,6 +129,7 @@ export default function EventDetailPage() {
     const count = Math.min(maxGuestSelectable, prefillCount)
     setGuestCount(count)
     setWantsGuests(count > 0)
+    setIsUpdatingGuests(hasJoined) // If user has already joined, this is an update (not a new join)
     setIsGuestModalOpen(true)
   }
   
@@ -137,17 +142,41 @@ export default function EventDetailPage() {
   const handleConfirmGuests = () => {
     const safeGuestCount = wantsGuests ? guestCount : 0
     setIsGuestModalOpen(false)
-    setIsJoiningFlow(true)
+    
+    // If event has a join question and this is a new join (not guest update), show question modal
+    if (event?.joinQuestion && !isUpdatingGuests) {
+      setPendingGuestCount(safeGuestCount)
+      setJoinQuestionAnswer('')
+      setIsJoinQuestionModalOpen(true)
+      return
+    }
+    
+    // Only show joining flow loader for new joins, not updates
+    if (!isUpdatingGuests) {
+      setIsJoiningFlow(true)
+    }
+    
     joinMutation.mutate({ guestCount: safeGuestCount })
+  }
+
+  const handleSubmitJoinQuestion = () => {
+    setIsJoinQuestionModalOpen(false)
+    setIsJoiningFlow(true)
+    joinMutation.mutate({ guestCount: pendingGuestCount, joinQuestionAnswer: joinQuestionAnswer.trim() || undefined })
   }
 
   // Join event (register for event + auto-join group - Meetup.com pattern)
   const joinMutation = useMutation({
     mutationFn: (payload = {}) => eventsAPI.joinEvent(id, payload),
     onSuccess: async () => {
-      // Show calendar modal immediately for instant feedback
-      // No toast needed - modal itself is the success indicator
-      setIsCalendarModalOpen(true)
+      // Only show calendar modal for new joins, not guest count updates
+      if (!isUpdatingGuests) {
+        setIsCalendarModalOpen(true)
+      } else {
+        // For updates, just show a success toast
+        toast.success('Guest count updated successfully')
+        setIsUpdatingGuests(false) // Reset the flag
+      }
       // Note: isJoiningFlow will be set to false when modal opens (see useEffect below)
       
       // Invalidate queries in background (don't await - let them happen async)
@@ -1016,6 +1045,12 @@ export default function EventDetailPage() {
                                   </span>
                                 )}
                               </div>
+                              {isEventOrganiser && event?.joinQuestion && participant.joinQuestionAnswer && (
+                                <p className="text-xs text-indigo-600 mt-1 flex items-start gap-1">
+                                  <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                  <span className="italic">{participant.joinQuestionAnswer}</span>
+                                </p>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -1408,6 +1443,50 @@ export default function EventDetailPage() {
                 Continue
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* JOIN QUESTION MODAL - Shown after guest picker if event has a question */}
+      {/* ============================================ */}
+      {isJoinQuestionModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => { setIsJoinQuestionModalOpen(false); setIsJoiningFlow(false) }}
+          />
+          <div className="relative w-full max-w-md bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl border border-gray-100 p-5 sm:p-6">
+            <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-gray-300" />
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex-shrink-0">
+                <MessageSquare className="h-4 w-4 text-white" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900">One quick question</h3>
+            </div>
+            <p className="text-sm text-gray-700 font-medium mt-3 mb-4">{event?.joinQuestion}</p>
+            <textarea
+              rows={3}
+              value={joinQuestionAnswer}
+              onChange={(e) => setJoinQuestionAnswer(e.target.value)}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm resize-none"
+              placeholder="Your answer..."
+              autoFocus
+            />
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={handleSubmitJoinQuestion}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow hover:shadow-lg"
+              >
+                Join Event
+              </button>
+            </div>
+            <button
+              onClick={handleSubmitJoinQuestion}
+              className="mt-2 w-full text-center text-xs text-gray-400 hover:text-gray-600"
+            >
+              Skip and join anyway
+            </button>
           </div>
         </div>
       )}
