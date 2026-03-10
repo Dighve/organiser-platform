@@ -50,5 +50,7 @@ if [ "${BASH_SOURCE[0]}" != "${0}" ]; then
     export CLOUDINARY_CLOUD_NAME=drdttgry4
     export CLOUDINARY_API_KEY=478746114596374
     export CLOUDINARY_API_SECRET=wXiHJlL_64SuSpyTUc7ajf8KdV4
+    export PUSH_VAPID_PUBLIC="BHCQVWYOmdcU7c0C5_J-NhtwWMpYtLm23wf2MZbeMMnuYLtH36a8krYAbLc2nhE8ySOv0oLEBqVm-fuHmpN0Yo8"
+    export PUSH_VAPID_PRIVATE="_62jYecTsRVNigcXaBEm8V6soDJJB0aY6FrWIZbCt94"
     echo "✅ Environment variables exported!"
 fi

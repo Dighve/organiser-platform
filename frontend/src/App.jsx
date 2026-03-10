@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
+import PushNotificationPrompt from './components/PushNotificationPrompt'
 
 // Critical pages - loaded immediately
 import HomePage from './pages/HomePage'
@@ -62,6 +63,7 @@ function App() {
   return (
     <FeatureFlagProvider>
       <ScrollToTop />
+      <PushNotificationPrompt />
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<HomePage />} />  

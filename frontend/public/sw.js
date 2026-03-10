@@ -1,4 +1,4 @@
-const CACHE_NAME = 'outmeets-shell-v1';
+const CACHE_NAME = 'outmeets-shell-v2';
 const APP_SHELL = [
   '/',
   '/index.html',
@@ -24,15 +24,24 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
+  // Skip API requests and Chrome extension URLs
+  const url = new URL(request.url);
+  if (url.pathname.startsWith('/api/')) return;
+  if (url.protocol === 'chrome-extension:') return;
   event.respondWith(
-    caches.match(request).then((cached) => cached || fetch(request))
+    fetch(request).catch(() => caches.match(request))
   );
 });
 
-// Placeholder for push notifications; backend/web-push wiring required.
+// Push notification handler
 self.addEventListener('push', (event) => {
   if (!event.data) return;
-  const data = event.data.json();
+  let data;
+  try {
+    data = event.data.json();
+  } catch (e) {
+    data = { title: 'OutMeets', body: event.data.text() };
+  }
   const title = data.title || 'OutMeets';
   const body = data.body || '';
   const url = data.url || '/';
@@ -40,14 +49,40 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(title, {
       body,
       data: { url },
-      icon: '/1.png',
-      badge: '/1.png',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      vibrate: [200, 100, 200],
+      tag: data.tag || 'outmeets-notification',
+      renotify: true,
     })
   );
 });
 
+// Deep-link: focus existing tab or open new one
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.url || '/';
-  event.waitUntil(clients.openWindow(url));
+  const targetUrl = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Try to find an existing OutMeets tab and navigate it
+      for (const client of windowClients) {
+        try {
+          const clientUrl = new URL(client.url);
+          if (clientUrl.origin === self.location.origin) {
+            return client.focus().then((focused) => {
+              if (focused && 'navigate' in focused) {
+                return focused.navigate(targetUrl);
+              }
+              return focused;
+            });
+          }
+        } catch (e) {
+          // ignore malformed URLs
+        }
+      }
+      // No existing tab found — open a new one
+      return clients.openWindow(targetUrl);
+    })
+  );
 });

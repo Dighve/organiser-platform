@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { X, Plus } from 'lucide-react'
 
-export default function TagInput({ tags = [], onChange, placeholder = "Add a tag..." }) {
+export default function TagInput({ tags = [], onChange, placeholder = "Add a tag...", hideHint = false }) {
   const [inputValue, setInputValue] = useState('')
 
   const handleKeyDown = (e) => {
@@ -64,9 +64,11 @@ export default function TagInput({ tags = [], onChange, placeholder = "Add a tag
           )}
         </div>
       </div>
-      <p className="text-sm text-gray-500 mt-2">
-        Type and press Enter to add, or click the + button. Press Backspace to remove.
-      </p>
+      {!hideHint && (
+        <p className="text-sm text-gray-500 mt-2">
+          Type and press Enter to add, or click the + button. Press Backspace to remove.
+        </p>
+      )}
       <div className="mt-3 flex flex-wrap gap-2">
           <p className="text-xs text-gray-500 w-full mb-1">Quick suggestions:</p>
           {['Hiking boots', 'Water proof jacket', 'Head torch', 'Downloaded route', 'Snacks', 'Lunch'].map((suggestion) => (

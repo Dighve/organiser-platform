@@ -3,7 +3,7 @@
 // ============================================================
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package } from 'lucide-react'
+import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package, X, Camera, ChevronDown, FileText } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
@@ -60,6 +60,8 @@ export default function EditEventPage() {
   const [currentStep, setCurrentStep] = useState(STEPS.BASICS)        // Current step in multi-step form
   const [formData, setFormData] = useState({})                        // Accumulated form data across steps
   const [selectedRequirements, setSelectedRequirements] = useState([])  // Custom gear requirements tags
+  const [showPhotoDescription, setShowPhotoDescription] = useState(false) // Mobile: toggle photo/description section
+  const [showDescriptionModal, setShowDescriptionModal] = useState(false)  // Mobile: full-screen description editor modal
   
   // Watch individual fields for validation and conditional rendering
   const watchedTitle = watch('title')
@@ -233,7 +235,7 @@ export default function EditEventPage() {
       requirements: selectedRequirements,
       includedItems: [],
       cancellationPolicy: null,
-      hostMemberId: data.hostMemberId ? Number(data.hostMemberId) : null
+      hostMemberId: formData.hostMemberId ? Number(formData.hostMemberId) : null
     }
 
     try {
@@ -250,6 +252,561 @@ export default function EditEventPage() {
   }
 
   // ============================================================
+  // MOBILE-ONLY RENDER FUNCTIONS (sm:hidden — full-screen app layout)
+  // ============================================================
+
+  const renderMobileProgressBar = () => (
+    <div className="flex-none flex items-center gap-3 px-4 py-3.5 bg-white border-b border-gray-100">
+      <button
+        type="button"
+        onClick={currentStep === 0 ? () => navigate(`/events/${id}`) : prevStep}
+        className="flex items-center gap-1 text-sm text-gray-500 font-semibold -ml-1 py-1 pr-2 active:opacity-60"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        {currentStep === 0 ? 'Cancel' : 'Back'}
+      </button>
+      <div className="flex-1 flex gap-1.5">
+        {[0, 1, 2, 3].map(i => (
+          <div
+            key={i}
+            className={`flex-1 h-1.5 rounded-full transition-all duration-500 ${
+              i < currentStep
+                ? 'bg-purple-600'
+                : i === currentStep
+                ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+                : 'bg-gray-200'
+            }`}
+          />
+        ))}
+      </div>
+      <span className="text-xs text-gray-400 font-semibold w-8 text-right">{currentStep + 1}/4</span>
+    </div>
+  )
+
+  const renderMobileBasicsContent = () => (
+    <div className="px-4 pt-6 pb-36 space-y-5">
+      <div className="pb-1">
+        <h1 className="text-2xl font-extrabold text-gray-900 leading-tight flex items-center gap-2.5">
+          <span className="text-3xl">✏️</span>
+          Update your hike
+        </h1>
+        <p className="text-sm text-gray-400 mt-1">Edit the basics — changes save when you proceed</p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Hike name *</label>
+        <input
+          value={watchedTitle || ''}
+          onChange={(e) => { setValue('title', e.target.value, { shouldValidate: true }); updateFormData({ title: e.target.value }) }}
+          placeholder="e.g. Dawn hike to Snowdon summit"
+          className={`w-full px-4 py-4 text-[15px] font-medium border rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder-gray-300 bg-white transition-all ${errors.title ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+        />
+        {errors.title && <p className="text-red-500 text-xs mt-1.5">⚠ {errors.title.message}</p>}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Date *</label>
+          <input
+            type="date"
+            value={watchedEventDate || ''}
+            onChange={(e) => { 
+              const newStartDate = e.target.value
+              setValue('eventDate', newStartDate, { shouldValidate: true })
+              updateFormData({ eventDate: newStartDate })
+              
+              // If end date/time exist, validate them against new start date
+              const endDate = watch('endDate')
+              const startTime = watchedStartTime
+              const endTime = watch('endTime')
+              
+              if (newStartDate && startTime && endDate && endTime) {
+                const startDateTime = new Date(`${newStartDate}T${startTime}`)
+                const endDateTime = new Date(`${endDate}T${endTime}`)
+                
+                if (endDateTime <= startDateTime) {
+                  // Clear invalid end date/time
+                  setValue('endDate', '')
+                  setValue('endTime', '')
+                  updateFormData({ endDate: '', endTime: '' })
+                }
+              }
+            }}
+            className={`w-full px-3 py-4 text-sm border rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white ${errors.eventDate ? 'border-red-300' : 'border-gray-200'}`}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Start time *</label>
+          <input
+            type="time"
+            value={watchedStartTime || ''}
+            onChange={(e) => { 
+              const newStartTime = e.target.value
+              setValue('startTime', newStartTime, { shouldValidate: true })
+              updateFormData({ startTime: newStartTime })
+              
+              // If end date/time exist, validate them against new start time
+              const startDate = watchedEventDate
+              const endDate = watch('endDate')
+              const endTime = watch('endTime')
+              
+              if (startDate && newStartTime && endDate && endTime) {
+                const startDateTime = new Date(`${startDate}T${newStartTime}`)
+                const endDateTime = new Date(`${endDate}T${endTime}`)
+                
+                if (endDateTime <= startDateTime) {
+                  // Clear invalid end date/time
+                  setValue('endDate', '')
+                  setValue('endTime', '')
+                  updateFormData({ endDate: '', endTime: '' })
+                }
+              }
+            }}
+            className={`w-full px-3 py-4 text-sm border rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white ${errors.startTime ? 'border-red-300' : 'border-gray-200'}`}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs text-gray-400 mb-1.5">End date</label>
+          <input
+            type="date"
+            min={watchedEventDate || ''}
+            value={watch('endDate') || ''}
+            onChange={(e) => {
+              const newEndDate = e.target.value
+              const startDate = watchedEventDate
+              const startTime = watchedStartTime
+              const endTime = watch('endTime')
+              
+              // Create datetime strings for comparison
+              if (startDate && startTime && newEndDate && endTime) {
+                const startDateTime = new Date(`${startDate}T${startTime}`)
+                const endDateTime = new Date(`${newEndDate}T${endTime}`)
+                
+                if (endDateTime <= startDateTime) {
+                  // Don't allow end datetime to be before or equal to start datetime
+                  return
+                }
+              }
+              setValue('endDate', newEndDate)
+              updateFormData({ endDate: newEndDate })
+            }}
+            className="w-full px-3 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-gray-400 mb-1.5">End time</label>
+          <input
+            type="time"
+            value={watch('endTime') || ''}
+            onChange={(e) => {
+              const newEndTime = e.target.value
+              const startDate = watchedEventDate
+              const endDate = watch('endDate')
+              const startTime = watchedStartTime
+              
+              // Create datetime strings for comparison
+              if (startDate && startTime && endDate && newEndTime) {
+                const startDateTime = new Date(`${startDate}T${startTime}`)
+                const endDateTime = new Date(`${endDate}T${newEndTime}`)
+                
+                if (endDateTime <= startDateTime) {
+                  // Don't allow end datetime to be before or equal to start datetime
+                  return
+                }
+              }
+              setValue('endTime', newEndTime)
+              updateFormData({ endTime: newEndTime })
+            }}
+            className="w-full px-3 py-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+          />
+        </div>
+      </div>
+      {(() => {
+        const startDate = watchedEventDate
+        const startTime = watchedStartTime
+        const endDate = watch('endDate')
+        const endTime = watch('endTime')
+        
+        if (startDate && startTime && endDate && endTime) {
+          const startDateTime = new Date(`${startDate}T${startTime}`)
+          const endDateTime = new Date(`${endDate}T${endTime}`)
+          
+          if (endDateTime <= startDateTime) {
+            return (
+              <p className="text-red-500 text-xs mt-2">⚠ End date & time must be after start date & time</p>
+            )
+          }
+        }
+        return null
+      })()}
+
+      <div className="rounded-2xl border border-gray-200 overflow-hidden bg-white">
+        <button
+          type="button"
+          onClick={() => setShowPhotoDescription(p => !p)}
+          className="w-full flex items-center gap-3 px-4 py-4 active:bg-gray-50 transition-colors"
+        >
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0 shadow-sm">
+            <Image className="h-4 w-4 text-white" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-semibold text-gray-900 text-sm">Photo & Description</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {(watchedImageUrl || watchedDescription) ? '✓ Added' : 'Optional — tap to add'}
+            </p>
+          </div>
+          <ChevronDown className={`h-5 w-5 text-gray-300 flex-shrink-0 transition-transform duration-300 ${showPhotoDescription ? 'rotate-180' : ''}`} />
+        </button>
+        {showPhotoDescription && (
+          <div className="border-t border-gray-100 bg-gray-50 px-4 py-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-2">Cover photo</p>
+                <div className="relative h-28 rounded-xl border-2 border-dashed border-gray-200 bg-white overflow-hidden">
+                  {watchedImageUrl && (
+                    <img src={watchedImageUrl} alt="" className="absolute inset-0 w-full h-full object-cover z-10" />
+                  )}
+                  {!watchedImageUrl && (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 z-0 pointer-events-none">
+                      <Camera className="h-6 w-6 text-gray-300" />
+                      <span className="text-xs text-gray-400">Tap to upload</span>
+                    </div>
+                  )}
+                  <div className="absolute inset-0 z-20 opacity-0">
+                    <ImageUpload
+                      value={watchedImageUrl}
+                      onChange={(url) => { setValue('imageUrl', url); updateFormData({ imageUrl: url }) }}
+                      folder="event-photo"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-2">Description</p>
+                <button
+                  type="button"
+                  onClick={() => setShowDescriptionModal(true)}
+                  className="w-full h-28 border-2 border-dashed border-gray-200 rounded-xl bg-white flex flex-col items-start justify-start p-2.5 overflow-hidden text-left active:bg-gray-50"
+                >
+                  {watchedDescription ? (
+                    <p className="text-xs text-gray-600 line-clamp-5 leading-relaxed">
+                      {watchedDescription.replace(/[#*_[\]()]/g, '')}
+                    </p>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center w-full h-full gap-1.5">
+                      <FileText className="h-6 w-6 text-gray-300" />
+                      <span className="text-xs text-gray-400">Tap to write</span>
+                    </div>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  const renderMobileLocationContent = () => (
+    <div className="px-4 pt-6 pb-36 space-y-5">
+      <div className="pb-1">
+        <h1 className="text-2xl font-extrabold text-gray-900 leading-tight flex items-center gap-2.5">
+          <span className="text-3xl">📍</span>
+          Update location
+        </h1>
+        <p className="text-sm text-gray-400 mt-1">Search for your trailhead or meeting point</p>
+      </div>
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Search location *</label>
+        <GooglePlacesAutocomplete
+          value={watchedLocation}
+          onChange={(value) => setValue('location', value)}
+          onPlaceSelect={(locationData) => {
+            setValue('location', locationData.address, { shouldValidate: true })
+            setValue('latitude', locationData.latitude)
+            setValue('longitude', locationData.longitude)
+            updateFormData({
+              location: locationData.address,
+              latitude: locationData.latitude,
+              longitude: locationData.longitude
+            })
+          }}
+          error={errors.location?.message}
+        />
+        <input type="hidden" {...register('location', { required: 'Location is required' })} />
+        <input type="hidden" {...register('latitude')} />
+        <input type="hidden" {...register('longitude')} />
+      </div>
+      {watchedLatitude && watchedLongitude && (
+        <div className="flex items-center gap-3 px-4 py-3.5 bg-green-50 border border-green-200 rounded-2xl">
+          <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
+            <Check className="h-4 w-4 text-white" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-green-800 truncate">{watchedLocation}</p>
+            <p className="text-xs text-green-600 mt-0.5">Location verified ✓</p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  const renderMobileDetailsContent = () => (
+    <div className="px-4 pt-6 pb-36 space-y-6">
+      <div className="pb-1">
+        <h1 className="text-2xl font-extrabold text-gray-900 leading-tight flex items-center gap-2.5">
+          <span className="text-3xl">⛰️</span>
+          Update details
+        </h1>
+        <p className="text-sm text-gray-400 mt-1">Edit difficulty, stats, and requirements</p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Difficulty level</label>
+        <div className="grid grid-cols-2 gap-2.5">
+          {DIFFICULTY_OPTIONS.map(opt => {
+            const selected = watchedDifficultyLevel === opt.value
+            const colorMap = {
+              BEGINNER: selected ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-200' : 'bg-white border-gray-200 text-gray-700',
+              INTERMEDIATE: selected ? 'bg-amber-400 border-amber-400 text-gray-900 shadow-lg shadow-amber-200' : 'bg-white border-gray-200 text-gray-700',
+              ADVANCED: selected ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-200' : 'bg-white border-gray-200 text-gray-700',
+              EXPERT: selected ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-200' : 'bg-white border-gray-200 text-gray-700',
+            }
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { setValue('difficultyLevel', opt.value); updateFormData({ difficultyLevel: opt.value }) }}
+                className={`py-3.5 px-4 rounded-2xl border-2 font-semibold text-sm flex items-center gap-2.5 transition-all active:scale-95 ${colorMap[opt.value]}`}
+              >
+                <span className="text-base">{opt.icon}</span>
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Distance (km)</label>
+          <input
+            type="number"
+            step="0.1"
+            value={watch('distanceKm') || ''}
+            onChange={(e) => { setValue('distanceKm', e.target.value); updateFormData({ distanceKm: e.target.value }) }}
+            className="w-full px-3 py-4 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            placeholder="15.5"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Elevation (m)</label>
+          <input
+            type="number"
+            value={watch('elevationGainM') || ''}
+            onChange={(e) => { setValue('elevationGainM', e.target.value); updateFormData({ elevationGainM: e.target.value }) }}
+            className="w-full px-3 py-4 text-sm border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            placeholder="600"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Max participants</label>
+        <input
+          type="number"
+          value={watch('maxParticipants') || ''}
+          onChange={(e) => { setValue('maxParticipants', e.target.value); updateFormData({ maxParticipants: e.target.value }) }}
+          className="w-full px-4 py-4 text-[15px] border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+          placeholder="20 (leave empty for unlimited)"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Required gear</label>
+        <TagInput
+          tags={selectedRequirements}
+          onChange={setSelectedRequirements}
+          placeholder="Type item and press Enter..."
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Cost per person (£)</label>
+        <input
+          type="number"
+          step="0.01"
+          value={watch('price') || ''}
+          onChange={(e) => { setValue('price', e.target.value); updateFormData({ price: e.target.value }) }}
+          className="w-full px-4 py-4 text-[15px] border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+          placeholder="0.00 (leave empty if free)"
+        />
+      </div>
+
+      <div>
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Host / Guide *</label>
+        <MemberAutocomplete
+          groupId={event?.groupId}
+          value={watchedHostName}
+          onChange={(value) => {
+            if (typeof value === 'object' && value.id) {
+              setValue('hostMemberId', value.id)
+              setValue('hostName', value.name)
+              updateFormData({ hostMemberId: value.id, hostName: value.name })
+            } else {
+              setValue('hostMemberId', null)
+              setValue('hostName', value)
+              updateFormData({ hostName: value })
+            }
+          }}
+          error={errors.hostName?.message}
+        />
+        <input type="hidden" {...register('hostMemberId')} />
+        <input type="hidden" {...register('hostName', { required: 'Host name is required' })} />
+        {errors.hostName && <p className="text-red-500 text-xs mt-1.5">⚠ {errors.hostName.message}</p>}
+      </div>
+    </div>
+  )
+
+  const renderMobileReviewContent = () => (
+    <div className="px-4 pt-6 pb-36 space-y-4">
+      <div className="pb-1">
+        <h1 className="text-2xl font-extrabold text-gray-900 leading-tight flex items-center gap-2.5">
+          <span className="text-3xl">✅</span>
+          Review changes
+        </h1>
+        <p className="text-sm text-gray-400 mt-1">Everything look good? Tap update to save</p>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Basics</p>
+          <button type="button" onClick={() => goToStep(STEPS.BASICS)} className="text-xs font-semibold text-purple-600 active:opacity-60">Edit</button>
+        </div>
+        <p className="font-bold text-gray-900 text-base mb-2">{formData.title || '—'}</p>
+        <p className="text-sm text-gray-600 flex items-center gap-1.5">
+          <Clock className="h-3.5 w-3.5 text-gray-400" />
+          {formData.eventDate} at {formData.startTime}
+        </p>
+        {(formData.endDate || formData.endTime) && (
+          <p className="text-sm text-gray-600 flex items-center gap-1.5 mt-1">
+            <Clock className="h-3.5 w-3.5 text-gray-400" />
+            Ends: {formData.endDate || formData.eventDate} {formData.endTime ? `at ${formData.endTime}` : ''}
+          </p>
+        )}
+        {formData.imageUrl && (
+          <img src={formData.imageUrl} alt="" className="w-full h-28 object-cover rounded-xl mt-3" />
+        )}
+        {formData.description && (
+          <p className="text-xs text-gray-600 mt-2 line-clamp-3 leading-relaxed">{formData.description.replace(/[#*_[\]()]/g, '')}</p>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Location</p>
+          <button type="button" onClick={() => goToStep(STEPS.LOCATION)} className="text-xs font-semibold text-purple-600 active:opacity-60">Edit</button>
+        </div>
+        <p className="text-sm text-gray-700 font-medium">{formData.location || '—'}</p>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Details</p>
+          <button type="button" onClick={() => goToStep(STEPS.DETAILS)} className="text-xs font-semibold text-purple-600 active:opacity-60">Edit</button>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {formData.difficultyLevel && (
+            <span className="px-2.5 py-1 bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold rounded-lg">{formData.difficultyLevel}</span>
+          )}
+          {formData.distanceKm && (
+            <span className="px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg">{formData.distanceKm} km</span>
+          )}
+          {formData.elevationGainM && (
+            <span className="px-2.5 py-1 bg-green-50 border border-green-200 text-green-700 text-xs font-semibold rounded-lg">↑ {formData.elevationGainM} m</span>
+          )}
+          {formData.maxParticipants && (
+            <span className="px-2.5 py-1 bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold rounded-lg">{formData.maxParticipants} max</span>
+          )}
+          {(Number(formData.price) > 0) && (
+            <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold rounded-lg">£{formData.price}</span>
+          )}
+        </div>
+        {selectedRequirements.length > 0 && (
+          <div className="mt-3">
+            <p className="text-xs font-semibold text-gray-500 mb-1.5">Required gear</p>
+            <div className="flex flex-wrap gap-1.5">
+              {selectedRequirements.map((item, i) => (
+                <span key={i} className="px-2.5 py-1 bg-purple-50 border border-purple-200 text-purple-700 text-xs font-medium rounded-lg">{item}</span>
+              ))}
+            </div>
+          </div>
+        )}
+        {formData.hostName && (
+          <p className="text-sm text-gray-600 mt-2 flex items-center gap-1.5">
+            <UserPlus className="h-3.5 w-3.5 text-gray-400" />
+            {formData.hostName}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+
+  const renderMobileLayout = () => (
+    <div className="sm:hidden fixed top-16 left-0 right-0 bottom-0 z-40 flex flex-col bg-gray-50">
+      {renderMobileProgressBar()}
+      <form
+        onSubmit={handleSubmit(currentStep === STEPS.REVIEW ? onFinalSubmit : onStepSubmit)}
+        className="flex flex-col flex-1 min-h-0"
+      >
+        <div className="flex-1 overflow-y-auto">
+          {currentStep === STEPS.BASICS && renderMobileBasicsContent()}
+          {currentStep === STEPS.LOCATION && renderMobileLocationContent()}
+          {currentStep === STEPS.DETAILS && renderMobileDetailsContent()}
+          {currentStep === STEPS.REVIEW && renderMobileReviewContent()}
+        </div>
+        <div className="flex-none px-4 py-4 bg-white border-t border-gray-100 shadow-md">
+          <button
+            type="submit"
+            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl text-base active:scale-95 transition-all shadow-lg"
+          >
+            {currentStep === STEPS.REVIEW ? '✅ Update Event' : 'Continue →'}
+          </button>
+        </div>
+      </form>
+      {showDescriptionModal && (
+        <div className="fixed inset-0 z-[200] flex flex-col bg-white">
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100">
+            <h3 className="font-bold text-gray-900">Event Description</h3>
+            <button type="button" onClick={() => setShowDescriptionModal(false)} className="p-2 rounded-xl bg-gray-100 active:bg-gray-200">
+              <X className="h-4 w-4 text-gray-600" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto p-4">
+            <MarkdownEditor
+              value={watchedDescription}
+              onChange={(val) => { setValue('description', val); updateFormData({ description: val }) }}
+              placeholder="Describe your hike, meeting point, what to expect..."
+            />
+          </div>
+          <div className="px-4 py-4 border-t border-gray-100">
+            <button
+              type="button"
+              onClick={() => setShowDescriptionModal(false)}
+              className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-2xl text-base"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // ============================================================
   // RENDER FUNCTIONS
   // ============================================================
   
@@ -259,27 +816,29 @@ export default function EditEventPage() {
     
     return (
       <div className="mb-10">
-        <div className="flex items-center justify-between mb-4">
-          {Object.keys(STEPS).map((_, index) => (
-            <div key={index} className="flex items-center flex-1">
-              <div className={`
-                flex items-center justify-center w-12 h-12 rounded-full font-bold text-sm
-                ${index <= currentStep 
-                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110' 
-                  : 'bg-gray-200 text-gray-500'}
-                transition-all duration-500 transform
-              `}>
-                {index < currentStep ? <Check className="h-6 w-6" /> : index + 1}
-              </div>
-              {index < Object.keys(STEPS).length - 1 && (
+        <div className="flex items-center justify-center mb-4">
+          <div className="flex items-center w-full" style={{ maxWidth: '600px' }}>
+            {Object.keys(STEPS).map((_, index) => (
+              <div key={index} className={`flex items-center ${index < Object.keys(STEPS).length - 1 ? 'flex-1' : 'flex-none'}`}>
                 <div className={`
-                  flex-1 h-2 mx-3 rounded-full
-                  ${index < currentStep ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-200'}
-                  transition-all duration-500
-                `} />
-              )}
-            </div>
-          ))}
+                  flex items-center justify-center w-12 h-12 rounded-full font-bold text-sm
+                  ${index <= currentStep 
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg scale-110' 
+                    : 'bg-gray-200 text-gray-500'}
+                  transition-all duration-500 transform
+                `}>
+                  {index < currentStep ? <Check className="h-6 w-6" /> : index + 1}
+                </div>
+                {index < Object.keys(STEPS).length - 1 && (
+                  <div className={`
+                    flex-1 h-2 mx-3 rounded-full
+                    ${index < currentStep ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-200'}
+                    transition-all duration-500
+                  `} />
+                )}
+              </div>
+            ))}
+          </div>
         </div>
         <p className="text-center text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
           Step {currentStep + 1} of {Object.keys(STEPS).length}: {STEP_TITLES[currentStep]}
@@ -392,7 +951,9 @@ export default function EditEventPage() {
   // MAIN COMPONENT RETURN
   // ============================================================
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4 pb-24 sm:pb-8">
+    <>
+      {renderMobileLayout()}
+      <div className="hidden sm:block min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 py-8 px-4 pb-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-10">
@@ -1000,36 +1561,10 @@ export default function EditEventPage() {
               </button>
             </div>
 
-            {/* Mobile sticky icon-only controls */}
-            <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl px-4 py-3 flex items-center justify-between gap-3">
-              {currentStep > STEPS.BASICS ? (
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="h-12 w-12 rounded-xl bg-gray-100 text-gray-700 flex items-center justify-center shadow-sm border border-gray-200"
-                  aria-label="Back"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </button>
-              ) : (
-                <div className="h-12 w-12" />
-              )}
-
-              <button
-                type="submit"
-                className={`flex-1 h-12 rounded-xl text-white font-bold text-base flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all ${
-                  currentStep === STEPS.REVIEW
-                    ? 'bg-gradient-to-r from-green-600 to-emerald-600'
-                    : 'bg-gradient-to-r from-purple-600 to-pink-600'
-                }`}
-                aria-label={currentStep === STEPS.REVIEW ? 'Update event' : 'Continue'}
-              >
-                {currentStep === STEPS.REVIEW ? <Check className="h-5 w-5" /> : <ArrowRight className="h-5 w-5" />}
-              </button>
-            </div>
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

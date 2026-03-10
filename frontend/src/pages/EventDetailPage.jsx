@@ -407,6 +407,17 @@ export default function EventDetailPage() {
   }
   const hostName = event?.hostMemberName || event?.hostName || displayEvent?.hostMemberName
   const hasHost = Boolean((event?.hostMemberId !== null && event?.hostMemberId !== undefined) || (hostName && hostName.trim()))
+  
+  // Debug logging for host data
+  if (event && !isLoading) {
+    console.log('Event host data:', {
+      hostMemberId: event.hostMemberId,
+      hostMemberName: event.hostMemberName,
+      hostName: event.hostName,
+      computed_hostName: hostName,
+      hasHost: hasHost
+    })
+  }
   const hasEventDetails = Boolean(
     event?.difficultyLevel ||
     event?.distanceKm ||
