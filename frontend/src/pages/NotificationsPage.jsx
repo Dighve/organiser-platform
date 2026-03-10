@@ -52,7 +52,7 @@ export default function NotificationsPage() {
       if (!notification.isRead) {
         await markAsReadMutation.mutateAsync(notification.id)
       }
-      await deleteMutation.mutateAsync(notification.id)
+      // Don't auto-delete - let users keep their notification history
     } catch (_) { /* ignore */ }
 
     if (notification.relatedEventId) {

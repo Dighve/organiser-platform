@@ -60,6 +60,18 @@ export default function NotificationBell({
   const markAllAsReadMutation = useMutation({
     mutationFn: () => notificationsAPI.markAllAsRead(),
     onSuccess: () => {
+      // Optimistically update the UI
+      queryClient.setQueryData(['notifications'], (old) => {
+        if (!old?.data?.content) return old
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            content: old.data.content.map(n => ({ ...n, isRead: true }))
+          }
+        }
+      })
+      // Then refetch to ensure consistency
       queryClient.invalidateQueries(['notifications'])
       queryClient.invalidateQueries(['notifications', 'unread-count'])
     },
@@ -101,9 +113,9 @@ export default function NotificationBell({
       if (!notification.isRead) {
         await markAsReadMutation.mutateAsync(notification.id)
       }
-      await deleteMutation.mutateAsync(notification.id)
+      // Don't auto-delete - let users keep their notification history
     } catch (err) {
-      // ignore failures; deletion is best-effort
+      // ignore failures
     }
 
     if (notification.relatedEventId) {
