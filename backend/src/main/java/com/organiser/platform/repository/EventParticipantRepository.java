@@ -31,4 +31,9 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     @Modifying
     @Query("DELETE FROM EventParticipant ep WHERE ep.member.id = :memberId AND ep.event.eventDate > :cutoff")
     void deleteFutureParticipations(@Param("memberId") Long memberId, @Param("cutoff") Instant cutoff);
+    
+    /**
+     * Delete all participants for an event (used when permanently deleting event)
+     */
+    void deleteByEventId(Long eventId);
 }

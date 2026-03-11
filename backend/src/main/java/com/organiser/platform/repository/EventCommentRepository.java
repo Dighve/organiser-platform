@@ -26,4 +26,9 @@ public interface EventCommentRepository extends JpaRepository<EventComment, Long
      * Find all comments by a specific member
      */
     List<EventComment> findByMemberIdOrderByCreatedAtDesc(Long memberId);
+    
+    /**
+     * Delete all comments for an event (used when permanently deleting event)
+     */
+    void deleteByEventId(Long eventId);
 }

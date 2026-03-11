@@ -72,7 +72,7 @@ public class GroupService {
      */
     @Transactional
     @CacheEvict(value = "groups", allEntries = true)
-    public Group createGroup(CreateGroupRequest request, Long organiserId) {
+    public GroupDTO createGroup(CreateGroupRequest request, Long organiserId) {
         // Find the member (organiser)
         Member organiser = memberRepository.findById(organiserId)
                 .orElseThrow(() -> new RuntimeException("Organiser not found"));
@@ -106,7 +106,8 @@ public class GroupService {
                 .build();
         subscriptionRepository.save(subscription);
         
-        return group;
+        long memberCount = subscriptionRepository.countByGroupIdAndStatus(group.getId(), Subscription.SubscriptionStatus.ACTIVE);
+        return GroupDTO.fromEntity(group, (int) memberCount);
     }
     
     /**
@@ -695,13 +696,35 @@ public class GroupService {
             throw new RuntimeException("Group cannot be deleted. It has history (events, members, or banned members)");
         }
         
-        // Delete the organizer's subscription first (cascade will handle the rest)
-        subscriptionRepository.deleteByGroupId(groupId);
+        log.info("Starting permanent deletion of group {} by organiser {}", groupId, organiserId);
         
-        // Delete any notifications related to this group
+        // CRITICAL FIX: Manual deletion in correct order to avoid StackOverflowError
+        // Step 1: Delete notifications first (no foreign key dependencies)
         notificationService.deleteNotificationsByGroup(groupId);
+        log.info("Deleted notifications for group {}", groupId);
         
-        // Delete the group (this will cascade delete any remaining related entities)
-        groupRepository.delete(group);
+        // Step 2: Get and delete all group events manually (should be 0 based on canGroupBeDeleted check)
+        List<Event> groupEvents = eventRepository.findAllByGroupId(groupId);
+        for (Event event : groupEvents) {
+            // Delete event participants first
+            eventParticipantRepository.deleteByEventId(event.getId());
+            // Delete event comments
+            eventCommentRepository.deleteByEventId(event.getId());
+            // Delete the event itself (without cascade to avoid recursion)
+            eventRepository.deleteById(event.getId());
+        }
+        log.info("Deleted {} events for group {}", groupEvents.size(), groupId);
+        
+        // Step 3: Delete all subscriptions (should be only 1 organiser based on canGroupBeDeleted check)
+        subscriptionRepository.deleteByGroupId(groupId);
+        log.info("Deleted subscriptions for group {}", groupId);
+        
+        // Step 4: Delete banned members if any exist
+        bannedMemberRepository.deleteByGroupId(groupId);
+        log.info("Deleted banned members for group {}", groupId);
+        
+        // Step 5: Finally delete the group itself (now safe, no cascading)
+        groupRepository.deleteById(groupId);
+        log.info("Successfully deleted group {}", groupId);
     }
 }

@@ -4,7 +4,6 @@ import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.CreateGroupRequest;
 import com.organiser.platform.dto.EventDTO;
 import com.organiser.platform.dto.GroupDTO;
-import com.organiser.platform.model.Group;
 import com.organiser.platform.service.EventService;
 import com.organiser.platform.service.GroupService;
 import jakarta.validation.Valid;
@@ -35,7 +34,7 @@ public class GroupController {
     private final GroupService groupService;
 
     @PostMapping
-    public ResponseEntity<Group> createGroup(
+    public ResponseEntity<GroupDTO> createGroup(
             @Valid @RequestBody CreateGroupRequest request,
             Authentication authentication
                                             ) {
