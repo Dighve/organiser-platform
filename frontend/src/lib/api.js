@@ -70,7 +70,11 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   requestMagicLink: (data) => api.post('/auth/magic-link', data),
-  verifyMagicLink: (token) => api.get(`/auth/verify?token=${token}`),
+  verifyMagicLink: (token, inviteToken) => {
+    const params = new URLSearchParams({ token })
+    if (inviteToken) params.append('inviteToken', inviteToken)
+    return api.get(`/auth/verify?${params.toString()}`)
+  },
   authenticateWithGoogle: (data) => api.post('/auth/google', data), // Google OAuth
 }
 
@@ -242,6 +246,15 @@ export const adminAPI = {
   
   // Member Management
   deleteMember: (memberId) => api.delete(`/admin/users/${memberId}`),
+  
+  // Organiser Invites
+  generateInvite: (note, expiryHours) => api.post('/admin/invites', { note, expiryHours }),
+  listInvites: () => api.get('/admin/invites'),
+}
+
+// Public Invite API (no auth required — used by InvitePage)
+export const invitesAPI = {
+  validateInvite: (token) => api.get(`/admin/invites/validate/${token}`),
 }
 
 // Feedback API (user)

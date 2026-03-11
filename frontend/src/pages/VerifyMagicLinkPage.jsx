@@ -13,7 +13,7 @@ export default function VerifyMagicLinkPage() {
   const [savedReturnUrl, setSavedReturnUrl] = useState(null)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { login, clearReturnUrl } = useAuthStore()
+  const { login, clearReturnUrl, inviteToken, clearInviteToken } = useAuthStore()
 
   useEffect(() => {
     const token = searchParams.get('token')
@@ -30,8 +30,10 @@ export default function VerifyMagicLinkPage() {
 
   const verifyToken = async (token, redirectParam) => {
     try {
-      const response = await authAPI.verifyMagicLink(token)
-      const { token: jwtToken, userId, email, role, hasOrganiserRole, isNewUser } = response.data
+      console.log('🔍 VerifyMagicLinkPage - inviteToken from store:', inviteToken)
+      console.log('🔍 VerifyMagicLinkPage - calling verifyMagicLink with:', { token: token.substring(0, 8) + '...', inviteToken })
+      const response = await authAPI.verifyMagicLink(token, inviteToken)
+      const { token: jwtToken, userId, email, role, hasOrganiserRole, isNewUser, inviteRedeemed } = response.data
       
       // Clear ALL React Query cache before logging in so no stale data from a previous
       // user's session bleeds into this new session (critical for shared devices / Safari)
@@ -40,6 +42,20 @@ export default function VerifyMagicLinkPage() {
       identifyUser(userId, email, role)
       trackMagicLinkVerified()
       trackLoginCompleted('magic_link', !!isNewUser)
+      
+      // Clear invite token regardless of outcome
+      clearInviteToken()
+      
+      // If invite was redeemed, send to onboarding
+      if (inviteRedeemed) {
+        setSavedReturnUrl('/organiser-onboarding')
+        setStatus('success')
+        setTimeout(() => {
+          clearReturnUrl()
+          navigate('/organiser-onboarding', { replace: true })
+        }, 1000)
+        return
+      }
       
       // Priority: URL param (cross-browser) > localStorage (same browser)
       const urlRedirect = redirectParam ? decodeURIComponent(redirectParam) : null
@@ -62,8 +78,6 @@ export default function VerifyMagicLinkPage() {
           // If it's already a relative path, use it as-is
           redirectTo = redirectTo
         }
-        
-        console.log('Redirecting to:', redirectTo, '(from URL param:', !!urlRedirect, ', from store:', !!storeRedirect, ')') // Debug log
         
         clearReturnUrl() // Clear the return URL after using it
         navigate(redirectTo, { replace: true }) // Use replace to avoid back button issues

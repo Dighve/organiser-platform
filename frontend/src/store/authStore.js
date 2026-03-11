@@ -22,6 +22,7 @@ export const useAuthStore = create(
       isAuthenticated: false,
       pendingEmail: null,
       returnUrl: null, // URL to redirect to after login
+      inviteToken: null, // Organiser invite token — persisted across magic-link redirects
       
       login: (userData, token) => {
         let tokenExpiry = null
@@ -91,6 +92,14 @@ export const useAuthStore = create(
         set({ returnUrl: null })
       },
       
+      setInviteToken: (token) => {
+        set({ inviteToken: token })
+      },
+      
+      clearInviteToken: () => {
+        set({ inviteToken: null })
+      },
+      
       updateUser: (userData) => {
         set((state) => ({
           user: { ...state.user, ...userData },
@@ -112,6 +121,7 @@ export const useAuthStore = create(
         tokenExpiry: state.tokenExpiry,
         isAuthenticated: state.isAuthenticated,
         returnUrl: state.returnUrl, // Persist return URL across page reloads
+        inviteToken: state.inviteToken, // Persist invite token across magic-link redirects
       }),
     }
   )

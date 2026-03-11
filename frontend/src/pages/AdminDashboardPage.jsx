@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminAPI, featureFlagsAPI } from '../lib/api';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle, MessageSquare, Flag, MoreVertical, UserMinus, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Users, TrendingUp, Calendar, MapPin, UserCheck, UserPlus, Settings, ToggleLeft, ToggleRight, Eye, EyeOff, Shield, FileText, Edit3, Save, X, History, User, Clock, CheckCircle, MessageSquare, Flag, MoreVertical, UserMinus, RefreshCw, AlertTriangle, Link as LinkIcon, Copy, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
@@ -52,6 +52,11 @@ export default function AdminDashboardPage() {
   
   // Delete member state
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+
+  // Invite link state
+  const [inviteNote, setInviteNote] = useState('');
+  const [inviteExpiryHours, setInviteExpiryHours] = useState(72);
+  const [showGenerateForm, setShowGenerateForm] = useState(false);
 
   // Fetch user statistics
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -181,6 +186,37 @@ export default function AdminDashboardPage() {
     if (selectedUser) {
       inviteMutation.mutate(selectedUser.id);
     }
+  };
+
+  // Fetch invite links
+  const { data: inviteLinks, isLoading: invitesLoading, refetch: refetchInvites } = useQuery({
+    queryKey: ['adminInvites'],
+    queryFn: async () => {
+      const response = await adminAPI.listInvites();
+      return response.data;
+    },
+    enabled: activeTab === 'invites',
+    refetchInterval: activeTab === 'invites' ? 30000 : false, // Auto-refresh every 30s when on invites tab
+  });
+
+  // Generate invite mutation
+  const generateInviteMutation = useMutation({
+    mutationFn: () => adminAPI.generateInvite(inviteNote || undefined, inviteExpiryHours || undefined),
+    onSuccess: () => {
+      toast.success('Invite link generated!');
+      setInviteNote('');
+      setShowGenerateForm(false);
+      queryClient.invalidateQueries({ queryKey: ['adminInvites'] });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to generate invite');
+    },
+  });
+
+  const copyInviteLink = (token) => {
+    const url = `${window.location.origin}/invite/${token}`;
+    navigator.clipboard.writeText(url);
+    toast.success('Invite link copied!');
   };
 
   const { data: feedbackList } = useQuery({
@@ -403,6 +439,7 @@ export default function AdminDashboardPage() {
               { key: 'feature-flags', icon: Settings, label: 'Feature Flags' },
               { key: 'agreements', icon: Shield, label: 'Agreements' },
               { key: 'feedback', icon: MessageSquare, label: 'Feedback' },
+              { key: 'invites', icon: LinkIcon, label: 'Invite Links' },
             ].map(({ key, icon: Icon, label }) => (
               <button
                 key={key}
@@ -1102,6 +1139,156 @@ export default function AdminDashboardPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* Invite Links Tab */}
+        {activeTab === 'invites' && (
+          <div className="space-y-6">
+            {/* Header */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h3 className="text-lg font-bold text-gray-900">Organiser Invite Links</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Generate single-use invite links that grant organiser role on sign-up.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => refetchInvites()}
+                    className="flex items-center gap-1.5 px-3 py-2 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 transition-all text-sm"
+                    disabled={invitesLoading}
+                  >
+                    <RefreshCw className={`w-4 h-4 ${invitesLoading ? 'animate-spin' : ''}`} /> Refresh
+                  </button>
+                  <button
+                    onClick={() => setShowGenerateForm(v => !v)}
+                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-200 text-sm"
+                  >
+                    <Plus className="w-4 h-4" /> Generate Link
+                  </button>
+                </div>
+              </div>
+
+              {/* Generate Form */}
+              {showGenerateForm && (
+                <div className="mt-5 p-5 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100 space-y-4">
+                  <h4 className="font-semibold text-gray-800">New Invite Link</h4>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Personal note (optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={inviteNote}
+                      onChange={(e) => setInviteNote(e.target.value)}
+                      placeholder="e.g. For Jane – Peak District organiser"
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      maxLength={200}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Expires after (hours)
+                    </label>
+                    <select
+                      value={inviteExpiryHours}
+                      onChange={(e) => setInviteExpiryHours(Number(e.target.value))}
+                      className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value={24}>24 hours</option>
+                      <option value={72}>72 hours (3 days)</option>
+                      <option value={168}>7 days</option>
+                      <option value={720}>30 days</option>
+                    </select>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => generateInviteMutation.mutate()}
+                      disabled={generateInviteMutation.isPending}
+                      className="px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all text-sm disabled:opacity-50"
+                    >
+                      {generateInviteMutation.isPending ? 'Generating...' : 'Generate'}
+                    </button>
+                    <button
+                      onClick={() => setShowGenerateForm(false)}
+                      className="px-5 py-2 border border-gray-200 text-gray-600 font-medium rounded-xl hover:bg-gray-50 text-sm"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Invite links list */}
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+              {invitesLoading ? (
+                <div className="p-8 text-center text-gray-500">Loading...</div>
+              ) : !inviteLinks?.length ? (
+                <div className="p-10 text-center">
+                  <LinkIcon className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No invite links yet. Generate one above.</p>
+                </div>
+              ) : (
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr className="text-gray-500 text-left">
+                      <th className="py-3 px-5 font-semibold">Note</th>
+                      <th className="py-3 px-5 font-semibold">Status</th>
+                      <th className="py-3 px-5 font-semibold">Created</th>
+                      <th className="py-3 px-5 font-semibold">Expires</th>
+                      <th className="py-3 px-5 font-semibold">Redeemed by</th>
+                      <th className="py-3 px-5 font-semibold">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inviteLinks.map((invite) => {
+                      const isUsed = invite.isUsed;
+                      const isExpired = !isUsed && invite.expiresAt && new Date(invite.expiresAt) < new Date();
+                      const statusLabel = isUsed ? 'Used' : isExpired ? 'Expired' : 'Active';
+                      const statusClass = isUsed
+                        ? 'bg-gray-100 text-gray-600'
+                        : isExpired
+                        ? 'bg-red-100 text-red-600'
+                        : 'bg-green-100 text-green-700';
+                      return (
+                        <tr key={invite.id} className="border-b last:border-0 hover:bg-gray-50">
+                          <td className="py-3 px-5 text-gray-800">
+                            {invite.note || <span className="text-gray-400 italic">No note</span>}
+                          </td>
+                          <td className="py-3 px-5">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${statusClass}`}>
+                              {statusLabel}
+                            </span>
+                          </td>
+                          <td className="py-3 px-5 text-gray-600">
+                            {invite.createdAt ? new Date(invite.createdAt).toLocaleDateString('en-GB') : '—'}
+                          </td>
+                          <td className="py-3 px-5 text-gray-600">
+                            {invite.expiresAt ? new Date(invite.expiresAt).toLocaleDateString('en-GB') : 'Never'}
+                          </td>
+                          <td className="py-3 px-5 text-gray-600">
+                            {invite.usedByMemberEmail || '—'}
+                          </td>
+                          <td className="py-3 px-5">
+                            {!isUsed && !isExpired && (
+                              <button
+                                onClick={() => copyInviteLink(invite.token)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 transition-colors text-xs font-semibold"
+                              >
+                                <Copy className="w-3.5 h-3.5" /> Copy Link
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
           </div>
         )}

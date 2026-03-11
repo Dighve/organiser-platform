@@ -8,6 +8,11 @@ export default function MemberAutocomplete({ groupId, value, onChange, error }) 
   const [searchTerm, setSearchTerm] = useState(value || '')
   const dropdownRef = useRef(null)
 
+  // Sync external value prop with internal state
+  useEffect(() => {
+    setSearchTerm(value || '')
+  }, [value])
+
   const { data: membersData, isLoading } = useQuery({
     queryKey: ['groupMembers', groupId],
     queryFn: () => groupsAPI.getGroupMembers(groupId),

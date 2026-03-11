@@ -19,4 +19,7 @@ public class AuthResponse {
     
     // Platform-level organiser role
     private Boolean hasOrganiserRole;
+
+    // True when user just got organiser role via invite — triggers onboarding flow
+    private Boolean isNewOrganiser;
 }

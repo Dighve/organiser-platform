@@ -125,14 +125,14 @@ export default function CreateEventPage() {
   // HOOKS & ROUTING
   // ============================================================
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
+  const [searchParams] = useSearchParams()
   const location = useLocation()
-  const [searchParams, setSearchParams] = useSearchParams()
+  const queryClient = useQueryClient()
   const groupId = searchParams.get('groupId')
   const copyFromId = searchParams.get('copyFrom')
   const copiedEventData = location.state?.eventData
   const { register, handleSubmit, watch, formState: { errors }, setValue } = useForm()
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const { isEventLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
   
   // ============================================================
@@ -216,6 +216,16 @@ export default function CreateEventPage() {
     setValue('eventDate', defaultDate)
     setValue('startTime', defaultTime)
   }, [defaultDate, defaultTime, setValue])
+
+  // Pre-populate hostName with current user for new events (not when copying)
+  useEffect(() => {
+    if (user && user.email && !copyFromId && !copiedEventData) {
+      // Extract display name from email (take part before @)
+      const displayName = user.email.split('@')[0]
+      setValue('hostName', displayName)
+      setFormData(prev => ({ ...prev, hostName: displayName }))
+    }
+  }, [user, copyFromId, copiedEventData, setValue])
   
   // Pre-fill form when copying an event
   useEffect(() => {
@@ -455,8 +465,15 @@ export default function CreateEventPage() {
       
       queryClient.invalidateQueries(['groupEvents', groupId])
       queryClient.invalidateQueries(['events'])
-      toast.success('🎉 Hike event created and published successfully!')
-      navigate(`/groups/${groupId}`)
+      toast.success('🎉 Event created successfully!')
+      
+      if (groupId) {
+        // If created from group page, go back to group
+        navigate(`/groups/${groupId}`)
+      } else {
+        // Navigate to the event detail page
+        navigate(`/events/${eventId}`)
+      }
     } catch (error) {
       console.error('Error creating event:', error)
       toast.error('Failed to create event. Please try again.')
@@ -2406,6 +2423,7 @@ export default function CreateEventPage() {
             </h1>
             <p className="text-gray-600 text-xl font-medium mb-6">Plan an amazing hiking adventure for your group</p>
           </div>
+
           {renderProgressBar()}
           <div className="bg-white/90 backdrop-blur-lg rounded-3xl p-10 border-2 border-white/50 shadow-2xl shadow-purple-500/10 hover:shadow-purple-500/20 transition-shadow duration-300">
             {renderCurrentStep()}

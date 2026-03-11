@@ -14,4 +14,6 @@ public class GoogleAuthRequest {
     private String idToken;  // Google ID token from frontend
     
     private String redirectUrl;  // Optional URL to redirect to after auth (for auto-join flow)
+
+    private String inviteToken;  // Optional organiser invite token — grants organiser role on auth
 }

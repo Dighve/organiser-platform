@@ -2,7 +2,7 @@
 // IMPORTS
 // ============================================================
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { groupsAPI, membersAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -38,6 +38,8 @@ export default function CreateGroupPage() {
   })
   
   const [errors, setErrors] = useState({})  // Form validation errors
+  const [showEventPrompt, setShowEventPrompt] = useState(false)
+  const [createdGroupId, setCreatedGroupId] = useState(null)
 
   // ============================================================
   // QUERIES
@@ -55,7 +57,10 @@ export default function CreateGroupPage() {
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['publicGroups'])
       const groupId = response.data?.id
-      navigate(groupId ? `/groups/${groupId}` : '/')
+      
+      // Show prompt modal instead of auto-navigating
+      setCreatedGroupId(groupId)
+      setShowEventPrompt(true)
     },
     onError: (error) => {
       console.error('Error creating group:', error)
@@ -148,42 +153,43 @@ export default function CreateGroupPage() {
   // MAIN RENDER
   // ============================================================
   return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-4 sm:py-8">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* ========== BACK BUTTON ========== */}
-        <button
-          onClick={() => navigate('/')}
-          className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-          Back to Home
-        </button>
-        
-        {/* ========== PAGE HEADER ========== */}
-        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">Create New Group</h1>
-        
-        {/* ========== COMING SOON ACTIVITIES BANNER ========== */}
-        <div className="mb-8">
-          <div className="bg-gradient-to-r from-purple-50 via-pink-50 to-orange-50 border-2 border-purple-200 rounded-2xl p-4">
-            <div className="flex items-center justify-center gap-3 flex-wrap">
-              <span className="text-gray-700 font-semibold text-sm">Currently:</span>
-              <span className="px-4 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-full text-sm font-bold shadow-lg">🥾 Hiking</span>
-              <span className="text-gray-400 text-sm">|</span>
-              <span className="text-gray-700 font-semibold text-sm">Coming Soon:</span>
-              <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏃 Running</span>
-              <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🧗 Climbing</span>
-              <span className="px-3 py-1.5 bg-gray-100 text-gray-500 rounded-full text-sm font-semibold">🏊 Swimming</span>
-            </div>
+        {/* ========== MOBILE HEADER ========== */}
+        <div className="sm:hidden mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg text-gray-600 hover:text-purple-600 transition-colors"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Create Group
+            </h1>
+            <div className="w-10 h-10"></div> {/* Spacer for center alignment */}
           </div>
+        </div>
+
+        {/* ========== DESKTOP HEADER ========== */}
+        <div className="hidden sm:block">
+          <button
+            onClick={() => navigate('/')}
+            className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
+            Back to Home
+          </button>
+          <h1 className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8">Create New Group</h1>
         </div>
         
         {/* ========== CREATE GROUP FORM ========== */}
-        <form onSubmit={handleSubmit} className="bg-white/60 backdrop-blur-sm rounded-3xl p-8 border border-gray-100 shadow-2xl space-y-6">
+        <form onSubmit={handleSubmit} className="bg-white/80 sm:bg-white/60 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-gray-100 shadow-xl sm:shadow-2xl space-y-4 sm:space-y-6">
          
           {/* GROUP NAME FIELD (Required) */}
           <div>
-            <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="name" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
               🎯 Group Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -192,7 +198,7 @@ export default function CreateGroupPage() {
               name="name"
               value={formData.name}
               onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`}
+              className={`w-full px-3 sm:px-4 py-3 sm:py-3 text-base border-2 ${errors.name ? 'border-red-500' : 'border-gray-200'} rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`}
               placeholder="e.g., Peak District Hikers"
             />
             {errors.name && (
@@ -204,7 +210,7 @@ export default function CreateGroupPage() {
       
           {/* DESCRIPTION FIELD (Optional) */}
           <div>
-            <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+            <label htmlFor="description" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
               📝 Description
             </label>
             <textarea
@@ -212,25 +218,25 @@ export default function CreateGroupPage() {
               name="description"
               value={formData.description}
               onChange={handleChange}
-              rows={4}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
+              rows={3}
+              className="w-full px-3 sm:px-4 py-3 text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none sm:resize-y"
               placeholder="Describe your group, its purpose, and what members can expect..."
             />
           </div>
           
           {/* GROUP GUIDELINES FIELD (Optional) */}
           <div>
-            <label htmlFor="groupGuidelines" className="block text-sm font-semibold text-gray-700 mb-2">
-              � Group Guidelines
-              <span className="text-gray-500 font-normal text-sm ml-2">(optional)</span>
+            <label htmlFor="groupGuidelines" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+              📋 Group Guidelines
+              <span className="text-gray-500 font-normal text-xs sm:text-sm ml-2">(optional)</span>
             </label>
             <textarea
               id="groupGuidelines"
               name="groupGuidelines"
               value={formData.groupGuidelines}
               onChange={handleChange}
-              rows={6}
-              className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none"
+              rows={4}
+              className="w-full px-3 sm:px-4 py-3 text-base border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none"
               placeholder="e.g., All participants must bring their own equipment. No refunds within 24 hours of event. Participants must be 18+..."
             />
             <p className="mt-2 text-xs text-gray-500">
@@ -240,9 +246,9 @@ export default function CreateGroupPage() {
           
           {/* COVER PHOTO / BANNER FIELD (Optional) */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              {createGroupMutation.isLoading ? 'Creating...' : 'Create Group'} Photo / Banner
+            <label className="block text-sm sm:text-base font-semibold text-gray-700 mb-2 flex items-center gap-2">
+              <Upload className="h-4 w-4 sm:h-5 sm:w-5" />
+              Group Photo / Banner
             </label>
             <ImageUpload
               value={formData.imageUrl}
@@ -259,7 +265,7 @@ export default function CreateGroupPage() {
           {/* LOCATION FIELD (Optional) - Google Places Autocomplete - Only show if location features are enabled */}
           {isGroupLocationEnabled() && isGoogleMapsEnabled() && (
             <div>
-              <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
+              <label htmlFor="location" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
                 📍 Location
               </label>
               <GooglePlacesAutocomplete
@@ -277,8 +283,9 @@ export default function CreateGroupPage() {
           
           {/* MAX MEMBERS FIELD (Optional) */}
           <div>
-            <label htmlFor="maxMembers" className="block text-sm font-semibold text-gray-700 mb-2">
-              👥 Maximum Members (Optional)
+            <label htmlFor="maxMembers" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
+              👥 Maximum Members
+              <span className="text-gray-500 font-normal text-xs sm:text-sm ml-2">(optional)</span>
             </label>
             <input
               type="number"
@@ -287,7 +294,7 @@ export default function CreateGroupPage() {
               value={formData.maxMembers}
               onChange={handleChange}
               min="1"
-              className={`w-full px-4 py-3 border-2 ${errors.maxMembers ? 'border-red-500' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`}
+              className={`w-full px-3 sm:px-4 py-3 text-base border-2 ${errors.maxMembers ? 'border-red-500' : 'border-gray-200'} rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`}
               placeholder="Leave empty for unlimited"
             />
             {errors.maxMembers && (
@@ -298,42 +305,43 @@ export default function CreateGroupPage() {
           </div>
           
           {/* PUBLIC VISIBILITY CHECKBOX */}
-          <div className="flex items-center p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+          <div className="flex items-center p-3 sm:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg sm:rounded-xl border border-purple-100">
             <input
               type="checkbox"
               id="isPublic"
               name="isPublic"
               checked={formData.isPublic}
               onChange={handleChange}
-              className="h-5 w-5 text-purple-600 focus:ring-2 focus:ring-purple-500 border-gray-300 rounded"
+              className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600 focus:ring-2 focus:ring-purple-500 border-gray-300 rounded"
             />
-            <label htmlFor="isPublic" className="ml-3 block text-sm font-semibold text-gray-700">
-              🌍 Make this group public (visible to all users)
+            <label htmlFor="isPublic" className="ml-3 block text-sm sm:text-base font-semibold text-gray-700">
+              🌍 Make this group public
+              <span className="hidden sm:inline"> (visible to all users)</span>
             </label>
           </div>
           
           {/* ERROR MESSAGE (Submit errors) */}
           {errors.submit && (
-            <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+            <div className="bg-red-50 border-2 border-red-200 rounded-lg sm:rounded-xl p-3 sm:p-4">
               <p className="text-sm text-red-600 font-semibold flex items-center gap-2">
                 <span>⚠️</span> {errors.submit}
               </p>
             </div>
           )}
           
-          {/* ACTION BUTTONS */}
-          <div className="flex gap-4 pt-6">
+          {/* ACTION BUTTONS - Mobile-optimized */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 sm:pt-6">
             <button
               type="button"
               onClick={() => navigate('/')}
-              className="flex-1 py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all"
+              className="w-full sm:flex-1 py-4 sm:py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all order-2 sm:order-1"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={createGroupMutation.isLoading}
-              className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+              className="w-full sm:flex-1 py-4 sm:py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2 order-1 sm:order-2"
             >
               {createGroupMutation.isLoading ? (
                 <>
@@ -349,7 +357,49 @@ export default function CreateGroupPage() {
             </button>
           </div>
         </form>
-        </div>
+
+        {/* ========== EVENT CREATION PROMPT MODAL ========== */}
+        {showEventPrompt && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-3xl p-8 max-w-md w-full shadow-2xl">
+              <div className="text-center">
+                <div className="text-6xl mb-4">🎉</div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+                  Group Created Successfully!
+                </h2>
+                <p className="text-gray-600 mb-6">
+                  Your group is ready! Would you like to create your first event to get members excited?
+                </p>
+                
+                {/* Actions */}
+                <div className="space-y-3">
+                  <button
+                    className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 transform hover:scale-105"
+                    onClick={() => {
+                      // Invalidate group members cache so the new subscription is available
+                      queryClient.invalidateQueries(['groupMembers', createdGroupId])
+                      navigate(`/create-event?groupId=${createdGroupId}`)
+                      setShowEventPrompt(false)
+                    }}
+                  >
+                    Create First Event
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      setShowEventPrompt(false)
+                      navigate(`/groups/${createdGroupId}`)
+                    }}
+                    className="w-full py-2 px-6 text-gray-500 font-medium rounded-xl hover:bg-gray-50 transition-all text-sm"
+                  >
+                    View Group Instead
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+    </div>
   )
 }

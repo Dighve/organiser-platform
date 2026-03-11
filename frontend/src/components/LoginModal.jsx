@@ -18,7 +18,7 @@ import {
 export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { setPendingEmail, returnUrl, login, isAuthenticated, clearReturnUrl } = useAuthStore()
+  const { setPendingEmail, returnUrl, login, isAuthenticated, clearReturnUrl, inviteToken, clearInviteToken } = useAuthStore()
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm()
   
   const [isLoading, setIsLoading] = useState(false)
@@ -59,10 +59,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         // Send access token to backend (backend will verify and get user info from Google)
         const response = await authAPI.authenticateWithGoogle({
           idToken: tokenResponse.access_token, // Send access token
-          redirectUrl: returnUrl
+          redirectUrl: returnUrl,
+          inviteToken: inviteToken || undefined,
         })
         
-        const { token, userId, email, role, isOrganiser, isNewUser } = response.data
+        const { token, userId, email, role, isOrganiser, isNewUser, inviteRedeemed } = response.data
         googleSignInInProgress.current = true
         // Clear ALL React Query cache before logging in so no stale data from a previous
         // user's session bleeds into this new session (critical for shared devices / Safari)
@@ -72,7 +73,19 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         trackGoogleAuthCompleted()
         trackLoginCompleted('google', !!isNewUser)
         
+        // Clear invite token after use
+        clearInviteToken()
+        
         toast.success('🎉 Signed in with Google!')
+        
+        // If invite was redeemed, go to onboarding
+        if (inviteRedeemed) {
+          clearReturnUrl()
+          handleClose()
+          navigate('/organiser-onboarding')
+          if (onSuccess) onSuccess()
+          return
+        }
         
         // Navigate to returnUrl if it exists (for auto-join flow)
         if (returnUrl) {
@@ -116,6 +129,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         email: data.email,
         displayName: data.displayName,
         redirectUrl: returnUrl, // Include redirect URL for cross-browser support
+        inviteToken: inviteToken || undefined,
       })
       
       const emailDomain = data.email.split('@')[1] || 'unknown'

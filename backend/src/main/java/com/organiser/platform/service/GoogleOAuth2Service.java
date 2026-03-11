@@ -8,6 +8,7 @@ import com.organiser.platform.model.Member;
 import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
+import org.springframework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -29,6 +30,7 @@ public class GoogleOAuth2Service {
     
     private final MemberRepository memberRepository;
     private final JwtUtil jwtUtil;
+    private final OrganiserInviteService organiserInviteService;
     
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
@@ -90,8 +92,18 @@ public class GoogleOAuth2Service {
                 memberRepository.save(member);
             }
             
+            // Process organiser invite token if present
+            boolean becameOrganiser = false;
+            if (StringUtils.hasText(request.getInviteToken())) {
+                becameOrganiser = organiserInviteService.consumeInviteAndGrantRole(
+                        request.getInviteToken(), member.getId());
+                if (becameOrganiser) {
+                    member = memberRepository.findById(member.getId()).orElse(member);
+                }
+            }
+
             // Determine role based on admin status
-            String role = member.getIsAdmin() ? "ADMIN" : "MEMBER";
+            String role = member.getIsAdmin() ? "ADMIN" : (member.getHasOrganiserRole() ? "ORGANISER" : "MEMBER");
             
             // Generate JWT token
             String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
@@ -102,6 +114,7 @@ public class GoogleOAuth2Service {
                     .email(member.getEmail())
                     .role(role)
                     .hasOrganiserRole(member.getHasOrganiserRole())
+                    .isNewOrganiser(becameOrganiser)
                     .build();
                     
         } catch (Exception e) {

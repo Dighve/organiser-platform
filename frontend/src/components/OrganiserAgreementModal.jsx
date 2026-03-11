@@ -136,7 +136,7 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept, isA
           <div className="flex-shrink-0 flex items-start justify-between gap-4 px-5 sm:px-8 py-5 border-b border-gray-100 bg-white">
             <div>
               <h2 className="text-2xl sm:text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
-                {isAlreadyOrganiser ? 'Updated Organiser Terms' : 'Become an Organiser'}
+                {isAlreadyOrganiser ? 'Organiser Terms' : 'Become an Organiser'}
               </h2>
               <p className="text-sm sm:text-base text-gray-600">
                 {isAlreadyOrganiser 

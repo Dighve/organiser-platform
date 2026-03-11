@@ -19,6 +19,7 @@ export default function Layout() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [showOrganiserModal, setShowOrganiserModal] = useState(false)
   const [showUserAgreementModal, setShowUserAgreementModal] = useState(false)
+  const [showCreateGroupPrompt, setShowCreateGroupPrompt] = useState(false)
   const { isAuthenticated, user, logout, updateUser, clearReturnUrl } = useAuthStore()
   const userAgreementShownRef = useRef(false)
   const organiserAgreementShownRef = useRef(false)
@@ -408,6 +409,8 @@ export default function Layout() {
         onClose={() => setShowOrganiserModal(false)}
         onAccept={() => {
           setShowOrganiserModal(false)
+          // Show create group prompt after organiser agreement accepted
+          setShowCreateGroupPrompt(true)
           // Refresh member data after acceptance
           queryClient.invalidateQueries(['currentMember'])
         }}
@@ -427,6 +430,58 @@ export default function Layout() {
           queryClient.invalidateQueries(['currentMember'])
         }}
       />
+
+      {/* Create Group Prompt Modal */}
+      {showCreateGroupPrompt && (
+        <div className="fixed inset-0 z-[2000]">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm" />
+          <div className="relative z-10 flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-3xl shadow-2xl max-w-md w-full p-8">
+              <div className="text-center">
+                {/* Icon */}
+                <div className="w-20 h-20 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                </div>
+
+                {/* Title */}
+                <h3 className="text-2xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  Welcome, Organiser! 🎉
+                </h3>
+                
+                {/* Message */}
+                <p className="text-gray-600 mb-2">
+                  You now have organiser privileges!
+                </p>
+                <p className="text-sm text-gray-500 mb-6">
+                  Would you like to create your first group to start building your outdoor community?
+                </p>
+
+                {/* Actions */}
+                <div className="space-y-3">
+                  <button
+                    onClick={() => {
+                      setShowCreateGroupPrompt(false)
+                      navigate('/groups/create')
+                    }}
+                    className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 transform hover:scale-105"
+                  >
+                    Start Creating Your First Group
+                  </button>
+                  
+                  <button
+                    onClick={() => setShowCreateGroupPrompt(false)}
+                    className="w-full py-2 px-6 text-gray-500 font-medium rounded-xl hover:bg-gray-50 transition-all text-sm"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Feedback floating button */}
       {isAuthenticated && <FeedbackWidget />}

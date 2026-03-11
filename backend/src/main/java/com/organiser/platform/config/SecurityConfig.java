@@ -81,6 +81,11 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/agreements/verify-hash", "POST")
                         ).permitAll()
 
+                        // Public invite validation endpoint (for landing page)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/admin/invites/validate/*", "GET")
+                        ).permitAll()
+
                         // Public VAPID key endpoint
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/push/vapid-public-key", "GET")

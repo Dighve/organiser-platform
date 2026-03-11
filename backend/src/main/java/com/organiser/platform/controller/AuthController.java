@@ -63,11 +63,14 @@ public class AuthController {
     }
     
     /**
-     * Verify magic link token and authenticate
+     * Verify magic link token and authenticate.
+     * Optional inviteToken grants organiser role on successful auth.
      */
     @GetMapping("/verify")
-    public ResponseEntity<AuthResponse> verifyMagicLink(@RequestParam String token) {
-        return ResponseEntity.ok(authService.verifyMagicLink(token));
+    public ResponseEntity<AuthResponse> verifyMagicLink(
+            @RequestParam String token,
+            @RequestParam(required = false) String inviteToken) {
+        return ResponseEntity.ok(authService.verifyMagicLink(token, inviteToken));
     }
     
     /**

@@ -5,10 +5,12 @@ import com.organiser.platform.dto.admin.UserStatsDTO;
 import com.organiser.platform.dto.admin.UpdateAgreementRequest;
 import com.organiser.platform.dto.admin.AgreementVersionDTO;
 import com.organiser.platform.dto.FeatureFlagDTO;
+import com.organiser.platform.dto.OrganiserInviteDTO;
 import com.organiser.platform.enums.AgreementType;
 import com.organiser.platform.service.AdminService;
 import com.organiser.platform.service.FeatureFlagService;
 import com.organiser.platform.service.LegalAgreementService;
+import com.organiser.platform.service.OrganiserInviteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +33,7 @@ public class AdminController {
     private final FeatureFlagService featureFlagService;
     private final LegalAgreementService legalAgreementService;
     private final com.organiser.platform.service.NotificationService notificationService;
+    private final OrganiserInviteService organiserInviteService;
     
     /**
      * Get comprehensive user statistics for dashboard
@@ -383,6 +386,58 @@ public class AdminController {
         
         List<AgreementVersionDTO> history = legalAgreementService.getAgreementHistory(agreementType, limit);
         return ResponseEntity.ok(history);
+    }
+
+    // =========================================================
+    // ORGANISER INVITE ENDPOINTS
+    // =========================================================
+
+    /**
+     * Generate a new single-use organiser invite link.
+     * Optionally accepts: { "note": "...", "expiryHours": 72 }
+     */
+    @PostMapping("/invites")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<OrganiserInviteDTO> generateInvite(
+            @RequestBody(required = false) Map<String, Object> body,
+            Authentication authentication
+    ) {
+        Long adminId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(adminId)) {
+            return ResponseEntity.status(403).build();
+        }
+        String note = body != null ? (String) body.get("note") : null;
+        Integer expiryHours = body != null && body.get("expiryHours") != null
+                ? ((Number) body.get("expiryHours")).intValue() : null;
+        OrganiserInviteDTO invite = organiserInviteService.generateInvite(adminId, note, expiryHours);
+        return ResponseEntity.ok(invite);
+    }
+
+    /**
+     * List all organiser invite links.
+     */
+    @GetMapping("/invites")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<OrganiserInviteDTO>> listInvites(Authentication authentication) {
+        Long adminId = getUserIdFromAuth(authentication);
+        if (!adminService.isAdmin(adminId)) {
+            return ResponseEntity.status(403).build();
+        }
+        return ResponseEntity.ok(organiserInviteService.listAllInvites());
+    }
+
+    /**
+     * Validate an invite token (public — called by the invite landing page).
+     * Returns invite details (note, expiry, validity) without consuming the token.
+     */
+    @GetMapping("/invites/validate/{token}")
+    public ResponseEntity<OrganiserInviteDTO> validateInvite(@PathVariable String token) {
+        try {
+            OrganiserInviteDTO dto = organiserInviteService.validateInvite(token);
+            return ResponseEntity.ok(dto);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**

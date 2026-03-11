@@ -25,6 +25,8 @@ const MemberDetailPage = lazy(() => import('./pages/MemberDetailPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const InvitePage = lazy(() => import('./pages/InvitePage'))
+const OrganiserOnboardingPage = lazy(() => import('./pages/OrganiserOnboardingPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -231,6 +233,21 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <AdminDashboardPage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route path="invite/:token" element={
+          <Suspense fallback={<PageLoader />}>
+            <InvitePage />
+          </Suspense>
+        } />
+        <Route
+          path="organiser-onboarding"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <OrganiserOnboardingPage />
               </Suspense>
             </PrivateRoute>
           }

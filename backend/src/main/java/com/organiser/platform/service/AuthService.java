@@ -12,6 +12,9 @@ import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.security.JwtUtil;
 import com.organiser.platform.util.AvatarGenerator;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,6 +35,11 @@ import java.util.UUID;
 public class AuthService {
     
     // ============================================================
+    // LOGGER
+    // ============================================================
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(AuthService.class);
+    
+    // ============================================================
     // DEPENDENCIES
     // ============================================================
     private final MemberRepository memberRepository;
@@ -39,6 +47,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final AvatarGenerator avatarGenerator;
+    private final OrganiserInviteService organiserInviteService;
     
     // ============================================================
     // CONSTANTS
@@ -87,7 +96,7 @@ public class AuthService {
      * Verify magic link token and authenticate user.
      */
     @Transactional
-    public AuthResponse verifyMagicLink(String token) {
+    public AuthResponse verifyMagicLink(String token, String inviteToken) {
         MagicLink magicLink = magicLinkRepository.findByTokenAndUsedFalse(token)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired magic link"));
         
@@ -120,8 +129,24 @@ public class AuthService {
             memberRepository.save(member);
         }
         
+        // Process organiser invite token if present
+        boolean becameOrganiser = false;
+        log.info("🔍 AuthService.verifyMagicLink - inviteToken received: {}", inviteToken);
+        if (StringUtils.hasText(inviteToken)) {
+            log.info("🔄 AuthService.verifyMagicLink - Processing invite token for member {}", member.getId());
+            becameOrganiser = organiserInviteService.consumeInviteAndGrantRole(inviteToken, member.getId());
+            log.info("✅ AuthService.verifyMagicLink - Invite consumption result: {}", becameOrganiser);
+            if (becameOrganiser) {
+                // Refresh member to get updated role
+                member = memberRepository.findById(member.getId()).orElse(member);
+                log.info("🔄 AuthService.verifyMagicLink - Member refreshed, hasOrganiserRole: {}", member.getHasOrganiserRole());
+            }
+        } else {
+            log.info("ℹ️ AuthService.verifyMagicLink - No invite token provided");
+        }
+
         // Determine role based on admin status
-        String role = member.getIsAdmin() ? "ADMIN" : "MEMBER";
+        String role = member.getIsAdmin() ? "ADMIN" : (member.getHasOrganiserRole() ? "ORGANISER" : "MEMBER");
         
         // Generate JWT token
         String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
@@ -132,6 +157,7 @@ public class AuthService {
                 .email(member.getEmail())
                 .role(role)
                 .hasOrganiserRole(member.getHasOrganiserRole())
+                .isNewOrganiser(becameOrganiser)
                 .build();
     }
     
