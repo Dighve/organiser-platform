@@ -57,6 +57,7 @@ export default function EventDetailPage() {
   const [isJoinQuestionModalOpen, setIsJoinQuestionModalOpen] = useState(false)
   const [joinQuestionAnswer, setJoinQuestionAnswer] = useState('')
   const [pendingGuestCount, setPendingGuestCount] = useState(0)
+  const [isCopying, setIsCopying] = useState(false) // Prevent multiple copy operations
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -211,17 +212,19 @@ export default function EventDetailPage() {
       // Show toast immediately for instant feedback
       toast.success('Successfully left the event')
       
-      // Invalidate queries in background (don't await - let them happen async)
-      queryClient.invalidateQueries(['event', id])
-      queryClient.invalidateQueries(['eventParticipants', id])
-      queryClient.invalidateQueries(['myEvents'])
+      // Force immediate refetch for instant UI update
+      await Promise.all([
+        queryClient.refetchQueries(['event', id]),
+        queryClient.refetchQueries(['eventParticipants', id]),
+        queryClient.refetchQueries(['myEvents']),
+      ])
+      
+      // Invalidate other queries in background
       queryClient.invalidateQueries(['allEvents'])
       queryClient.invalidateQueries(['events'])
-      
-      // Force refetch of current event to update UI
-      queryClient.refetchQueries(['event', id])
     },
     onError: (error) => {
+      setShowLeaveConfirm(false)
       toast.error(error.response?.data?.message || 'Failed to leave event')
     },
   })
@@ -281,6 +284,11 @@ export default function EventDetailPage() {
 
   // Copy event - Navigate to create page with pre-filled data
   const handleCopyEvent = () => {
+    // Prevent multiple simultaneous copy operations
+    if (isCopying) return
+    
+    setIsCopying(true)
+    
     // Encode event data as URL parameters
     const eventData = {
       title: event?.title,
@@ -299,13 +307,14 @@ export default function EventDetailPage() {
       cancellationPolicy: event?.cancellationPolicy,
       imageUrl: event?.imageUrl,
       hostName: event?.hostName,
+      joinQuestion: event?.joinQuestion,
       groupId: event?.groupId
     }
     
     // Navigate to create event page with groupId and copyFrom parameters
     // This ensures the event belongs to the same group
+    // Note: CreateEventPage will show the toast after pre-filling the form
     navigate(`/create-event?groupId=${event?.groupId}&copyFrom=${id}`, { state: { eventData } })
-    toast.success('Event copied! Update the date and details as needed.')
   }
 
   // ============================================
@@ -371,7 +380,9 @@ export default function EventDetailPage() {
     ...((participantsData?.data || []).map(p => p.id) || []),
   ].map(id => Number(id))
   const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
-  const hasJoined = isAuthenticated && participantIds.includes(Number(user?.id))
+  const isHost = event && isAuthenticated && event.hostMemberId && Number(user?.id) === Number(event.hostMemberId)
+  // Host is automatically registered as participant by backend
+  const hasJoined = isAuthenticated && (participantIds.includes(Number(user?.id)) || isHost)
   const currentHeadcount = event?.currentParticipants || 0
 
   // guest info for current user
@@ -603,18 +614,98 @@ export default function EventDetailPage() {
               {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
             </button>
             ) : isAuthenticated ? (
-            isEventOrganiser ? (
-              <button
-                onClick={() => setIsManageOpen(true)}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-2"
-              >
-                <MoreHorizontal className="h-5 w-5" />
-                Manage Event
-              </button>
+            isEventOrganiser && hasJoined ? (
+              // Organiser who has joined: Show guest count + Manage button (or Leave if not host)
+              <div className="space-y-2">
+                <div className="w-full py-2.5 px-3 rounded-lg shadow-md bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                  <p className="text-xs font-semibold text-purple-600">
+                    {isHost ? '🏕️ You\'re hosting (Organiser)' : 'You\'re registered (Organiser)'}
+                  </p>
+                  <p className="text-sm font-bold text-gray-900">
+                    {displayGuestCount > 0
+                      ? `You + ${displayGuestCount} guest${displayGuestCount === 1 ? '' : 's'}`
+                      : 'You (no guests)'}
+                  </p>
+                </div>
+                {isHost ? (
+                  // Host cannot leave - they're essential to the event
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        openGuestModal(displayGuestCount)
+                      }}
+                      className="flex-1 py-2.5 px-3 bg-white border-2 border-purple-200 text-purple-600 font-bold rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Users className="h-4 w-4" />
+                      Guests
+                    </button>
+                    <button
+                      onClick={() => setIsManageOpen(true)}
+                      className="flex-1 py-2.5 px-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Manage
+                    </button>
+                  </div>
+                ) : (
+                  // Organiser but not host - can manage guests and leave
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => {
+                        openGuestModal(displayGuestCount)
+                      }}
+                      className="w-full py-2.5 px-3 bg-white border-2 border-purple-200 text-purple-600 font-bold rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 text-sm"
+                    >
+                      <Users className="h-4 w-4" />
+                      Guests ({displayGuestCount})
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setShowLeaveConfirm(true)}
+                        className="flex-1 py-2.5 px-3 bg-white border-2 border-gray-300 text-gray-700 font-bold rounded-lg hover:border-red-400 hover:bg-red-50 hover:text-red-700 transition-all flex items-center justify-center gap-2 text-sm"
+                      >
+                        <X className="h-4 w-4" />
+                        Leave
+                      </button>
+                      <button
+                        onClick={() => setIsManageOpen(true)}
+                        className="flex-1 py-2.5 px-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Manage
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : isEventOrganiser ? (
+              // Organiser who hasn't joined: Show Join + Manage buttons
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleJoinClick}
+                  disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                >
+                  {joinMutation.isLoading || isJoiningFlow ? (
+                    <Loader className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Users className="h-4 w-4" />
+                  )}
+                  Join
+                </button>
+                <button
+                  onClick={() => setIsManageOpen(true)}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                >
+                  <Edit className="h-4 w-4" />
+                  Manage
+                </button>
+              </div>
             ) : hasJoined ? (
+              // Regular participant who has joined: Show guest count + actions menu
               <div className="flex items-center gap-2">
                 <div className="flex-1 py-2.5 px-3 rounded-lg shadow bg-gray-100 text-gray-700">
-                  <p className="text-xs font-semibold">You’re registered</p>
+                  <p className="text-xs font-semibold">You're registered</p>
                   <p className="text-sm font-bold text-gray-900">
                     {displayGuestCount > 0
                       ? `You + ${displayGuestCount} guest${displayGuestCount === 1 ? '' : 's'}`
@@ -630,6 +721,7 @@ export default function EventDetailPage() {
                 </button>
               </div>
             ) : (
+              // Not joined: Show Join button
               <button
                 onClick={handleJoinClick}
                 disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
@@ -698,14 +790,16 @@ export default function EventDetailPage() {
                   </button>
                   <div className="h-px bg-gray-200 mx-3" />
                   <button
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation()
                       setIsManageOpen(false)
                       handleCopyEvent()
                     }}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                    disabled={isCopying}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Copy className="h-5 w-5 text-blue-600" />
-                    Copy event
+                    {isCopying ? 'Copying...' : 'Copy event'}
                   </button>
                   <div className="h-px bg-gray-200 mx-3" />
                   <button
@@ -992,23 +1086,41 @@ export default function EventDetailPage() {
                   {/* Host */}
                   {hasHost && (
                     <div>
-                      <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
-                        <span className="text-lg lg:text-xl">🏕️</span>
-                        <span>Host</span>
-                      </h2>
                       {(() => {
                         const hostNameFallback = hostName
+                        // Get host's guest count from participants list (works for any viewer)
+                        const hostParticipant = participantsData?.data?.find(p => p.id === event?.hostMemberId)
+                        const hostGuestCount = hostParticipant?.guestCount || 0
+                        // Total count = everyone (host + all guests + all attendees)
+                        const totalCount = event?.currentParticipants || 0
+                        
                         return (
-                          <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl">
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
-                              {hostNameFallback.charAt(0).toUpperCase()}
+                          <>
+                            <h2 className="flex items-center justify-between gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg lg:text-xl">🏕️</span>
+                                <span>Host</span>
+                              </div>
+                              {totalCount > 0 && (
+                                <span className="text-sm font-semibold text-purple-600">👥 {totalCount}</span>
+                              )}
+                            </h2>
+                            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl">
+                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                                {hostNameFallback.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-900 truncate">
+                                  {hostNameFallback}
+                                </p>
+                                {hostGuestCount > 0 && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    +{hostGuestCount} guest{hostGuestCount === 1 ? '' : 's'}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-gray-900 truncate">
-                                {hostNameFallback}
-                              </p>
-                            </div>
-                          </div>
+                          </>
                         )
                       })()}
                     </div>
@@ -1016,28 +1128,35 @@ export default function EventDetailPage() {
 
                   {/* Attendees */}
                   <div className={hasHost ? '' : 'lg:col-span-2'}>
-                    <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
-                      <span className="text-lg lg:text-xl">👥</span>
-                      <span>Attendees ({event?.currentParticipants ? (event.currentParticipants - 1) : 0}{event?.maxParticipants ? `/${event?.maxParticipants - 1}` : ''})</span>
-                    </h2>
-                    {participantsData?.data && participantsData.data.length > 0 ? (
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
-                        {participantsData.data.filter(participant => participant.id !== event?.hostMemberId).map((participant) => (
+                    {(() => {
+                      // Calculate actual other attendees (excluding host)
+                      const otherAttendees = participantsData?.data?.filter(p => p.id !== event?.hostMemberId) || []
+                      const attendeeCount = otherAttendees.length
+                      
+                      return (
+                        <>
+                          <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
+                            <span className="text-lg lg:text-xl">👥</span>
+                            <span>Other Attendees</span>
+                          </h2>
+                          {attendeeCount > 0 ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
+                              {otherAttendees.map((participant) => (
                           <div 
                             key={participant.id}
                             onClick={() => navigate(`/members/${participant.id}`)}
-                            className="flex items-center space-x-2 lg:space-x-3 p-2.5 lg:p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl hover:shadow-md lg:hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-0.5 lg:hover:-translate-y-1"
+                            className="flex items-start space-x-3 lg:space-x-4 p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl hover:shadow-md lg:hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-0.5 lg:hover:-translate-y-1"
                           >
                             <ProfileAvatar 
                               member={participant} 
                               size="md" 
-                              className="group-hover:scale-105 lg:group-hover:scale-110 transition-transform"
+                              className="group-hover:scale-105 lg:group-hover:scale-110 transition-transform flex-shrink-0"
                             />
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 space-y-1">
                               <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all text-sm lg:text-base">
                                 {participant.displayName || participant.email.split('@')[0]}
                               </p>
-                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <div className="flex items-center flex-wrap gap-2 text-xs text-gray-500">
                                 <span>{new Date(participant.joinedAt).toLocaleDateString()}</span>
                                 {participant.guestCount > 0 && (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/70 border border-purple-100 text-purple-700 font-semibold">
@@ -1046,10 +1165,12 @@ export default function EventDetailPage() {
                                 )}
                               </div>
                               {isEventOrganiser && event?.joinQuestion && participant.joinQuestionAnswer && (
-                                <p className="text-xs text-indigo-600 mt-1 flex items-start gap-1">
-                                  <MessageSquare className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                  <span className="italic">{participant.joinQuestionAnswer}</span>
-                                </p>
+                                <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t border-purple-100/50">
+                                  <MessageSquare className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-indigo-500" />
+                                  <p className="text-xs text-indigo-600 italic leading-relaxed">
+                                    {participant.joinQuestionAnswer}
+                                  </p>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -1058,9 +1179,12 @@ export default function EventDetailPage() {
                     ) : (
                       <div className="text-center py-6 lg:py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
                         <Users className="h-8 w-8 lg:h-12 lg:w-12 mx-auto mb-2 lg:mb-3 text-gray-400" />
-                        <p className="text-gray-600 text-sm lg:text-base">No attendees yet. Be the first to join!</p>
+                        <p className="text-gray-600 text-sm lg:text-base">No other attendees yet</p>
                       </div>
                     )}
+                        </>
+                      )
+                    })()}
                   </div>
                 </div>
               </div>
@@ -1209,11 +1333,15 @@ export default function EventDetailPage() {
                             </p>
                           </div>
                           <button
-                            onClick={handleCopyEvent}
-                            className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleCopyEvent()
+                            }}
+                            disabled={isCopying}
+                            className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                           >
                             <Copy className="h-5 w-5" />
-                            Copy Event for Future Date
+                            {isCopying ? 'Copying...' : 'Copy Event for Future Date'}
                           </button>
                         </div>
                       )}
@@ -1476,17 +1604,15 @@ export default function EventDetailPage() {
             <div className="mt-4 flex gap-3">
               <button
                 onClick={handleSubmitJoinQuestion}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow hover:shadow-lg"
+                disabled={!joinQuestionAnswer.trim()}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Join Event
               </button>
             </div>
-            <button
-              onClick={handleSubmitJoinQuestion}
-              className="mt-2 w-full text-center text-xs text-gray-400 hover:text-gray-600"
-            >
-              Skip and join anyway
-            </button>
+            <p className="mt-2 text-xs text-gray-500 text-center">
+              Please answer the question to continue
+            </p>
           </div>
         </div>
       )}

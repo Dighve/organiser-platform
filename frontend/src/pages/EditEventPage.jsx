@@ -135,7 +135,8 @@ export default function EditEventPage() {
         distanceKm: event.distanceKm,
         elevationGainM: event.elevationGainM,
         imageUrl: event.imageUrl,
-        hostName: event.organiserName || '',  // Pre-fill host name
+        hostMemberId: event.hostMemberId || null,  // Preserve host member ID
+        hostName: event.hostMemberName || event.organiserName || '',  // Pre-fill host name
         joinQuestion: event.joinQuestion || ''
       }
       
@@ -698,7 +699,8 @@ export default function EditEventPage() {
         </div>
         {joinQuestionEnabled && (
           <textarea
-            {...register('joinQuestion')}
+            value={watch('joinQuestion') || ''}
+            onChange={(e) => setValue('joinQuestion', e.target.value)}
             rows={2}
             className="mt-3 w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm bg-white resize-none"
             placeholder="e.g., What's your experience level with long-distance hikes?"
@@ -787,6 +789,15 @@ export default function EditEventPage() {
             <UserPlus className="h-3.5 w-3.5 text-gray-400" />
             {formData.hostName}
           </p>
+        )}
+        {joinQuestionEnabled && (formData.joinQuestion || watch('joinQuestion')) && (
+          <div className="mt-3">
+            <p className="text-xs font-semibold text-gray-500 mb-1.5 flex items-center gap-1.5">
+              <MessageSquare className="h-3.5 w-3.5 text-gray-400" />
+              Join question
+            </p>
+            <p className="text-xs text-gray-600 italic">"{formData.joinQuestion || watch('joinQuestion')}"</p>
+          </div>
         )}
       </div>
     </div>
@@ -1434,7 +1445,8 @@ export default function EditEventPage() {
                 {joinQuestionEnabled && (
                   <div className="mt-4">
                     <textarea
-                      {...register('joinQuestion')}
+                      value={watch('joinQuestion') || ''}
+                      onChange={(e) => setValue('joinQuestion', e.target.value)}
                       rows={2}
                       className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm sm:text-base transition-all bg-white resize-none"
                       placeholder="e.g., What's your experience level with long-distance hikes?"
@@ -1587,6 +1599,15 @@ export default function EditEventPage() {
                           Host/Guide:
                         </p>
                         <p className="text-gray-700 ml-6">{formData.hostName}</p>
+                      </div>
+                    )}
+                    {joinQuestionEnabled && (formData.joinQuestion || watch('joinQuestion')) && (
+                      <div className="mt-4 bg-purple-50 p-3 rounded-lg">
+                        <p className="font-semibold text-sm mb-1 flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-indigo-600" />
+                          Join question:
+                        </p>
+                        <p className="text-gray-700 ml-6 italic">"{formData.joinQuestion || watch('joinQuestion')}"</p>
                       </div>
                     )}
                   </div>

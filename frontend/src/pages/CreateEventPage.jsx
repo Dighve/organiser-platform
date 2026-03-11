@@ -1,7 +1,7 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Type, FileText, Image, Timer, Camera, X, ChevronDown, MessageSquare } from 'lucide-react'
 import { useNavigate, useSearchParams, useLocation, Link } from 'react-router-dom'
@@ -146,6 +146,7 @@ export default function CreateEventPage() {
   // ============================================================
   const [currentStep, setCurrentStep] = useState(STEPS.BASICS)        // Current step in multi-step form
   const { defaultDate, defaultTime } = getDefaultDateTime()
+  const hasShownCopyToast = useRef(false) // Prevent duplicate toast in React Strict Mode
   const [formData, setFormData] = useState({
     eventDate: defaultDate,
     startTime: defaultTime
@@ -219,8 +220,11 @@ export default function CreateEventPage() {
   // Pre-fill form when copying an event
   useEffect(() => {
     if (copiedEventData && copyFromId) {
-      // Show info toast
-      toast.success('📋 Event copied! Update the date and make any changes needed.', { duration: 5000 })
+      // Show info toast only once (prevent duplicate in React Strict Mode)
+      if (!hasShownCopyToast.current) {
+        toast.success('📋 Event copied! Update the date and make any changes needed.', { duration: 5000 })
+        hasShownCopyToast.current = true
+      }
       
       // Pre-fill all fields except dates (user needs to set new dates)
       const updatedFormData = {
@@ -239,6 +243,7 @@ export default function CreateEventPage() {
         cancellationPolicy: copiedEventData.cancellationPolicy || '',
         imageUrl: copiedEventData.imageUrl || '',
         hostName: copiedEventData.hostName || '',
+        joinQuestion: copiedEventData.joinQuestion || '',
         eventDate: defaultDate, // Use default date for new event
         startTime: defaultTime  // Use default time for new event
       }
@@ -255,6 +260,11 @@ export default function CreateEventPage() {
         } catch (e) {
           console.error('Error parsing required gear:', e)
         }
+      }
+      
+      // Enable join question toggle if question exists
+      if (copiedEventData.joinQuestion) {
+        setJoinQuestionEnabled(true)
       }
       
       // Set form values
@@ -985,6 +995,37 @@ export default function CreateEventPage() {
           error={errors.hostName?.message}
         />
       </div>
+
+      {/* Join question toggle */}
+      <div className="border border-indigo-100 rounded-2xl p-4 bg-gradient-to-r from-indigo-50 to-purple-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex-shrink-0">
+              <MessageSquare className="h-3.5 w-3.5 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900 text-sm">Ask members a question</p>
+              <p className="text-xs text-gray-400">Members answer when they join</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setJoinQuestionEnabled(prev => !prev)}
+            className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors ${joinQuestionEnabled ? 'bg-indigo-600' : 'bg-gray-200'}`}
+          >
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${joinQuestionEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+          </button>
+        </div>
+        {joinQuestionEnabled && (
+          <textarea
+            value={watch('joinQuestion') || ''}
+            onChange={(e) => setValue('joinQuestion', e.target.value)}
+            rows={2}
+            className="mt-3 w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm bg-white resize-none"
+            placeholder="e.g., What's your experience level with long-distance hikes?"
+          />
+        )}
+      </div>
     </div>
   )
 
@@ -1106,6 +1147,21 @@ export default function CreateEventPage() {
                   )}
                 </div>
                 <button type="button" onClick={() => goToStep(STEPS.BASICS)} className="text-purple-600 text-xs font-bold flex-shrink-0 pt-0.5">Edit</button>
+              </div>
+            </div>
+          )}
+
+          {joinQuestionEnabled && (formData.joinQuestion || watch('joinQuestion')) && (
+            <div className="px-5 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <MessageSquare className="h-3 w-3" />
+                    Join question
+                  </p>
+                  <p className="text-xs text-gray-600 italic">"{formData.joinQuestion || watch('joinQuestion')}"</p>
+                </div>
+                <button type="button" onClick={() => goToStep(STEPS.DETAILS)} className="text-purple-600 text-xs font-bold flex-shrink-0 pt-0.5">Edit</button>
               </div>
             </div>
           )}
@@ -1966,7 +2022,8 @@ export default function CreateEventPage() {
         {joinQuestionEnabled && (
           <div className="mt-4">
             <textarea
-              {...register('joinQuestion')}
+              value={watch('joinQuestion') || ''}
+              onChange={(e) => setValue('joinQuestion', e.target.value)}
               rows={2}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm sm:text-base transition-all bg-white resize-none"
               placeholder="e.g., What's your experience level with long-distance hikes?"

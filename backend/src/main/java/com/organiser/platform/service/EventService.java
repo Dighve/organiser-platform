@@ -168,15 +168,16 @@ public class EventService {
         }
         
         // Update host member if specified
+        Member newHostMember = null;
         if (request.getHostMemberId() != null) {
-            Member hostMember = memberRepository.findById(request.getHostMemberId())
+            newHostMember = memberRepository.findById(request.getHostMemberId())
                     .orElseThrow(() -> new RuntimeException("Host member not found"));
             
             // Verify host is a member of the group
-            if (!groupService.isMemberOfGroup(hostMember.getId(), event.getGroup().getId())) {
+            if (!groupService.isMemberOfGroup(newHostMember.getId(), event.getGroup().getId())) {
                 throw new RuntimeException("Host must be a member of the group");
             }
-            event.setHostMember(hostMember);
+            event.setHostMember(newHostMember);
         } else {
             event.setHostMember(null);
         }
@@ -213,6 +214,28 @@ public class EventService {
         }
         
         event = eventRepository.save(event);
+        
+        // Ensure the new host has a participant record (preserves existing guest count if already registered)
+        if (newHostMember != null) {
+            // Check if host already has a participant record
+            EventParticipant existingHostParticipant = eventParticipantRepository
+                    .findByEventIdAndMemberId(event.getId(), newHostMember.getId())
+                    .orElse(null);
+            
+            if (existingHostParticipant == null) {
+                // Create new participant record for the host
+                EventParticipant hostParticipant = EventParticipant.builder()
+                        .event(event)
+                        .member(newHostMember)
+                        .status(EventParticipant.ParticipationStatus.CONFIRMED)
+                        .registrationDate(LocalDateTime.now())
+                        .guestCount(0)
+                        .build();
+                eventParticipantRepository.save(hostParticipant);
+            }
+            // If participant record exists, keep it as-is (preserves guest count)
+        }
+        
         return convertToDTO(event);
     }
     
