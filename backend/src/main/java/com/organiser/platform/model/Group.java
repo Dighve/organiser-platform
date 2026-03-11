@@ -1,5 +1,6 @@
 package com.organiser.platform.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -92,11 +93,13 @@ public class Group {
     // Members subscribed to this group
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
     @Builder.Default
+    @JsonIgnore
     private Set<Subscription> subscriptions = new HashSet<>();
     
     // Events organized by this group
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
     @Builder.Default
+    @JsonIgnore
     private Set<Event> events = new HashSet<>();
     
     public int getSubscriberCount() {

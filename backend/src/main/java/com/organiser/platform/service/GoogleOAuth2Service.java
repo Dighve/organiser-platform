@@ -78,7 +78,17 @@ public class GoogleOAuth2Service {
             // Find or create member
             Member member = memberRepository.findByEmail(email)
                     .orElseGet(() -> createMemberFromGoogle(email, name, pictureUrl));
-            
+
+            // Reactivate soft-deleted accounts on successful login
+            if (Boolean.FALSE.equals(member.getActive())) {
+                member.setActive(true);
+                if (member.getDisplayName() == null || "Deleted user".equalsIgnoreCase(member.getDisplayName().trim())) {
+                    String localPart = email.split("@")[0];
+                    member.setDisplayName(localPart);
+                }
+                memberRepository.save(member);
+            }
+
             // Update profile photo if Google has one and user doesn't
             if (pictureUrl != null && !pictureUrl.isEmpty() && 
                 (member.getProfilePhotoUrl() == null || member.getProfilePhotoUrl().contains("ui-avatars.com"))) {

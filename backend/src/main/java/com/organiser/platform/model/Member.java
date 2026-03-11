@@ -1,5 +1,6 @@
 package com.organiser.platform.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -87,10 +88,12 @@ public class Member {
     // Subscriptions to groups
     @Builder.Default
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<Subscription> subscriptions = new HashSet<>();
     
     // Events this member is participating in
     @Builder.Default
     @OneToMany(mappedBy = "member", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<EventParticipant> eventParticipations = new HashSet<>();
 }

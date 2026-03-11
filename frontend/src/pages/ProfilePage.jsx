@@ -21,7 +21,7 @@ export default function ProfilePage() {
   // HOOKS & STATE
   // ============================================================
   const navigate = useNavigate()
-  const { user, logout } = useAuthStore()  // Global auth state
+  const { user, isAuthenticated, logout } = useAuthStore()  // Global auth state
   const queryClient = useQueryClient()  // React Query cache
   
   // ============================================================
@@ -44,8 +44,14 @@ export default function ProfilePage() {
   const { data: memberData, isLoading, error, refetch } = useQuery({
     queryKey: ['currentMember'],
     queryFn: () => membersAPI.getCurrentMember().then(res => res.data),
-    retry: 3, // Retry failed requests 3 times
-    retryDelay: 1000, // Wait 1 second between retries
+    enabled: isAuthenticated, // Only fetch when authenticated
+    retry: (failureCount, err) => {
+      // Don't retry on auth errors — avoids caching a stale 401/403 from a previous session
+      const status = err?.response?.status
+      if (status === 401 || status === 403) return false
+      return failureCount < 2
+    },
+    retryDelay: 1000,
   })
 
   // ============================================================
