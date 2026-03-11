@@ -82,7 +82,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         if (inviteRedeemed) {
           clearReturnUrl()
           handleClose()
-          navigate('/organiser-onboarding')
+          navigate('/')
           if (onSuccess) onSuccess()
           return
         }

@@ -46,13 +46,13 @@ export default function VerifyMagicLinkPage() {
       // Clear invite token regardless of outcome
       clearInviteToken()
       
-      // If invite was redeemed, send to onboarding
+      // If invite was redeemed, send to homepage where T&C modal will show
       if (inviteRedeemed) {
-        setSavedReturnUrl('/organiser-onboarding')
+        setSavedReturnUrl('/')
         setStatus('success')
         setTimeout(() => {
           clearReturnUrl()
-          navigate('/organiser-onboarding', { replace: true })
+          navigate('/', { replace: true })
         }, 1000)
         return
       }

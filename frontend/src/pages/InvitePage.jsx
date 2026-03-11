@@ -22,10 +22,10 @@ export default function InvitePage() {
     staleTime: 60 * 1000,
   })
 
-  // If already authenticated with organiser role, redirect to onboarding
+  // If already authenticated with organiser role, redirect to homepage where T&C modal will show
   useEffect(() => {
     if (isAuthenticated && user?.role === 'ORGANISER') {
-      navigate('/organiser-onboarding', { replace: true })
+      navigate('/', { replace: true })
     }
   }, [isAuthenticated, user, navigate])
 
@@ -39,7 +39,7 @@ export default function InvitePage() {
 
   const handleLoginSuccess = () => {
     setLoginModalOpen(false)
-    // Navigation to /organiser-onboarding is handled in LoginModal / VerifyMagicLinkPage
+    // Navigation to homepage is handled in LoginModal / VerifyMagicLinkPage where T&C modal will show
   }
 
   if (isLoading) {

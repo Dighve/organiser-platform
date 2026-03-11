@@ -19,10 +19,39 @@ INSERT INTO members (email, display_name, profile_photo_url, verified, active, c
 ('user3@test.com', 'Carol White', 'https://ui-avatars.com/api/?name=Carol+White&background=random', true, true, CURRENT_TIMESTAMP);
 
 -- Insert Groups (using the verified organiser as primary organiser)
-INSERT INTO groups (name, description, image_url, primary_organiser_id, activity_id, location, max_members, active, is_public, created_at, updated_at) VALUES
-('Mountain Hikers', 'A group for enthusiasts who love challenging mountain trails', 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800', 1, 1, 'San Francisco Bay Area', 50, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Bay Area Cyclists', 'Cycling through the beautiful Bay Area routes', 'https://images.unsplash.com/photo-1541625602330-2277a4c46182?w=800', 1, 2, 'San Francisco, CA', 30, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('Morning Runners', 'Early morning running group for all levels', 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=800', 1, 3, 'San Francisco, CA', 25, true, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO groups (name, description, image_url, primary_organiser_id, activity_id, location, max_members, active, is_public, group_guidelines, created_at, updated_at) VALUES
+('Mountain Hikers', 'A group for enthusiasts who love challenging mountain trails', 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=800', 1, 1, 'San Francisco Bay Area', 50, true, true, 
+'## Mountain Hikers Group Guidelines
+
+Welcome to Mountain Hikers! To ensure everyone has a safe and enjoyable experience, please review and agree to these guidelines:
+
+### Safety Requirements
+- Always inform someone of your hiking plans
+- Carry proper safety equipment (first aid kit, whistle, headlamp)
+- Check weather conditions before each hike
+- Stay with the group and follow the designated trail
+
+### What to Bring
+- Sturdy hiking boots with good traction
+- Weather-appropriate clothing (layers recommended)
+- At least 2 liters of water per person
+- Snacks/lunch for longer hikes
+- Sunscreen and hat
+
+### Group Conduct
+- Respect fellow hikers and wildlife
+- Follow Leave No Trace principles
+- No alcohol or drugs during activities
+- Be punctual and prepared for scheduled meetups
+
+### Cancellation Policy
+- Events may be cancelled due to severe weather
+- Members will be notified at least 2 hours before start time
+- Partial refunds available for paid events (see individual event policies)
+
+By joining our events, you agree to follow these guidelines and participate at your own risk. Let''s explore the mountains together safely!', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Bay Area Cyclists', 'Cycling through the beautiful Bay Area routes', 'https://images.unsplash.com/photo-1541625602330-2277a4c46182?w=800', 1, 2, 'San Francisco, CA', 30, true, true, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('Morning Runners', 'Early morning running group for all levels', 'https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?w=800', 1, 3, 'San Francisco, CA', 25, true, true, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert Subscriptions (members subscribing to groups)
 INSERT INTO subscriptions (member_id, group_id, status, subscribed_at) VALUES
