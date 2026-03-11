@@ -12,6 +12,7 @@ import com.organiser.platform.model.Event;
 import com.organiser.platform.model.EventParticipant;
 import com.organiser.platform.model.Group;
 import com.organiser.platform.model.Member;
+import com.organiser.platform.repository.EventCommentRepository;
 import com.organiser.platform.repository.EventRepository;
 import com.organiser.platform.repository.EventParticipantRepository;
 import com.organiser.platform.repository.GroupRepository;
@@ -59,6 +60,7 @@ public class GroupService {
     private final com.organiser.platform.repository.ActivityRepository activityRepository;
     private final EventRepository eventRepository;
     private final EventParticipantRepository eventParticipantRepository;
+    private final EventCommentRepository eventCommentRepository;
     private final BannedMemberRepository bannedMemberRepository;
     private final NotificationService notificationService;
     

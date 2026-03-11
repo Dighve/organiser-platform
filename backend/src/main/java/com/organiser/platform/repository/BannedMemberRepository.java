@@ -42,4 +42,9 @@ public interface BannedMemberRepository extends JpaRepository<BannedMember, Long
      * Check if any banned members exist for a group
      */
     boolean existsByGroupId(Long groupId);
+
+    /**
+     * Delete all banned member records for a group (used when permanently deleting group)
+     */
+    void deleteByGroupId(Long groupId);
 }
