@@ -54,4 +54,5 @@ public class EventDTO {
     private Set<Long> participantIds;
     private Boolean userIsGroupMember; // Whether current user is a member of the group
     private String joinQuestion;
+    private String groupGuidelines; // Group guidelines for display during joining
 }

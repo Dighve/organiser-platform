@@ -656,6 +656,21 @@ export default function GroupDetailPage() {
                     {displayGroup.description || 'No description available.'}
                   </p>
                   
+                  {/* Group Guidelines Section */}
+                  {displayGroup.groupGuidelines && displayGroup.groupGuidelines.trim() && (
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <span className="text-purple-600">📋</span>
+                        Group Guidelines
+                      </h3>
+                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border border-purple-100 p-4">
+                        <div className="text-gray-700 text-base leading-relaxed whitespace-pre-wrap">
+                          {displayGroup.groupGuidelines}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Group creation date */}
                   {displayGroup.createdAt && (
                     <div className="flex items-center gap-2 text-gray-400 text-xs pb-4 border-t border-gray-100 pt-4 mb-4">

@@ -45,11 +45,14 @@ export function initAnalytics() {
     return
   }
 
+  console.log('[Analytics] Initializing Mixpanel with token:', TOKEN.substring(0, 8) + '...')
+
   mixpanel.init(TOKEN, {
     debug: import.meta.env.DEV,
     track_pageview: false,
     persistence: 'localStorage',
     ignore_dnt: false,
+    api_host: 'https://api-eu.mixpanel.com', // EU data residency
   })
 
   initialized = true
@@ -62,6 +65,8 @@ export function initAnalytics() {
     browser: detectBrowser(),
     app_name: 'OutMeets',
   })
+
+  console.log('[Analytics] ✅ Mixpanel initialized successfully')
 }
 
 function track(event, props = {}) {

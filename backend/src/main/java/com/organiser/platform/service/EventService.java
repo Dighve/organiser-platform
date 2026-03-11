@@ -717,6 +717,7 @@ public class EventService {
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(true) // Default true for backward compatibility
                 .joinQuestion(event.getJoinQuestion())
+                .groupGuidelines(group.getGroupGuidelines())
                 .build();
     }
     
@@ -810,6 +811,7 @@ public class EventService {
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(isGroupMember)
                 .joinQuestion(event.getJoinQuestion())
+                .groupGuidelines(group.getGroupGuidelines())
                 .build();
     }
     
@@ -876,6 +878,9 @@ public class EventService {
                 .averageRating(BigDecimal.ZERO)
                 .totalReviews(0)
                 .updatedAt(null)
+                .userIsGroupMember(false)
+                .joinQuestion(null)
+                .groupGuidelines(group.getGroupGuidelines()) // Include guidelines for joining flow
                 .build();
     }
     
