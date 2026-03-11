@@ -18,6 +18,11 @@ export default function WelcomeScreen({ onDiscoverClick }) {
     trackLoginModalOpened('welcome_screen')
     setLoginModalOpen(true)
   }
+
+  const handleLoginSuccess = () => {
+    // After successful login, automatically move to discover events view
+    onDiscoverClick()
+  }
   // HERO BACKGROUND - Optimized animated gradient with floating shapes
   const heroBackground = (
     <div className="absolute inset-0 -z-10 w-full h-full overflow-hidden">
@@ -166,6 +171,7 @@ export default function WelcomeScreen({ onDiscoverClick }) {
       <LoginModal 
         isOpen={loginModalOpen} 
         onClose={() => setLoginModalOpen(false)}
+        onSuccess={handleLoginSuccess}
         trigger="welcome_screen"
       />
     </div>
