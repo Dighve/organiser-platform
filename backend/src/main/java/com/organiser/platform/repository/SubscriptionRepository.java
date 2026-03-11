@@ -26,4 +26,9 @@ public interface SubscriptionRepository extends JpaRepository<Subscription, Long
     Long countByMemberId(Long memberId);
 
     void deleteByMemberId(Long memberId);
+    
+    /**
+     * Delete all subscriptions for a group (used when permanently deleting group)
+     */
+    void deleteByGroupId(Long groupId);
 }

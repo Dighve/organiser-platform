@@ -42,4 +42,11 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Modifying
     @Query("DELETE FROM Notification n WHERE n.isRead = true AND n.readAt < :cutoffDate")
     int deleteOldReadNotifications(@Param("cutoffDate") java.time.LocalDateTime cutoffDate);
+    
+    /**
+     * Delete all notifications for a group (used when permanently deleting group)
+     */
+    @Modifying
+    @Query("DELETE FROM Notification n WHERE n.relatedGroup.id = :groupId")
+    int deleteByGroupId(@Param("groupId") Long groupId);
 }

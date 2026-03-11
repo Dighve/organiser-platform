@@ -570,4 +570,70 @@ public class GroupService {
                     .ifPresent(eventParticipantRepository::delete);
         }
     }
+    
+    // ============================================================
+    // PUBLIC METHODS - Group Deletion
+    // ============================================================
+    
+    /**
+     * Check if a group has no history and can be permanently deleted.
+     * A group has "no history" when:
+     * 1. No events have been created
+     * 2. Only the organizer is a member (only one active subscription)
+     * 3. No banned members exist
+     */
+    public boolean canGroupBeDeleted(Long groupId) {
+        // Check if any events exist for this group
+        long eventCount = eventRepository.countByGroupId(groupId);
+        if (eventCount > 0) {
+            return false;
+        }
+        
+        // Check if only organizer is a member (should have exactly 1 active subscription)
+        long activeSubscriptionCount = subscriptionRepository.countByGroupIdAndStatus(
+                groupId, Subscription.SubscriptionStatus.ACTIVE);
+        if (activeSubscriptionCount != 1) {
+            return false;
+        }
+        
+        // Check if any banned members exist
+        boolean hasBannedMembers = bannedMemberRepository.existsByGroupId(groupId);
+        if (hasBannedMembers) {
+            return false;
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Permanently delete a group that has no history.
+     * This is irreversible and completely removes the group from the database.
+     * Only allowed for groups with no events, no additional members, and no banned members.
+     */
+    @Transactional
+    @CacheEvict(value = {"groups", "events"}, allEntries = true)
+    public void permanentlyDeleteGroup(Long groupId, Long organiserId) {
+        // Verify group exists
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Verify requester is the organiser
+        if (!group.getPrimaryOrganiser().getId().equals(organiserId)) {
+            throw new RuntimeException("Only the group organiser can delete the group");
+        }
+        
+        // Verify group can be deleted (has no history)
+        if (!canGroupBeDeleted(groupId)) {
+            throw new RuntimeException("Group cannot be deleted. It has history (events, members, or banned members)");
+        }
+        
+        // Delete the organizer's subscription first (cascade will handle the rest)
+        subscriptionRepository.deleteByGroupId(groupId);
+        
+        // Delete any notifications related to this group
+        notificationService.deleteNotificationsByGroup(groupId);
+        
+        // Delete the group (this will cascade delete any remaining related entities)
+        groupRepository.delete(group);
+    }
 }

@@ -37,4 +37,9 @@ public interface BannedMemberRepository extends JpaRepository<BannedMember, Long
      */
     @Query("SELECT bm.group.id FROM BannedMember bm WHERE bm.member.id = :memberId")
     List<Long> findBannedGroupIdsByMemberId(@Param("memberId") Long memberId);
+    
+    /**
+     * Check if any banned members exist for a group
+     */
+    boolean existsByGroupId(Long groupId);
 }

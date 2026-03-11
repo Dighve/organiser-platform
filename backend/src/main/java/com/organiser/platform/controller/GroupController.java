@@ -15,6 +15,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -178,6 +179,21 @@ public class GroupController {
     ) {
         Long organiserId = getUserIdFromAuth(authentication);
         groupService.removeMemberFromGroup(groupId, memberId, organiserId);
+        return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * Permanently delete a group that has no history (organiser only).
+     * This is irreversible and completely removes the group from the database.
+     * Only allowed for groups with no events, no additional members, and no banned members.
+     */
+    @DeleteMapping("/{groupId}/permanent")
+    public ResponseEntity<Void> permanentlyDeleteGroup(
+            @PathVariable Long groupId,
+            Authentication authentication
+    ) {
+        Long organiserId = getUserIdFromAuth(authentication);
+        groupService.permanentlyDeleteGroup(groupId, organiserId);
         return ResponseEntity.ok().build();
     }
 }

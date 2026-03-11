@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search, MoreVertical, Ban, UserCheck } from 'lucide-react'
+import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search, MoreVertical, Ban, UserCheck, Trash2, AlertTriangle } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
@@ -327,15 +327,30 @@ export default function GroupDetailPage() {
   // Update group details (organiser only)
   const updateGroupMutation = useMutation({
     mutationFn: (data) => groupsAPI.updateGroup(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedGroup) => {
       queryClient.invalidateQueries(['group', id])
       queryClient.invalidateQueries(['myGroups'])
       queryClient.invalidateQueries(['myOrganisedGroups'])
-      setIsEditModalOpen(false)
       toast.success('Group updated successfully!')
+      setIsEditModalOpen(false)
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to update group')
+    },
+  })
+
+  // Permanently delete group (organiser only)
+  const permanentDeleteMutation = useMutation({
+    mutationFn: () => groupsAPI.permanentlyDeleteGroup(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['myGroups'])
+      queryClient.invalidateQueries(['myOrganisedGroups'])
+      queryClient.invalidateQueries(['publicGroups'])
+      toast.success('Group permanently deleted')
+      navigate('/')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to delete group')
     },
   })
 
@@ -388,6 +403,7 @@ export default function GroupDetailPage() {
   }
 
   const [showLeaveModal, setShowLeaveModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   // Leave group (with in-app confirmation)
   const handleUnsubscribe = () => {
@@ -397,6 +413,16 @@ export default function GroupDetailPage() {
   const handleConfirmLeave = () => {
     unsubscribeMutation.mutate()
     setShowLeaveModal(false)
+  }
+
+  // Permanent group deletion (organiser only)
+  const handlePermanentDelete = () => {
+    setShowDeleteModal(true)
+  }
+
+  const handleConfirmDelete = () => {
+    permanentDeleteMutation.mutate()
+    setShowDeleteModal(false)
   }
 
   // ============================================
@@ -946,6 +972,22 @@ export default function GroupDetailPage() {
                           <Calendar className="h-5 w-5" />
                           Create Event
                         </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={handleOpenEditModal}
+                            className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Edit className="h-4 w-4" />
+                            Edit Group
+                          </button>
+                          <button
+                            onClick={handlePermanentDelete}
+                            className="flex-1 py-3 px-4 bg-red-100 text-red-600 font-semibold rounded-xl hover:bg-red-200 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        </div>
                       </>
                     ) : (
                       /* MEMBER/NON-MEMBER VIEW */
@@ -1069,6 +1111,13 @@ export default function GroupDetailPage() {
                 aria-label="Edit group"
               >
                 <Edit className="h-5 w-5" />
+              </button>
+              <button
+                onClick={handlePermanentDelete}
+                className="px-4 py-3 bg-red-100 text-red-600 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
+                aria-label="Delete group permanently"
+              >
+                <Trash2 className="h-5 w-5" />
               </button>
             </div>
           ) : isSubscribed ? (
@@ -1417,6 +1466,85 @@ export default function GroupDetailPage() {
                   removeOption === 'ban' ? 'Remove & Ban' : 'Remove Member'
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* PERMANENT DELETE CONFIRMATION MODAL */}
+      {/* ============================================ */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-red-600 to-red-700 text-white p-6 rounded-t-3xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6" />
+                <h2 className="text-xl font-bold">Delete Group Permanently</h2>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
+                aria-label="Close modal"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              <div className="mb-6">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-red-800 mb-1">This action cannot be undone</p>
+                      <p className="text-sm text-red-700">
+                        This will permanently delete the group and all associated data.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-3 text-sm text-gray-600">
+                  <p><strong>Requirements for deletion:</strong></p>
+                  <ul className="list-disc list-inside space-y-1 ml-4">
+                    <li>No events have been created</li>
+                    <li>Only you (the organizer) are a member</li>
+                    <li>No members have been banned</li>
+                  </ul>
+                  
+                  <p className="text-xs text-red-600 mt-4">
+                    <strong>Warning:</strong> If these requirements aren't met, deletion will fail.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteModal(false)}
+                  className="flex-1 px-6 py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-colors"
+                  disabled={permanentDeleteMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white font-semibold rounded-xl hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={permanentDeleteMutation.isPending}
+                >
+                  {permanentDeleteMutation.isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Deleting...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <Trash2 className="h-4 w-4" />
+                      Delete Permanently
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

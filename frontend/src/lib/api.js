@@ -168,6 +168,8 @@ export const groupsAPI = {
   
   updateGroup: (groupId, data) => api.put(`/groups/${groupId}`, data),
   
+  permanentlyDeleteGroup: (groupId) => api.delete(`/groups/${groupId}/permanent`),
+  
   getGroupMembers: (groupId) => api.get(`/groups/${groupId}/members`),
   
   removeMember: (groupId, memberId) => 

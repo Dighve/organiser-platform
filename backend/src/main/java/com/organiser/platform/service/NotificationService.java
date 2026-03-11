@@ -201,4 +201,13 @@ public class NotificationService {
         log.info("Created MEMBER_BANNED notification for member {} from group {}", 
             bannedMember.getId(), group.getId());
     }
+    
+    /**
+     * Delete all notifications related to a group (used when permanently deleting group)
+     */
+    @Transactional
+    public void deleteNotificationsByGroup(Long groupId) {
+        notificationRepository.deleteByGroupId(groupId);
+        log.info("Deleted all notifications for group {}", groupId);
+    }
 }
