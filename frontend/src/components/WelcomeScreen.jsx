@@ -1,6 +1,8 @@
-import React from 'react'
+import React, { useState } from 'react'
+import LoginModal from './LoginModal'
 
 export default function WelcomeScreen({ onDiscoverClick }) {
+  const [loginModalOpen, setLoginModalOpen] = useState(false)
   // HERO BACKGROUND - Optimized animated gradient with floating shapes
   const heroBackground = (
     <div className="absolute inset-0 -z-10 w-full h-full overflow-hidden">
@@ -109,17 +111,24 @@ export default function WelcomeScreen({ onDiscoverClick }) {
           <div className="px-3 sm:px-4 py-2 sm:py-2 rounded-full bg-white/15 text-white/90 text-base sm:text-sm font-semibold border border-white/20">All skill levels</div>
         </div>
 
-        {/* Mobile Inline Button */}
-        <div className="md:hidden flex justify-center mt-auto pb-2">
+        {/* Mobile Buttons */}
+        <div className="md:hidden flex flex-col gap-3 justify-center mt-auto pb-2">
           <button
             onClick={onDiscoverClick}
             className="w-full max-w-md py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 text-white font-extrabold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             Discover Events
           </button>
+          <button
+            onClick={() => setLoginModalOpen(true)}
+            className="w-full max-w-md py-3 px-6 bg-white/20 backdrop-blur-sm border border-white/40 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 hover:bg-white/30"
+          >
+            Login / Sign Up
+            <span className="text-lg">🔑</span>
+          </button>
         </div>
         
-        {/* Desktop Button */}
+        {/* Desktop Buttons */}
         <div className="hidden md:flex flex-col sm:flex-row gap-4 justify-center items-center">
           <button
             className="w-full max-w-md py-4 px-6 bg-white text-purple-700 hover:bg-white/90 hover:text-purple-800 font-extrabold rounded-xl shadow-2xl shadow-black/20 active:scale-95 transition-all flex items-center justify-center gap-3 border border-white/60"
@@ -128,10 +137,21 @@ export default function WelcomeScreen({ onDiscoverClick }) {
             Discover Events
             <span className="text-xl">→</span>
           </button>
+          <button
+            className="w-full max-w-md py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 text-white font-extrabold rounded-xl shadow-2xl shadow-black/20 active:scale-95 transition-all flex items-center justify-center gap-3"
+            onClick={() => setLoginModalOpen(true)}
+          >
+            Login / Sign Up
+            <span className="text-xl">🔑</span>
+          </button>
         </div>
       </div>
 
-      {/* Mobile Fixed Button removed */}
+      {/* Login Modal */}
+      <LoginModal 
+        isOpen={loginModalOpen} 
+        onClose={() => setLoginModalOpen(false)} 
+      />
     </div>
   )
 }
