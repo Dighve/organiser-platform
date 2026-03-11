@@ -183,6 +183,21 @@ public class GroupController {
     }
     
     /**
+     * Transfer ownership of a group to another member (current organiser only).
+     * The new organiser must be an active member of the group.
+     */
+    @PostMapping("/{groupId}/transfer-ownership/{newOrganiserId}")
+    public ResponseEntity<GroupDTO> transferOwnership(
+            @PathVariable Long groupId,
+            @PathVariable Long newOrganiserId,
+            Authentication authentication
+    ) {
+        Long currentOrganiserId = getUserIdFromAuth(authentication);
+        GroupDTO updatedGroup = groupService.transferOwnership(groupId, newOrganiserId, currentOrganiserId);
+        return ResponseEntity.ok(updatedGroup);
+    }
+    
+    /**
      * Permanently delete a group that has no history (organiser only).
      * This is irreversible and completely removes the group from the database.
      * Only allowed for groups with no events, no additional members, and no banned members.

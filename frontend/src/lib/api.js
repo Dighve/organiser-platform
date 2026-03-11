@@ -182,6 +182,9 @@ export const groupsAPI = {
     api.post(`/groups/${groupId}/unban/${memberId}`),
   
   getBannedMembers: (groupId) => api.get(`/groups/${groupId}/banned-members`),
+  
+  transferOwnership: (groupId, newOrganiserId) => 
+    api.post(`/groups/${groupId}/transfer-ownership/${newOrganiserId}`),
 }
 
 // Members API

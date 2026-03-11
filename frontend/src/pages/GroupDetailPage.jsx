@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams, useLocation } from 'react-rout
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search, MoreVertical, Ban, UserCheck, Trash2, AlertTriangle } from 'lucide-react'
+import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search, MoreVertical, Ban, UserCheck, Trash2, AlertTriangle, UserPlus } from 'lucide-react'
 import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import ProfileAvatar from '../components/ProfileAvatar'
@@ -130,7 +130,20 @@ export default function GroupDetailPage() {
   // LOCAL STATE
   // ============================================
   const [activeTab, setActiveTab] = useState('about') // Current tab: about, events, or members
+  
+  // Modal states
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [removeModalOpen, setRemoveModalOpen] = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState(null)
+  const [removeOption, setRemoveOption] = useState('remove') // 'remove' or 'ban'
+  const [banReason, setBanReason] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
+  const [selectedNewOrganiser, setSelectedNewOrganiser] = useState(null)
+  const [openMenuMemberId, setOpenMenuMemberId] = useState(null)
+  
+  // Edit form state
   const [editFormData, setEditFormData] = useState({
     name: '',
     description: '',
@@ -140,11 +153,6 @@ export default function GroupDetailPage() {
     maxMembers: '',
     isPublic: true,
   })
-  const [openMenuMemberId, setOpenMenuMemberId] = useState(null)
-  const [removeModalOpen, setRemoveModalOpen] = useState(false)
-  const [memberToRemove, setMemberToRemove] = useState(null)
-  const [removeOption, setRemoveOption] = useState('remove') // 'remove' or 'ban'
-  const [banReason, setBanReason] = useState('')
 
   // Set initial tab from URL parameter (e.g., ?tab=events)
   useEffect(() => {
@@ -339,6 +347,23 @@ export default function GroupDetailPage() {
     },
   })
 
+  // Transfer group ownership (organiser only)
+  const transferOwnershipMutation = useMutation({
+    mutationFn: (newOrganiserId) => groupsAPI.transferOwnership(id, newOrganiserId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['group', id])
+      queryClient.invalidateQueries(['myGroups'])
+      queryClient.invalidateQueries(['myOrganisedGroups'])
+      queryClient.invalidateQueries(['groupMembers', id])
+      toast.success('Group ownership transferred successfully!')
+      setShowTransferModal(false)
+      setSelectedNewOrganiser(null)
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to transfer ownership')
+    },
+  })
+
   // Permanently delete group (organiser only)
   const permanentDeleteMutation = useMutation({
     mutationFn: () => groupsAPI.permanentlyDeleteGroup(id),
@@ -401,9 +426,6 @@ export default function GroupDetailPage() {
     }
     subscribeMutation.mutate()
   }
-
-  const [showLeaveModal, setShowLeaveModal] = useState(false)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
   // Leave group (with in-app confirmation)
   const handleUnsubscribe = () => {
@@ -663,18 +685,9 @@ export default function GroupDetailPage() {
               {/* ============================================ */}
               {activeTab === 'about' && (
                 <div>
-                  {/* Group description header with edit button (organiser only) */}
-                  <div className="flex items-center justify-between mb-3">
+                  {/* Group description header */}
+                  <div className="mb-3">
                     <h2 className="text-lg font-semibold text-gray-900">About This Group</h2>
-                    {isGroupOrganiser && (
-                      <button
-                        onClick={handleOpenEditModal}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:shadow-md transition-all"
-                      >
-                        <Edit className="h-3.5 w-3.5" />
-                        Edit
-                      </button>
-                    )}
                   </div>
                   
                   {/* Group description text */}
@@ -988,6 +1001,13 @@ export default function GroupDetailPage() {
                             Delete
                           </button>
                         </div>
+                        <button
+                          onClick={() => setShowTransferModal(true)}
+                          className="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-indigo-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Transfer Ownership
+                        </button>
                       </>
                     ) : (
                       /* MEMBER/NON-MEMBER VIEW */
@@ -1097,28 +1117,40 @@ export default function GroupDetailPage() {
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3">
         {isAuthenticated ? (
           isGroupOrganiser ? (
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <button
                 onClick={() => navigate(`/create-event?groupId=${id}`)}
-                className="flex-1 bg-gradient-to-r from-orange-500 to-pink-600 text-white py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+                className="w-full bg-gradient-to-r from-orange-500 to-pink-600 text-white py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
               >
                 <Plus className="h-5 w-5" />
                 Create Event
               </button>
-              <button
-                onClick={handleOpenEditModal}
-                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
-                aria-label="Edit group"
-              >
-                <Edit className="h-5 w-5" />
-              </button>
-              <button
-                onClick={handlePermanentDelete}
-                className="px-4 py-3 bg-red-100 text-red-600 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
-                aria-label="Delete group permanently"
-              >
-                <Trash2 className="h-5 w-5" />
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleOpenEditModal}
+                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
+                  aria-label="Edit group"
+                >
+                  <Edit className="h-5 w-5" />
+                  <span className="ml-1 text-xs">Edit</span>
+                </button>
+                <button
+                  onClick={() => setShowTransferModal(true)}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
+                  aria-label="Transfer ownership"
+                >
+                  <UserPlus className="h-5 w-5" />
+                  <span className="ml-1 text-xs">Transfer</span>
+                </button>
+                <button
+                  onClick={handlePermanentDelete}
+                  className="flex-1 py-3 px-4 bg-red-100 text-red-600 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
+                  aria-label="Delete group permanently"
+                >
+                  <Trash2 className="h-5 w-5" />
+                  <span className="ml-1 text-xs">Delete</span>
+                </button>
+              </div>
             </div>
           ) : isSubscribed ? (
             <div className="flex gap-2">
@@ -1466,6 +1498,156 @@ export default function GroupDetailPage() {
                   removeOption === 'ban' ? 'Remove & Ban' : 'Remove Member'
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* TRANSFER OWNERSHIP MODAL */}
+      {/* ============================================ */}
+      {showTransferModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <UserPlus className="h-6 w-6" />
+                <h2 className="text-2xl font-bold">Transfer Group Ownership</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setShowTransferModal(false)
+                  setSelectedNewOrganiser(null)
+                }}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              {/* Warning */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="font-semibold text-amber-800 mb-1">Important: Transfer of Ownership</p>
+                    <p className="text-sm text-amber-700">
+                      You will no longer be the organiser of this group. The new organiser will have full control over the group, including the ability to remove members and delete the group.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Select New Organiser */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Select New Organiser</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Choose an active member to become the new organiser of this group.
+                </p>
+
+                {membersData?.data ? (
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {membersData.data
+                      .filter(member => !member.isOrganiser) // Exclude current organiser
+                      .map((member) => (
+                        <label
+                          key={member.id}
+                          className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all hover:bg-gray-50 ${
+                            selectedNewOrganiser?.id === member.id
+                              ? 'border-indigo-500 bg-indigo-50'
+                              : 'border-gray-200'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="newOrganiser"
+                            value={member.id}
+                            checked={selectedNewOrganiser?.id === member.id}
+                            onChange={() => setSelectedNewOrganiser(member)}
+                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <ProfileAvatar member={member} size="md" />
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-900">
+                              {member.displayName || member.email?.split('@')[0]}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                year: 'numeric' 
+                              })}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
+                    <p className="text-sm text-gray-500 mt-2">Loading members...</p>
+                  </div>
+                )}
+
+                {membersData?.data && membersData.data.filter(member => !member.isOrganiser).length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                    <p>No other members to transfer ownership to.</p>
+                    <p className="text-sm">Invite more members first.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirmation */}
+              {selectedNewOrganiser && (
+                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
+                  <div className="flex items-start gap-3">
+                    <UserPlus className="h-5 w-5 text-indigo-600 mt-0.5" />
+                    <div>
+                      <p className="font-semibold text-indigo-800 mb-1">Ready to Transfer</p>
+                      <p className="text-sm text-indigo-700">
+                        <strong>{selectedNewOrganiser.displayName || selectedNewOrganiser.email?.split('@')[0]}</strong> will become the new organiser of this group.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowTransferModal(false)
+                    setSelectedNewOrganiser(null)
+                  }}
+                  className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
+                  disabled={transferOwnershipMutation.isPending}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (selectedNewOrganiser) {
+                      transferOwnershipMutation.mutate(selectedNewOrganiser.id)
+                    }
+                  }}
+                  disabled={!selectedNewOrganiser || transferOwnershipMutation.isPending}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                  {transferOwnershipMutation.isPending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      Transferring...
+                    </span>
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      <UserPlus className="h-4 w-4" />
+                      Transfer Ownership
+                    </span>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>

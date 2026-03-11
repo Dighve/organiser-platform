@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -46,6 +47,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class GroupService {
     
     // ============================================================
@@ -603,6 +605,72 @@ public class GroupService {
         }
         
         return true;
+    }
+    
+    /**
+     * Transfer ownership of a group to another member (current organiser only).
+     * The new organiser must be an active member of the group.
+     * All existing events will remain unchanged with the same organiser.
+     */
+    @Transactional
+    @CacheEvict(value = {"groups", "events"}, allEntries = true)
+    public GroupDTO transferOwnership(Long groupId, Long newOrganiserId, Long currentOrganiserId) {
+        // Verify group exists
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new RuntimeException("Group not found"));
+        
+        // Verify requester is the current organiser
+        if (!group.getPrimaryOrganiser().getId().equals(currentOrganiserId)) {
+            throw new RuntimeException("Only the current group organiser can transfer ownership");
+        }
+        
+        // Cannot transfer to yourself
+        if (newOrganiserId.equals(currentOrganiserId)) {
+            throw new RuntimeException("Cannot transfer ownership to yourself");
+        }
+        
+        // Verify new organiser exists and is a member of the group
+        Member newOrganiser = memberRepository.findById(newOrganiserId)
+                .orElseThrow(() -> new RuntimeException("New organiser not found"));
+        
+        // Check if new organiser is an active member of the group
+        Optional<Subscription> subscription = subscriptionRepository.findByMemberIdAndGroupId(newOrganiserId, groupId);
+        if (subscription.isEmpty() || subscription.get().getStatus() != Subscription.SubscriptionStatus.ACTIVE) {
+            throw new RuntimeException("New organiser must be an active member of the group");
+        }
+        
+        // Check if new organiser is banned (extra safety check)
+        if (isMemberBanned(groupId, newOrganiserId)) {
+            throw new RuntimeException("Cannot transfer ownership to a banned member");
+        }
+        
+        // SANITY CHECK: Verify events will not have side effects
+        // Events created by the current organiser will remain with the current organiser
+        // This is intentional - we only transfer group ownership, not event ownership
+        List<Event> groupEvents = eventRepository.findAllByGroupId(groupId);
+        
+        // Log information about existing events (for transparency)
+        int eventsCount = groupEvents.size();
+        // Events don't have a single organiser - they have event organisers and host members
+        // For this sanity check, we just log the count - actual event ownership remains unchanged
+        log.info("Group {} has {} existing events - these will remain unchanged during ownership transfer", 
+                groupId, eventsCount);
+        
+        // Transfer group ownership
+        group.setPrimaryOrganiser(newOrganiser);
+        group = groupRepository.save(group);
+        
+        // Log the ownership transfer (notification can be added later if needed)
+        log.info("Group {} ownership transferred from member {} to member {}", 
+                groupId, currentOrganiserId, newOrganiserId);
+        
+        // Return updated GroupDTO
+        int memberCount = (int) subscriptionRepository.countByGroupIdAndStatus(
+                group.getId(), 
+                Subscription.SubscriptionStatus.ACTIVE
+        );
+        
+        return GroupDTO.fromEntity(group, memberCount);
     }
     
     /**
