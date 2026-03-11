@@ -23,5 +23,5 @@ public class CreateGroupRequest {
     
     private Boolean isPublic = true;
     
-    private String termsAndConditions;
+    private String groupGuidelines;
 }

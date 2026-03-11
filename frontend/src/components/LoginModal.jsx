@@ -7,6 +7,13 @@ import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import {
+  trackAuthMethodSelected,
+  trackGoogleAuthCompleted,
+  trackMagicLinkRequested,
+  trackLoginCompleted,
+  identifyUser,
+} from '../lib/analytics'
 
 export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const navigate = useNavigate()
@@ -55,12 +62,15 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
           redirectUrl: returnUrl
         })
         
-        const { token, userId, email, role, isOrganiser } = response.data
+        const { token, userId, email, role, isOrganiser, isNewUser } = response.data
         googleSignInInProgress.current = true
         // Clear ALL React Query cache before logging in so no stale data from a previous
         // user's session bleeds into this new session (critical for shared devices / Safari)
         queryClient.clear()
         login({ id: userId, userId, email, role, isOrganiser }, token)
+        identifyUser(userId, email, role)
+        trackGoogleAuthCompleted()
+        trackLoginCompleted('google', !!isNewUser)
         
         toast.success('🎉 Signed in with Google!')
         
@@ -107,6 +117,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         displayName: data.displayName,
         redirectUrl: returnUrl, // Include redirect URL for cross-browser support
       })
+      
+      const emailDomain = data.email.split('@')[1] || 'unknown'
+      trackMagicLinkRequested(emailDomain)
       
       setPendingEmail(data.email)
       setEmailSent(true)
@@ -211,7 +224,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                 <div className="mt-5 sm:mt-6 space-y-3 sm:space-y-4">
                   <button
                     type="button"
-                    onClick={() => googleLogin()}
+                    onClick={() => { trackAuthMethodSelected('google'); googleLogin() }}
                     disabled={isLoading}
                     className="w-full py-2.5 sm:py-3 px-5 sm:px-6 bg-white border border-gray-200 shadow-sm text-gray-700 text-sm sm:text-base font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -239,7 +252,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
 
                   <button
                     type="button"
-                    onClick={() => setShowMagicLink(true)}
+                    onClick={() => { trackAuthMethodSelected('magic_link'); setShowMagicLink(true) }}
                     className="w-full py-2.5 sm:py-3 px-5 sm:px-6 bg-white border border-gray-200 shadow-sm text-gray-700 text-sm sm:text-base font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3"
                   >
                     <Mail className="h-5 w-5 text-purple-600" />

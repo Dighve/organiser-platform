@@ -8,6 +8,11 @@ import {
   isSubscribedLocally,
 } from '../lib/pushNotifications'
 import toast from 'react-hot-toast'
+import {
+  trackNotificationPromptShown,
+  trackNotificationEnabled,
+  trackNotificationDismissed,
+} from '../lib/analytics'
 
 /**
  * A small banner that appears once to prompt the user to enable push notifications.
@@ -27,13 +32,17 @@ export default function PushNotificationPrompt() {
     if (getPermissionState() === 'denied') return
 
     // Small delay so it doesn't flash on page load
-    const timer = setTimeout(() => setVisible(true), 3000)
+    const timer = setTimeout(() => {
+      setVisible(true)
+      trackNotificationPromptShown()
+    }, 3000)
     return () => clearTimeout(timer)
   }, [isAuthenticated])
 
   const handleEnable = async () => {
     const result = await subscribeToPush()
     if (result.success) {
+      trackNotificationEnabled()
       toast.success('Push notifications enabled!')
     } else {
       toast.error(result.reason || 'Could not enable notifications')
@@ -43,6 +52,7 @@ export default function PushNotificationPrompt() {
   }
 
   const handleDismiss = () => {
+    trackNotificationDismissed()
     setVisible(false)
     localStorage.setItem(DISMISS_KEY, 'true')
   }

@@ -6,6 +6,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { Toaster } from 'react-hot-toast'
 import App from './App'
 import './index.css'
+import { initAnalytics, trackPWAInstallPromptShown, trackPWAInstalled } from './lib/analytics'
 
 // Google OAuth Client ID - You'll need to get this from Google Cloud Console
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'
@@ -15,6 +16,17 @@ console.log('🔑 Google Client ID loaded:', GOOGLE_CLIENT_ID ? '✅ Present' : 
 if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
   console.error('⚠️ Google OAuth will not work! Add VITE_GOOGLE_CLIENT_ID to your .env file')
 }
+
+// Initialise Mixpanel as early as possible
+initAnalytics()
+
+// PWA install tracking
+window.addEventListener('beforeinstallprompt', () => {
+  trackPWAInstallPromptShown()
+})
+window.addEventListener('appinstalled', () => {
+  trackPWAInstalled()
+})
 
 // Disable browser's automatic scroll restoration before any rendering
 // This prevents the browser from restoring scroll position from previous visits

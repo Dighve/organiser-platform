@@ -78,8 +78,8 @@ public class Group {
     @Builder.Default
     private Boolean isPublic = true;
     
-    @Column(name = "terms_and_conditions", columnDefinition = "TEXT")
-    private String termsAndConditions;
+    @Column(name = "group_guidelines", columnDefinition = "TEXT")
+    private String groupGuidelines;
     
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)

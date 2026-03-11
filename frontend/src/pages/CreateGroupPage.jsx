@@ -29,7 +29,7 @@ export default function CreateGroupPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    termsAndConditions: '',
+    groupGuidelines: '',
     activityId: 1, // Currently: Hiking (Running, Climbing, Swimming coming soon)
     location: '',
     imageUrl: '',
@@ -112,7 +112,7 @@ export default function CreateGroupPage() {
     const groupData = {
       name: formData.name.trim(),
       description: formData.description.trim() || null,
-      termsAndConditions: formData.termsAndConditions.trim() || null,
+      groupGuidelines: formData.groupGuidelines.trim() || null,
       activityId: formData.activityId, // Always 1 for Hiking
       location: formData.location.trim() || null,
       imageUrl: formData.imageUrl || null,
@@ -218,23 +218,23 @@ export default function CreateGroupPage() {
             />
           </div>
           
-          {/* TERMS AND CONDITIONS FIELD (Optional) */}
+          {/* GROUP GUIDELINES FIELD (Optional) */}
           <div>
-            <label htmlFor="termsAndConditions" className="block text-sm font-semibold text-gray-700 mb-2">
-              📜 Group Terms & Conditions
+            <label htmlFor="groupGuidelines" className="block text-sm font-semibold text-gray-700 mb-2">
+              � Group Guidelines
               <span className="text-gray-500 font-normal text-sm ml-2">(optional)</span>
             </label>
             <textarea
-              id="termsAndConditions"
-              name="termsAndConditions"
-              value={formData.termsAndConditions}
+              id="groupGuidelines"
+              name="groupGuidelines"
+              value={formData.groupGuidelines}
               onChange={handleChange}
               rows={6}
               className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none"
               placeholder="e.g., All participants must bring their own equipment. No refunds within 24 hours of event. Participants must be 18+..."
             />
             <p className="mt-2 text-xs text-gray-500">
-              💡 Set rules that members must accept when joining your events (e.g., equipment requirements, age restrictions, cancellation policy)
+              💡 Set community guidelines that members should follow (e.g., equipment requirements, safety standards, group etiquette)
             </p>
           </div>
           

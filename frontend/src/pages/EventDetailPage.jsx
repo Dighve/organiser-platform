@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
@@ -13,8 +13,16 @@ import ProfileAvatar from '../components/ProfileAvatar'
 import LoginModal from '../components/LoginModal'
 import AddToCalendar from '../components/AddToCalendar'
 import AddToCalendarModal from '../components/AddToCalendarModal'
-import GroupTermsModal from '../components/GroupTermsModal'
+import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
+import {
+  trackEventViewed,
+  trackJoinEventClicked,
+  trackJoinEventGuestSelected,
+  trackJoinEventCompleted,
+  trackLeaveEvent,
+  trackLoginModalOpened,
+} from '../lib/analytics'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -42,8 +50,9 @@ export default function EventDetailPage() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const { isEventLocationEnabled, isGoogleMapsEnabled, isStaticMapsEnabled } = useFeatureFlags()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const trackedEventRef = useRef(null)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
-  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
+  const [isGuidelinesModalOpen, setIsGuidelinesModalOpen] = useState(false)
   const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false)
   const [isManageOpen, setIsManageOpen] = useState(false)
   const [heroImageError, setHeroImageError] = useState(false)
@@ -103,23 +112,59 @@ export default function EventDetailPage() {
   })
 
   // ============================================
+  // COMPUTED VALUES - Derived from fetched data
+  // ============================================
+  const event = data?.data
+  
+  // Check user's relationship to this event
+  const participantIds = [
+    ...(event?.participantIds || []),
+    ...((participantsData?.data || []).map(p => p.id) || []),
+  ].map(id => Number(id))
+  const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
+  const isHost = event && isAuthenticated && event.hostMemberId && Number(user?.id) === Number(event.hostMemberId)
+  // Host is automatically registered as participant by backend
+  const hasJoined = isAuthenticated && (participantIds.includes(Number(user?.id)) || isHost)
+  const currentHeadcount = event?.currentParticipants || 0
+
+  // guest info for current user
+  const userParticipant = (participantsData?.data || []).find(
+    (p) => p?.id && user?.id && Number(p.id) === Number(user.id)
+  )
+  const userGuestCount = userParticipant?.guestCount ? Number(userParticipant.guestCount) : 0
+  const displayGuestCount = userGuestCount || guestCount || 0
+
+  // capacity calculations (respect user's existing guests)
+  const remainingSpots = event?.maxParticipants ? Math.max(0, event.maxParticipants - currentHeadcount) : Number.POSITIVE_INFINITY
+  const availableWithUser =
+    event?.maxParticipants != null
+      ? Math.max(0, event.maxParticipants - (currentHeadcount - (1 + userGuestCount)) - 1)
+      : Number.POSITIVE_INFINITY
+  const maxGuestSelectable =
+    availableWithUser === Number.POSITIVE_INFINITY
+      ? Math.max(3, userGuestCount)
+      : Math.max(userGuestCount, Math.min(3, availableWithUser))
+
+  // ============================================
   // MUTATIONS - API calls that change data
   // ============================================
   
   // Handle join button click - check authentication first
   const handleJoinClick = () => {
+    trackJoinEventClicked(id, event?.title, isAuthenticated)
     if (!isAuthenticated) {
       // Store current URL with action parameter so we can auto-join after login
       setReturnUrl(`/events/${id}?action=join`)
+      trackLoginModalOpened('join_event')
       setIsLoginModalOpen(true)
       return
     }
     
     // Check if group has terms and conditions
-    const groupTerms = event?.group?.termsAndConditions
-    if (groupTerms && groupTerms.trim()) {
-      // Show terms modal first
-      setIsTermsModalOpen(true)
+    const groupGuidelines = event?.group?.groupGuidelines
+    if (groupGuidelines && groupGuidelines.trim()) {
+      // Show guidelines modal first
+      setIsGuidelinesModalOpen(true)
     } else {
       // No terms, open guest selector
       openGuestModal()
@@ -136,13 +181,14 @@ export default function EventDetailPage() {
   
   // Handle accepting terms and joining
   const handleAcceptTerms = () => {
-    setIsTermsModalOpen(false)
+    setIsGuidelinesModalOpen(false)
     openGuestModal()
   }
 
   const handleConfirmGuests = () => {
     const safeGuestCount = wantsGuests ? guestCount : 0
     setIsGuestModalOpen(false)
+    trackJoinEventGuestSelected(id, safeGuestCount)
     
     // If event has a join question and this is a new join (not guest update), show question modal
     if (event?.joinQuestion && !isUpdatingGuests) {
@@ -169,9 +215,10 @@ export default function EventDetailPage() {
   // Join event (register for event + auto-join group - Meetup.com pattern)
   const joinMutation = useMutation({
     mutationFn: (payload = {}) => eventsAPI.joinEvent(id, payload),
-    onSuccess: async () => {
+    onSuccess: async (data, variables) => {
       // Only show calendar modal for new joins, not guest count updates
       if (!isUpdatingGuests) {
+        trackJoinEventCompleted(id, event?.title, variables?.guestCount || 0)
         setIsCalendarModalOpen(true)
       } else {
         // For updates, just show a success toast
@@ -209,6 +256,7 @@ export default function EventDetailPage() {
     mutationFn: () => eventsAPI.leaveEvent(id),
     onSuccess: async () => {
       setShowLeaveConfirm(false)
+      trackLeaveEvent(id, event?.title)
       // Show toast immediately for instant feedback
       toast.success('Successfully left the event')
       
@@ -262,6 +310,15 @@ export default function EventDetailPage() {
       toast.error(error.response?.data?.message || 'Failed to delete event')
     },
   })
+
+  // Track event viewed once per unique event load
+  useEffect(() => {
+    if (event?.id && trackedEventRef.current !== event.id) {
+      trackedEventRef.current = event.id
+      trackEventViewed(id, event.title, event.group?.name, isAuthenticated)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event?.id])
 
   // Force refetch when navigating back to this page
   useEffect(() => {
@@ -369,40 +426,6 @@ export default function EventDetailPage() {
     )
   }
 
-  // ============================================
-  // COMPUTED VALUES - Derived from fetched data
-  // ============================================
-  const event = data?.data
-  
-  // Check user's relationship to this event
-  const participantIds = [
-    ...(event?.participantIds || []),
-    ...((participantsData?.data || []).map(p => p.id) || []),
-  ].map(id => Number(id))
-  const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
-  const isHost = event && isAuthenticated && event.hostMemberId && Number(user?.id) === Number(event.hostMemberId)
-  // Host is automatically registered as participant by backend
-  const hasJoined = isAuthenticated && (participantIds.includes(Number(user?.id)) || isHost)
-  const currentHeadcount = event?.currentParticipants || 0
-
-  // guest info for current user
-  const userParticipant = (participantsData?.data || []).find(
-    (p) => p?.id && user?.id && Number(p.id) === Number(user.id)
-  )
-  const userGuestCount = userParticipant?.guestCount ? Number(userParticipant.guestCount) : 0
-  const displayGuestCount = userGuestCount || guestCount || 0
-
-  // capacity calculations (respect user's existing guests)
-  const remainingSpots = event?.maxParticipants ? Math.max(0, event.maxParticipants - currentHeadcount) : Number.POSITIVE_INFINITY
-  const availableWithUser =
-    event?.maxParticipants != null
-      ? Math.max(0, event.maxParticipants - (currentHeadcount - (1 + userGuestCount)) - 1)
-      : Number.POSITIVE_INFINITY
-  const maxGuestSelectable =
-    availableWithUser === Number.POSITIVE_INFINITY
-      ? Math.max(3, userGuestCount)
-      : Math.max(userGuestCount, Math.min(3, availableWithUser))
-  
   // Check if event is in the past
   const eventStart = event ? new Date(event?.eventDate) : null
   const eventEnd = event ? (event?.endDate ? new Date(event.endDate) : eventStart) : null
@@ -1664,14 +1687,14 @@ export default function EventDetailPage() {
       </div>
 
       {/* ============================================ */}
-      {/* GROUP TERMS MODAL - Opens before joining if group has terms */}
+      {/* GROUP GUIDELINES MODAL - Opens before joining if group has guidelines */}
       {/* ============================================ */}
-      <GroupTermsModal
-        isOpen={isTermsModalOpen}
-        onClose={() => setIsTermsModalOpen(false)}
+      <GroupGuidelinesModal
+        isOpen={isGuidelinesModalOpen}
+        onClose={() => setIsGuidelinesModalOpen(false)}
         onAccept={handleAcceptTerms}
         groupName={event?.group?.name || 'this group'}
-        terms={event?.group?.termsAndConditions || ''}
+        guidelines={event?.group?.groupGuidelines || ''}
         isLoading={joinMutation.isLoading}
       />
 

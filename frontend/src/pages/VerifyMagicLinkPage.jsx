@@ -4,6 +4,7 @@ import { Loader2, CheckCircle, XCircle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import { trackMagicLinkVerified, trackLoginCompleted, identifyUser } from '../lib/analytics'
 
 export default function VerifyMagicLinkPage() {
   const [searchParams] = useSearchParams()
@@ -30,12 +31,15 @@ export default function VerifyMagicLinkPage() {
   const verifyToken = async (token, redirectParam) => {
     try {
       const response = await authAPI.verifyMagicLink(token)
-      const { token: jwtToken, userId, email, role, hasOrganiserRole } = response.data
+      const { token: jwtToken, userId, email, role, hasOrganiserRole, isNewUser } = response.data
       
       // Clear ALL React Query cache before logging in so no stale data from a previous
       // user's session bleeds into this new session (critical for shared devices / Safari)
       queryClient.clear()
       login({ id: userId, userId, email, role, hasOrganiserRole }, jwtToken)
+      identifyUser(userId, email, role)
+      trackMagicLinkVerified()
+      trackLoginCompleted('magic_link', !!isNewUser)
       
       // Priority: URL param (cross-browser) > localStorage (same browser)
       const urlRedirect = redirectParam ? decodeURIComponent(redirectParam) : null

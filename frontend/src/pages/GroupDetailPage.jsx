@@ -134,7 +134,7 @@ export default function GroupDetailPage() {
   const [editFormData, setEditFormData] = useState({
     name: '',
     description: '',
-    termsAndConditions: '',
+    groupGuidelines: '',
     location: '',
     imageUrl: '',
     maxMembers: '',
@@ -349,7 +349,7 @@ export default function GroupDetailPage() {
       setEditFormData({
         name: group.name || '',
         description: group.description || '',
-        termsAndConditions: group.termsAndConditions || '',
+        groupGuidelines: group.groupGuidelines || '',
         location: group.location || '',
         imageUrl: group.imageUrl || '',
         maxMembers: group.maxMembers || '',
@@ -366,7 +366,7 @@ export default function GroupDetailPage() {
     const updateData = {
       name: editFormData.name.trim(),
       description: editFormData.description.trim() || null,
-      termsAndConditions: editFormData.termsAndConditions.trim() || null,
+      groupGuidelines: editFormData.groupGuidelines.trim() || null,
       activityId: 1, // Always Hiking for now
       location: editFormData.location.trim() || null,
       imageUrl: editFormData.imageUrl || null,
@@ -1147,19 +1147,19 @@ export default function GroupDetailPage() {
                 />
               </div>
 
-              {/* Terms and Conditions */}
+              {/* Group Guidelines */}
               <div>
-                <label htmlFor="edit-termsAndConditions" className="block text-sm font-semibold text-gray-700 mb-2">
-                  📜 Group Terms & Conditions
+                <label htmlFor="edit-groupGuidelines" className="block text-sm font-semibold text-gray-700 mb-2">
+                  � Group Guidelines
                   <span className="text-gray-500 font-normal text-sm ml-2">(optional)</span>
                 </label>
                 <textarea
-                  id="edit-termsAndConditions"
-                  value={editFormData.termsAndConditions}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, termsAndConditions: e.target.value }))}
+                  id="edit-groupGuidelines"
+                  value={editFormData.groupGuidelines}
+                  onChange={(e) => setEditFormData(prev => ({ ...prev, groupGuidelines: e.target.value }))}
                   rows={6}
                   className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none"
-                  placeholder="e.g., All participants must bring their own equipment. No refunds within 24 hours of event. Participants must be 18+..."
+                  placeholder="e.g., Be respectful to all members. Bring appropriate hiking equipment. Follow Leave No Trace principles..."
                 />
                 <p className="mt-2 text-xs text-gray-500">
                   💡 Set rules that members must accept when joining your events

@@ -4,6 +4,7 @@ import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 import PushNotificationPrompt from './components/PushNotificationPrompt'
+import { trackPageView, identifyUser, resetUser } from './lib/analytics'
 
 // Critical pages - loaded immediately
 import HomePage from './pages/HomePage'
@@ -54,6 +55,55 @@ function ScrollToTop() {
   return null
 }
 
+const PAGE_NAMES = {
+  '/': 'Home',
+  '/events': 'Events',
+  '/create-event': 'Create Event',
+  '/my-groups': 'My Groups',
+  '/browse-groups': 'Browse Groups',
+  '/groups': 'Browse Groups',
+  '/groups/create': 'Create Group',
+  '/profile': 'Profile',
+  '/settings': 'Settings',
+  '/notifications': 'Notifications',
+  '/admin': 'Admin',
+  '/hiking-grade-faq': 'Hiking Grade FAQ',
+  '/auth/verify': 'Verify Magic Link',
+}
+
+function getPageName(pathname) {
+  if (PAGE_NAMES[pathname]) return PAGE_NAMES[pathname]
+  if (/^\/events\/[^/]+\/edit$/.test(pathname)) return 'Edit Event'
+  if (/^\/events\/[^/]+$/.test(pathname)) return 'Event Detail'
+  if (/^\/groups\/[^/]+$/.test(pathname)) return 'Group Detail'
+  if (/^\/members\/[^/]+$/.test(pathname)) return 'Member Profile'
+  return 'Unknown'
+}
+
+function RouteTracker() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    trackPageView(getPageName(pathname))
+  }, [pathname])
+
+  return null
+}
+
+function UserIdentitySync() {
+  const { isAuthenticated, user } = useAuthStore()
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      identifyUser(user.userId || user.id, user.email, user.role)
+    } else if (!isAuthenticated) {
+      resetUser()
+    }
+  }, [isAuthenticated, user])
+
+  return null
+}
+
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
   return isAuthenticated ? children : <Navigate to="/" />
@@ -63,6 +113,8 @@ function App() {
   return (
     <FeatureFlagProvider>
       <ScrollToTop />
+      <RouteTracker />
+      <UserIdentitySync />
       <PushNotificationPrompt />
       <Routes>
         <Route path="/" element={<Layout />}>

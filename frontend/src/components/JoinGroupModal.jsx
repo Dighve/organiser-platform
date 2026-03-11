@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { X, Users, MapPin, Lock, CheckCircle, Loader } from 'lucide-react'
 import toast from 'react-hot-toast'
+import GroupGuidelinesModal from './GroupGuidelinesModal'
 
 /**
  * JoinGroupModal - Modal overlay for joining a group without leaving current page
@@ -24,6 +25,7 @@ import toast from 'react-hot-toast'
 export default function JoinGroupModal({ isOpen, onClose, groupId, groupName, onSuccess }) {
   const queryClient = useQueryClient()
   const [joinSuccess, setJoinSuccess] = useState(false)
+  const [showGuidelines, setShowGuidelines] = useState(false)
 
   // Fetch full group details
   const { data: groupData, isLoading: isLoadingGroup } = useQuery({
@@ -62,6 +64,22 @@ export default function JoinGroupModal({ isOpen, onClose, groupId, groupName, on
       toast.error(error.response?.data?.message || 'Failed to join group')
     },
   })
+
+  // Handle join button click - check for guidelines first
+  const handleJoinClick = () => {
+    const hasGuidelines = group?.groupGuidelines && group.groupGuidelines.trim()
+    if (hasGuidelines) {
+      setShowGuidelines(true)
+    } else {
+      joinMutation.mutate()
+    }
+  }
+
+  // Handle accepting guidelines and proceed to join
+  const handleAcceptGuidelines = () => {
+    setShowGuidelines(false)
+    joinMutation.mutate()
+  }
 
   // Don't render if not open
   if (!isOpen) return null
@@ -185,7 +203,7 @@ export default function JoinGroupModal({ isOpen, onClose, groupId, groupName, on
                     Cancel
                   </button>
                   <button
-                    onClick={() => joinMutation.mutate()}
+                    onClick={handleJoinClick}
                     disabled={joinMutation.isLoading}
                     className="flex-1 py-3 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
                   >
@@ -207,6 +225,16 @@ export default function JoinGroupModal({ isOpen, onClose, groupId, groupName, on
           </div>
         </div>
       </div>
+
+      {/* Group Guidelines Modal */}
+      <GroupGuidelinesModal
+        isOpen={showGuidelines}
+        onClose={() => setShowGuidelines(false)}
+        onAccept={handleAcceptGuidelines}
+        groupName={group?.name || groupName || 'this group'}
+        guidelines={group?.groupGuidelines || ''}
+        isLoading={joinMutation.isLoading}
+      />
     </>
   )
 }
