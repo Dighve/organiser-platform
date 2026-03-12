@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Mountain, CheckCircle, XCircle, Loader2, Star, Users, Calendar } from 'lucide-react'
+import { Mountain, CheckCircle, XCircle, Loader2, Star, Users, Calendar, ArrowLeft } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { invitesAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -101,23 +101,22 @@ export default function InvitePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 sm:flex sm:items-center sm:justify-center px-4 py-12 sm:py-12 pb-32 sm:pb-12 relative overflow-hidden">
       {/* Background blobs */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
       <div className="absolute top-40 right-10 w-72 h-72 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
       <div className="absolute -bottom-8 left-1/2 w-72 h-72 bg-orange-400 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
 
       <div className="max-w-lg w-full relative z-10 space-y-6">
-        {/* Brand header */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center">
-              <Mountain className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              OutMeets
-            </span>
-          </div>
+        
+        {/* ========== MOBILE HEADER (Back button only) ========== */}
+        <div className="sm:hidden">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm shadow-lg text-gray-600 hover:text-purple-600 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
         </div>
 
         {/* Invite card */}
@@ -174,9 +173,10 @@ export default function InvitePage() {
               </p>
             )}
 
+            {/* Desktop button - inside card */}
             <button
               onClick={handleAcceptInvite}
-              className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 transform hover:scale-105"
+              className="hidden sm:flex w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-bold text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/30 transition-all duration-200 transform hover:scale-105 items-center justify-center gap-2"
             >
               Accept Invite & Sign In
             </button>
@@ -186,6 +186,17 @@ export default function InvitePage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* ========== FIXED BOTTOM BUTTON (Mobile Only) ========== */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-gray-200 p-4 z-40">
+        <button
+          onClick={handleAcceptInvite}
+          className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white font-bold text-base rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+        >
+          <CheckCircle className="h-5 w-5" />
+          <span>Accept Invite & Sign In</span>
+        </button>
       </div>
 
       <LoginModal

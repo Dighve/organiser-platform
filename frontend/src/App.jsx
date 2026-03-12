@@ -18,6 +18,8 @@ const EditEventPage = lazy(() => import('./pages/EditEventPage'))
 const MyGroupsPage = lazy(() => import('./pages/MyGroupsPage'))
 const BrowseGroupsPage = lazy(() => import('./pages/BrowseGroupsPage'))
 const CreateGroupPage = lazy(() => import('./pages/CreateGroupPage'))
+const EditGroupPage = lazy(() => import('./pages/EditGroupPage'))
+const TransferOwnershipPage = lazy(() => import('./pages/TransferOwnershipPage'))
 const GroupDetailPage = lazy(() => import('./pages/GroupDetailPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const HikingGradeFAQPage = lazy(() => import('./pages/HikingGradeFAQPage'))
@@ -76,6 +78,8 @@ function getPageName(pathname) {
   if (PAGE_NAMES[pathname]) return PAGE_NAMES[pathname]
   if (/^\/events\/[^/]+\/edit$/.test(pathname)) return 'Edit Event'
   if (/^\/events\/[^/]+$/.test(pathname)) return 'Event Detail'
+  if (/^\/groups\/[^/]+\/edit$/.test(pathname)) return 'Edit Group'
+  if (/^\/groups\/[^/]+\/transfer$/.test(pathname)) return 'Transfer Ownership'
   if (/^\/groups\/[^/]+$/.test(pathname)) return 'Group Detail'
   if (/^\/members\/[^/]+$/.test(pathname)) return 'Member Profile'
   return 'Unknown'
@@ -181,6 +185,26 @@ function App() {
             <GroupDetailPage />
           </Suspense>
         } />
+        <Route
+          path="groups/:id/edit"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <EditGroupPage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="groups/:id/transfer"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <TransferOwnershipPage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
         <Route path="members/:id" element={
           <Suspense fallback={<PageLoader />}>
             <MemberDetailPage />

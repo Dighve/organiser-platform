@@ -133,26 +133,13 @@ export default function GroupDetailPage() {
   
   // Modal states
   const [showLeaveModal, setShowLeaveModal] = useState(false)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [removeModalOpen, setRemoveModalOpen] = useState(false)
   const [memberToRemove, setMemberToRemove] = useState(null)
   const [removeOption, setRemoveOption] = useState('remove') // 'remove' or 'ban'
   const [banReason, setBanReason] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [showTransferModal, setShowTransferModal] = useState(false)
-  const [selectedNewOrganiser, setSelectedNewOrganiser] = useState(null)
   const [openMenuMemberId, setOpenMenuMemberId] = useState(null)
-  
-  // Edit form state
-  const [editFormData, setEditFormData] = useState({
-    name: '',
-    description: '',
-    groupGuidelines: '',
-    location: '',
-    imageUrl: '',
-    maxMembers: '',
-    isPublic: true,
-  })
+  const [isGroupActionsOpen, setIsGroupActionsOpen] = useState(false)
 
   // Set initial tab from URL parameter (e.g., ?tab=events)
   useEffect(() => {
@@ -332,38 +319,6 @@ export default function GroupDetailPage() {
     },
   })
 
-  // Update group details (organiser only)
-  const updateGroupMutation = useMutation({
-    mutationFn: (data) => groupsAPI.updateGroup(id, data),
-    onSuccess: (updatedGroup) => {
-      queryClient.invalidateQueries(['group', id])
-      queryClient.invalidateQueries(['myGroups'])
-      queryClient.invalidateQueries(['myOrganisedGroups'])
-      toast.success('Group updated successfully!')
-      setIsEditModalOpen(false)
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to update group')
-    },
-  })
-
-  // Transfer group ownership (organiser only)
-  const transferOwnershipMutation = useMutation({
-    mutationFn: (newOrganiserId) => groupsAPI.transferOwnership(id, newOrganiserId),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['group', id])
-      queryClient.invalidateQueries(['myGroups'])
-      queryClient.invalidateQueries(['myOrganisedGroups'])
-      queryClient.invalidateQueries(['groupMembers', id])
-      toast.success('Group ownership transferred successfully!')
-      setShowTransferModal(false)
-      setSelectedNewOrganiser(null)
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to transfer ownership')
-    },
-  })
-
   // Permanently delete group (organiser only)
   const permanentDeleteMutation = useMutation({
     mutationFn: () => groupsAPI.permanentlyDeleteGroup(id),
@@ -383,39 +338,6 @@ export default function GroupDetailPage() {
   // EVENT HANDLERS
   // ============================================
   
-  // Open edit modal and populate with current group data
-  const handleOpenEditModal = () => {
-    if (group) {
-      setEditFormData({
-        name: group.name || '',
-        description: group.description || '',
-        groupGuidelines: group.groupGuidelines || '',
-        location: group.location || '',
-        imageUrl: group.imageUrl || '',
-        maxMembers: group.maxMembers || '',
-        isPublic: group.isPublic !== undefined ? group.isPublic : true,
-      })
-      setIsEditModalOpen(true)
-    }
-  }
-
-  // Save edited group data
-  const handleEditSubmit = (e) => {
-    e.preventDefault()
-    
-    const updateData = {
-      name: editFormData.name.trim(),
-      description: editFormData.description.trim() || null,
-      groupGuidelines: editFormData.groupGuidelines.trim() || null,
-      activityId: 1, // Always Hiking for now
-      location: editFormData.location.trim() || null,
-      imageUrl: editFormData.imageUrl || null,
-      maxMembers: editFormData.maxMembers ? parseInt(editFormData.maxMembers) : null,
-      isPublic: editFormData.isPublic,
-    }
-    
-    updateGroupMutation.mutate(updateData)
-  }
 
   // Join group (open login modal if not authenticated)
   const handleSubscribe = () => {
@@ -980,34 +902,36 @@ export default function GroupDetailPage() {
                         </div>
                         <button
                           onClick={() => navigate(`/create-event?groupId=${id}`)}
-                          className="w-full py-3 px-6 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+                          className="w-full py-4 px-6 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-orange-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2 text-lg"
                         >
                           <Calendar className="h-5 w-5" />
                           Create Event
                         </button>
-                        <div className="flex gap-2">
+                        
+                        {/* Secondary Actions */}
+                        <div className="pt-2 space-y-2">
                           <button
-                            onClick={handleOpenEditModal}
-                            className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                            onClick={() => navigate(`/groups/${id}/edit`)}
+                            className="w-full py-2.5 px-4 bg-gray-50 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-all flex items-center justify-center gap-2 text-sm"
                           >
                             <Edit className="h-4 w-4" />
                             Edit Group
                           </button>
                           <button
+                            onClick={() => navigate(`/groups/${id}/transfer`)}
+                            className="w-full py-2.5 px-4 bg-indigo-50 text-indigo-700 font-medium rounded-lg hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 text-sm"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                            Transfer Ownership
+                          </button>
+                          <button
                             onClick={handlePermanentDelete}
-                            className="flex-1 py-3 px-4 bg-red-100 text-red-600 font-semibold rounded-xl hover:bg-red-200 transition-all flex items-center justify-center gap-2"
+                            className="w-full py-2.5 px-4 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-all flex items-center justify-center gap-2 text-sm"
                           >
                             <Trash2 className="h-4 w-4" />
-                            Delete
+                            Delete Group
                           </button>
                         </div>
-                        <button
-                          onClick={() => setShowTransferModal(true)}
-                          className="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-indigo-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2"
-                        >
-                          <UserPlus className="h-4 w-4" />
-                          Transfer Ownership
-                        </button>
                       </>
                     ) : (
                       /* MEMBER/NON-MEMBER VIEW */
@@ -1112,45 +1036,93 @@ export default function GroupDetailPage() {
       )}
 
       {/* ============================================ */}
+      {/* MOBILE GROUP ACTIONS SHEET - Organiser only */}
+      {/* ============================================ */}
+      {isGroupActionsOpen && isGroupOrganiser && (
+        <div className="lg:hidden fixed inset-0 z-[60] flex items-end justify-center">
+          <button
+            type="button"
+            aria-label="Close group actions menu"
+            onClick={() => setIsGroupActionsOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full mx-4 mb-4 bg-white rounded-3xl shadow-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-center pt-3">
+              <div className="h-1.5 w-12 bg-gray-300 rounded-full" />
+            </div>
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setIsGroupActionsOpen(false)}
+              className="absolute right-4 top-3 text-gray-500 hover:text-gray-800"
+            >
+              <span className="text-2xl leading-none">×</span>
+            </button>
+            <div className="px-4 pb-4 pt-6">
+              <div className="space-y-1">
+                <button
+                  onClick={() => {
+                    setIsGroupActionsOpen(false)
+                    navigate(`/groups/${id}/edit`)
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <Edit className="h-5 w-5 text-purple-600" />
+                  Edit group
+                </button>
+                <div className="h-px bg-gray-200 mx-3" />
+                <button
+                  onClick={() => {
+                    setIsGroupActionsOpen(false)
+                    navigate(`/groups/${id}/transfer`)
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <UserPlus className="h-5 w-5 text-indigo-600" />
+                  Transfer ownership
+                </button>
+                <div className="h-px bg-gray-200 mx-3" />
+                <button
+                  onClick={() => {
+                    setIsGroupActionsOpen(false)
+                    handlePermanentDelete()
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-red-700 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="h-5 w-5 text-red-600" />
+                  Delete group
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
       {/* MOBILE STICKY ACTION BAR - Bottom of screen */}
       {/* ============================================ */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3">
         {isAuthenticated ? (
           isGroupOrganiser ? (
-            <div className="space-y-2">
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => navigate(`/create-event?groupId=${id}`)}
-                className="w-full bg-gradient-to-r from-orange-500 to-pink-600 text-white py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+                className="flex-1 bg-gradient-to-r from-orange-500 to-pink-600 text-white py-3 px-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
               >
                 <Plus className="h-5 w-5" />
                 Create Event
               </button>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleOpenEditModal}
-                  className="flex-1 py-3 px-4 bg-gray-100 text-gray-700 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
-                  aria-label="Edit group"
-                >
-                  <Edit className="h-5 w-5" />
-                  <span className="ml-1 text-xs">Edit</span>
-                </button>
-                <button
-                  onClick={() => setShowTransferModal(true)}
-                  className="flex-1 py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
-                  aria-label="Transfer ownership"
-                >
-                  <UserPlus className="h-5 w-5" />
-                  <span className="ml-1 text-xs">Transfer</span>
-                </button>
-                <button
-                  onClick={handlePermanentDelete}
-                  className="flex-1 py-3 px-4 bg-red-100 text-red-600 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all"
-                  aria-label="Delete group permanently"
-                >
-                  <Trash2 className="h-5 w-5" />
-                  <span className="ml-1 text-xs">Delete</span>
-                </button>
-              </div>
+              <button
+                onClick={() => setIsGroupActionsOpen(true)}
+                className="h-12 w-12 rounded-xl flex items-center justify-center bg-white border border-gray-200 text-gray-600 shadow hover:bg-gray-50"
+                aria-label="More actions"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </button>
             </div>
           ) : isSubscribed ? (
             <div className="flex gap-2">
@@ -1194,162 +1166,6 @@ export default function GroupDetailPage() {
         )}
       </div>
 
-      {/* ============================================ */}
-      {/* EDIT GROUP MODAL - Organiser only */}
-      {/* Allows organiser to update group details */}
-      {/* ============================================ */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-6 rounded-t-3xl flex items-center justify-between">
-              <h2 className="text-2xl font-bold">Edit Group</h2>
-              <button
-                onClick={() => setIsEditModalOpen(false)}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-6">
-              {/* Group Name */}
-              <div>
-                <label htmlFor="edit-name" className="block text-sm font-semibold text-gray-700 mb-2">
-                  🎯 Group Name *
-                </label>
-                <input
-                  type="text"
-                  id="edit-name"
-                  value={editFormData.name}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, name: e.target.value }))}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
-                  placeholder="e.g., Peak District Hikers"
-                  required
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label htmlFor="edit-description" className="block text-sm font-semibold text-gray-700 mb-2">
-                  📝 Description
-                </label>
-                <textarea
-                  id="edit-description"
-                  value={editFormData.description}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, description: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
-                  placeholder="Describe your group, its purpose, and what members can expect..."
-                />
-              </div>
-
-              {/* Group Guidelines */}
-              <div>
-                <label htmlFor="edit-groupGuidelines" className="block text-sm font-semibold text-gray-700 mb-2">
-                  � Group Guidelines
-                  <span className="text-gray-500 font-normal text-sm ml-2">(optional)</span>
-                </label>
-                <textarea
-                  id="edit-groupGuidelines"
-                  value={editFormData.groupGuidelines}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, groupGuidelines: e.target.value }))}
-                  rows={6}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all resize-none"
-                  placeholder="e.g., Be respectful to all members. Bring appropriate hiking equipment. Follow Leave No Trace principles..."
-                />
-                <p className="mt-2 text-xs text-gray-500">
-                  💡 Set rules that members must accept when joining your events
-                </p>
-              </div>
-
-              {/* Cover Photo */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                  <Upload className="h-4 w-4 text-purple-600" />
-                  Cover Photo / Banner
-                </label>
-                <ImageUpload
-                  value={editFormData.imageUrl}
-                  onChange={(url) => {
-                    setEditFormData(prev => ({ ...prev, imageUrl: url }))
-                  }}
-                  folder="group-banner"
-                />
-                <p className="mt-2 text-xs text-gray-500">
-                  💡 Recommended size: 1200x400px
-                </p>
-              </div>
-
-              {/* Location - Only show if location features are enabled */}
-              {isGroupLocationEnabled() && isGoogleMapsEnabled() && (
-                <div>
-                  <label htmlFor="edit-location" className="block text-sm font-semibold text-gray-700 mb-2">
-                    📍 Location
-                  </label>
-                  <GooglePlacesAutocomplete
-                    onPlaceSelect={(locationData) => {
-                      setEditFormData(prev => ({
-                        ...prev,
-                        location: locationData.address
-                      }))
-                    }}
-                    placeholder="e.g., Peak District, UK"
-                  />
-                </div>
-              )}
-
-              {/* Max Members */}
-              <div>
-                <label htmlFor="edit-maxMembers" className="block text-sm font-semibold text-gray-700 mb-2">
-                  👥 Maximum Members (Optional)
-                </label>
-                <input
-                  type="number"
-                  id="edit-maxMembers"
-                  value={editFormData.maxMembers}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, maxMembers: e.target.value }))}
-                  min="1"
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
-                  placeholder="Leave empty for unlimited"
-                />
-              </div>
-
-              {/* Is Public */}
-              <div className="flex items-center gap-3 p-4 bg-purple-50 rounded-xl">
-                <input
-                  type="checkbox"
-                  id="edit-isPublic"
-                  checked={editFormData.isPublic}
-                  onChange={(e) => setEditFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-                  className="w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500 cursor-pointer"
-                />
-                <label htmlFor="edit-isPublic" className="text-sm font-semibold text-gray-700 cursor-pointer">
-                  🌍 Make this group public (visible to everyone)
-                </label>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setIsEditModalOpen(false)}
-                  className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
-                  disabled={updateGroupMutation.isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={updateGroupMutation.isPending}
-                >
-                  {updateGroupMutation.isPending ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ============================================ */}
       {/* Remove Member Modal (Meetup-style) */}
@@ -1503,155 +1319,6 @@ export default function GroupDetailPage() {
         </div>
       )}
 
-      {/* ============================================ */}
-      {/* TRANSFER OWNERSHIP MODAL */}
-      {/* ============================================ */}
-      {showTransferModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-6 rounded-t-3xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <UserPlus className="h-6 w-6" />
-                <h2 className="text-2xl font-bold">Transfer Group Ownership</h2>
-              </div>
-              <button
-                onClick={() => {
-                  setShowTransferModal(false)
-                  setSelectedNewOrganiser(null)
-                }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-all"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-
-            <div className="p-6">
-              {/* Warning */}
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
-                <div className="flex items-start gap-3">
-                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-amber-800 mb-1">Important: Transfer of Ownership</p>
-                    <p className="text-sm text-amber-700">
-                      You will no longer be the organiser of this group. The new organiser will have full control over the group, including the ability to remove members and delete the group.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Select New Organiser */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Select New Organiser</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Choose an active member to become the new organiser of this group.
-                </p>
-
-                {membersData?.data ? (
-                  <div className="space-y-2 max-h-60 overflow-y-auto">
-                    {membersData.data
-                      .filter(member => !member.isOrganiser) // Exclude current organiser
-                      .map((member) => (
-                        <label
-                          key={member.id}
-                          className={`flex items-center gap-4 p-4 border-2 rounded-xl cursor-pointer transition-all hover:bg-gray-50 ${
-                            selectedNewOrganiser?.id === member.id
-                              ? 'border-indigo-500 bg-indigo-50'
-                              : 'border-gray-200'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="newOrganiser"
-                            value={member.id}
-                            checked={selectedNewOrganiser?.id === member.id}
-                            onChange={() => setSelectedNewOrganiser(member)}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500"
-                          />
-                          <ProfileAvatar member={member} size="md" />
-                          <div className="flex-1">
-                            <p className="font-semibold text-gray-900">
-                              {member.displayName || member.email?.split('@')[0]}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                year: 'numeric' 
-                              })}
-                            </p>
-                          </div>
-                        </label>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto"></div>
-                    <p className="text-sm text-gray-500 mt-2">Loading members...</p>
-                  </div>
-                )}
-
-                {membersData?.data && membersData.data.filter(member => !member.isOrganiser).length === 0 && (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="h-12 w-12 mx-auto mb-2 text-gray-300" />
-                    <p>No other members to transfer ownership to.</p>
-                    <p className="text-sm">Invite more members first.</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Confirmation */}
-              {selectedNewOrganiser && (
-                <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 mb-6">
-                  <div className="flex items-start gap-3">
-                    <UserPlus className="h-5 w-5 text-indigo-600 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-indigo-800 mb-1">Ready to Transfer</p>
-                      <p className="text-sm text-indigo-700">
-                        <strong>{selectedNewOrganiser.displayName || selectedNewOrganiser.email?.split('@')[0]}</strong> will become the new organiser of this group.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowTransferModal(false)
-                    setSelectedNewOrganiser(null)
-                  }}
-                  className="flex-1 px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-all"
-                  disabled={transferOwnershipMutation.isPending}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    if (selectedNewOrganiser) {
-                      transferOwnershipMutation.mutate(selectedNewOrganiser.id)
-                    }
-                  }}
-                  disabled={!selectedNewOrganiser || transferOwnershipMutation.isPending}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-indigo-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                >
-                  {transferOwnershipMutation.isPending ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Transferring...
-                    </span>
-                  ) : (
-                    <span className="flex items-center justify-center gap-2">
-                      <UserPlus className="h-4 w-4" />
-                      Transfer Ownership
-                    </span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ============================================ */}
       {/* PERMANENT DELETE CONFIRMATION MODAL */}
