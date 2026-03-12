@@ -95,10 +95,11 @@ public class OrganiserInviteService {
         invite.setUsedAt(LocalDateTime.now());
         inviteRepository.save(invite);
 
-        // Grant organiser role directly (skip normal agreement flow for invited organisers)
+        // Grant organiser role but require agreement acceptance via modal
         member.setHasOrganiserRole(true);
-        member.setHasAcceptedOrganiserAgreement(true);
-        member.setOrganiserAgreementAcceptedAt(LocalDateTime.now());
+        // DO NOT auto-accept organiser agreement - let the modal flow handle it
+        // member.setHasAcceptedOrganiserAgreement(true);  // REMOVED - must show modal
+        // member.setOrganiserAgreementAcceptedAt(LocalDateTime.now());  // REMOVED
         memberRepository.save(member);
 
         log.info("Organiser invite {} consumed by member {} — role granted", token, member.getEmail());

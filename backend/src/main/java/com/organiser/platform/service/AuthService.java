@@ -60,7 +60,7 @@ public class AuthService {
     
     /**
      * Request a magic link to be sent to the email.
-     * Creates user if doesn't exist.
+     * Creates user if doesn't exist, or reactivates soft-deleted account.
      */
     @Transactional
     public void requestMagicLink(MagicLinkRequest request) {
@@ -69,8 +69,9 @@ public class AuthService {
         }
         String email = request.getEmail().toLowerCase().trim();
         
-        // Create member if doesn't exist
+        // Create member if doesn't exist, or reactivate if soft-deleted
         Member member = memberRepository.findByEmail(email)
+                .map(existingMember -> reactivateMemberIfDeleted(existingMember, request))
                 .orElseGet(() -> createNewMember(email, request));
         
         // Delete any existing unused magic links for this email
@@ -112,16 +113,8 @@ public class AuthService {
         // Get user
         Member member = magicLink.getUser();
 
-        // Reactivate soft-deleted accounts on successful login
-        if (Boolean.FALSE.equals(member.getActive())) {
-            member.setActive(true);
-            // If the display name was scrubbed, set a sensible default from email
-            if (member.getDisplayName() == null || "Deleted user".equalsIgnoreCase(member.getDisplayName().trim())) {
-                String localPart = member.getEmail() != null ? member.getEmail().split("@")[0] : "User";
-                member.setDisplayName(localPart);
-            }
-            memberRepository.save(member);
-        }
+        // Note: Member reactivation is now handled in requestMagicLink() → reactivateMemberIfDeleted()
+        // This ensures legal agreement flags are properly reset during reactivation
         
         // Mark user as verified
         if (!member.getVerified()) {
@@ -183,6 +176,49 @@ public class AuthService {
                 .build();
         
         return memberRepository.save(newMember);
+    }
+    
+    /**
+     * Reactivate a soft-deleted member and reset legal agreement flags.
+     * This ensures user/organiser agreements are shown again on reactivation.
+     */
+    private Member reactivateMemberIfDeleted(Member existingMember, MagicLinkRequest request) {
+        // If member is active, return as-is
+        if (Boolean.TRUE.equals(existingMember.getActive())) {
+            return existingMember;
+        }
+        
+        log.info("🔄 Reactivating soft-deleted member: {}", existingMember.getEmail());
+        
+        // Reactivate member and reset legal agreement flags
+        existingMember.setActive(true);
+        existingMember.setHasAcceptedUserAgreement(false); // CRITICAL: Reset user agreement
+        existingMember.setUserAgreementAcceptedAt(null);
+        existingMember.setHasAcceptedOrganiserAgreement(false); // CRITICAL: Reset organiser agreement  
+        existingMember.setOrganiserAgreementAcceptedAt(null);
+        existingMember.setHasOrganiserRole(false); // Reset organiser role
+        
+        // Update display name - reset from "Deleted user" or use provided name
+        if (request.getDisplayName() != null && !request.getDisplayName().trim().isEmpty()) {
+            existingMember.setDisplayName(request.getDisplayName().trim());
+        } else if (existingMember.getDisplayName() == null || "Deleted user".equalsIgnoreCase(existingMember.getDisplayName().trim())) {
+            // Reset display name from email if it was scrubbed during deletion
+            String localPart = existingMember.getEmail() != null ? existingMember.getEmail().split("@")[0] : "User";
+            existingMember.setDisplayName(localPart);
+        }
+        
+        // Generate new avatar if display name changed or if no profile photo
+        if (existingMember.getProfilePhotoUrl() == null || 
+            existingMember.getProfilePhotoUrl().contains("ui-avatars.com")) {
+            String avatarUrl = avatarGenerator.generateAvatarUrl(
+                existingMember.getDisplayName(), 
+                existingMember.getEmail()
+            );
+            existingMember.setProfilePhotoUrl(avatarUrl);
+        }
+        
+        log.info("✅ Member reactivated - agreements reset, will show user agreement modal");
+        return memberRepository.save(existingMember);
     }
     
     // ============================================================
