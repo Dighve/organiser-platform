@@ -1,9 +1,113 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Bell, ArrowLeft, CheckCheck, Loader2 } from 'lucide-react'
+import { Bell, ArrowLeft, CheckCheck, Loader2, BellOff, BellRing, Smartphone, Settings } from 'lucide-react'
 import { notificationsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import { formatDistanceToNow } from 'date-fns'
+import {
+  isPushSupported,
+  getPermissionState,
+  subscribeToPush,
+  isSubscribedLocally,
+  isIOS,
+  isStandalone,
+} from '../lib/pushNotifications'
+import toast from 'react-hot-toast'
+
+function PushNotificationStatus() {
+  const [permState, setPermState] = useState('default')
+  const [subscribed, setSubscribed] = useState(false)
+  const [enabling, setEnabling] = useState(false)
+
+  useEffect(() => {
+    setPermState(getPermissionState())
+    setSubscribed(isSubscribedLocally())
+  }, [])
+
+  const handleEnable = async () => {
+    setEnabling(true)
+    const result = await subscribeToPush()
+    if (result.success) {
+      toast.success('Notifications enabled!')
+      setPermState('granted')
+      setSubscribed(true)
+    } else {
+      toast.error(result.reason || 'Could not enable notifications')
+      setPermState(getPermissionState())
+    }
+    setEnabling(false)
+  }
+
+  // iOS browser (not standalone) — needs Add to Home Screen first
+  if (isIOS() && !isStandalone()) {
+    return (
+      <div className="flex items-start gap-3 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 mb-3">
+        <Smartphone className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+        <div className="min-w-0">
+          <p className="font-semibold text-blue-900 text-sm">Enable notifications on iOS</p>
+          <p className="text-xs text-blue-700 mt-0.5">
+            Tap the <strong>Share ⬆</strong> button in Safari, choose <strong>Add to Home Screen</strong>, then open the app from your home screen to enable notifications.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Push not supported on this browser
+  if (!isPushSupported()) {
+    return (
+      <div className="flex items-start gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 mb-3">
+        <BellOff className="h-5 w-5 text-gray-400 mt-0.5 flex-shrink-0" />
+        <p className="text-xs text-gray-500">Push notifications are not supported in this browser.</p>
+      </div>
+    )
+  }
+
+  // Permission denied — direct user to system settings
+  if (permState === 'denied') {
+    return (
+      <div className="flex items-start gap-3 rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 mb-3">
+        <Settings className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+        <div className="min-w-0">
+          <p className="font-semibold text-amber-900 text-sm">Notifications are blocked</p>
+          <p className="text-xs text-amber-700 mt-0.5">
+            To receive alerts, go to your device <strong>Settings → Apps → OutMeets (or your browser) → Notifications</strong> and allow notifications, then come back here.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Already enabled
+  if (permState === 'granted' && subscribed) {
+    return (
+      <div className="flex items-center gap-3 rounded-2xl border border-green-100 bg-green-50 px-4 py-3 mb-3">
+        <BellRing className="h-5 w-5 text-green-600 flex-shrink-0" />
+        <p className="text-sm font-semibold text-green-800">Push notifications are enabled</p>
+      </div>
+    )
+  }
+
+  // Not yet asked / permission granted but not subscribed
+  return (
+    <div className="flex items-start gap-3 rounded-2xl border border-purple-100 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-3 mb-3">
+      <Bell className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-purple-900 text-sm">Stay in the loop</p>
+        <p className="text-xs text-purple-700 mt-0.5">Enable push notifications to get alerts for new events and comments even when the app is closed.</p>
+      </div>
+      <button
+        onClick={handleEnable}
+        disabled={enabling}
+        className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg disabled:opacity-60 hover:shadow-md transition-all"
+      >
+        {enabling ? <Loader2 className="h-3 w-3 animate-spin" /> : <Bell className="h-3 w-3" />}
+        {enabling ? 'Enabling…' : 'Enable'}
+      </button>
+    </div>
+  )
+}
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
@@ -93,6 +197,7 @@ export default function NotificationsPage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
+        <PushNotificationStatus />
         {isLoading || isFetching ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />

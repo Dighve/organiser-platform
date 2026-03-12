@@ -316,6 +316,34 @@ public class EnhancedLegalService {
         return hasAccepted;
     }
     /**
+     * Withdraw all active consent records for a member.
+     * Called when a member deletes their account to ensure agreement modals
+     * are shown again if they re-register with the same email.
+     */
+    @Transactional
+    public void withdrawAllConsentsForMember(Long memberId, String reason) {
+        log.info("Withdrawing all consents for member: {} - reason: {}", memberId, reason);
+        
+        List<LegalAgreement> allAgreements = legalAgreementRepository.findByMemberId(memberId);
+        
+        int withdrawnCount = 0;
+        for (LegalAgreement agreement : allAgreements) {
+            // Skip already-withdrawn records and withdrawal audit records
+            if (Boolean.TRUE.equals(agreement.getIsWithdrawn())) {
+                continue;
+            }
+            if (agreement.getAgreementType() != null && agreement.getAgreementType().endsWith("_WITHDRAWAL")) {
+                continue;
+            }
+            agreement.withdraw(reason);
+            legalAgreementRepository.save(agreement);
+            withdrawnCount++;
+        }
+        
+        log.info("Withdrew {} consent record(s) for member: {}", withdrawnCount, memberId);
+    }
+
+    /**
      * Get complete audit trail for a member
      */
     public List<LegalAgreement> getAuditTrail(Long memberId) {

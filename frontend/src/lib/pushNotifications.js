@@ -3,6 +3,23 @@ import api from './api'
 const PUSH_SUBSCRIPTION_KEY = 'outmeets-push-subscribed'
 
 /**
+ * Returns true when running as an installed PWA (standalone mode)
+ */
+export function isStandalone() {
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    window.navigator.standalone === true
+  )
+}
+
+/**
+ * Returns true on iOS/iPadOS devices
+ */
+export function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+}
+
+/**
  * Check if the browser supports push notifications
  */
 export function isPushSupported() {

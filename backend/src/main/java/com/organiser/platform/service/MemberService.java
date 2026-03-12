@@ -172,11 +172,18 @@ public class MemberService {
         // Remove group subscriptions
         groupService.removeAllSubscriptionsForMember(memberId);
 
+        // Withdraw all legal agreement acceptances so modals are shown on re-registration
+        enhancedLegalService.withdrawAllConsentsForMember(memberId, "Account deleted by user");
+
         // Soft delete member and scrub PII
         member.setActive(false);
         member.setDisplayName("Deleted user");
         member.setProfilePhotoUrl(null);
         member.setHasOrganiserRole(false);
+        member.setHasAcceptedUserAgreement(false);
+        member.setUserAgreementAcceptedAt(null);
+        member.setHasAcceptedOrganiserAgreement(false);
+        member.setOrganiserAgreementAcceptedAt(null);
         memberRepository.save(member);
     }
     

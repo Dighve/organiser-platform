@@ -79,14 +79,28 @@ public class GoogleOAuth2Service {
             Member member = memberRepository.findByEmail(email)
                     .orElseGet(() -> createMemberFromGoogle(email, name, pictureUrl));
 
-            // Reactivate soft-deleted accounts on successful login
+            // Reactivate soft-deleted accounts on successful login with full state reset
             if (Boolean.FALSE.equals(member.getActive())) {
+                log.info("Google OAuth: Reactivating soft-deleted member: {}", email);
                 member.setActive(true);
-                if (member.getDisplayName() == null || "Deleted user".equalsIgnoreCase(member.getDisplayName().trim())) {
-                    String localPart = email.split("@")[0];
-                    member.setDisplayName(localPart);
+                // Reset legal agreement flags so modals are shown again
+                member.setHasAcceptedUserAgreement(false);
+                member.setUserAgreementAcceptedAt(null);
+                member.setHasAcceptedOrganiserAgreement(false);
+                member.setOrganiserAgreementAcceptedAt(null);
+                member.setHasOrganiserRole(false);
+                // Use Google-provided name (overrides "Deleted user" scrubbed name)
+                if (name != null && !name.trim().isEmpty()) {
+                    member.setDisplayName(name);
+                } else if (member.getDisplayName() == null || "Deleted user".equalsIgnoreCase(member.getDisplayName().trim())) {
+                    member.setDisplayName(email.split("@")[0]);
+                }
+                // Restore Google profile photo
+                if (pictureUrl != null && !pictureUrl.isEmpty()) {
+                    member.setProfilePhotoUrl(pictureUrl);
                 }
                 memberRepository.save(member);
+                log.info("Google OAuth: Member reactivated - agreements reset, will show agreement modals");
             }
 
             // Update profile photo if Google has one and user doesn't
