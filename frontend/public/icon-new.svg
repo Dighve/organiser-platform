@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- White background -->
+  <rect width="512" height="512" fill="white"/>
+  
+  <!-- Mountain range with gradient colors (scaled up from 48x48 to 512x512) -->
+  <polygon points="21,469 149,256 256,469" fill="#FBBF24" opacity="0.95" />
+  <polygon points="149,469 277,192 405,469" fill="#F59E0B" opacity="0.95" />
+  <polygon points="277,469 384,299 491,469" fill="#FDE68A" opacity="0.9" />
+  
+  <!-- Hiker figure (scaled up) -->
+  <circle cx="341" cy="341" r="32" fill="#333333" opacity="0.98" />
+  <rect x="330" y="373" width="21" height="75" rx="10" fill="#333333" opacity="0.98" />
+  <rect x="320" y="427" width="16" height="64" rx="8" fill="#333333" opacity="0.98" transform="rotate(-20 320 427)" />
+  <rect x="352" y="427" width="16" height="64" rx="8" fill="#333333" opacity="0.98" transform="rotate(20 352 427)" />
+  <rect x="347" y="384" width="11" height="64" rx="5" fill="#333333" opacity="0.98" transform="rotate(-30 347 384)" />
+</svg>
