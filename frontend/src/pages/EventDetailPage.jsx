@@ -1128,12 +1128,23 @@ export default function EventDetailPage() {
                                 <span className="text-sm font-semibold text-purple-600">👥 {totalCount}</span>
                               )}
                             </h2>
-                            <div className="flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl">
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg">
+                            <div 
+                              onClick={() => event?.hostMemberId && navigate(`/members/${event.hostMemberId}`)}
+                              className={`flex items-center space-x-3 p-4 bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl transition-all ${
+                                event?.hostMemberId 
+                                  ? 'cursor-pointer hover:-translate-y-1 hover:shadow-lg group' 
+                                  : ''
+                              }`}
+                            >
+                              <div className={`w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg transition-transform ${
+                                event?.hostMemberId ? 'group-hover:scale-110' : ''
+                              }`}>
                                 {hostNameFallback.charAt(0).toUpperCase()}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <p className="font-bold text-gray-900 truncate">
+                                <p className={`font-bold text-gray-900 truncate transition-all ${
+                                  event?.hostMemberId ? 'group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text group-hover:text-transparent' : ''
+                                }`}>
                                   {hostNameFallback}
                                 </p>
                                 {hostGuestCount > 0 && (

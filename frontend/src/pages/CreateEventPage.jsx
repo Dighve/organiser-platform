@@ -217,13 +217,14 @@ export default function CreateEventPage() {
     setValue('startTime', defaultTime)
   }, [defaultDate, defaultTime, setValue])
 
-  // Pre-populate hostName with current user for new events (not when copying)
+  // Pre-populate hostName AND hostMemberId with current user for new events (not when copying)
   useEffect(() => {
-    if (user && user.email && !copyFromId && !copiedEventData) {
-      // Extract display name from email (take part before @)
-      const displayName = user.email.split('@')[0]
+    if (user && user.id && user.email && !copyFromId && !copiedEventData) {
+      // Use display name if available, otherwise extract from email
+      const displayName = user.displayName || user.email.split('@')[0]
       setValue('hostName', displayName)
-      setFormData(prev => ({ ...prev, hostName: displayName }))
+      setValue('hostMemberId', user.id)
+      setFormData(prev => ({ ...prev, hostName: displayName, hostMemberId: user.id }))
     }
   }, [user, copyFromId, copiedEventData, setValue])
   
