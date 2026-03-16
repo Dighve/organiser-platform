@@ -248,7 +248,7 @@ public class EmailService {
                             <p style="margin: 8px 0; font-weight: 500;">🔒 This link is unique to you and can only be used once.</p>
                             <p style="margin: 8px 0; font-weight: 500;">⏰ It will expire in 15 minutes for security reasons.</p>
                             <p style="margin: 8px 0; font-weight: 500;">❓ If you didn't request this email, you can safely ignore it.</p>
-                            <p style="margin-top: 25px; color: #9ca3af; font-style: italic; font-weight: 600;">Connect through outdoor adventures! �</p>
+                            <p style="margin-top: 25px; color: #9ca3af; font-style: italic; font-weight: 600;"> Discover day hikes from London! �</p>
                         </div>
                     </div>
                 </div>

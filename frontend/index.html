@@ -2,6 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    
+    <!-- Performance: Preconnect to external domains -->
+    <link rel="preconnect" href="https://maps.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="preconnect" href="https://res.cloudinary.com" crossorigin />
+    <link rel="dns-prefetch" href="https://maps.googleapis.com" />
+    <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
+    <link rel="dns-prefetch" href="https://res.cloudinary.com" />
+    
     <link rel="icon" type="image/svg+xml" href="/favicon1.svg" />
     <link rel="alternate icon" type="image/png" href="/favicon1.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -10,18 +19,75 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <title>OutMeets - Connect Through Outdoor Adventures</title>
-    <meta name="description" content="Join and organize outdoor activities like hiking, cycling, and more with fellow enthusiasts. Connect through outdoor adventures." />
+    
+    <!-- SEO Meta Tags -->
+    <title>Day Hikes from London | London Hiking Groups & Trails Near London | OutMeets</title>
+    <meta name="description" content="Discover day hikes from London with local hiking groups. Join guided walks to the South Downs, Chilterns, and scenic trails near London. Connect with London hikers today." />
+    <link rel="canonical" href="https://www.outmeets.com/" />
+    <meta name="keywords" content="day hikes from London, hikes from London, London hiking group, hikes near London, hiking groups London, day trips from London hiking" />
+    <meta name="geo.region" content="GB-LND" />
+    <meta name="geo.placename" content="London" />
+    <meta name="geo.position" content="51.5074;-0.1278" />
+    <meta name="ICBM" content="51.5074, -0.1278" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="OutMeets - Connect Through Outdoor Adventures" />
-    <meta property="og:description" content="Join and organize outdoor activities like hiking, cycling, and more with fellow enthusiasts" />
+    <meta property="og:url" content="https://www.outmeets.com/" />
+    <meta property="og:site_name" content="OutMeets" />
+    <meta property="og:title" content="Day Hikes from London | Join London Hiking Groups" />
+    <meta property="og:description" content="Discover day hikes from London with local hiking groups. Join guided walks to the South Downs, Chilterns, and scenic trails near London." />
+    <meta property="og:image" content="https://www.outmeets.com/og-image.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_GB" />
     
     <!-- Twitter -->
-    <meta property="twitter:card" content="summary" />
-    <meta property="twitter:title" content="OutMeets - Connect Through Outdoor Adventures" />
-    <meta property="twitter:description" content="Join and organize outdoor activities like hiking, cycling, and more with fellow enthusiasts" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://www.outmeets.com/" />
+    <meta name="twitter:title" content="Day Hikes from London | Join London Hiking Groups" />
+    <meta name="twitter:description" content="Discover day hikes from London with local hiking groups. Join guided walks to the South Downs, Chilterns, and scenic trails near London." />
+    <meta name="twitter:image" content="https://www.outmeets.com/og-image.jpg" />
+    
+    <!-- Schema.org Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "OutMeets",
+      "url": "https://www.outmeets.com",
+      "description": "Join and organise day hikes from London with local hiking groups",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": "https://www.outmeets.com/events?search={search_term_string}",
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "OutMeets",
+      "url": "https://www.outmeets.com",
+      "logo": "https://www.outmeets.com/logo.png",
+      "description": "Platform for discovering and organising day hikes from London and across the UK",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "London",
+        "addressCountry": "GB"
+      },
+      "areaServed": {
+        "@type": "GeoCircle",
+        "geoMidpoint": {
+          "@type": "GeoCoordinates",
+          "latitude": "51.5074",
+          "longitude": "-0.1278"
+        },
+        "geoRadius": "100000"
+      },
+      "sameAs": []
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>

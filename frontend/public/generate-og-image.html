@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate OG Image & Logo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            background: linear-gradient(135deg, #9333EA 0%, #EC4899 50%, #F59E0B 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .preview-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+        canvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: block;
+        }
+        button {
+            background: linear-gradient(135deg, #9333EA 0%, #EC4899 100%);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin: 10px 5px;
+            transition: transform 0.2s;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(147, 51, 234, 0.3);
+        }
+        .instructions {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .instructions code {
+            background: #dbeafe;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏔️ OutMeets - OG Image & Logo Generator</h1>
+        
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Click the download buttons below</li>
+                <li>Save the files to <code>/public</code> folder:
+                    <ul>
+                        <li><code>og-image.jpg</code> - For social media sharing (1200x630)</li>
+                        <li><code>logo.png</code> - For Schema.org (512x512)</li>
+                    </ul>
+                </li>
+                <li>Files are automatically optimized for web</li>
+            </ol>
+        </div>
+
+        <div class="preview-section">
+            <h3>🖼️ Open Graph Image (1200x630)</h3>
+            <p>Used when sharing on Facebook, LinkedIn, WhatsApp, etc.</p>
+            <canvas id="ogCanvas" width="1200" height="630"></canvas>
+            <button onclick="downloadOGImage()">⬇️ Download og-image.jpg</button>
+        </div>
+
+        <div class="preview-section">
+            <h3>🎨 Logo (512x512)</h3>
+            <p>Used for Schema.org structured data</p>
+            <canvas id="logoCanvas" width="512" height="512"></canvas>
+            <button onclick="downloadLogo()">⬇️ Download logo.png</button>
+        </div>
+    </div>
+
+    <script>
+        // Draw OG Image (1200x630)
+        function drawOGImage() {
+            const canvas = document.getElementById('ogCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Gradient background (purple -> pink -> orange)
+            const gradient = ctx.createLinearGradient(0, 0, 1200, 630);
+            gradient.addColorStop(0, '#9333EA');
+            gradient.addColorStop(0.5, '#EC4899');
+            gradient.addColorStop(1, '#F59E0B');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 1200, 630);
+            
+            // Semi-transparent overlay for better text readability
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, 1200, 630);
+            
+            // Draw mountain peaks (decorative)
+            drawMountains(ctx, 1200, 630);
+            
+            // Main text
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 80px Arial, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Day Hikes from London', 600, 250);
+            
+            // Subtitle
+            ctx.font = '40px Arial, sans-serif';
+            ctx.fillText('Join Local Hiking Groups', 600, 320);
+            
+            // Features
+            ctx.font = '32px Arial, sans-serif';
+            ctx.fillText('🥾 South Downs • Chilterns • Surrey Hills', 600, 420);
+            
+            // Brand
+            ctx.font = 'bold 36px Arial, sans-serif';
+            ctx.fillText('OutMeets.com', 600, 520);
+        }
+        
+        // Draw Logo (512x512)
+        function drawLogo() {
+            const canvas = document.getElementById('logoCanvas');
+            const ctx = canvas.getContext('2d');
+            const size = 512;
+            const scale = size / 48;
+            
+            // White background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, size, size);
+            
+            // Draw larger mountains
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const mountainScale = 8;
+            
+            // Mountain 1 (left) - Yellow
+            ctx.fillStyle = '#FBBF24';
+            ctx.beginPath();
+            ctx.moveTo(centerX - 20 * mountainScale, centerY + 10 * mountainScale);
+            ctx.lineTo(centerX - 8 * mountainScale, centerY - 10 * mountainScale);
+            ctx.lineTo(centerX + 2 * mountainScale, centerY + 10 * mountainScale);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Mountain 2 (center) - Orange
+            ctx.fillStyle = '#F59E0B';
+            ctx.beginPath();
+            ctx.moveTo(centerX - 8 * mountainScale, centerY + 10 * mountainScale);
+            ctx.lineTo(centerX, centerY - 16 * mountainScale);
+            ctx.lineTo(centerX + 12 * mountainScale, centerY + 10 * mountainScale);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Mountain 3 (right) - Light yellow
+            ctx.fillStyle = '#FDE68A';
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY + 10 * mountainScale);
+            ctx.lineTo(centerX + 10 * mountainScale, centerY - 4 * mountainScale);
+            ctx.lineTo(centerX + 20 * mountainScale, centerY + 10 * mountainScale);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Hiker figure
+            ctx.fillStyle = '#333333';
+            
+            // Head
+            ctx.beginPath();
+            ctx.arc(centerX + 6 * mountainScale, centerY + 6 * mountainScale, 3 * mountainScale, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Body
+            ctx.fillRect(centerX + 5 * mountainScale, centerY + 9 * mountainScale, 2 * mountainScale, 7 * mountainScale);
+            
+            // Legs
+            ctx.save();
+            ctx.translate(centerX + 4 * mountainScale, centerY + 14 * mountainScale);
+            ctx.rotate(-20 * Math.PI / 180);
+            ctx.fillRect(0, 0, 1.5 * mountainScale, 6 * mountainScale);
+            ctx.restore();
+            
+            ctx.save();
+            ctx.translate(centerX + 7 * mountainScale, centerY + 14 * mountainScale);
+            ctx.rotate(20 * Math.PI / 180);
+            ctx.fillRect(0, 0, 1.5 * mountainScale, 6 * mountainScale);
+            ctx.restore();
+            
+            // Hiking stick
+            ctx.save();
+            ctx.translate(centerX + 6.5 * mountainScale, centerY + 10 * mountainScale);
+            ctx.rotate(-30 * Math.PI / 180);
+            ctx.fillRect(0, 0, 1 * mountainScale, 6 * mountainScale);
+            ctx.restore();
+        }
+        
+        // Helper function to draw decorative mountains on OG image
+        function drawMountains(ctx, width, height) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            
+            // Left mountain
+            ctx.beginPath();
+            ctx.moveTo(0, height);
+            ctx.lineTo(200, 300);
+            ctx.lineTo(400, height);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Right mountain
+            ctx.beginPath();
+            ctx.moveTo(800, height);
+            ctx.lineTo(1000, 250);
+            ctx.lineTo(1200, height);
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        // Download functions
+        function downloadOGImage() {
+            const canvas = document.getElementById('ogCanvas');
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'og-image.jpg';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 'image/jpeg', 0.9);
+        }
+        
+        function downloadLogo() {
+            const canvas = document.getElementById('logoCanvas');
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'logo.png';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        // Draw on page load
+        drawOGImage();
+        drawLogo();
+    </script>
+</body>
+</html>
