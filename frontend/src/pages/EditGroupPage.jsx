@@ -298,24 +298,34 @@ export default function EditGroupPage() {
             </p>
           </div>
           
-          {/* LOCATION FIELD (Optional) - Google Places Autocomplete - Only show if location features are enabled */}
-          {isGroupLocationEnabled() && isGoogleMapsEnabled() && (
+          {/* LOCATION FIELD (Optional) - Only show if group location feature is enabled */}
+          {isGroupLocationEnabled() && (
             <div>
               <label htmlFor="location" className="block text-sm sm:text-base font-semibold text-gray-700 mb-2">
                 📍 Location
               </label>
-              <GooglePlacesAutocomplete
-                value={formData.location}
-                onChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
-                onPlaceSelect={(locationData) => {
-                  setFormData(prev => ({
-                    ...prev,
-                    location: locationData.address
-                  }))
-                }}
-                error={errors.location}
-                placeholder="e.g., Peak District, UK"
-              />
+              {isGoogleMapsEnabled() ? (
+                <GooglePlacesAutocomplete
+                  onPlaceSelect={(locationData) => {
+                    setFormData(prev => ({
+                      ...prev,
+                      location: locationData.address
+                    }))
+                  }}
+                  error={errors.location}
+                  placeholder="e.g., Peak District, UK"
+                />
+              ) : (
+                <input
+                  type="text"
+                  id="location"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleChange}
+                  className={`w-full px-3 sm:px-4 py-3 text-base border-2 ${errors.location ? 'border-red-500' : 'border-gray-200'} rounded-lg sm:rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all`}
+                  placeholder="e.g., Peak District, UK"
+                />
+              )}
             </div>
           )}
           

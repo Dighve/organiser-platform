@@ -32,7 +32,6 @@ public class CreateEventRequest {
     private Instant endDate;
     private Instant registrationDeadline;
     
-    @NotBlank(message = "Location is required")
     private String location;
     
     private BigDecimal latitude;

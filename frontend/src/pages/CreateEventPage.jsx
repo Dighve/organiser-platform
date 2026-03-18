@@ -36,18 +36,13 @@ const STEPS = {
 /**
  * Get smart default date and time for new events
  * Similar to Meetup.com behavior:
- * - Default date: Today
+ * - Default date: Today (or tomorrow if late at night)
  * - Default time: 2-3 hours from now, rounded to next hour
  * - Example: Current time 16:52 → Default 19:00
+ * - Example: Current time 23:30 → Default tomorrow at 10:00
  */
 const getDefaultDateTime = () => {
   const now = new Date()
-  
-  // Default date: Today in YYYY-MM-DD format
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const defaultDate = `${year}-${month}-${day}`
   
   // Default time: 2-3 hours from now, rounded up to next hour
   const currentHour = now.getHours()
@@ -59,10 +54,18 @@ const getDefaultDateTime = () => {
     defaultHour += 1  // Round up to next full hour
   }
   
-  // Handle overflow past midnight
+  // Handle overflow past midnight - set to tomorrow at 10:00 AM
+  let targetDate = new Date(now)
   if (defaultHour >= 24) {
-    defaultHour = 23
+    targetDate.setDate(targetDate.getDate() + 1)  // Tomorrow
+    defaultHour = 10  // 10:00 AM
   }
+  
+  // Format date: YYYY-MM-DD
+  const year = targetDate.getFullYear()
+  const month = String(targetDate.getMonth() + 1).padStart(2, '0')
+  const day = String(targetDate.getDate()).padStart(2, '0')
+  const defaultDate = `${year}-${month}-${day}`
   
   const defaultTime = `${String(defaultHour).padStart(2, '0')}:00`
   
@@ -311,8 +314,8 @@ export default function CreateEventPage() {
     if (currentStep < STEPS.REVIEW) {
       let nextStepValue = currentStep + 1
       
-      // Skip LOCATION step if location features are disabled
-      if (nextStepValue === STEPS.LOCATION && (!isEventLocationEnabled() || !isGoogleMapsEnabled())) {
+      // Skip LOCATION step only if EVENT_LOCATION is disabled
+      if (nextStepValue === STEPS.LOCATION && !isEventLocationEnabled()) {
         nextStepValue = STEPS.DETAILS
       }
       
@@ -325,8 +328,8 @@ export default function CreateEventPage() {
     if (currentStep > STEPS.BASICS) {
       let prevStepValue = currentStep - 1
       
-      // Skip LOCATION step if location features are disabled
-      if (prevStepValue === STEPS.LOCATION && (!isEventLocationEnabled() || !isGoogleMapsEnabled())) {
+      // Skip LOCATION step only if EVENT_LOCATION is disabled
+      if (prevStepValue === STEPS.LOCATION && !isEventLocationEnabled()) {
         prevStepValue = STEPS.BASICS
       }
       
@@ -376,20 +379,22 @@ export default function CreateEventPage() {
       return
     }
     
-    // Validate location requirements based on Google Maps availability
-    if (isGoogleMapsEnabled()) {
-      // When Google Maps is enabled, require coordinates
-      if (!data.latitude || !data.longitude) {
-        toast.error('⚠️ Please select a valid location from Google Maps with coordinates')
-        setCurrentStep(STEPS.LOCATION)
-        return
-      }
-    } else {
-      // When Google Maps is disabled, just require location text
-      if (!data.location || data.location.trim() === '') {
-        toast.error('⚠️ Please enter a hiking location')
-        setCurrentStep(STEPS.DETAILS)
-        return
+    // Validate location requirements based on feature flags
+    if (isEventLocationEnabled()) {
+      if (isGoogleMapsEnabled()) {
+        // When Google Maps is enabled, require coordinates
+        if (!data.latitude || !data.longitude) {
+          toast.error('⚠️ Please select a valid location from Google Maps with coordinates')
+          setCurrentStep(STEPS.LOCATION)
+          return
+        }
+      } else {
+        // When Google Maps is disabled, just require location text
+        if (!data.location || data.location.trim() === '') {
+          toast.error('⚠️ Please enter a hiking location')
+          setCurrentStep(STEPS.DETAILS)
+          return
+        }
       }
     }
     
@@ -835,28 +840,44 @@ export default function CreateEventPage() {
           <span className="text-3xl">📍</span>
           Where's the hike?
         </h1>
-        <p className="text-sm text-gray-400 mt-1">Search for your trailhead or meeting point</p>
+        <p className="text-sm text-gray-400 mt-1">{isGoogleMapsEnabled() ? 'Search for your trailhead or meeting point' : 'Enter the hiking location'}</p>
       </div>
       <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Search location *</label>
-        <GooglePlacesAutocomplete
-          onPlaceSelect={(locationData) => {
-            setValue('location', locationData.address, { shouldValidate: true })
-            setValue('latitude', locationData.latitude)
-            setValue('longitude', locationData.longitude)
-            updateFormData({
-              location: locationData.address,
-              latitude: locationData.latitude,
-              longitude: locationData.longitude
-            })
-          }}
-          error={errors.location?.message}
-        />
-        <input type="hidden" {...register('location', { required: 'Location is required' })} />
-        <input type="hidden" {...register('latitude')} />
-        <input type="hidden" {...register('longitude')} />
+        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{isGoogleMapsEnabled() ? 'Search location *' : 'Hiking location *'}</label>
+        {isGoogleMapsEnabled() ? (
+          <>
+            <GooglePlacesAutocomplete
+              onPlaceSelect={(locationData) => {
+                setValue('location', locationData.address, { shouldValidate: true })
+                setValue('latitude', locationData.latitude)
+                setValue('longitude', locationData.longitude)
+                updateFormData({
+                  location: locationData.address,
+                  latitude: locationData.latitude,
+                  longitude: locationData.longitude
+                })
+              }}
+              error={errors.location?.message}
+            />
+            <input type="hidden" {...register('location', { required: 'Location is required' })} />
+            <input type="hidden" {...register('latitude')} />
+            <input type="hidden" {...register('longitude')} />
+          </>
+        ) : (
+          <input
+            {...register('location', { required: 'Location is required' })}
+            type="text"
+            className="w-full px-4 py-3.5 text-base border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium transition-all"
+            placeholder="e.g., Peak District National Park, UK"
+          />
+        )}
+        {errors.location && (
+          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+            <span>⚠️</span> {errors.location.message}
+          </p>
+        )}
       </div>
-      {watchedLatitude && watchedLongitude && (
+      {isGoogleMapsEnabled() && watchedLatitude && watchedLongitude && (
         <div className="flex items-center gap-3 px-4 py-3.5 bg-green-50 border border-green-200 rounded-2xl">
           <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0">
             <Check className="h-4 w-4 text-white" />
@@ -1089,6 +1110,7 @@ export default function CreateEventPage() {
             </div>
           </div>
 
+          {isEventLocationEnabled() && (
           <div className="px-5 py-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 flex-1">
@@ -1096,9 +1118,10 @@ export default function CreateEventPage() {
                 <p className="text-sm font-semibold text-gray-800 truncate">{formData.location || '—'}</p>
                 {formData.latitude && <p className="text-xs text-green-600 mt-0.5 flex items-center gap-1"><Check className="h-3 w-3" /> Verified</p>}
               </div>
-              <button type="button" onClick={() => goToStep(STEPS.LOCATION)} className="text-purple-600 text-xs font-bold flex-shrink-0 pt-0.5">Edit</button>
+              <button type="button" onClick={() => goToStep(isGoogleMapsEnabled() ? STEPS.LOCATION : STEPS.DETAILS)} className="text-purple-600 text-xs font-bold flex-shrink-0 pt-0.5">Edit</button>
             </div>
           </div>
+          )}
 
           {(formData.difficultyLevel || formData.distanceKm || formData.elevationGainM || formData.maxParticipants) && (
             <div className="px-5 py-4">
@@ -1192,7 +1215,7 @@ export default function CreateEventPage() {
     switch (currentStep) {
       case STEPS.BASICS: return renderMobileBasicsContent()
       case STEPS.LOCATION:
-        return (isEventLocationEnabled() && isGoogleMapsEnabled())
+        return isEventLocationEnabled()
           ? renderMobileLocationContent()
           : renderMobileDetailsContent()
       case STEPS.DETAILS: return renderMobileDetailsContent()
@@ -1212,7 +1235,7 @@ export default function CreateEventPage() {
           <button
             type="button"
             onClick={() => handleSubmit(onFinalSubmit)()}
-            disabled={isSubmitting || !formData.latitude || !formData.longitude}
+            disabled={isSubmitting || (isEventLocationEnabled() && isGoogleMapsEnabled() && (!formData.latitude || !formData.longitude))}
             className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base rounded-2xl shadow-lg shadow-purple-200 active:opacity-90 transition-all disabled:opacity-40 flex items-center justify-center gap-2"
           >
             <Check className="h-5 w-5" />
@@ -1670,33 +1693,49 @@ export default function CreateEventPage() {
         <h2 className="text-2xl sm:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-600 via-orange-500 to-amber-500 mb-2 sm:mb-3">
           Where will you hike?
         </h2>
-        <p className="text-gray-600 text-sm sm:text-lg">Search for your hiking location using Google Maps</p>
+        <p className="text-gray-600 text-sm sm:text-lg">{isGoogleMapsEnabled() ? 'Search for your hiking location using Google Maps' : 'Enter the hiking location'}</p>
       </div>
 
       <div>
         <label htmlFor="location" className="block text-base font-bold text-gray-900 mb-3">
           Hiking location <span className="text-red-500">*</span>
         </label>
-        <GooglePlacesAutocomplete
-          onPlaceSelect={(locationData) => {
-            // Only update when user selects from dropdown (not while typing)
-            setValue('location', locationData.address, { shouldValidate: true })
-            setValue('latitude', locationData.latitude)
-            setValue('longitude', locationData.longitude)
-            updateFormData({
-              location: locationData.address,
-              latitude: locationData.latitude,
-              longitude: locationData.longitude
-            })
-          }}
-          error={errors.location?.message}
-        />
-        <input type="hidden" {...register('location', { required: 'Location is required' })} />
-        <input type="hidden" {...register('latitude')} />
-        <input type="hidden" {...register('longitude')} />
+        {isGoogleMapsEnabled() ? (
+          <>
+            <GooglePlacesAutocomplete
+              onPlaceSelect={(locationData) => {
+                // Only update when user selects from dropdown (not while typing)
+                setValue('location', locationData.address, { shouldValidate: true })
+                setValue('latitude', locationData.latitude)
+                setValue('longitude', locationData.longitude)
+                updateFormData({
+                  location: locationData.address,
+                  latitude: locationData.latitude,
+                  longitude: locationData.longitude
+                })
+              }}
+              error={errors.location?.message}
+            />
+            <input type="hidden" {...register('location', { required: 'Location is required' })} />
+            <input type="hidden" {...register('latitude')} />
+            <input type="hidden" {...register('longitude')} />
+          </>
+        ) : (
+          <input
+            {...register('location', { required: 'Location is required' })}
+            type="text"
+            className="w-full px-4 py-4 text-base border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-pink-300 bg-white"
+            placeholder="e.g., Peak District National Park, UK"
+          />
+        )}
+        {errors.location && (
+          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+            <span>⚠️</span> {errors.location.message}
+          </p>
+        )}
       </div>
 
-      {watchedLatitude && watchedLongitude && (
+      {isGoogleMapsEnabled() && watchedLatitude && watchedLongitude && (
         <>
           {/* Mobile compact confirmation */}
           <div className="sm:hidden flex items-center gap-2 px-3 py-2.5 bg-green-50 border border-green-200 rounded-xl">
@@ -1758,32 +1797,6 @@ export default function CreateEventPage() {
         </h2>
         <p className="text-gray-600 text-sm sm:text-lg">Add details to help hikers prepare for the adventure</p>
       </div>
-
-      {/* Location fallback when Google Maps is disabled */}
-      {!isGoogleMapsEnabled() && (
-        <div>
-          <label htmlFor="location" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-orange-500 shadow-lg">
-              <MapPin className="h-4 w-4 text-white" />
-            </div>
-            Hiking Location <span className="text-red-500">*</span>
-          </label>
-          <div className="relative group">
-            <div className="absolute inset-0 bg-gradient-to-r from-pink-500 to-orange-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-            <input
-              {...register('location', { required: 'Location is required' })}
-              type="text"
-              className="relative w-full pl-11 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-5 text-base sm:text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-pink-500/20 focus:border-pink-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-pink-300 bg-white"
-              placeholder="e.g., Peak District National Park, UK"
-            />
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500">
-              <MapPin className="h-6 w-6" />
-            </div>
-          </div>
-          {errors.location && <p className="text-red-500 text-sm mt-2 flex items-center gap-1"><span>⚠️</span>{errors.location.message}</p>}
-          <p className="text-sm text-gray-500 mt-2 ml-1">💡 Enter the name of the hiking area or trail</p>
-        </div>
-      )}
 
       {/* MOBILE ONLY: Difficulty select dropdown */}
       <div className="sm:hidden">
@@ -2061,7 +2074,6 @@ export default function CreateEventPage() {
         <button
           type="submit"
           className="flex-1 sm:flex-none py-3 sm:py-4 px-4 sm:px-10 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base sm:text-lg rounded-xl hover:shadow-xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
-          disabled={!isGoogleMapsEnabled() && (!watchedLocation || watchedLocation.trim() === '')}
         >
           Continue <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />
         </button>
@@ -2245,6 +2257,7 @@ export default function CreateEventPage() {
           </div>
 
           {/* ========== REVIEW: LOCATION SECTION ========== */}
+          {isEventLocationEnabled() && (
           <div className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-pink-200 shadow-sm">
             <div className="flex justify-between items-start mb-4">
               <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
@@ -2253,41 +2266,63 @@ export default function CreateEventPage() {
               </h3>
               <button
                 type="button"
-                onClick={() => goToStep(STEPS.LOCATION)}
+                onClick={() => goToStep(isGoogleMapsEnabled() ? STEPS.LOCATION : STEPS.DETAILS)}
                 className="py-2 px-4 bg-pink-100 text-pink-600 hover:bg-pink-200 rounded-lg font-semibold flex items-center gap-1 text-sm transition-all"
               >
                 <Edit2 className="h-4 w-4" /> Edit
               </button>
             </div>
             
-            {formData.location && formData.latitude && formData.longitude ? (
-              <div className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-4 border-2 border-pink-200">
-                <div className="flex items-start gap-3">
-                  <div className="bg-pink-500 rounded-full p-2 mt-1">
-                    <MapPin className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-gray-900 font-bold text-lg">{formData.location}</p>
-                    <div className="mt-3 bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-pink-200">
-                      <p className="text-xs text-gray-600 font-semibold mb-1">GPS Coordinates:</p>
-                      <p className="text-sm text-gray-800 font-mono">
-                        📍 Lat: {formData.latitude?.toFixed(6)}, Long: {formData.longitude?.toFixed(6)}
+            {isGoogleMapsEnabled() ? (
+              formData.location && formData.latitude && formData.longitude ? (
+                <div className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-4 border-2 border-pink-200">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-pink-500 rounded-full p-2 mt-1">
+                      <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-gray-900 font-bold text-lg">{formData.location}</p>
+                      <div className="mt-3 bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-pink-200">
+                        <p className="text-xs text-gray-600 font-semibold mb-1">GPS Coordinates:</p>
+                        <p className="text-sm text-gray-800 font-mono">
+                          📍 Lat: {formData.latitude?.toFixed(6)}, Long: {formData.longitude?.toFixed(6)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-green-600 font-semibold mt-2 flex items-center gap-1">
+                        <Check className="h-3 w-3" /> Location verified via Google Maps
                       </p>
                     </div>
-                    <p className="text-xs text-green-600 font-semibold mt-2 flex items-center gap-1">
-                      <Check className="h-3 w-3" /> Location verified via Google Maps
-                    </p>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                  <p className="text-red-700 font-semibold flex items-center gap-2">
+                    <span>⚠️</span> Location not properly set - Please go back and select from Google Maps
+                  </p>
+                </div>
+              )
             ) : (
-              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-                <p className="text-red-700 font-semibold flex items-center gap-2">
-                  <span>⚠️</span> Location not properly set - Please go back and select from Google Maps
-                </p>
-              </div>
+              formData.location ? (
+                <div className="bg-gradient-to-br from-pink-50 to-orange-50 rounded-xl p-4 border-2 border-pink-200">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-pink-500 rounded-full p-2 mt-1">
+                      <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-gray-900 font-bold text-lg">{formData.location}</p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+                  <p className="text-amber-700 font-semibold flex items-center gap-2">
+                    <span>📍</span> No location set - go to Details to add one (optional)
+                  </p>
+                </div>
+              )
             )}
           </div>
+          )}
 
           {/* ========== REVIEW: HIKE DETAILS SECTION ========== */}
           <div className="bg-white rounded-2xl p-4 sm:p-6 border-2 border-green-200 shadow-sm">
@@ -2374,8 +2409,8 @@ export default function CreateEventPage() {
             type="button" 
             className="flex-1 sm:flex-none py-3 sm:py-4 px-4 sm:px-10 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-base sm:text-lg rounded-xl hover:shadow-2xl hover:shadow-green-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2" 
             onClick={() => handleSubmit(onFinalSubmit)()}
-            disabled={isSubmitting || !formData.latitude || !formData.longitude}
-            title={!formData.latitude || !formData.longitude ? 'Please select a valid location from Google Maps' : ''}
+            disabled={isSubmitting || (isEventLocationEnabled() && isGoogleMapsEnabled() && (!formData.latitude || !formData.longitude))}
+            title={(isEventLocationEnabled() && isGoogleMapsEnabled() && (!formData.latitude || !formData.longitude)) ? 'Please select a valid location from Google Maps' : ''}
           >
             <Check className="h-5 w-5 sm:h-6 sm:w-6" /> {isSubmitting ? 'Publishing...' : 'Publish Hike Event'}
           </button>
@@ -2392,8 +2427,8 @@ export default function CreateEventPage() {
       case STEPS.BASICS:
         return renderBasicsStep()
       case STEPS.LOCATION:
-        // Only show location step if location features are enabled
-        return (isEventLocationEnabled() && isGoogleMapsEnabled()) 
+        // Only show location step if EVENT_LOCATION feature is enabled
+        return isEventLocationEnabled()
           ? renderLocationStep() 
           : renderDetailsStep() // Skip to details if location disabled
       case STEPS.DETAILS:

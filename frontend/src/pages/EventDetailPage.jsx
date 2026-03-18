@@ -955,7 +955,7 @@ export default function EventDetailPage() {
                 </button>
 
                 {/* Location (members only) */}
-                {!isAccessDenied && event?.location && isEventLocationEnabled() && isGoogleMapsEnabled() && (
+                {!isAccessDenied && event?.location && isEventLocationEnabled() && (
                   <div className="space-y-3">
                     <div className="h-px bg-gradient-to-r from-purple-100 via-pink-100 to-orange-100" />
                     <div className="flex items-center gap-2 text-sm text-gray-700">

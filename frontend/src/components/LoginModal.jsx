@@ -28,16 +28,16 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   
   const email = watch('email')
 
-  // Auto-close modal when user logs in from another tab (magic link)
-  // Skipped when Google OAuth handles the flow directly
+  // Auto-close modal when user logs in (handles both Google OAuth and magic link)
   useEffect(() => {
     if (isAuthenticated && isOpen) {
+      // Skip if Google OAuth is in progress (it handles its own toast and close)
       if (googleSignInInProgress.current) {
         googleSignInInProgress.current = false
         return
       }
-      // User logged in from another tab via magic link
-      toast.success('✅ Successfully logged in!')
+      // User logged in from another tab via magic link - just close modal
+      // (VerifyMagicLinkPage already showed success message)
       setEmailSent(false)
       setShowMagicLink(false)
       reset()
@@ -64,7 +64,10 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         })
         
         const { token, userId, email, role, isOrganiser, isNewUser, inviteRedeemed } = response.data
+        
+        // Set flag BEFORE login() to prevent useEffect from showing duplicate toast
         googleSignInInProgress.current = true
+        
         // Clear ALL React Query cache before logging in so no stale data from a previous
         // user's session bleeds into this new session (critical for shared devices / Safari)
         queryClient.clear()
