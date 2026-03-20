@@ -69,8 +69,8 @@ export default function PushNotificationPrompt() {
     // Don't show prompt if permission is already granted (regardless of localStorage)
     // This fixes the issue where users granted permission but subscription failed
     if (getPermissionState() === 'granted') {
-      // Double-check: if permission granted but not subscribed locally, 
-      // check if there's actually a real subscription
+      // Double-check: when permission is granted, verify there is an actual subscription
+      // and ensure localStorage reflects the true subscription state
       const checkRealSubscription = async () => {
         try {
           const registration = await navigator.serviceWorker.ready
