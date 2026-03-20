@@ -8,6 +8,7 @@ import {
   isSubscribedLocally,
   isIOS,
   isStandalone,
+  PUSH_SUBSCRIPTION_KEY,
 } from '../lib/pushNotifications'
 import toast from 'react-hot-toast'
 import {
@@ -64,7 +65,28 @@ export default function PushNotificationPrompt() {
     }
 
     if (!isPushSupported()) return
-    if (isSubscribedLocally() && getPermissionState() === 'granted') return
+    
+    // Don't show prompt if permission is already granted (regardless of localStorage)
+    // This fixes the issue where users granted permission but subscription failed
+    if (getPermissionState() === 'granted') {
+      // Double-check: if permission granted but not subscribed locally, 
+      // check if there's actually a real subscription
+      const checkRealSubscription = async () => {
+        try {
+          const registration = await navigator.serviceWorker.ready
+          const subscription = await registration.pushManager.getSubscription()
+          if (subscription) {
+            // Fix localStorage to match reality
+            localStorage.setItem(PUSH_SUBSCRIPTION_KEY, 'true')
+          }
+        } catch (error) {
+          console.warn('Could not check push subscription:', error)
+        }
+      }
+      checkRealSubscription()
+      return
+    }
+    
     if (getPermissionState() === 'denied') return
 
     // On fresh login: always prompt (bypass snooze) so the user is asked after every sign-in.

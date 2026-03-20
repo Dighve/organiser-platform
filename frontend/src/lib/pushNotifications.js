@@ -1,6 +1,6 @@
 import api from './api'
 
-const PUSH_SUBSCRIPTION_KEY = 'outmeets-push-subscribed'
+export const PUSH_SUBSCRIPTION_KEY = 'outmeets-push-subscribed'
 
 /**
  * Returns true when running as an installed PWA (standalone mode)
