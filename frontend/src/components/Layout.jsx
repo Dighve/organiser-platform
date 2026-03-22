@@ -88,10 +88,13 @@ export default function Layout() {
       })
       
       // Show user agreement modal if not accepted - only once per session
+      // Skipped entirely when USER_AGREEMENT_ENABLED feature flag is false
       if (!memberData.hasAcceptedUserAgreement && !userAgreementShownRef.current) {
-        console.log('⚠️ User has not accepted User Agreement - showing modal')
         userAgreementShownRef.current = true
-        setShowUserAgreementModal(true)
+        console.log('USER_AGREEMENT_ENABLED:', featureFlags.USER_AGREEMENT_ENABLED)
+        if (featureFlags.USER_AGREEMENT_ENABLED !== false) {
+          setShowUserAgreementModal(true)
+        }
       }
       
       // Show organiser agreement modal if user has organiser role but hasn't accepted current agreement - only once per session

@@ -20,6 +20,7 @@ export const FeatureFlagProvider = ({ children }) => {
     STATIC_MAPS_ENABLED: true,
     DISABLE_BECOME_ORGANISER_BUTTON: false,
     PASSCODE_AUTH_ENABLED: false,
+    USER_AGREEMENT_ENABLED: true, // When false, skip user agreement modal and auto-join
   })
 
   const { data: flagsData, isLoading, error } = useQuery({
