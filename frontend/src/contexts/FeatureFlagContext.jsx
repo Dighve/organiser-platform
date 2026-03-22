@@ -25,8 +25,8 @@ export const FeatureFlagProvider = ({ children }) => {
   const { data: flagsData, isLoading, error } = useQuery({
     queryKey: ['featureFlags'],
     queryFn: featureFlagsAPI.getFeatureFlagsMap,
-    staleTime: 5 * 60 * 1000, // 5 minutes - feature flags don't change often
-    refetchOnWindowFocus: false,
+    staleTime: 30 * 1000, // 30 seconds - faster updates when flags change
+    refetchOnWindowFocus: true, // Refetch when user returns to tab (catches backend changes)
     retry: 2,
   })
 
