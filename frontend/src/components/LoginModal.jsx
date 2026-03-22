@@ -402,7 +402,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
 
                   <div className="mt-3 sm:mt-4 text-center text-[11px] sm:text-xs text-gray-500 pt-4 border-t border-gray-200">
                     <p>
-                      ✨ <strong>Instant sign-in</strong> with Google or secure magic link
+                      ✨ <strong>Instant sign-in</strong> with Google or secure {isPasscodeAuthEnabled() ? 'passcode' : 'magic link'}
                     </p>
                   </div>
                 </div>
