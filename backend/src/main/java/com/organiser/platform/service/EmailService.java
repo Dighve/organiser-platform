@@ -92,10 +92,59 @@ public class EmailService {
         }
     }
     
+    /**
+     * Send a 6-digit passcode email to the user.
+     * Used when PASSCODE_AUTH_ENABLED feature flag is true.
+     */
+    public void sendPasscode(String email, String code) {
+        log.debug("Sending passcode to: {}", email);
+
+        if (resendApiKey == null || resendApiKey.isEmpty()) {
+            log.debug("=".repeat(80));
+            log.debug("Passcode for: {}", email);
+            log.debug("Code: {}", code);
+            log.debug("=".repeat(80));
+        } else {
+            try {
+                sendPasscodeViaResend(email, code);
+                log.debug("Passcode email sent successfully to: {}", email);
+            } catch (Exception e) {
+                log.error("Failed to send passcode email via Resend to: {}", email, e);
+                log.debug("=".repeat(80));
+                log.debug("FALLBACK - Passcode for: {}", email);
+                log.debug("Code: {}", code);
+                log.debug("=".repeat(80));
+            }
+        }
+    }
+
     // ============================================================
     // PRIVATE METHODS - API Integration
     // ============================================================
-    
+
+    /**
+     * Send passcode email via Resend API.
+     */
+    private void sendPasscodeViaResend(String toEmail, String code) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(resendApiKey);
+
+        Map<String, Object> emailData = new HashMap<>();
+        emailData.put("from", fromEmail);
+        emailData.put("to", new String[]{toEmail});
+        emailData.put("subject", "Your Sign-In Code - OutMeets");
+        emailData.put("html", buildPasscodeEmailContent(code));
+
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailData, headers);
+
+        restTemplate.postForObject(
+            "https://api.resend.com/emails",
+            request,
+            String.class
+        );
+    }
+
     /**
      * Send email via Resend API.
      */
@@ -255,5 +304,113 @@ public class EmailService {
             </body>
             </html>
             """.formatted(magicLink, magicLink);
+    }
+
+    /**
+     * Build HTML email content for passcode (OTP).
+     */
+    private String buildPasscodeEmailContent(String code) {
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+                        line-height: 1.6;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                        background: linear-gradient(135deg, #fdf2f8 0%%, #fef3f2 50%%, #fff7ed 100%%);
+                    }
+                    .container {
+                        max-width: 600px;
+                        margin: 40px auto;
+                        padding: 0;
+                        background-color: white;
+                        border-radius: 16px;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+                        overflow: hidden;
+                    }
+                    .header {
+                        background: linear-gradient(135deg, #9333ea 0%%, #ec4899 50%%, #f97316 100%%);
+                        padding: 40px 30px;
+                        text-align: center;
+                    }
+                    .header h1 {
+                        color: white;
+                        margin: 0;
+                        font-size: 32px;
+                        font-weight: 700;
+                        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                    }
+                    .content {
+                        padding: 40px 30px;
+                        background: linear-gradient(to bottom, white 0%%, #fafafa 100%%);
+                    }
+                    .code-box {
+                        background: linear-gradient(135deg, #f3e8ff 0%%, #fce7f3 100%%);
+                        border: 2px solid #e9d5ff;
+                        border-radius: 16px;
+                        padding: 30px;
+                        text-align: center;
+                        margin: 30px 0;
+                    }
+                    .code {
+                        font-size: 48px;
+                        font-weight: 800;
+                        letter-spacing: 12px;
+                        background: linear-gradient(135deg, #9333ea 0%%, #ec4899 50%%, #f97316 100%%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                        display: block;
+                        margin: 10px 0;
+                    }
+                    .footer {
+                        margin-top: 30px;
+                        padding-top: 25px;
+                        border-top: 2px solid;
+                        border-image: linear-gradient(90deg, #9333ea, #ec4899, #f97316) 1;
+                        font-size: 13px;
+                        color: #666;
+                    }
+                    .emoji {
+                        font-size: 40px;
+                        margin-bottom: 15px;
+                    }
+                    .title-gradient {
+                        background: linear-gradient(135deg, #9333ea 0%%, #ec4899 50%%, #f97316 100%%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <div class="emoji">🏔️</div>
+                        <h1>OutMeets</h1>
+                    </div>
+                    <div class="content">
+                        <h2 class="title-gradient" style="margin-top: 0; font-size: 24px; font-weight: 700;">Your Sign-In Code</h2>
+                        <p style="font-size: 16px; color: #4b5563;">Enter this code in the app to sign in to your OutMeets account. It expires in <strong>10 minutes</strong>.</p>
+                        <div class="code-box">
+                            <p style="margin: 0; font-size: 14px; color: #6b7280; font-weight: 600;">YOUR PASSCODE</p>
+                            <span class="code">%s</span>
+                            <p style="margin: 0; font-size: 13px; color: #9ca3af;">Valid for 10 minutes</p>
+                        </div>
+                        <div class="footer">
+                            <p style="margin: 8px 0; font-weight: 500;">🔒 This code is unique to you and can only be used once.</p>
+                            <p style="margin: 8px 0; font-weight: 500;">⏰ It will expire in 10 minutes for security reasons.</p>
+                            <p style="margin: 8px 0; font-weight: 500;">❓ If you didn't request this code, you can safely ignore it.</p>
+                            <p style="margin-top: 25px; color: #9ca3af; font-style: italic; font-weight: 600;"> Discover day hikes from London! </p>
+                        </div>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(code);
     }
 }

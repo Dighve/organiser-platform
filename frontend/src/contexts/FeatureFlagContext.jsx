@@ -19,6 +19,7 @@ export const FeatureFlagProvider = ({ children }) => {
     GROUP_LOCATION_ENABLED: true,
     STATIC_MAPS_ENABLED: true,
     DISABLE_BECOME_ORGANISER_BUTTON: false,
+    PASSCODE_AUTH_ENABLED: false,
   })
 
   const { data: flagsData, isLoading, error } = useQuery({
@@ -41,6 +42,8 @@ export const FeatureFlagProvider = ({ children }) => {
   const isGroupLocationEnabled = () => featureFlags.GROUP_LOCATION_ENABLED
   const isStaticMapsEnabled = () => featureFlags.STATIC_MAPS_ENABLED
 
+  const isPasscodeAuthEnabled = () => featureFlags.PASSCODE_AUTH_ENABLED
+
   // Check if any location features are enabled
   const isAnyLocationFeatureEnabled = () => {
     return isGoogleMapsEnabled() || isEventLocationEnabled() || 
@@ -57,6 +60,7 @@ export const FeatureFlagProvider = ({ children }) => {
     isGroupLocationEnabled,
     isStaticMapsEnabled,
     isAnyLocationFeatureEnabled,
+    isPasscodeAuthEnabled,
   }
 
   return (

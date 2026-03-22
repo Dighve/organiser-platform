@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import { Mail, CheckCircle, X } from 'lucide-react'
+import { Mail, CheckCircle, X, KeyRound } from 'lucide-react'
 import { useGoogleLogin } from '@react-oauth/google'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { authAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
+import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import {
   trackAuthMethodSelected,
   trackGoogleAuthCompleted,
@@ -20,13 +21,20 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const queryClient = useQueryClient()
   const { setPendingEmail, returnUrl, login, isAuthenticated, clearReturnUrl, inviteToken, clearInviteToken } = useAuthStore()
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm()
-  
+  const { isPasscodeAuthEnabled } = useFeatureFlags()
+
   const [isLoading, setIsLoading] = useState(false)
   const [isGooglePopupOpen, setIsGooglePopupOpen] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [showMagicLink, setShowMagicLink] = useState(false)
   const googleSignInInProgress = useRef(false)
-  
+
+  // Passcode flow state
+  const [passcodeStep, setPasscodeStep] = useState('email') // 'email' | 'code'
+  const [passcodeEmail, setPasscodeEmail] = useState('')
+  const [passcodeDigits, setPasscodeDigits] = useState(['', '', '', '', '', ''])
+  const passcodeInputRefs = useRef([])
+
   const email = watch('email')
 
   // Auto-close modal when user logs in (handles both Google OAuth and magic link)
@@ -41,6 +49,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       // (VerifyMagicLinkPage already showed success message)
       setEmailSent(false)
       setShowMagicLink(false)
+      setPasscodeStep('email')
+      setPasscodeEmail('')
+      setPasscodeDigits(['', '', '', '', '', ''])
       reset()
       onClose()
       if (onSuccess) {
@@ -127,6 +138,109 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
     },
   })
 
+  // Handle passcode email request
+  const onPasscodeEmailSubmit = async (data) => {
+    setIsLoading(true)
+    try {
+      await authAPI.requestPasscode({
+        email: data.email,
+        displayName: data.displayName,
+        redirectUrl: returnUrl,
+        inviteToken: inviteToken || undefined,
+      })
+      setPasscodeEmail(data.email)
+      setPasscodeStep('code')
+      setPasscodeDigits(['', '', '', '', '', ''])
+      toast.success('Passcode sent! Check your email.')
+      setTimeout(() => passcodeInputRefs.current[0]?.focus(), 100)
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to send passcode. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Handle individual passcode digit input
+  const handlePasscodeDigitChange = (index, value) => {
+    const digit = value.replace(/\D/g, '').slice(-1)
+    const next = [...passcodeDigits]
+    next[index] = digit
+    setPasscodeDigits(next)
+    if (digit && index < 5) {
+      passcodeInputRefs.current[index + 1]?.focus()
+    }
+    // Auto-submit when all 6 digits filled
+    if (digit && index === 5) {
+      const fullCode = [...next].join('')
+      if (fullCode.length === 6) handlePasscodeVerify([...next].join(''))
+    }
+  }
+
+  const handlePasscodeKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !passcodeDigits[index] && index > 0) {
+      passcodeInputRefs.current[index - 1]?.focus()
+    }
+  }
+
+  const handlePasscodePaste = (e) => {
+    e.preventDefault()
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    if (pasted.length === 6) {
+      setPasscodeDigits(pasted.split(''))
+      handlePasscodeVerify(pasted)
+    }
+  }
+
+  // Verify passcode and log in
+  const handlePasscodeVerify = async (code) => {
+    if (code.length !== 6) return
+    setIsLoading(true)
+    try {
+      const response = await authAPI.verifyPasscode(passcodeEmail, code, inviteToken)
+      const { token: jwtToken, userId, email: userEmail, role, hasOrganiserRole, isNewUser, inviteRedeemed } = response.data
+
+      googleSignInInProgress.current = true
+      queryClient.clear()
+      login({ id: userId, userId, email: userEmail, role, hasOrganiserRole }, jwtToken)
+      identifyUser(userId, userEmail, role)
+      trackLoginCompleted('passcode', !!isNewUser)
+      clearInviteToken()
+
+      toast.success('🎉 Signed in successfully!')
+
+      if (inviteRedeemed) {
+        clearReturnUrl()
+        handleClose()
+        navigate('/')
+        if (onSuccess) onSuccess()
+        return
+      }
+
+      if (returnUrl) {
+        let pathToNavigate = returnUrl
+        try {
+          const url = new URL(returnUrl, window.location.origin)
+          pathToNavigate = url.pathname + url.search + url.hash
+        } catch {
+          pathToNavigate = returnUrl
+        }
+        clearReturnUrl()
+        handleClose()
+        navigate(pathToNavigate)
+      } else {
+        handleClose()
+      }
+
+      if (onSuccess) onSuccess()
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Invalid or expired passcode. Please try again.')
+      setPasscodeDigits(['', '', '', '', '', ''])
+      setTimeout(() => passcodeInputRefs.current[0]?.focus(), 50)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Handle magic link request
   const onSubmit = async (data) => {
     setIsLoading(true)
@@ -158,6 +272,9 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const handleClose = () => {
     setEmailSent(false)
     setShowMagicLink(false)
+    setPasscodeStep('email')
+    setPasscodeEmail('')
+    setPasscodeDigits(['', '', '', '', '', ''])
     reset()
     onClose()
   }
@@ -272,10 +389,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
 
                   <button
                     type="button"
-                    onClick={() => { trackAuthMethodSelected('magic_link'); setShowMagicLink(true) }}
+                    onClick={() => { trackAuthMethodSelected(isPasscodeAuthEnabled() ? 'passcode' : 'magic_link'); setShowMagicLink(true) }}
                     className="w-full py-2.5 sm:py-3 px-5 sm:px-6 bg-white border border-gray-200 shadow-sm text-gray-700 text-sm sm:text-base font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3"
                   >
-                    <Mail className="h-5 w-5 text-purple-600" />
+                    {isPasscodeAuthEnabled() ? (
+                      <KeyRound className="h-5 w-5 text-purple-600" />
+                    ) : (
+                      <Mail className="h-5 w-5 text-purple-600" />
+                    )}
                     <span>Continue with Email</span>
                   </button>
 
@@ -283,6 +404,106 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                     <p>
                       ✨ <strong>Instant sign-in</strong> with Google or secure magic link
                     </p>
+                  </div>
+                </div>
+              ) : isPasscodeAuthEnabled() ? (
+                // Passcode flow
+                <div>
+                  {passcodeStep === 'email' ? (
+                    <form className="mt-5 sm:mt-6 space-y-4" onSubmit={handleSubmit(onPasscodeEmailSubmit)}>
+                      <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          Email Address *
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Mail className="h-5 w-5 text-gray-400" />
+                          </div>
+                          <input
+                            {...register('email', {
+                              required: 'Email is required',
+                              pattern: {
+                                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                                message: 'Invalid email address',
+                              },
+                            })}
+                            type="email"
+                            className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                            placeholder="you@example.com"
+                          />
+                        </div>
+                        {errors.email && (
+                          <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                            <span>⚠️</span> {errors.email.message}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                      >
+                        {isLoading ? (
+                          <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /><span>Sending...</span></>
+                        ) : (
+                          <><KeyRound className="h-5 w-5" /><span>Send Passcode</span></>
+                        )}
+                      </button>
+                    </form>
+                  ) : (
+                    // Code entry step
+                    <div className="mt-5 sm:mt-6 space-y-5">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600">We sent a 6-digit code to</p>
+                        <p className="font-bold text-purple-600 text-sm mt-1 truncate">{passcodeEmail}</p>
+                      </div>
+                      <div className="flex justify-center gap-2" onPaste={handlePasscodePaste}>
+                        {passcodeDigits.map((digit, i) => (
+                          <input
+                            key={i}
+                            ref={(el) => (passcodeInputRefs.current[i] = el)}
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={1}
+                            value={digit}
+                            onChange={(e) => handlePasscodeDigitChange(i, e.target.value)}
+                            onKeyDown={(e) => handlePasscodeKeyDown(i, e)}
+                            disabled={isLoading}
+                            className="w-10 h-12 sm:w-12 sm:h-14 text-center text-xl font-bold border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all disabled:opacity-50"
+                          />
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={isLoading || passcodeDigits.join('').length !== 6}
+                        onClick={() => handlePasscodeVerify(passcodeDigits.join(''))}
+                        className="w-full py-3 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-xl transition-all duration-200 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2"
+                      >
+                        {isLoading ? (
+                          <><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" /><span>Verifying...</span></>
+                        ) : (
+                          <><CheckCircle className="h-5 w-5" /><span>Verify Code</span></>
+                        )}
+                      </button>
+                      <div className="text-center space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => { setPasscodeStep('email'); setPasscodeDigits(['', '', '', '', '', '']) }}
+                          className="text-sm text-gray-500 hover:text-gray-700 font-medium block w-full"
+                        >
+                          Didn't receive it? Try again
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="mt-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => { setShowMagicLink(false); setPasscodeStep('email') }}
+                      className="text-sm text-purple-600 hover:text-purple-700 font-medium"
+                    >
+                      ← Back to Google sign-in
+                    </button>
                   </div>
                 </div>
               ) : (

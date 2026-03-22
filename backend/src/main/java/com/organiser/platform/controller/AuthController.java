@@ -3,8 +3,10 @@ package com.organiser.platform.controller;
 import com.organiser.platform.dto.AuthResponse;
 import com.organiser.platform.dto.GoogleAuthRequest;
 import com.organiser.platform.dto.MagicLinkRequest;
+import com.organiser.platform.dto.PasscodeRequest;
 import com.organiser.platform.exception.RateLimitExceededException;
 import com.organiser.platform.service.AuthService;
+import com.organiser.platform.service.FeatureFlagService;
 import com.organiser.platform.service.GoogleOAuth2Service;
 import com.organiser.platform.service.RateLimitService;
 import io.github.bucket4j.Bucket;
@@ -27,6 +29,7 @@ public class AuthController {
     private final AuthService authService;
     private final GoogleOAuth2Service googleOAuth2Service;
     private final RateLimitService rateLimitService;
+    private final FeatureFlagService featureFlagService;
     
     /**
      * Request a magic link to be sent to email
@@ -73,6 +76,66 @@ public class AuthController {
         return ResponseEntity.ok(authService.verifyMagicLink(token, inviteToken));
     }
     
+    /**
+     * Request a 6-digit passcode to be sent to email.
+     * Only available when PASSCODE_AUTH_ENABLED feature flag is true.
+     * Rate limited: 5 requests per hour per IP+email combination
+     */
+    @PostMapping("/passcode")
+    public ResponseEntity<Map<String, String>> requestPasscode(
+            @Valid @RequestBody PasscodeRequest request,
+            HttpServletRequest httpRequest) {
+
+        if (!featureFlagService.isFeatureEnabled(FeatureFlagService.PASSCODE_AUTH_ENABLED)) {
+            Map<String, String> response = new HashMap<>();
+            response.put("error", "Passcode authentication is not enabled");
+            return ResponseEntity.status(403).body(response);
+        }
+
+        String clientIp = getClientIp(httpRequest);
+        String rateLimitKey = clientIp + ":passcode:" + request.getEmail();
+        io.github.bucket4j.Bucket bucket = rateLimitService.resolveMagicLinkBucket(rateLimitKey);
+
+        if (!rateLimitService.tryConsume(bucket)) {
+            log.warn("Rate limit exceeded for passcode request - IP: {}, Email: {}", clientIp, request.getEmail());
+            throw new RateLimitExceededException(
+                "Too many passcode requests. Please try again in 1 hour."
+            );
+        }
+
+        log.debug("Passcode request accepted - IP: {}, Email: {}", clientIp, request.getEmail());
+        authService.requestPasscode(request);
+
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Passcode sent to your email");
+        response.put("email", request.getEmail());
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Verify a 6-digit passcode and authenticate.
+     * Only available when PASSCODE_AUTH_ENABLED feature flag is true.
+     */
+    @PostMapping("/passcode/verify")
+    public ResponseEntity<AuthResponse> verifyPasscode(
+            @RequestBody Map<String, String> body,
+            HttpServletRequest httpRequest) {
+
+        if (!featureFlagService.isFeatureEnabled(FeatureFlagService.PASSCODE_AUTH_ENABLED)) {
+            return ResponseEntity.status(403).build();
+        }
+
+        String email = body.get("email");
+        String code = body.get("code");
+        String inviteToken = body.get("inviteToken");
+
+        if (email == null || code == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return ResponseEntity.ok(authService.verifyPasscode(email, code, inviteToken));
+    }
+
     /**
      * Authenticate with Google OAuth2
      * Primary authentication method - instant, no email required

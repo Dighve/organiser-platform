@@ -36,7 +36,9 @@ public class SecurityConfig {
                         // Authentication endpoints - public
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/auth/magic-link", "POST"),
+                                new AntPathRequestMatcher("/api/v1/auth/passcode", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/verify", "GET"),
+                                new AntPathRequestMatcher("/api/v1/auth/passcode/verify", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/google", "POST")
                         ).permitAll()
                         
