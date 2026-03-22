@@ -104,6 +104,17 @@ body {
   }
 }
 
+@keyframes slide-up {
+  0% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes bounce-slow {
   0%, 100% {
     transform: translateY(0);
@@ -140,6 +151,10 @@ body {
 
 .animate-fade-in {
   animation: fade-in 0.6s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
 }
 
 /* Accessibility: Respect user's motion preferences */

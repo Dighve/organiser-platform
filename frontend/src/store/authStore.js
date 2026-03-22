@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { jwtDecode } from 'jwt-decode'
+import toast from 'react-hot-toast'
 
 // Helper function to check if token is expired
 export const isTokenExpired = (token) => {
@@ -58,8 +59,8 @@ export const useAuthStore = create(
       logout: (message = null) => {
         // Show a message if provided (useful for session expiration)
         if (message) {
-          // You can replace this with your preferred notification system
-          alert(message)
+          // Use non-blocking toast instead of alert() for better UX
+          try { toast.error(message, { duration: 5000, id: 'session-expired' }) } catch { /* toast may not be mounted yet */ }
         }
         
         set({

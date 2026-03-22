@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, X, Lock } from 'lucide-react'
+import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, X, Lock, Loader } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import { commentsAPI, membersAPI } from '../lib/api'
@@ -247,7 +247,7 @@ export default function CommentSection({ eventId }) {
                     className="h-9 w-9 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50"
                     aria-label="Send comment"
                   >
-                    <Send className="h-4 w-4" />
+                    {createCommentMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                   </button>
                 )}
               </div>
@@ -561,7 +561,7 @@ export default function CommentSection({ eventId }) {
                               className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg transition-all disabled:opacity-50"
                               aria-label="Send reply"
                             >
-                              <Send className="h-4 w-4" />
+                              {createReplyMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                             </button>
                           )}
                         </div>
