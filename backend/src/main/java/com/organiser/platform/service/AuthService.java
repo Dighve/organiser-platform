@@ -203,13 +203,15 @@ public class AuthService {
 
     /**
      * Verify a 6-digit passcode and authenticate the user.
+     * Input is trimmed and validated before DB lookup for better UX.
      */
     @Transactional
     public AuthResponse verifyPasscode(String email, String code, String inviteToken) {
         String normalizedEmail = email.toLowerCase().trim();
+        String trimmedCode = code.trim(); // Trim whitespace for better UX (e.g., pasted codes)
 
         EmailOtp otp = emailOtpRepository
-                .findTopByEmailAndCodeAndUsedFalseOrderByCreatedAtDesc(normalizedEmail, code)
+                .findTopByEmailAndCodeAndUsedFalseOrderByCreatedAtDesc(normalizedEmail, trimmedCode)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired passcode"));
 
         if (!otp.isValid()) {
