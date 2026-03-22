@@ -67,6 +67,7 @@ export default function EventDetailPage() {
   const [joinQuestionAnswer, setJoinQuestionAnswer] = useState('')
   const [pendingGuestCount, setPendingGuestCount] = useState(0)
   const [isCopying, setIsCopying] = useState(false) // Prevent multiple copy operations
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -383,7 +384,7 @@ export default function EventDetailPage() {
     const urlParams = new URLSearchParams(window.location.search)
     const action = urlParams.get('action')
     
-    if (action === 'join' && isAuthenticated && !joinMutation.isLoading) {
+    if (action === 'join' && isAuthenticated && !hasJoined && !joinMutation.isLoading) {
       // User just logged in and wants to join the event
       // Remove the action parameter from URL
       urlParams.delete('action')
@@ -631,9 +632,13 @@ export default function EventDetailPage() {
             <button
               onClick={handleJoinClick}
               disabled={joinMutation.isLoading || isJoiningFlow}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl transition-all flex items-center justify-center gap-2"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              <Users className="h-5 w-5" />
+              {joinMutation.isLoading || isJoiningFlow ? (
+                <Loader className="h-5 w-5 animate-spin" />
+              ) : (
+                <Users className="h-5 w-5" />
+              )}
               {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
             </button>
             ) : isAuthenticated ? (
@@ -685,10 +690,11 @@ export default function EventDetailPage() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => setShowLeaveConfirm(true)}
-                        className="flex-1 py-2.5 px-3 bg-white border-2 border-gray-300 text-gray-700 font-bold rounded-lg hover:border-red-400 hover:bg-red-50 hover:text-red-700 transition-all flex items-center justify-center gap-2 text-sm"
+                        disabled={leaveMutation.isLoading}
+                        className="flex-1 py-2.5 px-3 bg-white border-2 border-gray-300 text-gray-700 font-bold rounded-lg hover:border-red-400 hover:bg-red-50 hover:text-red-700 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
                       >
-                        <X className="h-4 w-4" />
-                        Leave
+                        {leaveMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                        {leaveMutation.isLoading ? 'Leaving...' : 'Leave'}
                       </button>
                       <button
                         onClick={() => setIsManageOpen(true)}
@@ -1325,11 +1331,11 @@ export default function EventDetailPage() {
                                 </p>
                               </div>
                               <button
-                                onClick={() => publishMutation.mutate()}
+                                onClick={() => setShowPublishConfirm(true)}
                                 disabled={publishMutation.isLoading}
                                 className="w-full py-3 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-green-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
                               >
-                                <Eye className="h-5 w-5" />
+                                {publishMutation.isLoading ? <Loader className="h-5 w-5 animate-spin" /> : <Eye className="h-5 w-5" />}
                                 {publishMutation.isLoading ? 'Publishing...' : 'Publish Event'}
                               </button>
                             </div>
@@ -1724,7 +1730,7 @@ export default function EventDetailPage() {
               </div>
               <div className="flex-1">
                 <h3 className="text-lg font-bold text-gray-900">Leave this event?</h3>
-                <p className="text-sm text-gray-600">You’ll lose your spot and any updates for this event.</p>
+                <p className="text-sm text-gray-600">You'll lose your spot and any updates for this event.</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -1740,6 +1746,41 @@ export default function EventDetailPage() {
                 className="w-full py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-semibold shadow hover:shadow-lg transition-all disabled:opacity-60"
               >
                 {leaveMutation.isLoading ? 'Leaving...' : 'Leave event'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* PUBLISH CONFIRMATION MODAL */}
+      {/* ============================================ */}
+      {showPublishConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowPublishConfirm(false)} />
+          <div className="relative w-full max-w-sm bg-white rounded-2xl shadow-2xl border border-gray-100 p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white grid place-items-center shadow">
+                <Eye className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-gray-900">Publish this event?</h3>
+                <p className="text-sm text-gray-600">It will become visible to everyone in Discover Events.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setShowPublishConfirm(false)}
+                className="w-full py-2.5 rounded-xl border border-gray-200 text-gray-700 font-semibold hover:bg-gray-50"
+              >
+                Not yet
+              </button>
+              <button
+                onClick={() => { setShowPublishConfirm(false); publishMutation.mutate() }}
+                disabled={publishMutation.isLoading}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold shadow hover:shadow-lg transition-all disabled:opacity-60"
+              >
+                {publishMutation.isLoading ? 'Publishing...' : 'Publish'}
               </button>
             </div>
           </div>

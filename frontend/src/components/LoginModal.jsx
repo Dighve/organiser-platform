@@ -22,6 +22,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const { register, handleSubmit, formState: { errors }, watch, reset } = useForm()
   
   const [isLoading, setIsLoading] = useState(false)
+  const [isGooglePopupOpen, setIsGooglePopupOpen] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
   const [showMagicLink, setShowMagicLink] = useState(false)
   const googleSignInInProgress = useRef(false)
@@ -54,6 +55,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
     // in with a previously cached Google account (critical on Safari iOS shared devices)
     prompt: 'select_account',
     onSuccess: async (tokenResponse) => {
+      setIsGooglePopupOpen(false)
       setIsLoading(true)
       try {
         // Send access token to backend (backend will verify and get user info from Google)
@@ -120,6 +122,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       }
     },
     onError: () => {
+      setIsGooglePopupOpen(false)
       toast.error('Google sign-in was cancelled or failed')
     },
   })
@@ -166,13 +169,13 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
         onClick={handleClose}
       />
       
       {/* Modal */}
       <div className="flex min-h-full items-end sm:items-center justify-center p-3 sm:p-4">
-        <div className="relative bg-white sm:bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl shadow-lg sm:shadow-2xl w-full max-w-xl sm:max-w-md sm:px-8 sm:py-8 px-5 py-6 pb-8 sm:pb-8 transform transition-all">
+        <div className="relative bg-white sm:bg-white rounded-t-3xl rounded-b-none sm:rounded-3xl shadow-lg sm:shadow-2xl w-full max-w-xl sm:max-w-md sm:px-8 sm:py-8 px-5 py-6 pb-8 sm:pb-8 animate-slide-up sm:animate-scale-in">
           {/* Close button */}
           <button
             onClick={handleClose}
@@ -241,11 +244,11 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                 <div className="mt-5 sm:mt-6 space-y-3 sm:space-y-4">
                   <button
                     type="button"
-                    onClick={() => { trackAuthMethodSelected('google'); googleLogin() }}
-                    disabled={isLoading}
+                    onClick={() => { trackAuthMethodSelected('google'); setIsGooglePopupOpen(true); googleLogin() }}
+                    disabled={isLoading || isGooglePopupOpen}
                     className="w-full py-2.5 sm:py-3 px-5 sm:px-6 bg-white border border-gray-200 shadow-sm text-gray-700 text-sm sm:text-base font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isLoading ? (
+                    {isLoading || isGooglePopupOpen ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-purple-600" />
                     ) : (
                       <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -255,7 +258,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                         <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
                       </svg>
                     )}
-                    <span>Continue with Google</span>
+                    <span>{isGooglePopupOpen ? 'Opening Google...' : isLoading ? 'Signing in...' : 'Continue with Google'}</span>
                   </button>
 
                   <div className="relative">

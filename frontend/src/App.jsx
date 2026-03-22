@@ -34,8 +34,11 @@ function PageLoader() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50">
       <div className="text-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
-        <p className="text-gray-600 font-medium">Loading...</p>
+        <div className="w-12 h-12 mx-auto mb-4">
+          <img src="/favicon1.svg" alt="" className="w-full h-full object-contain opacity-80 animate-pulse" />
+        </div>
+        <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-purple-200 border-t-purple-600 mb-3"></div>
+        <p className="text-gray-500 text-sm font-medium">Loading...</p>
       </div>
     </div>
   )
