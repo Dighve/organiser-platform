@@ -6,10 +6,10 @@ CREATE TABLE email_otps (
     code VARCHAR(6) NOT NULL,
     email VARCHAR(100) NOT NULL,
     member_id BIGINT NOT NULL REFERENCES members(id) ON DELETE CASCADE,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
     used BOOLEAN NOT NULL DEFAULT false,
-    used_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
+    used_at TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX idx_email_otps_email ON email_otps(email);
