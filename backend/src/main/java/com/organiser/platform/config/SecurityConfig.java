@@ -121,7 +121,7 @@ public class SecurityConfig {
                         
                         // File upload - require authentication
                         .requestMatchers(
-                                new AntPathRequestMatcher("/api/v1/files/upload/**", "POST"),
+                                new AntPathRequestMatcher("/api/v1/files/upload/*", "POST"),
                                 new AntPathRequestMatcher("/api/v1/files/delete", "DELETE")
                         ).authenticated()
                         
@@ -178,16 +178,8 @@ public class SecurityConfig {
                 "https://www.outmeets.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        // Restrict to specific headers needed by the application
-        configuration.setAllowedHeaders(Arrays.asList(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "Origin",
-                "X-Requested-With",
-                "Content-Length",
-                "Cache-Control"
-        ));
+        // Temporarily allow all headers to isolate CORS issue
+        configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type"
