@@ -88,7 +88,7 @@ public class AuthController {
 
         if (!featureFlagService.isFeatureEnabled(FeatureFlagService.PASSCODE_AUTH_ENABLED)) {
             Map<String, String> response = new HashMap<>();
-            response.put("error", "Passcode authentication is not enabled");
+            response.put("message", "Passcode authentication is not enabled");
             return ResponseEntity.status(403).body(response);
         }
 
