@@ -1136,11 +1136,13 @@ export default function EventDetailPage() {
                                   : ''
                               }`}
                             >
-                              <div className={`w-12 h-12 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg transition-transform ${
-                                event?.hostMemberId ? 'group-hover:scale-110' : ''
-                              }`}>
-                                {hostNameFallback.charAt(0).toUpperCase()}
-                              </div>
+                              <ProfileAvatar 
+                                member={hostParticipant || { displayName: hostNameFallback, email: hostNameFallback }}
+                                size="lg"
+                                showBadge={true}
+                                badgeType="host"
+                                className={`transition-transform ${event?.hostMemberId ? 'group-hover:scale-110' : ''}`}
+                              />
                               <div className="flex-1 min-w-0">
                                 <p className={`font-bold text-gray-900 truncate transition-all ${
                                   event?.hostMemberId ? 'group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text group-hover:text-transparent' : ''
