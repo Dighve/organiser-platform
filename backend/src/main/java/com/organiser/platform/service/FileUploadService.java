@@ -37,7 +37,8 @@ public class FileUploadService {
     // ============================================================
     // CONSTANTS
     // ============================================================
-    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+    private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB for banners/events
+    private static final long MAX_PROFILE_PHOTO_SIZE = 2 * 1024 * 1024; // 2MB for profile photos
     private static final String[] ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"};
 
     // ============================================================
@@ -84,6 +85,51 @@ public class FileUploadService {
     }
 
     /**
+     * Upload a profile photo with optimized circular cropping and resizing.
+     * 
+     * @param file The multipart file to upload
+     * @param folder The folder in Cloudinary where the profile photo will be stored
+     * @return The public URL of the uploaded and transformed profile photo
+     * @throws IOException if upload fails
+     */
+    public String uploadProfilePhoto(MultipartFile file, String folder) throws IOException {
+        // Validate file with profile photo size limits
+        validateProfilePhoto(file);
+
+        // Generate unique filename
+        String originalFilename = file.getOriginalFilename();
+        String publicId = folder + "/" + UUID.randomUUID().toString();
+
+        log.info("Uploading profile photo to Cloudinary: {} (size: {} bytes)", originalFilename, file.getSize());
+
+        try {
+            // Upload to Cloudinary with profile photo optimizations
+            Map uploadResult = cloudinary.uploader().upload(file.getBytes(),
+                    ObjectUtils.asMap(
+                            "public_id", publicId,
+                            "folder", folder,
+                            "resource_type", "image",
+                            // Profile photo transformations for optimal performance
+                            "width", 300,
+                            "height", 300,
+                            "crop", "fill",
+                            "gravity", "face",
+                            "radius", "max",  // Make it circular
+                            "quality", "auto:good",
+                            "fetch_format", "auto"  // Use best format (WebP when supported)
+                    ));
+
+            String imageUrl = (String) uploadResult.get("secure_url");
+            log.info("Profile photo uploaded and transformed successfully: {}", imageUrl);
+            return imageUrl;
+
+        } catch (Exception e) {
+            log.error("Failed to upload profile photo to Cloudinary", e);
+            throw new IOException("Failed to upload profile photo: " + e.getMessage(), e);
+        }
+    }
+
+    /**
      * Delete an image from Cloudinary.
      * 
      * @param imageUrl The URL of the image to delete
@@ -116,6 +162,29 @@ public class FileUploadService {
 
         if (file.getSize() > MAX_FILE_SIZE) {
             throw new IOException("File size exceeds maximum allowed size of 10MB");
+        }
+
+        String filename = file.getOriginalFilename();
+        if (filename == null || filename.trim().isEmpty()) {
+            throw new IOException("Invalid filename");
+        }
+
+        String extension = getFileExtension(filename);
+        if (!isValidExtension(extension)) {
+            throw new IOException("Invalid file type. Allowed types: " + String.join(", ", ALLOWED_EXTENSIONS));
+        }
+    }
+
+    /**
+     * Validate uploaded profile photo for size, type, and name with stricter limits.
+     */
+    private void validateProfilePhoto(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IOException("File is empty");
+        }
+
+        if (file.getSize() > MAX_PROFILE_PHOTO_SIZE) {
+            throw new IOException("Profile photo size exceeds maximum allowed size of 2MB");
         }
 
         String filename = file.getOriginalFilename();

@@ -136,10 +136,10 @@ public class FileUploadController {
     }
 
     /**
-     * Upload a profile photo
+     * Upload a profile photo with automatic circular cropping and optimization
      * @param file The image file to upload
      * @param authentication User authentication
-     * @return Response with the uploaded image URL
+     * @return Response with the uploaded and optimized image URL
      */
     @PostMapping(value = "/upload/profile-photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadProfilePhoto(
@@ -150,13 +150,13 @@ public class FileUploadController {
             log.debug("Received profile photo upload request: {} (size: {} bytes)", 
                     file.getOriginalFilename(), file.getSize());
 
-            // Upload to Cloudinary in "profiles" folder
-            String imageUrl = fileUploadService.uploadImage(file, "hikehub/profiles");
+            // Upload to Cloudinary with profile photo optimizations (circular crop, resize, compress)
+            String imageUrl = fileUploadService.uploadProfilePhoto(file, "hikehub/profiles");
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("imageUrl", imageUrl);
-            response.put("message", "Profile photo uploaded successfully");
+            response.put("message", "Profile photo uploaded and optimized successfully");
 
             return ResponseEntity.ok(response);
 
