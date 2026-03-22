@@ -228,7 +228,11 @@ public class AuthService {
         }
 
         boolean becameOrganiser = false;
-        log.info("🔍 AuthService.verifyPasscode - inviteToken received: {}", inviteToken);
+        if (log.isDebugEnabled()) {
+            boolean hasInviteToken = StringUtils.hasText(inviteToken);
+            int inviteTokenLength = inviteToken != null ? inviteToken.length() : 0;
+            log.debug("🔍 AuthService.verifyPasscode - inviteToken metadata: hasInviteToken={}, length={}", hasInviteToken, inviteTokenLength);
+        }
         if (StringUtils.hasText(inviteToken)) {
             becameOrganiser = organiserInviteService.consumeInviteAndGrantRole(inviteToken, member.getId());
             if (becameOrganiser) {
