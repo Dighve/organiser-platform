@@ -21,7 +21,7 @@ export default function ProfilePage() {
   // HOOKS & STATE
   // ============================================================
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout } = useAuthStore()  // Global auth state
+  const { user, isAuthenticated, logout, token } = useAuthStore()  // Global auth state
   const queryClient = useQueryClient()  // React Query cache
   
   // ============================================================
@@ -160,13 +160,11 @@ export default function ProfilePage() {
     setUploading(true)
     
     try {
-      const token = localStorage.getItem('token')
       const response = await axios.post(
         `${API_URL}/files/upload/profile-photo`,
         formData,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
             'Authorization': token ? `Bearer ${token}` : ''
           }
         }
