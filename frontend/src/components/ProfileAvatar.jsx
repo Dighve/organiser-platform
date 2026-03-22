@@ -13,7 +13,8 @@ const ProfileAvatar = ({
   size = 'md',
   className = '',
   showBadge = false,
-  badgeType = null // 'organiser' or 'host'
+  badgeType = null, // 'organiser' or 'host'
+  loading = 'lazy' // 'lazy' or 'eager' - use 'eager' for above-the-fold images
 }) => {
   // Size configurations
   const sizeClasses = {
@@ -46,6 +47,12 @@ const ProfileAvatar = ({
           src={member.profilePhotoUrl}
           alt={member.displayName || member.email || 'Member'}
           className={`${baseClasses} object-cover`}
+          loading={loading}
+          decoding="async"
+          onError={(e) => {
+            // Hide broken images gracefully - fallback will show
+            e.target.style.display = 'none'
+          }}
         />
       ) : (
         <div className={`${baseClasses} bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold`}>
