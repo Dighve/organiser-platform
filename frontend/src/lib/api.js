@@ -76,6 +76,8 @@ export const authAPI = {
     return api.get(`/auth/verify?${params.toString()}`)
   },
   authenticateWithGoogle: (data) => api.post('/auth/google', data), // Google OAuth
+  requestPasscode: (data) => api.post('/auth/passcode', data),
+  verifyPasscode: (email, code, inviteToken) => api.post('/auth/passcode/verify', { email, code, inviteToken }),
 }
 
 // Events API

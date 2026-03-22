@@ -5,8 +5,11 @@ package com.organiser.platform.service;
 // ============================================================
 import com.organiser.platform.dto.AuthResponse;
 import com.organiser.platform.dto.MagicLinkRequest;
+import com.organiser.platform.dto.PasscodeRequest;
+import com.organiser.platform.model.EmailOtp;
 import com.organiser.platform.model.MagicLink;
 import com.organiser.platform.model.Member;
+import com.organiser.platform.repository.EmailOtpRepository;
 import com.organiser.platform.repository.MagicLinkRepository;
 import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.security.JwtUtil;
@@ -19,6 +22,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -44,6 +48,7 @@ public class AuthService {
     // ============================================================
     private final MemberRepository memberRepository;
     private final MagicLinkRepository magicLinkRepository;
+    private final EmailOtpRepository emailOtpRepository;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final AvatarGenerator avatarGenerator;
@@ -53,6 +58,8 @@ public class AuthService {
     // CONSTANTS
     // ============================================================
     private static final int MAGIC_LINK_EXPIRY_MINUTES = 15;
+    private static final int PASSCODE_EXPIRY_MINUTES = 10;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
     
     // ============================================================
     // PUBLIC METHODS - Authentication
@@ -155,6 +162,94 @@ public class AuthService {
     }
     
     // ============================================================
+    // PUBLIC METHODS - Passcode (OTP) Authentication
+    // ============================================================
+
+    /**
+     * Request a 6-digit passcode to be sent to the email.
+     * Same member creation/reactivation logic as magic link.
+     */
+    @Transactional
+    public void requestPasscode(PasscodeRequest request) {
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be null or empty");
+        }
+        String email = request.getEmail().toLowerCase().trim();
+
+        MagicLinkRequest mlRequest = new MagicLinkRequest();
+        mlRequest.setEmail(email);
+        mlRequest.setDisplayName(request.getDisplayName());
+        mlRequest.setRedirectUrl(request.getRedirectUrl());
+        mlRequest.setInviteToken(request.getInviteToken());
+
+        Member member = memberRepository.findByEmail(email)
+                .map(existingMember -> reactivateMemberIfDeleted(existingMember, mlRequest))
+                .orElseGet(() -> createNewMember(email, mlRequest));
+
+        emailOtpRepository.deleteUnusedOtpsByEmail(email);
+
+        String code = String.format("%06d", SECURE_RANDOM.nextInt(1_000_000));
+        EmailOtp otp = EmailOtp.builder()
+                .code(code)
+                .email(email)
+                .member(member)
+                .expiresAt(LocalDateTime.now().plusMinutes(PASSCODE_EXPIRY_MINUTES))
+                .used(false)
+                .build();
+
+        emailOtpRepository.save(otp);
+        emailService.sendPasscode(email, code);
+    }
+
+    /**
+     * Verify a 6-digit passcode and authenticate the user.
+     */
+    @Transactional
+    public AuthResponse verifyPasscode(String email, String code, String inviteToken) {
+        String normalizedEmail = email.toLowerCase().trim();
+
+        EmailOtp otp = emailOtpRepository
+                .findTopByEmailAndCodeAndUsedFalseOrderByCreatedAtDesc(normalizedEmail, code)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired passcode"));
+
+        if (!otp.isValid()) {
+            throw new RuntimeException("Passcode has expired or been used");
+        }
+
+        otp.setUsed(true);
+        otp.setUsedAt(LocalDateTime.now());
+        emailOtpRepository.save(otp);
+
+        Member member = otp.getMember();
+
+        if (!member.getVerified()) {
+            member.setVerified(true);
+            memberRepository.save(member);
+        }
+
+        boolean becameOrganiser = false;
+        log.info("🔍 AuthService.verifyPasscode - inviteToken received: {}", inviteToken);
+        if (StringUtils.hasText(inviteToken)) {
+            becameOrganiser = organiserInviteService.consumeInviteAndGrantRole(inviteToken, member.getId());
+            if (becameOrganiser) {
+                member = memberRepository.findById(member.getId()).orElse(member);
+            }
+        }
+
+        String role = member.getIsAdmin() ? "ADMIN" : (member.getHasOrganiserRole() ? "ORGANISER" : "MEMBER");
+        String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
+
+        return AuthResponse.builder()
+                .token(jwtToken)
+                .userId(member.getId())
+                .email(member.getEmail())
+                .role(role)
+                .hasOrganiserRole(member.getHasOrganiserRole())
+                .isNewOrganiser(becameOrganiser)
+                .build();
+    }
+
+    // ============================================================
     // PRIVATE METHODS - Member Creation
     // ============================================================
     
@@ -226,11 +321,12 @@ public class AuthService {
     // ============================================================
     
     /**
-     * Cleanup expired and used magic links every hour.
+     * Cleanup expired and used magic links and OTPs every hour.
      */
     @Scheduled(fixedRate = 3600000, initialDelay = 60000) // Run every hour, start after 1 minute
     @Transactional
     public void cleanupExpiredLinks() {
         magicLinkRepository.deleteExpiredAndUsedLinks(LocalDateTime.now());
+        emailOtpRepository.deleteExpiredAndUsedOtps(LocalDateTime.now());
     }
 }

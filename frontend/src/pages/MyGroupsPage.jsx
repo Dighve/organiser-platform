@@ -1,7 +1,7 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
@@ -60,6 +60,13 @@ export default function MyGroupsPage() {
   // ============================================================
   const groups = data?.data || []  // Subscribed groups
   const organisedGroups = organisedData?.data || []  // Organised groups
+  
+  // Filter member groups to exclude groups already in organiser tab (avoid duplicates)
+  const filteredMemberGroups = useMemo(() => {
+    if (organisedGroups.length === 0) return groups
+    const organisedGroupIds = new Set(organisedGroups.map(g => g.id))
+    return groups.filter(g => !organisedGroupIds.has(g.id))
+  }, [groups, organisedGroups])
   
   // ============================================================
   // UNAUTHENTICATED STATE
@@ -190,7 +197,7 @@ export default function MyGroupsPage() {
             <div className="card">
               <p className="text-gray-600">Loading your groups...</p>
             </div>
-          ) : groups.length === 0 ? (
+          ) : filteredMemberGroups.length === 0 ? (
             <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-16 text-center border border-gray-100 shadow-lg">
               <Users className="h-20 w-20 mx-auto text-purple-400 mb-6" />
               <h3 className="text-2xl font-bold text-gray-900 mb-3">No Groups Yet</h3>
@@ -199,7 +206,7 @@ export default function MyGroupsPage() {
             </div>
           ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {groups.map(group => (
+          {filteredMemberGroups.map(group => (
             <div onClick={() => navigate(`/groups/${group.id}`)}
               key={group.id}
               className="bg-white/60 backdrop-blur-sm rounded-xl shadow-lg hover:shadow-2xl transition-all overflow-hidden cursor-pointer hover:scale-[1.02] border border-gray-100"
