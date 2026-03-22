@@ -8,6 +8,8 @@
  * Supports multiple sizes and maintains consistent styling across the platform
  */
 
+import { useState } from 'react'
+
 const ProfileAvatar = ({ 
   member, 
   size = 'md',
@@ -16,6 +18,9 @@ const ProfileAvatar = ({
   badgeType = null, // 'organiser' or 'host'
   loading = 'lazy' // 'lazy' or 'eager' - use 'eager' for above-the-fold images
 }) => {
+  // Track image loading errors to show fallback
+  const [imageError, setImageError] = useState(false)
+
   // Size configurations
   const sizeClasses = {
     xs: 'h-6 w-6 text-xs',
@@ -40,24 +45,27 @@ const ProfileAvatar = ({
 
   const baseClasses = `${sizeClasses[size]} rounded-full ${className}`
 
+  // Show fallback if no photo URL or if image failed to load
+  const showFallback = !member?.profilePhotoUrl || imageError
+
   return (
     <div className="relative inline-block">
-      {member?.profilePhotoUrl ? (
+      {showFallback ? (
+        <div className={`${baseClasses} bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold`}>
+          {getInitials()}
+        </div>
+      ) : (
         <img
           src={member.profilePhotoUrl}
           alt={member.displayName || member.email || 'Member'}
           className={`${baseClasses} object-cover`}
           loading={loading}
           decoding="async"
-          onError={(e) => {
-            // Hide broken images gracefully - fallback will show
-            e.target.style.display = 'none'
+          onError={() => {
+            // Track error and render fallback instead of hiding
+            setImageError(true)
           }}
         />
-      ) : (
-        <div className={`${baseClasses} bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold`}>
-          {getInitials()}
-        </div>
       )}
       
       {/* Badge for organiser or host */}

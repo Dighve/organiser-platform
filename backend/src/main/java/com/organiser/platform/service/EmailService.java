@@ -95,25 +95,28 @@ public class EmailService {
     /**
      * Send a 6-digit passcode email to the user.
      * Used when PASSCODE_AUTH_ENABLED feature flag is true.
+     * 
+     * SECURITY NOTE: OTP codes are NOT logged to prevent account takeover.
+     * In development mode (no Resend API key), codes are logged for testing only.
      */
     public void sendPasscode(String email, String code) {
-        log.debug("Sending passcode to: {}", email);
+        log.info("Sending passcode to: {}", email);
 
         if (resendApiKey == null || resendApiKey.isEmpty()) {
-            log.debug("=".repeat(80));
-            log.debug("Passcode for: {}", email);
-            log.debug("Code: {}", code);
-            log.debug("=".repeat(80));
+            // Development mode only - log code for testing
+            log.warn("=".repeat(80));
+            log.warn("DEV MODE - Passcode for: {}", email);
+            log.warn("Code: {}", code);
+            log.warn("=".repeat(80));
         } else {
             try {
                 sendPasscodeViaResend(email, code);
-                log.debug("Passcode email sent successfully to: {}", email);
+                log.info("Passcode email sent successfully to: {}", email);
             } catch (Exception e) {
-                log.error("Failed to send passcode email via Resend to: {}", email, e);
-                log.debug("=".repeat(80));
-                log.debug("FALLBACK - Passcode for: {}", email);
-                log.debug("Code: {}", code);
-                log.debug("=".repeat(80));
+                log.error("Failed to send passcode email via Resend to: {} - Error: {}", email, e.getMessage());
+                // SECURITY: Do NOT log the code in production fallback
+                // User must retry or contact support
+                throw new RuntimeException("Failed to send passcode email. Please try again.", e);
             }
         }
     }

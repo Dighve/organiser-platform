@@ -88,6 +88,25 @@ public class RateLimitService {
     }
     
     /**
+     * Passcode verification rate limit: 10 attempts per 15 minutes per IP+email
+     * Prevents brute-force attacks on 6-digit OTP codes
+     */
+    public Bucket resolvePasscodeVerifyBucket(String key) {
+        return cache.get(key, k -> {
+            log.debug("Creating new passcode verify bucket for key: {}", k);
+            return createPasscodeVerifyBucket();
+        });
+    }
+    
+    private Bucket createPasscodeVerifyBucket() {
+        // 10 tokens, refill 10 tokens every 15 minutes
+        Bandwidth limit = Bandwidth.classic(10, Refill.intervally(10, Duration.ofMinutes(15)));
+        return Bucket.builder()
+            .addLimit(limit)
+            .build();
+    }
+    
+    /**
      * General API rate limit: 100 requests per minute per IP
      * Global protection against API abuse
      */

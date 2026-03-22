@@ -26,7 +26,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const [isLoading, setIsLoading] = useState(false)
   const [isGooglePopupOpen, setIsGooglePopupOpen] = useState(false)
   const [emailSent, setEmailSent] = useState(false)
-  const [showMagicLink, setShowMagicLink] = useState(false)
+  const [showEmailAuth, setShowEmailAuth] = useState(false) // Renamed from showMagicLink for clarity
   const googleSignInInProgress = useRef(false)
 
   // Passcode flow state
@@ -48,7 +48,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       // User logged in from another tab via magic link - just close modal
       // (VerifyMagicLinkPage already showed success message)
       setEmailSent(false)
-      setShowMagicLink(false)
+      setShowEmailAuth(false)
       setPasscodeStep('email')
       setPasscodeEmail('')
       setPasscodeDigits(['', '', '', '', '', ''])
@@ -271,10 +271,12 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   // Handle modal close
   const handleClose = () => {
     setEmailSent(false)
-    setShowMagicLink(false)
+    setShowEmailAuth(false)
     setPasscodeStep('email')
     setPasscodeEmail('')
     setPasscodeDigits(['', '', '', '', '', ''])
+    setIsGooglePopupOpen(false) // Reset Google popup state
+    setIsLoading(false) // Reset loading state
     reset()
     onClose()
   }
@@ -353,10 +355,10 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                 Sign in to join
               </h2>
               <p className="mt-2 text-center text-xs sm:text-sm text-gray-600 px-2">
-                {showMagicLink ? '🔐 No password needed! We\'ll send you a secure magic link.' : '⚡ Quick and secure sign-in'}
+                {showEmailAuth ? '🔐 No password needed! We\'ll send you a secure magic link.' : '⚡ Quick and secure sign-in'}
               </p>
 
-              {!showMagicLink ? (
+              {!showEmailAuth ? (
                 // Google OAuth primary option
                 <div className="mt-5 sm:mt-6 space-y-3 sm:space-y-4">
                   <button
@@ -389,7 +391,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
 
                   <button
                     type="button"
-                    onClick={() => { trackAuthMethodSelected(isPasscodeAuthEnabled() ? 'passcode' : 'magic_link'); setShowMagicLink(true) }}
+                    onClick={() => { trackAuthMethodSelected(isPasscodeAuthEnabled() ? 'passcode' : 'magic_link'); setShowEmailAuth(true) }}
                     className="w-full py-2.5 sm:py-3 px-5 sm:px-6 bg-white border border-gray-200 shadow-sm text-gray-700 text-sm sm:text-base font-semibold rounded-xl hover:bg-gray-50 hover:border-purple-300 transition-all duration-200 flex items-center justify-center gap-3"
                   >
                     {isPasscodeAuthEnabled() ? (
@@ -499,7 +501,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                   <div className="mt-4 text-center">
                     <button
                       type="button"
-                      onClick={() => { setShowMagicLink(false); setPasscodeStep('email') }}
+                      onClick={() => { setShowEmailAuth(false); setPasscodeStep('email') }}
                       className="text-sm text-purple-600 hover:text-purple-700 font-medium"
                     >
                       ← Back to Google sign-in
@@ -560,7 +562,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
                 <div className="mt-4 text-center">
                   <button
                     type="button"
-                    onClick={() => setShowMagicLink(false)}
+                    onClick={() => setShowEmailAuth(false)}
                     className="text-sm text-purple-600 hover:text-purple-700 font-medium"
                   >
                     ← Back to Google sign-in

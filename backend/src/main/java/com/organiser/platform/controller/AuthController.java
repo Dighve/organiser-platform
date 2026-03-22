@@ -115,6 +115,7 @@ public class AuthController {
     /**
      * Verify a 6-digit passcode and authenticate.
      * Only available when PASSCODE_AUTH_ENABLED feature flag is true.
+     * Rate limited: 10 attempts per 15 minutes per IP+email to prevent brute-force
      */
     @PostMapping("/passcode/verify")
     public ResponseEntity<AuthResponse> verifyPasscode(
@@ -129,11 +130,31 @@ public class AuthController {
         String code = body.get("code");
         String inviteToken = body.get("inviteToken");
 
-        if (email == null || code == null) {
+        // Validate input
+        if (email == null || email.trim().isEmpty() || code == null || code.trim().isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
-        return ResponseEntity.ok(authService.verifyPasscode(email, code, inviteToken));
+        // Trim and validate code format (exactly 6 digits)
+        String trimmedCode = code.trim();
+        if (!trimmedCode.matches("^\\d{6}$")) {
+            log.warn("Invalid passcode format from IP: {} for email: {}", getClientIp(httpRequest), email);
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Rate limiting: 10 attempts per 15 minutes per IP+email (prevents brute-force)
+        String clientIp = getClientIp(httpRequest);
+        String rateLimitKey = clientIp + ":passcode-verify:" + email.trim().toLowerCase();
+        Bucket bucket = rateLimitService.resolvePasscodeVerifyBucket(rateLimitKey);
+
+        if (!rateLimitService.tryConsume(bucket)) {
+            log.warn("Rate limit exceeded for passcode verification - IP: {}, Email: {}", clientIp, email);
+            throw new RateLimitExceededException(
+                "Too many verification attempts. Please try again in 15 minutes."
+            );
+        }
+
+        return ResponseEntity.ok(authService.verifyPasscode(email.trim(), trimmedCode, inviteToken));
     }
 
     /**
