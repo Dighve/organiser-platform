@@ -175,7 +175,7 @@ public class SecurityConfig {
                 "http://192.168.0.114:3000",
                 "https://organiser-platform.netlify.app",
                 "https://hikehub-poc.netlify.app",
-                "https://www.outmeets.com/"
+                "https://www.outmeets.com"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         // Restrict to specific headers needed by the application
@@ -184,7 +184,9 @@ public class SecurityConfig {
                 "Content-Type",
                 "Accept",
                 "Origin",
-                "X-Requested-With"
+                "X-Requested-With",
+                "Content-Length",
+                "Cache-Control"
         ));
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
