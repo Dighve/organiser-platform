@@ -12,6 +12,11 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
   const [preview, setPreview] = useState(value || null)
   const fileInputRef = useRef(null)
 
+  // Different settings for profile photos vs other images
+  const isProfilePhoto = folder === 'profile-photo'
+  const maxFileSize = isProfilePhoto ? 2 * 1024 * 1024 : 10 * 1024 * 1024 // 2MB for profiles, 10MB for others
+  const maxFileSizeText = isProfilePhoto ? '2MB' : '10MB'
+
   // Sync preview with value prop changes (for edit mode)
   useEffect(() => {
     setPreview(value || null)
@@ -28,10 +33,9 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
       return
     }
 
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024 // 10MB
-    if (file.size > maxSize) {
-      toast.error('Image size must be less than 10MB')
+    // Validate file size (2MB for profiles, 10MB for others)
+    if (file.size > maxFileSize) {
+      toast.error(`Image size must be less than ${maxFileSizeText}`)
       return
     }
 
@@ -74,7 +78,11 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
 
       if (response.data.success && response.data.imageUrl) {
         onChange(response.data.imageUrl)
-        toast.success('🎉 Image uploaded successfully!')
+        if (isProfilePhoto) {
+          toast.success('✨ Profile photo uploaded and optimized! Automatically cropped to circle and compressed for fast loading.')
+        } else {
+          toast.success('🎉 Image uploaded successfully!')
+        }
       } else {
         throw new Error('Upload failed')
       }
@@ -170,13 +178,17 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
             </div>
             <div className="text-center">
               <p className="text-lg font-bold text-gray-900 mb-1">
-                {uploading ? 'Uploading...' : 'Upload Feature Photo'}
+                {uploading ? 'Uploading...' : isProfilePhoto ? 'Upload Profile Photo' : 'Upload Feature Photo'}
               </p>
               <p className="text-sm text-gray-600">
-                Click to select a beautiful photo of your hike location
+                {isProfilePhoto 
+                  ? 'Click to select your profile photo - automatically optimized and cropped to circle'
+                  : 'Click to select a beautiful photo of your hike location'
+                }
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                JPG, PNG, GIF or WebP • Max 10MB
+                JPG, PNG, GIF or WebP • Max {maxFileSizeText}
+                {isProfilePhoto && ' • Auto-cropped & compressed'}
               </p>
             </div>
           </div>
