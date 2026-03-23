@@ -7,4 +7,5 @@ VALUES (
     'User Agreement Modal',
     'When enabled, new users must accept the user agreement before accessing the platform. When disabled, users skip the agreement modal and are directly joined.',
     true
-);
+)
+ON CONFLICT (flag_key) DO NOTHING;
