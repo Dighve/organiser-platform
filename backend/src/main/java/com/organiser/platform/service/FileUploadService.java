@@ -156,35 +156,31 @@ public class FileUploadService {
      * Validate uploaded file for size, type, and name.
      */
     private void validateFile(MultipartFile file) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new IOException("File is empty");
-        }
-
-        if (file.getSize() > MAX_FILE_SIZE) {
-            throw new IOException("File size exceeds maximum allowed size of 10MB");
-        }
-
-        String filename = file.getOriginalFilename();
-        if (filename == null || filename.trim().isEmpty()) {
-            throw new IOException("Invalid filename");
-        }
-
-        String extension = getFileExtension(filename);
-        if (!isValidExtension(extension)) {
-            throw new IOException("Invalid file type. Allowed types: " + String.join(", ", ALLOWED_EXTENSIONS));
-        }
+        validateFileWithSize(file, MAX_FILE_SIZE, "10MB");
     }
 
     /**
      * Validate uploaded profile photo for size, type, and name with stricter limits.
      */
     private void validateProfilePhoto(MultipartFile file) throws IOException {
+        validateFileWithSize(file, MAX_PROFILE_PHOTO_SIZE, "2MB");
+    }
+
+    /**
+     * Shared validation logic for file uploads with configurable size limit.
+     * 
+     * @param file The multipart file to validate
+     * @param maxSize Maximum allowed file size in bytes
+     * @param maxSizeLabel Human-readable size label for error messages (e.g., "10MB", "2MB")
+     * @throws IOException if validation fails
+     */
+    private void validateFileWithSize(MultipartFile file, long maxSize, String maxSizeLabel) throws IOException {
         if (file == null || file.isEmpty()) {
             throw new IOException("File is empty");
         }
 
-        if (file.getSize() > MAX_PROFILE_PHOTO_SIZE) {
-            throw new IOException("Profile photo size exceeds maximum allowed size of 2MB");
+        if (file.getSize() > maxSize) {
+            throw new IOException("File size exceeds maximum allowed size of " + maxSizeLabel);
         }
 
         String filename = file.getOriginalFilename();

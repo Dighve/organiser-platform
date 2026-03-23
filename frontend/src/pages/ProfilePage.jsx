@@ -141,10 +141,10 @@ export default function ProfilePage() {
       return
     }
 
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024
+    // Validate file size (2MB max for profile photos)
+    const maxSize = 2 * 1024 * 1024
     if (file.size > maxSize) {
-      toast.error('Image size must be less than 10MB')
+      toast.error('Image size must be less than 2MB')
       return
     }
 

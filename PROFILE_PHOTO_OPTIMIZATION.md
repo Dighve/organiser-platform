@@ -47,15 +47,14 @@ public String uploadProfilePhoto(MultipartFile file, String folder) throws IOExc
             "public_id", publicId,
             "folder", folder,
             "resource_type", "image",
-            "transformation", ObjectUtils.asMap(
-                "width", 300,
-                "height", 300,
-                "crop", "fill",
-                "gravity", "face",        // Smart face detection
-                "radius", "max",          // Circular crop
-                "quality", "auto:good",   // Smart quality
-                "format", "auto"          // WebP when supported
-            )
+            // Profile photo transformations for optimal performance
+            "width", 300,
+            "height", 300,
+            "crop", "fill",
+            "gravity", "face",        // Smart face detection
+            "radius", "max",          // Circular crop
+            "quality", "auto:good",   // Smart quality
+            "fetch_format", "auto"    // WebP when supported
         ));
 }
 ```
@@ -66,11 +65,19 @@ public String uploadProfilePhoto(MultipartFile file, String folder) throws IOExc
 
 ### Frontend Changes
 
-**ImageUpload.jsx** - Smart profile photo handling:
-- Detects when `folder === 'profile-photo'`
+**ProfilePage.jsx** - Profile photo upload flow:
+- Uses the profile photo upload endpoint with Cloudinary optimizations
+- Applies a 2MB file size limit specifically for profile photos (10MB remains for other images)
+- Direct file upload with camera icon overlay in edit mode
+- On success, shows: "Image uploaded! Now adjust the position." and opens the profile photo position modal
+- After positioning, shows: "Photo position saved! Click 'Save Changes' to update your profile."
+- Validation happens both client-side (2MB check) and server-side
+
+**ImageUpload.jsx** - Context-aware component:
+- Detects upload context via `folder` prop ('profile-photo', 'group-banner', 'event-photo')
 - Shows 2MB limit for profiles vs 10MB for others
-- Displays optimization benefits in UI text
-- Success message: "✨ Profile photo uploaded and optimized! Automatically cropped to circle and compressed for fast loading."
+- Displays context-specific UI messaging (e.g., "Upload Profile Photo" vs "Upload Group Banner")
+- Success message for profiles: "✨ Profile photo uploaded and optimized! Automatically cropped to circle and compressed for fast loading."
 
 ## Performance Improvements
 

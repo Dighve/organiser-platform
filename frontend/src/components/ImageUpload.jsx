@@ -14,8 +14,33 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
 
   // Different settings for profile photos vs other images
   const isProfilePhoto = folder === 'profile-photo'
+  const isGroupBanner = folder === 'group-banner'
+  const isEventPhoto = folder === 'event-photo'
+  
   const maxFileSize = isProfilePhoto ? 2 * 1024 * 1024 : 10 * 1024 * 1024 // 2MB for profiles, 10MB for others
   const maxFileSizeText = isProfilePhoto ? '2MB' : '10MB'
+  
+  // Context-aware copy
+  const getUploadTitle = () => {
+    if (isProfilePhoto) return 'Upload Profile Photo'
+    if (isGroupBanner) return 'Upload Group Banner'
+    if (isEventPhoto) return 'Upload Feature Photo'
+    return 'Upload Image'
+  }
+  
+  const getUploadDescription = () => {
+    if (isProfilePhoto) return 'Click to select your profile photo - automatically optimized and cropped to circle'
+    if (isGroupBanner) return 'Click to select a beautiful banner for your group (recommended: 1200x400px)'
+    if (isEventPhoto) return 'Click to select a beautiful photo of your hike location'
+    return 'Click to select an image'
+  }
+  
+  const getPreviewAlt = () => {
+    if (isProfilePhoto) return 'Profile photo preview'
+    if (isGroupBanner) return 'Group banner preview'
+    if (isEventPhoto) return 'Feature photo preview'
+    return 'Image preview'
+  }
 
   // Sync preview with value prop changes (for edit mode)
   useEffect(() => {
@@ -130,7 +155,7 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
           <div className="relative rounded-xl overflow-hidden border-2 border-purple-200 shadow-lg">
             <img
               src={preview}
-              alt="Feature photo preview"
+              alt={getPreviewAlt()}
               className="w-full h-64 object-cover"
             />
             {uploading && (
@@ -178,13 +203,10 @@ export default function ImageUpload({ value, onChange, folder = 'event-photo' })
             </div>
             <div className="text-center">
               <p className="text-lg font-bold text-gray-900 mb-1">
-                {uploading ? 'Uploading...' : isProfilePhoto ? 'Upload Profile Photo' : 'Upload Feature Photo'}
+                {uploading ? 'Uploading...' : getUploadTitle()}
               </p>
               <p className="text-sm text-gray-600">
-                {isProfilePhoto 
-                  ? 'Click to select your profile photo - automatically optimized and cropped to circle'
-                  : 'Click to select a beautiful photo of your hike location'
-                }
+                {getUploadDescription()}
               </p>
               <p className="text-xs text-gray-500 mt-2">
                 JPG, PNG, GIF or WebP • Max {maxFileSizeText}
