@@ -434,30 +434,31 @@ export default function EventDetailPage() {
   const isPastEvent = eventStart ? eventEnd < now : false
   const isOngoingEvent = eventStart ? eventStart <= now && now <= (eventEnd || eventStart) : false
   
-  // Check if access is denied (non-member trying to view members-only event)
-  // The backend returns partial data for non-group members
-  // Detect partial data by checking if key member-only fields are null
+  // Check if access is denied (non-member trying to view a private group event)
+  // Public groups: backend returns full data to everyone → never denied
+  // Private groups: backend returns partial data (null fields) for non-members
   const is403Error = error && (
     error?.response?.status === 403 || 
     error?.status === 403 ||
     (error?.message && error.message.includes('403'))
   )
-  // Check if access is denied by detecting partial data from backend
-  // The backend returns null for sensitive fields when access is denied
+  // Detect partial data: backend sets sensitive fields to null for private group non-members
   const isPartialData = event && (
     event.description === null || 
     event.location === null || 
     event.maxParticipants === null
   )
-  // Organisers or participants always have access
-  const isAccessDenied = (!isEventOrganiser && !hasJoined) && (is403Error || 
+  // Public groups are always visible to everyone
+  const groupIsPublic = event?.groupIsPublic !== false
+  // Access is denied only for private group non-members
+  const isAccessDenied = !groupIsPublic && (!isEventOrganiser && !hasJoined) && (is403Error || 
     !event || 
     !event?.title || 
     isPartialData)
   
-  // Create display event for access-denied cases (partial data)
+  // Create display event for access-denied cases (partial data from private group)
   const displayEvent = event || {
-    title: 'Attendees Only Event',
+    title: 'Private Event',
     activityTypeName: null,
     organiserName: 'Event Organiser',
     imageUrl: null,
@@ -614,8 +615,8 @@ export default function EventDetailPage() {
           <div className="lg:hidden mb-4">
           <div className="w-full p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 text-center">
             <Lock className="h-6 w-6 mx-auto mb-1.5 text-gray-400" />
-            <p className="text-xs font-semibold text-gray-600 mb-0.5">Attendees Only</p>
-            <p className="text-xs text-gray-500">Join event to view full details</p>
+            <p className="text-xs font-semibold text-gray-600 mb-0.5">Members Only</p>
+            <p className="text-xs text-gray-500">Join the group to view full details</p>
           </div>
         </div>
         )}
@@ -913,7 +914,7 @@ export default function EventDetailPage() {
                   <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
                     <h2 className="text-base lg:text-lg font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-gray-300 text-gray-600 text-[11px] font-semibold flex-shrink-0">
-                      {event?.group?.isPublic === false ? 'Private Group' : 'Public Group'}
+                      {event?.groupIsPublic === false ? 'Private Group' : 'Public Group'}
                     </span>
                   </div>
                 </div>
@@ -1258,8 +1259,8 @@ export default function EventDetailPage() {
                   <div className="space-y-4">
                     <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
                       <Lock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-                      <p className="text-sm font-semibold text-gray-600 mb-1">Attendees Only</p>
-                      <p className="text-xs text-gray-500">Join the event to unlock full details.</p>
+                      <p className="text-sm font-semibold text-gray-600 mb-1">Members Only</p>
+                      <p className="text-xs text-gray-500">Join the group to view full details.</p>
                     </div>
                     <button
                       onClick={handleJoinClick}

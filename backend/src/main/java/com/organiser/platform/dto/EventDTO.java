@@ -53,6 +53,7 @@ public class EventDTO {
     private LocalDateTime updatedAt;
     private Set<Long> participantIds;
     private Boolean userIsGroupMember; // Whether current user is a member of the group
+    private Boolean groupIsPublic; // Whether the group is public (affects event visibility)
     private String joinQuestion;
     private String groupGuidelines; // Group guidelines for display during joining
 }

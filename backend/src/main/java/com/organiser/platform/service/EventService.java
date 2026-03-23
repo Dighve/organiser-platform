@@ -241,7 +241,8 @@ public class EventService {
     
     /**
      * Get event by ID with privacy controls.
-     * Non-members see only partial event data.
+     * Public groups: full data visible to everyone.
+     * Private groups: full data only visible to group members.
      */
     @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "#id + '_' + #memberId")
@@ -249,13 +250,20 @@ public class EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
-        // Check group membership - hide details for non-members regardless of public/private group
-        // If not authenticated or not a group member, return partial event data (title, date, organiser, activity only)
+        boolean isPublicGroup = Boolean.TRUE.equals(event.getGroup().getIsPublic());
+        
+        // Public groups: everyone can see full event details
+        if (isPublicGroup) {
+            boolean isMember = memberId != null && groupService.isMemberOfGroup(memberId, event.getGroup().getId());
+            return convertToDTO(event, isMember);
+        }
+        
+        // Private groups: only members see full details
         if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
             return convertToPartialDTO(event);
         }
         
-        return convertToDTO(event);
+        return convertToDTO(event, true);
     }
     
     /**
@@ -716,6 +724,7 @@ public class EventService {
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(true) // Default true for backward compatibility
+                .groupIsPublic(group.getIsPublic())
                 .joinQuestion(event.getJoinQuestion())
                 .groupGuidelines(group.getGroupGuidelines())
                 .build();
@@ -810,13 +819,14 @@ public class EventService {
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(isGroupMember)
+                .groupIsPublic(group.getIsPublic())
                 .joinQuestion(event.getJoinQuestion())
                 .groupGuidelines(group.getGroupGuidelines())
                 .build();
     }
     
     /**
-     * Convert Event entity to partial EventDTO (for non-members).
+     * Convert Event entity to partial EventDTO (for non-members of private groups).
      * Only includes basic information: title, date, organiser, activity type, group info, image.
      */
     private EventDTO convertToPartialDTO(Event event) {
@@ -879,6 +889,7 @@ public class EventService {
                 .totalReviews(0)
                 .updatedAt(null)
                 .userIsGroupMember(false)
+                .groupIsPublic(group.getIsPublic())
                 .joinQuestion(null)
                 .groupGuidelines(group.getGroupGuidelines()) // Include guidelines for joining flow
                 .build();
