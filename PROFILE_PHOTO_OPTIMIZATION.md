@@ -124,7 +124,7 @@ public String uploadProfilePhoto(MultipartFile file, String folder) throws IOExc
 - **Existing profiles**: Will show optimized versions when updated
 - **No database changes**: Uses existing `profilePhotoUrl` field
 - **Progressive enhancement**: Works with or without optimization
-- **Graceful fallback**: Original images still work if transformation fails
+- **Failure behavior**: If optimization/transformation fails, the upload fails and returns an error (no profile photo is updated)
 
 ## File Size Comparison Examples
 
