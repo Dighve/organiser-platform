@@ -33,6 +33,7 @@ public class FeatureFlagService {
     public static final String STATIC_MAPS_ENABLED = "STATIC_MAPS_ENABLED";
     public static final String DISABLE_BECOME_ORGANISER_BUTTON = "DISABLE_BECOME_ORGANISER_BUTTON";
     public static final String PASSCODE_AUTH_ENABLED = "PASSCODE_AUTH_ENABLED";
+    public static final String USER_AGREEMENT_ENABLED = "USER_AGREEMENT_ENABLED";
     
     /**
      * Check if a specific feature is enabled
