@@ -75,7 +75,7 @@ export default function EventDetailPage() {
   
   // 1. Fetch event details (with 403 handling for members-only events)
   const { data, isLoading, error } = useQuery({
-    queryKey: ['event', id],
+    queryKey: ['event', id, isAuthenticated ? user?.id : 'guest'], // Include auth state in cache key
     queryFn: () => eventsAPI.getEventById(id),
     staleTime: 2 * 60 * 1000, // Cache for 2 minutes - reduces unnecessary refetches
     refetchOnMount: false, // Don't refetch on every mount - use cache
@@ -451,7 +451,7 @@ export default function EventDetailPage() {
   // Public groups are always visible to everyone
   const groupIsPublic = event?.groupIsPublic !== false
   // Access is denied only for private group non-members
-  const isAccessDenied = !groupIsPublic && (!isEventOrganiser && !hasJoined) && (is403Error || 
+  const isAccessDenied = !groupIsPublic && (!isEventOrganiser && !hasJoined) && (is403Error ||
     !event || 
     !event?.title || 
     isPartialData)
