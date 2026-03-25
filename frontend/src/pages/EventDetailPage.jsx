@@ -448,13 +448,14 @@ export default function EventDetailPage() {
     event.location === null || 
     event.maxParticipants === null
   )
-  // Public groups are always visible to everyone
-  const groupIsPublic = event?.groupIsPublic !== false
-  // Access is denied only for private group non-members
-  const isAccessDenied = !groupIsPublic && (!isEventOrganiser && !hasJoined) && (is403Error ||
-    !event || 
-    !event?.title || 
-    isPartialData)
+  // 403 errors always mean access denied (takes precedence)
+  // Otherwise, check if it's a private group with partial data
+  const groupIsPublic = is403Error ? false : (event?.groupIsPublic !== false)
+  // Access is denied for: 403 errors OR private group non-members with partial data
+  const isAccessDenied = !isEventOrganiser && (
+    is403Error || 
+    (!groupIsPublic && !hasJoined && (isPartialData || !event || !event?.title))
+  )
   
   // Create display event for access-denied cases (partial data from private group)
   const displayEvent = event || {
