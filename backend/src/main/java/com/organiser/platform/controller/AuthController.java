@@ -6,7 +6,6 @@ import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.dto.PasscodeRequest;
 import com.organiser.platform.exception.RateLimitExceededException;
 import com.organiser.platform.model.Member;
-import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.security.JwtUtil;
 import com.organiser.platform.service.AuthService;
 import com.organiser.platform.service.FeatureFlagService;
@@ -36,7 +35,6 @@ public class AuthController {
     private final FeatureFlagService featureFlagService;
     private final RefreshTokenService refreshTokenService;
     private final JwtUtil jwtUtil;
-    private final MemberRepository memberRepository;
     
     /**
      * Request a magic link to be sent to email
@@ -162,7 +160,7 @@ public class AuthController {
             );
         }
 
-        return ResponseEntity.ok(authService.verifyPasscode(email.trim(), trimmedCode, inviteToken));
+        return ResponseEntity.ok(authService.verifyPasscode(email.trim(), trimmedCode, inviteToken, httpRequest));
     }
 
     /**
@@ -189,7 +187,7 @@ public class AuthController {
         }
         
         log.debug("Google OAuth request accepted - IP: {}", clientIp);
-        return ResponseEntity.ok(googleOAuth2Service.authenticateWithGoogle(request));
+        return ResponseEntity.ok(googleOAuth2Service.authenticateWithGoogle(request, httpRequest));
     }
     
     /**

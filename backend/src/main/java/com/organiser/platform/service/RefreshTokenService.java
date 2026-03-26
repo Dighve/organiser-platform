@@ -63,7 +63,8 @@ public class RefreshTokenService {
      */
     @Transactional
     public RefreshToken verifyAndRotateToken(String token, HttpServletRequest request) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
+        // Use pessimistic locking to prevent concurrent rotation
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenWithLock(token)
                 .orElseThrow(() -> new RuntimeException("Invalid refresh token"));
         
         if (!refreshToken.isValid()) {

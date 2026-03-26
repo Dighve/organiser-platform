@@ -9,6 +9,7 @@ import com.organiser.platform.dto.PasscodeRequest;
 import com.organiser.platform.model.EmailOtp;
 import com.organiser.platform.model.MagicLink;
 import com.organiser.platform.model.Member;
+import com.organiser.platform.model.RefreshToken;
 import com.organiser.platform.repository.EmailOtpRepository;
 import com.organiser.platform.repository.MagicLinkRepository;
 import com.organiser.platform.repository.MemberRepository;
@@ -211,7 +212,7 @@ public class AuthService {
      * Input is trimmed and validated before DB lookup for better UX.
      */
     @Transactional
-    public AuthResponse verifyPasscode(String email, String code, String inviteToken) {
+    public AuthResponse verifyPasscode(String email, String code, String inviteToken, jakarta.servlet.http.HttpServletRequest request) {
         String normalizedEmail = email.toLowerCase().trim();
         String trimmedCode = code.trim(); // Trim whitespace for better UX (e.g., pasted codes)
 
@@ -249,9 +250,13 @@ public class AuthService {
 
         String role = member.getIsAdmin() ? "ADMIN" : (member.getHasOrganiserRole() ? "ORGANISER" : "MEMBER");
         String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
+        
+        // Generate refresh token
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(member.getId(), request);
 
         return AuthResponse.builder()
                 .token(jwtToken)
+                .refreshToken(refreshToken.getToken())
                 .userId(member.getId())
                 .email(member.getEmail())
                 .role(role)

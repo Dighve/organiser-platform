@@ -52,7 +52,8 @@ export const useAuthStore = create(
         const { refreshToken } = get()
         if (refreshToken) {
           try {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/logout`, {
+            // Use same base URL pattern as api.js (VITE_API_URL already includes /api/v1)
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ refreshToken }),
@@ -155,8 +156,12 @@ if (typeof window !== 'undefined') {
         const newState = JSON.parse(event.newValue)
         const currentState = useAuthStore.getState()
         
-        // Only update if authentication state actually changed
-        if (newState.state.isAuthenticated !== currentState.isAuthenticated) {
+        // Update if authentication state changed OR if tokens changed (rotation)
+        const authChanged = newState.state.isAuthenticated !== currentState.isAuthenticated
+        const tokensChanged = newState.state.token !== currentState.token || 
+                             newState.state.refreshToken !== currentState.refreshToken
+        
+        if (authChanged || tokensChanged) {
           // Manually update the store to trigger re-renders
           useAuthStore.setState({
             user: newState.state.user,

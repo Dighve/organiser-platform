@@ -15,8 +15,8 @@ CREATE TABLE refresh_tokens (
         REFERENCES members(id) ON DELETE CASCADE
 );
 
--- Index for fast lookup by token
-CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
+-- Note: token column has UNIQUE constraint which automatically creates an index
+-- No need for explicit idx_refresh_tokens_token index
 
 -- Index for finding user's active tokens
 CREATE INDEX idx_refresh_tokens_member_id ON refresh_tokens(member_id);

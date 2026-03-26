@@ -72,11 +72,11 @@ api.interceptors.response.use(
           refreshToken
         })
 
-        const { token: newToken, refreshToken: newRefreshToken, userId, email, role } = response.data
+        const { token: newToken, refreshToken: newRefreshToken, userId, email, role, hasOrganiserRole } = response.data
         
-        // Update store with new tokens
+        // Update store with new tokens (preserve hasOrganiserRole from refresh response)
         login(
-          { id: userId, email, role },
+          { id: userId, email, role, hasOrganiserRole },
           newToken,
           newRefreshToken
         )
