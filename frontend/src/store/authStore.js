@@ -19,13 +19,14 @@ export const useAuthStore = create(
     (set, get) => ({
       user: null,
       token: null,
+      refreshToken: null,
       tokenExpiry: null,
       isAuthenticated: false,
       pendingEmail: null,
       returnUrl: null, // URL to redirect to after login
       inviteToken: null, // Organiser invite token — persisted across magic-link redirects
       
-      login: (userData, token) => {
+      login: (userData, token, refreshToken = null) => {
         let tokenExpiry = null
         try {
           const { exp } = jwtDecode(token)
@@ -37,26 +38,31 @@ export const useAuthStore = create(
         set({
           user: userData,
           token,
+          refreshToken,
           tokenExpiry,
           isAuthenticated: true,
           pendingEmail: null,
         })
         
-        // Set up auto-logout when token expires
-        if (tokenExpiry) {
-          const timeUntilExpiry = tokenExpiry - Date.now()
-          if (timeUntilExpiry > 0) {
-            setTimeout(() => {
-              // Only log out if the token hasn't been refreshed
-              if (get().tokenExpiry === tokenExpiry) {
-                get().logout('Your session has expired. Please log in again.')
-              }
-            }, timeUntilExpiry)
-          }
-        }
+        // No auto-logout - token refresh interceptor will handle expiration
       },
       
-      logout: (message = null) => {
+      logout: async (message = null) => {
+        // Revoke refresh token on server
+        const { refreshToken } = get()
+        if (refreshToken) {
+          try {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/v1/auth/logout`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken }),
+            })
+            // Don't block logout if revocation fails
+          } catch (error) {
+            console.error('Failed to revoke refresh token:', error)
+          }
+        }
+        
         // Show a message if provided (useful for session expiration)
         if (message) {
           // Use non-blocking toast instead of alert() for better UX
@@ -66,6 +72,7 @@ export const useAuthStore = create(
         set({
           user: null,
           token: null,
+          refreshToken: null,
           tokenExpiry: null,
           isAuthenticated: false,
           pendingEmail: null,
@@ -119,6 +126,7 @@ export const useAuthStore = create(
       partialize: (state) => ({
         user: state.user,
         token: state.token,
+        refreshToken: state.refreshToken,
         tokenExpiry: state.tokenExpiry,
         isAuthenticated: state.isAuthenticated,
         returnUrl: state.returnUrl, // Persist return URL across page reloads
@@ -153,6 +161,7 @@ if (typeof window !== 'undefined') {
           useAuthStore.setState({
             user: newState.state.user,
             token: newState.state.token,
+            refreshToken: newState.state.refreshToken,
             tokenExpiry: newState.state.tokenExpiry,
             isAuthenticated: newState.state.isAuthenticated,
             returnUrl: newState.state.returnUrl,

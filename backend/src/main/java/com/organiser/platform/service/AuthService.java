@@ -53,6 +53,7 @@ public class AuthService {
     private final EmailService emailService;
     private final AvatarGenerator avatarGenerator;
     private final OrganiserInviteService organiserInviteService;
+    private final RefreshTokenService refreshTokenService;
     
     // ============================================================
     // CONSTANTS
@@ -104,7 +105,7 @@ public class AuthService {
      * Verify magic link token and authenticate user.
      */
     @Transactional
-    public AuthResponse verifyMagicLink(String token, String inviteToken) {
+    public AuthResponse verifyMagicLink(String token, String inviteToken, jakarta.servlet.http.HttpServletRequest request) {
         MagicLink magicLink = magicLinkRepository.findByTokenAndUsedFalse(token)
                 .orElseThrow(() -> new RuntimeException("Invalid or expired magic link"));
         
@@ -148,11 +149,15 @@ public class AuthService {
         // Determine role based on admin status
         String role = member.getIsAdmin() ? "ADMIN" : (member.getHasOrganiserRole() ? "ORGANISER" : "MEMBER");
         
-        // Generate JWT token
+        // Generate JWT access token (15 minutes)
         String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
+        
+        // Generate refresh token (30 days)
+        com.organiser.platform.model.RefreshToken refreshToken = refreshTokenService.createRefreshToken(member.getId(), request);
         
         return AuthResponse.builder()
                 .token(jwtToken)
+                .refreshToken(refreshToken.getToken())
                 .userId(member.getId())
                 .email(member.getEmail())
                 .role(role)
