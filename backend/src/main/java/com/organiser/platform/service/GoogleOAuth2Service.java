@@ -5,8 +5,10 @@ import com.google.gson.JsonParser;
 import com.organiser.platform.dto.AuthResponse;
 import com.organiser.platform.dto.GoogleAuthRequest;
 import com.organiser.platform.model.Member;
+import com.organiser.platform.model.RefreshToken;
 import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.security.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,7 @@ public class GoogleOAuth2Service {
     private final MemberRepository memberRepository;
     private final JwtUtil jwtUtil;
     private final OrganiserInviteService organiserInviteService;
+    private final RefreshTokenService refreshTokenService;
     
     @Value("${spring.security.oauth2.client.registration.google.client-id}")
     private String googleClientId;
@@ -40,20 +43,20 @@ public class GoogleOAuth2Service {
      * Creates user if doesn't exist, updates if exists.
      */
     @Transactional
-    public AuthResponse authenticateWithGoogle(GoogleAuthRequest request) {
+    public AuthResponse authenticateWithGoogle(GoogleAuthRequest request, HttpServletRequest httpRequest) {
         try {
             // Verify access token by calling Google's userinfo endpoint
             String accessToken = request.getIdToken(); // Frontend sends access_token in idToken field
             
             // Call Google's userinfo API to verify token and get user data
             HttpClient client = HttpClient.newHttpClient();
-            HttpRequest httpRequest = HttpRequest.newBuilder()
+            HttpRequest googleRequest = HttpRequest.newBuilder()
                     .uri(URI.create("https://www.googleapis.com/oauth2/v3/userinfo"))
                     .header("Authorization", "Bearer " + accessToken)
                     .GET()
                     .build();
             
-            HttpResponse<String> httpResponse = client.send(httpRequest, 
+            HttpResponse<String> httpResponse = client.send(googleRequest, 
                     HttpResponse.BodyHandlers.ofString());
             
             if (httpResponse.statusCode() != 200) {
@@ -132,8 +135,12 @@ public class GoogleOAuth2Service {
             // Generate JWT token
             String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
             
+            // Generate refresh token
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(member.getId(), httpRequest);
+            
             return AuthResponse.builder()
                     .token(jwtToken)
+                    .refreshToken(refreshToken.getToken())
                     .userId(member.getId())
                     .email(member.getEmail())
                     .role(role)

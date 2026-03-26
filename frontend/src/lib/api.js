@@ -10,16 +10,10 @@ const api = axios.create({
   },
 })
 
-// Request interceptor to add auth token and check expiration
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const { token, logout } = useAuthStore.getState()
-    
-    // Check if token is expired before making the request
-    if (token && isTokenExpired(token)) {
-      logout('Your session has expired. Please log in again.')
-      return Promise.reject(new Error('Token expired'))
-    }
+    const { token } = useAuthStore.getState()
     
     // Add token to request if it exists
     if (token) {
@@ -33,36 +27,79 @@ api.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle errors and token expiration
+// Track if we're currently refreshing to prevent multiple refresh requests
+let isRefreshing = false
+let failedQueue = []
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error)
+    } else {
+      prom.resolve(token)
+    }
+  })
+  failedQueue = []
+}
+
+// Response interceptor to handle errors and automatic token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
-    const { logout } = useAuthStore.getState()
+    const { refreshToken, logout, login } = useAuthStore.getState()
     
     // Handle 401 Unauthorized responses
-    if (error.response?.status === 401) {
-      // If this is not a retry attempt and we have a token
-      if (!originalRequest._retry) {
-        originalRequest._retry = true
+    if (error.response?.status === 401 && refreshToken && !originalRequest._retry) {
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject })
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`
+          return api(originalRequest)
+        }).catch(err => {
+          return Promise.reject(err)
+        })
+      }
+
+      originalRequest._retry = true
+      isRefreshing = true
+
+      try {
+        // Attempt to refresh the token
+        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+          refreshToken
+        })
+
+        const { token: newToken, refreshToken: newRefreshToken, userId, email, role, hasOrganiserRole } = response.data
         
-        // If the token is expired, log the user out
-        const token = useAuthStore.getState().token
-        if (token && isTokenExpired(token)) {
-          logout('Your session has expired. Please log in again.')
-          // Redirect to login page with a return URL
-          window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
-          return Promise.reject(error)
-        }
+        // Update store with new tokens (preserve hasOrganiserRole from refresh response)
+        login(
+          { id: userId, email, role, hasOrganiserRole },
+          newToken,
+          newRefreshToken
+        )
+
+        // Update the failed request with new token
+        originalRequest.headers.Authorization = `Bearer ${newToken}`
         
-        // Here you could implement token refresh logic if needed
-        // For now, we'll just log out the user
+        // Process queued requests
+        processQueue(null, newToken)
+        isRefreshing = false
+        
+        // Retry the original request
+        return api(originalRequest)
+      } catch (refreshError) {
+        // Refresh failed, log out user
+        processQueue(refreshError, null)
+        isRefreshing = false
         logout('Your session has expired. Please log in again.')
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+        return Promise.reject(refreshError)
       }
     }
     
-    // For other errors, just reject with the error
+    // For other errors or if no refresh token, just reject
     return Promise.reject(error)
   }
 )

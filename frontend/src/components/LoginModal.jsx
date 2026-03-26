@@ -76,7 +76,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
           inviteToken: inviteToken || undefined,
         })
         
-        const { token, userId, email, role, isOrganiser, isNewUser, inviteRedeemed } = response.data
+        const { token, refreshToken, userId, email, role, isOrganiser, isNewUser, inviteRedeemed } = response.data
         
         // Set flag BEFORE login() to prevent useEffect from showing duplicate toast
         googleSignInInProgress.current = true
@@ -84,7 +84,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         // Clear ALL React Query cache before logging in so no stale data from a previous
         // user's session bleeds into this new session (critical for shared devices / Safari)
         queryClient.clear()
-        login({ id: userId, userId, email, role, isOrganiser }, token)
+        login({ id: userId, userId, email, role, isOrganiser }, token, refreshToken)
         identifyUser(userId, email, role)
         trackGoogleAuthCompleted()
         trackLoginCompleted('google', !!isNewUser)

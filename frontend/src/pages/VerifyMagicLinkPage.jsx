@@ -33,12 +33,12 @@ export default function VerifyMagicLinkPage() {
       console.log('🔍 VerifyMagicLinkPage - inviteToken from store:', inviteToken)
       console.log('🔍 VerifyMagicLinkPage - calling verifyMagicLink with:', { token: token.substring(0, 8) + '...', inviteToken })
       const response = await authAPI.verifyMagicLink(token, inviteToken)
-      const { token: jwtToken, userId, email, role, hasOrganiserRole, isNewUser, inviteRedeemed } = response.data
+      const { token: jwtToken, refreshToken, userId, email, role, hasOrganiserRole, isNewUser, inviteRedeemed } = response.data
       
       // Clear ALL React Query cache before logging in so no stale data from a previous
       // user's session bleeds into this new session (critical for shared devices / Safari)
       queryClient.clear()
-      login({ id: userId, userId, email, role, hasOrganiserRole }, jwtToken)
+      login({ id: userId, userId, email, role, hasOrganiserRole }, jwtToken, refreshToken)
       identifyUser(userId, email, role)
       trackMagicLinkVerified()
       trackLoginCompleted('magic_link', !!isNewUser)

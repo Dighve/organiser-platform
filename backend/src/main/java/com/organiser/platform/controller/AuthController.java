@@ -5,10 +5,13 @@ import com.organiser.platform.dto.GoogleAuthRequest;
 import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.dto.PasscodeRequest;
 import com.organiser.platform.exception.RateLimitExceededException;
+import com.organiser.platform.model.Member;
+import com.organiser.platform.security.JwtUtil;
 import com.organiser.platform.service.AuthService;
 import com.organiser.platform.service.FeatureFlagService;
 import com.organiser.platform.service.GoogleOAuth2Service;
 import com.organiser.platform.service.RateLimitService;
+import com.organiser.platform.service.RefreshTokenService;
 import io.github.bucket4j.Bucket;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -30,6 +33,8 @@ public class AuthController {
     private final GoogleOAuth2Service googleOAuth2Service;
     private final RateLimitService rateLimitService;
     private final FeatureFlagService featureFlagService;
+    private final RefreshTokenService refreshTokenService;
+    private final JwtUtil jwtUtil;
     
     /**
      * Request a magic link to be sent to email
@@ -72,8 +77,9 @@ public class AuthController {
     @GetMapping("/verify")
     public ResponseEntity<AuthResponse> verifyMagicLink(
             @RequestParam String token,
-            @RequestParam(required = false) String inviteToken) {
-        return ResponseEntity.ok(authService.verifyMagicLink(token, inviteToken));
+            @RequestParam(required = false) String inviteToken,
+            HttpServletRequest request) {
+        return ResponseEntity.ok(authService.verifyMagicLink(token, inviteToken, request));
     }
     
     /**
@@ -154,7 +160,7 @@ public class AuthController {
             );
         }
 
-        return ResponseEntity.ok(authService.verifyPasscode(email.trim(), trimmedCode, inviteToken));
+        return ResponseEntity.ok(authService.verifyPasscode(email.trim(), trimmedCode, inviteToken, httpRequest));
     }
 
     /**
@@ -181,7 +187,73 @@ public class AuthController {
         }
         
         log.debug("Google OAuth request accepted - IP: {}", clientIp);
-        return ResponseEntity.ok(googleOAuth2Service.authenticateWithGoogle(request));
+        return ResponseEntity.ok(googleOAuth2Service.authenticateWithGoogle(request, httpRequest));
+    }
+    
+    /**
+     * Refresh access token using refresh token
+     * Returns new access token and new refresh token (rotation)
+     */
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refreshToken(
+            @RequestBody Map<String, String> request,
+            HttpServletRequest httpRequest) {
+        
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken == null || refreshToken.trim().isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+        
+        try {
+            // Verify and rotate refresh token
+            com.organiser.platform.model.RefreshToken newRefreshToken = 
+                refreshTokenService.verifyAndRotateToken(refreshToken, httpRequest);
+            
+            // Get member details
+            Member member = newRefreshToken.getMember();
+            
+            // Determine role
+            String role = member.getIsAdmin() ? "ADMIN" : 
+                         (member.getHasOrganiserRole() ? "ORGANISER" : "MEMBER");
+            
+            // Generate new access token (15 minutes)
+            String newAccessToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
+            
+            // Return new tokens
+            return ResponseEntity.ok(AuthResponse.builder()
+                    .token(newAccessToken)
+                    .refreshToken(newRefreshToken.getToken())
+                    .userId(member.getId())
+                    .email(member.getEmail())
+                    .role(role)
+                    .hasOrganiserRole(member.getHasOrganiserRole())
+                    .build());
+                    
+        } catch (RuntimeException e) {
+            log.error("Refresh token error: {}", e.getMessage());
+            return ResponseEntity.status(401).build();
+        }
+    }
+    
+    /**
+     * Logout - revoke refresh token
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, String>> logout(
+            @RequestBody Map<String, String> request) {
+        
+        String refreshToken = request.get("refreshToken");
+        if (refreshToken != null && !refreshToken.trim().isEmpty()) {
+            try {
+                refreshTokenService.revokeToken(refreshToken);
+            } catch (Exception e) {
+                log.warn("Failed to revoke refresh token: {}", e.getMessage());
+            }
+        }
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("message", "Logged out successfully");
+        return ResponseEntity.ok(response);
     }
     
     /**
