@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
+import { Users, MapPin, Calendar, ArrowLeft, UserPlus, UserMinus, Edit, Trash2, MoreVertical, X, AlertTriangle, Ban, Shield, UserX, Search, LogIn } from 'lucide-react'
+import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
-import { ArrowLeft, Users, MapPin, Calendar, Edit, Upload, X, LogIn, Plus, Search, MoreVertical, Ban, UserCheck, Trash2, AlertTriangle, UserPlus } from 'lucide-react'
-import GooglePlacesAutocomplete from '../components/GooglePlacesAutocomplete'
-import ImageUpload from '../components/ImageUpload'
-import ProfileAvatar from '../components/ProfileAvatar'
-import { toast } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
+import { useIsIOS } from '../hooks/useIsIOS'
+import ProfileAvatar from '../components/ProfileAvatar'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -124,6 +124,7 @@ export default function GroupDetailPage() {
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
   const { isGroupLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
+  const isIOS = useIsIOS()
   const [searchParams] = useSearchParams()
 
   // ============================================
@@ -408,14 +409,16 @@ export default function GroupDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-8 pb-28 lg:pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Back button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
-          Back
-        </button>
+        
+        {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
+        {isIOS && (
+          <button
+            onClick={() => navigate(-1)}
+            className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
 
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 overflow-hidden">
           {/* ============================================ */}

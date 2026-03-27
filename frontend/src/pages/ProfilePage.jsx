@@ -7,9 +7,10 @@ import { useAuthStore } from '../store/authStore'
 import { membersAPI } from '../lib/api'
 import ImagePositionModal from '../components/ImagePositionModal'
 import toast from 'react-hot-toast'
-import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Calendar } from 'lucide-react'
+import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Calendar, ArrowLeft } from 'lucide-react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
+import { useIsIOS } from '../hooks/useIsIOS'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -23,6 +24,7 @@ export default function ProfilePage() {
   const navigate = useNavigate()
   const { user, isAuthenticated, logout, token } = useAuthStore()  // Global auth state
   const queryClient = useQueryClient()  // React Query cache
+  const isIOS = useIsIOS()  // Detect iOS devices
   
   // ============================================================
   // LOCAL STATE
@@ -293,6 +295,17 @@ export default function ProfilePage() {
       <div className="pointer-events-none absolute right-10 bottom-[-60px] h-72 w-72 rounded-full bg-blue-200/30 blur-[90px]" />
 
       <div className="relative max-w-2xl mx-auto px-4 sm:px-6 pt-8 pb-28">
+        
+        {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
+        {isIOS && (
+          <button
+            onClick={() => navigate(-1)}
+            className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
+
         {/* Hidden file input */}
         <input
           ref={fileInputRef}

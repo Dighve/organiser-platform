@@ -15,6 +15,7 @@ import AddToCalendar from '../components/AddToCalendar'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
+import { useIsIOS } from '../hooks/useIsIOS'
 import {
   trackEventViewed,
   trackJoinEventClicked,
@@ -49,6 +50,7 @@ export default function EventDetailPage() {
   const { isAuthenticated, user, setReturnUrl } = useAuthStore()
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const { isEventLocationEnabled, isGoogleMapsEnabled, isStaticMapsEnabled } = useFeatureFlags()
+  const isIOS = useIsIOS()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const trackedEventRef = useRef(null)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
@@ -568,6 +570,16 @@ export default function EventDetailPage() {
       )}
       
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
+        {isIOS && (
+          <button
+            onClick={() => navigate(-1)}
+            className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
 
         {/* ============================================ */}
         {/* HERO IMAGE - Hidden for non-members */}
