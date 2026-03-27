@@ -5,7 +5,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Search } from 'lucide-react'
-import { groupsAPI, eventsAPI } from '../lib/api'
+import { groupsAPI, eventsAPI, featureFlagsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import LoginModal from '../components/LoginModal'
 import WelcomeScreen from '../components/WelcomeScreen'
@@ -74,6 +74,14 @@ export default function HomePage() {
     cacheTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
     refetchOnWindowFocus: false, // Disable refetch on window focus to reduce API calls
     refetchOnMount: false, // Don't refetch if data is still fresh
+  })
+  
+  // Fetch feature flags to check if welcome screen is enabled
+  const { data: featureFlags } = useQuery({
+    queryKey: ['featureFlags'],
+    queryFn: () => featureFlagsAPI.getFeatureFlagsMap(),
+    staleTime: 5 * 60 * 1000, // 5 minutes - feature flags don't change often
+    refetchOnWindowFocus: false,
   })
   
   // ============================================================
@@ -160,7 +168,10 @@ export default function HomePage() {
   // ============================================================
   // HERO VIEW - First-time visitor landing page
   // ============================================================
-  if (showDiscover) {
+  // Check if welcome screen is enabled via admin feature flag
+  const isWelcomeScreenEnabled = featureFlags?.WELCOME_SCREEN_ENABLED ?? true // Default to true if not loaded yet
+  
+  if (showDiscover && isWelcomeScreenEnabled) {
     return <WelcomeScreen onDiscoverClick={handleDiscoverClick} />
   }
 
