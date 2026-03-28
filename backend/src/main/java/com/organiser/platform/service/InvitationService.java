@@ -27,6 +27,8 @@ public class InvitationService {
     private final NotificationService notificationService;
     private final EmailService emailService;
     private final FeatureFlagService featureFlagService;
+    private final GroupService groupService;
+    private final EventService eventService;
     
     /**
      * Send invitations to multiple members for an event or group
@@ -42,7 +44,7 @@ public class InvitationService {
         
         String senderName = sender.getDisplayName() != null ? sender.getDisplayName() : sender.getEmail().split("@")[0];
         
-        // Get item details (event or group)
+        // Get item details and verify authorization
         String itemName;
         String itemType = request.getType();
         
@@ -50,10 +52,32 @@ public class InvitationService {
             Event event = eventRepository.findById(request.getItemId())
                 .orElseThrow(() -> new RuntimeException("Event not found"));
             itemName = event.getTitle();
+            
+            // Verify sender is authorized (must be group member/organiser)
+            Long groupId = event.getGroup().getId();
+            boolean isMember = groupService.isMemberOfGroup(senderId, groupId);
+            
+            if (!isMember) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
+                    "You must be a group member to send invitations to events"
+                );
+            }
         } else if ("group".equalsIgnoreCase(itemType)) {
             Group group = groupRepository.findById(request.getItemId())
                 .orElseThrow(() -> new RuntimeException("Group not found"));
             itemName = group.getName();
+            
+            // Verify sender is authorized (must be group organiser or member)
+            boolean isOrganiser = group.getPrimaryOrganiser().getId().equals(senderId);
+            boolean isMember = groupService.isMemberOfGroup(senderId, request.getItemId());
+            
+            if (!isOrganiser && !isMember) {
+                throw new org.springframework.web.server.ResponseStatusException(
+                    org.springframework.http.HttpStatus.FORBIDDEN,
+                    "You must be the group organiser or a member to send invitations"
+                );
+            }
         } else {
             throw new RuntimeException("Invalid invitation type: " + itemType);
         }

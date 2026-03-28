@@ -448,7 +448,20 @@ public class EmailService {
             log.info("=".repeat(80));
         } else {
             try {
-                sendHtmlEmailViaResend(recipient.getEmail(), subject, htmlBody);
+                // Send invitation email using Resend API
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth(resendApiKey);
+                
+                Map<String, Object> emailData = new HashMap<>();
+                emailData.put("from", fromEmail);
+                emailData.put("to", new String[]{recipient.getEmail()});
+                emailData.put("subject", subject);
+                emailData.put("html", htmlBody);
+                
+                HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailData, headers);
+                restTemplate.postForObject("https://api.resend.com/emails", request, String.class);
+                
                 log.info("Invitation email sent to {}", recipient.getEmail());
             } catch (Exception e) {
                 log.error("Failed to send invitation email to {}: {}", recipient.getEmail(), e.getMessage());
@@ -456,12 +469,17 @@ public class EmailService {
         }
     }
     
-    private String buildInvitationEmailHtml(String senderName, String itemType, String itemName, String personalMessage, String url) {
+    private String buildInvitationEmailHtml(String senderName, String itemType, String itemName, String personalMessage, String itemUrl) {
+        // HTML-escape all user-supplied content to prevent HTML injection
+        String escapedSenderName = escapeHtml(senderName);
+        String escapedItemName = escapeHtml(itemName);
+        
         String messageSection = "";
         if (personalMessage != null && !personalMessage.isEmpty()) {
+            String escapedMessage = escapeHtml(personalMessage);
             messageSection = String.format(
                 "<div style=\"background: #f3f4f6; padding: 20px; border-radius: 12px; margin: 20px 0;\">" +
-                "<p style=\"margin: 0; font-style: italic; color: #4b5563;\">\"" + personalMessage + "\"</p>" +
+                "<p style=\"margin: 0; font-style: italic; color: #4b5563;\">\"" + escapedMessage + "\"</p>" +
                 "</div>"
             );
         }
@@ -490,23 +508,22 @@ public class EmailService {
                 </div>
             </body>
             </html>
-            """.formatted(senderName, itemName, messageSection, url, itemType.substring(0, 1).toUpperCase() + itemType.substring(1));
+            """.formatted(escapedSenderName, escapedItemName, messageSection, itemUrl, itemType.substring(0, 1).toUpperCase() + itemType.substring(1));
     }
     
-    private void sendHtmlEmailViaResend(String to, String subject, String htmlBody) {
-        String url = "https://api.resend.com/emails";
-        
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setBearerAuth(resendApiKey);
-        
-        Map<String, Object> emailData = new HashMap<>();
-        emailData.put("from", fromEmail);
-        emailData.put("to", to);
-        emailData.put("subject", subject);
-        emailData.put("html", htmlBody);
-        
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailData, headers);
-        restTemplate.postForEntity(url, request, String.class);
+    /**
+     * Escape HTML special characters to prevent HTML injection
+     */
+    private String escapeHtml(String input) {
+        if (input == null) {
+            return "";
+        }
+        return input
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#x27;")
+            .replace("/", "&#x2F;");
     }
 }
