@@ -42,6 +42,20 @@ public class MemberController {
         MemberDTO member = memberService.getMemberDTOById(memberId);
         return ResponseEntity.ok(member);
     }
+    
+    /**
+     * Get all members for invitation/search purposes.
+     * Returns list of all members with basic info (id, email, displayName, profilePhotoUrl).
+     * Requires authentication.
+     */
+    @GetMapping
+    public ResponseEntity<java.util.List<MemberDTO>> getAllMembers(Authentication authentication) {
+        // Ensure user is authenticated
+        if (authentication == null) {
+            throw new RuntimeException("Authentication required");
+        }
+        return ResponseEntity.ok(memberService.getAllMembers());
+    }
 
     /**
      * Delete current user's profile.

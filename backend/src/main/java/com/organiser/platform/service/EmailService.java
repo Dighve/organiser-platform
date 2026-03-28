@@ -416,4 +416,97 @@ public class EmailService {
             </html>
             """.formatted(code);
     }
+    
+    /**
+     * Send invitation email to a member.
+     * Notifies member they've been invited to an event or group.
+     */
+    public void sendInvitationEmail(
+            com.organiser.platform.model.Member recipient,
+            com.organiser.platform.model.Member sender,
+            String itemType,
+            String itemName,
+            String personalMessage,
+            String url) {
+        
+        if (!recipient.getEmailNotificationsEnabled()) {
+            log.info("Email notifications disabled for {}, skipping invitation email", recipient.getEmail());
+            return;
+        }
+        
+        String senderName = sender.getDisplayName() != null ? sender.getDisplayName() : sender.getEmail().split("@")[0];
+        String subject = senderName + " invited you to " + itemName;
+        
+        String htmlBody = buildInvitationEmailHtml(senderName, itemType, itemName, personalMessage, url);
+        
+        if (resendApiKey == null || resendApiKey.isEmpty()) {
+            log.info("=".repeat(80));
+            log.info("Invitation Email for: {}", recipient.getEmail());
+            log.info("From: {}", senderName);
+            log.info("Item: {} ({})", itemName, itemType);
+            log.info("URL: {}", url);
+            log.info("=".repeat(80));
+        } else {
+            try {
+                sendHtmlEmailViaResend(recipient.getEmail(), subject, htmlBody);
+                log.info("Invitation email sent to {}", recipient.getEmail());
+            } catch (Exception e) {
+                log.error("Failed to send invitation email to {}: {}", recipient.getEmail(), e.getMessage());
+            }
+        }
+    }
+    
+    private String buildInvitationEmailHtml(String senderName, String itemType, String itemName, String personalMessage, String url) {
+        String messageSection = "";
+        if (personalMessage != null && !personalMessage.isEmpty()) {
+            messageSection = String.format(
+                "<div style=\"background: #f3f4f6; padding: 20px; border-radius: 12px; margin: 20px 0;\">" +
+                "<p style=\"margin: 0; font-style: italic; color: #4b5563;\">\"" + personalMessage + "\"</p>" +
+                "</div>"
+            );
+        }
+        
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+                <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div style="font-size: 40px; margin-bottom: 15px;">🏔️</div>
+                        <h1 style="margin: 0; background: linear-gradient(135deg, #9333ea 0%%, #ec4899 50%%, #f97316 100%%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 28px; font-weight: 700;">OutMeets</h1>
+                    </div>
+                    <div style="background: white; border-radius: 16px; padding: 30px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                        <h2 style="margin-top: 0; font-size: 24px; color: #1f2937;">You've been invited!</h2>
+                        <p style="font-size: 16px; color: #4b5563; line-height: 1.6;"><strong>%s</strong> has invited you to join:</p>
+                        <h3 style="font-size: 20px; color: #9333ea; margin: 20px 0;">%s</h3>
+                        %s
+                        <a href="%s" style="display: inline-block; padding: 14px 28px; background: linear-gradient(to right, #9333ea, #ec4899); color: white; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 16px; margin: 20px 0;">View %s</a>
+                        <p style="color: #6b7280; font-size: 13px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">If you don't want to receive these emails, you can disable email notifications in your settings.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(senderName, itemName, messageSection, url, itemType.substring(0, 1).toUpperCase() + itemType.substring(1));
+    }
+    
+    private void sendHtmlEmailViaResend(String to, String subject, String htmlBody) {
+        String url = "https://api.resend.com/emails";
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setBearerAuth(resendApiKey);
+        
+        Map<String, Object> emailData = new HashMap<>();
+        emailData.put("from", fromEmail);
+        emailData.put("to", to);
+        emailData.put("subject", subject);
+        emailData.put("html", htmlBody);
+        
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailData, headers);
+        restTemplate.postForEntity(url, request, String.class);
+    }
 }

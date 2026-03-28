@@ -4,8 +4,10 @@ import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.CreateGroupRequest;
 import com.organiser.platform.dto.EventDTO;
 import com.organiser.platform.dto.GroupDTO;
+import com.organiser.platform.dto.SendInvitationRequest;
 import com.organiser.platform.service.EventService;
 import com.organiser.platform.service.GroupService;
+import com.organiser.platform.service.InvitationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +34,7 @@ import java.util.List;
 public class GroupController {
     
     private final GroupService groupService;
+    private final InvitationService invitationService;
 
     @PostMapping
     public ResponseEntity<GroupDTO> createGroup(
@@ -208,6 +211,19 @@ public class GroupController {
     ) {
         Long organiserId = getUserIdFromAuth(authentication);
         groupService.permanentlyDeleteGroup(groupId, organiserId);
+        return ResponseEntity.ok().build();
+    }
+    
+    /**
+     * Send invitations to members for a group or event
+     */
+    @PostMapping("/invitations")
+    public ResponseEntity<Void> sendInvitations(
+            @Valid @RequestBody SendInvitationRequest request,
+            Authentication authentication
+    ) {
+        Long senderId = getUserIdFromAuth(authentication);
+        invitationService.sendInvitations(request, senderId);
         return ResponseEntity.ok().build();
     }
 }

@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MemberDTO {
     private Long id;
-    private String email;
     private String displayName;
     private String profilePhotoUrl;
     private String imagePosition; // JSON string: {"x": 50, "y": 50}

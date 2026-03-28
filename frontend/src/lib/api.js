@@ -217,6 +217,8 @@ export const groupsAPI = {
   banMember: (groupId, memberId, reason) => 
     api.post(`/groups/${groupId}/ban/${memberId}`, null, { params: { reason } }),
   
+  sendInvitations: (data) => api.post('/groups/invitations', data),
+  
   unbanMember: (groupId, memberId) => 
     api.post(`/groups/${groupId}/unban/${memberId}`),
   
@@ -233,6 +235,8 @@ export const membersAPI = {
   getCurrentMember: () => api.get('/members/me'),
   
   getMemberById: (memberId) => api.get(`/members/${memberId}`),
+  
+  getAllMembers: (params) => api.get('/members', { params }),
   
   updateProfile: (data) => api.put('/members/me', data),
 

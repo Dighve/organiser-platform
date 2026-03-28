@@ -147,6 +147,20 @@ public class MemberService {
         
         return convertToDTO(updatedMember);
     }
+    
+    /**
+     * Get all members for invitation/search purposes.
+     * Returns basic member information (id, email, displayName, profilePhotoUrl).
+     *
+     * @return List of MemberDTO objects
+     */
+    public java.util.List<MemberDTO> getAllMembers() {
+        log.info("Fetching all members for invitation search");
+        java.util.List<Member> members = memberRepository.findAll();
+        return members.stream()
+                .map(this::convertToDTO)
+                .collect(java.util.stream.Collectors.toList());
+    }
 
     /**
      * Delete current member profile with organiser/host safeguards.
@@ -210,7 +224,6 @@ public class MemberService {
         
         return MemberDTO.builder()
                 .id(member.getId())
-                .email(member.getEmail())
                 .displayName(member.getDisplayName())
                 .profilePhotoUrl(member.getProfilePhotoUrl())
                 .imagePosition(member.getImagePosition())

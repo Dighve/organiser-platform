@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2 } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -15,6 +15,7 @@ import AddToCalendar from '../components/AddToCalendar'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
 import ShareButton from '../components/ShareButton'
+import InviteMembersModal from '../components/InviteMembersModal'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
 import {
@@ -71,6 +72,7 @@ export default function EventDetailPage() {
   const [pendingGuestCount, setPendingGuestCount] = useState(0)
   const [isCopying, setIsCopying] = useState(false) // Prevent multiple copy operations
   const [showPublishConfirm, setShowPublishConfirm] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -107,13 +109,28 @@ export default function EventDetailPage() {
   // 3. Fetch calendar data for "Add to Calendar" feature
   // Note: We fetch for all authenticated users, but only show button if they've joined
   // The enabled flag will prevent the query from running for unauthenticated users
-  const { data: calendarData } = useQuery({
+  const { data: calendarData, isLoading: isCalendarLoading, error: calendarError } = useQuery({
     queryKey: ['eventCalendar', id],
     queryFn: () => eventsAPI.getCalendarData(id),
     enabled: !!id && isAuthenticated,
-    retry: false, // Don't retry if user hasn't joined (will get 403)
+    retry: 1, // Retry once in case of temporary failure
     select: (response) => response.data,
   })
+  
+  // Debug logging for calendar data
+  useEffect(() => {
+    if (calendarData) {
+      console.log('✅ Calendar data loaded:', calendarData)
+    }
+    if (calendarError) {
+      console.error('❌ Calendar data error:', {
+        message: calendarError?.message,
+        response: calendarError?.response?.data,
+        status: calendarError?.response?.status,
+        fullError: calendarError
+      })
+    }
+  }, [calendarData, calendarError])
 
   // ============================================
   // COMPUTED VALUES - Derived from fetched data
@@ -854,6 +871,8 @@ export default function EventDetailPage() {
                   >
                     <ShareButton
                       type="event"
+                      itemId={id}
+                      groupId={displayEvent.groupId}
                       title={displayEvent.title}
                       description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
                       url={window.location.href}
@@ -1382,6 +1401,8 @@ export default function EventDetailPage() {
                             )}
                             <ShareButton
                               type="event"
+                              itemId={id}
+                              groupId={displayEvent.groupId}
                               title={displayEvent.title}
                               description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
                               url={window.location.href}
@@ -1470,6 +1491,8 @@ export default function EventDetailPage() {
                           )}
                           <ShareButton
                             type="event"
+                            itemId={id}
+                            groupId={displayEvent.groupId}
                             title={displayEvent.title}
                             description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
                             url={window.location.href}
@@ -1757,6 +1780,16 @@ export default function EventDetailPage() {
             <button
               onClick={() => {
                 setIsGuestActionsOpen(false)
+                setShowInviteModal(true)
+              }}
+              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3 flex items-center gap-3"
+            >
+              <UserPlus className="h-5 w-5 text-purple-600" />
+              Invite Members
+            </button>
+            <button
+              onClick={() => {
+                setIsGuestActionsOpen(false)
                 setShowLeaveConfirm(true)
               }}
               className="w-full text-left px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 font-semibold hover:bg-red-100 flex items-center gap-3"
@@ -1862,6 +1895,19 @@ export default function EventDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ============================================ */}
+      {/* INVITE MEMBERS MODAL */}
+      {/* ============================================ */}
+      <InviteMembersModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        type="event"
+        itemId={id}
+        groupId={displayEvent?.groupId}
+        title={displayEvent?.title}
+        url={window.location.href}
+      />
     </div>
   )
 }

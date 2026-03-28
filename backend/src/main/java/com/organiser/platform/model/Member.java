@@ -81,6 +81,10 @@ public class Member {
     @Column(name = "user_agreement_accepted_at")
     private LocalDateTime userAgreementAcceptedAt;
     
+    @Builder.Default
+    @Column(name = "email_notifications_enabled")
+    private Boolean emailNotificationsEnabled = true;
+    
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
