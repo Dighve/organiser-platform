@@ -1,4 +1,4 @@
-package com.organiser.platform.entity;
+package com.organiser.platform.model;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

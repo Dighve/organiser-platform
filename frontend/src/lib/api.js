@@ -240,6 +240,8 @@ export const membersAPI = {
   
   updateProfile: (data) => api.put('/members/me', data),
 
+  updateEmailNotifications: (enabled) => api.put('/members/me/email-notifications', { enabled }),
+
   deleteProfile: () => api.delete('/members/me'),
 }
 

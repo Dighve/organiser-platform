@@ -149,6 +149,24 @@ public class MemberService {
     }
     
     /**
+     * Update email notification preferences.
+     *
+     * @param memberId The ID of the member to update
+     * @param enabled Whether email notifications should be enabled
+     * @throws RuntimeException if member not found
+     */
+    @Transactional
+    public void updateEmailNotifications(Long memberId, Boolean enabled) {
+        log.info("Updating email notifications for member: {} to {}", memberId, enabled);
+        
+        Member member = getMemberById(memberId);
+        member.setEmailNotificationsEnabled(enabled);
+        
+        memberRepository.save(member);
+        log.info("Email notifications updated successfully for member: {}", memberId);
+    }
+    
+    /**
      * Get all members for invitation/search purposes.
      * Returns basic member information (id, email, displayName, profilePhotoUrl).
      *
@@ -234,6 +252,7 @@ public class MemberService {
                 .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())
                 .hasAcceptedUserAgreement(hasAcceptedCurrentUserAgreement)
                 .userAgreementAcceptedAt(member.getUserAgreementAcceptedAt())
+                .emailNotificationsEnabled(member.getEmailNotificationsEnabled())
                 .deleted(!member.getActive())
                 .build();
     }

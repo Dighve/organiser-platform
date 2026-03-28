@@ -80,6 +80,22 @@ public class MemberController {
         return ResponseEntity.ok(updatedMember);
     }
     
+    /**
+     * Update email notification preferences
+     */
+    @PutMapping("/me/email-notifications")
+    public ResponseEntity<Void> updateEmailNotifications(
+            @RequestBody java.util.Map<String, Boolean> request,
+            Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        Boolean enabled = request.get("enabled");
+        if (enabled == null) {
+            throw new RuntimeException("'enabled' field is required");
+        }
+        memberService.updateEmailNotifications(userId, enabled);
+        return ResponseEntity.ok().build();
+    }
+    
     private Long getUserIdFromAuth(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
             throw new RuntimeException("User not authenticated");

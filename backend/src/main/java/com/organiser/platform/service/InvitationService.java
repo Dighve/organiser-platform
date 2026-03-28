@@ -26,6 +26,7 @@ public class InvitationService {
     private final GroupRepository groupRepository;
     private final NotificationService notificationService;
     private final EmailService emailService;
+    private final FeatureFlagService featureFlagService;
     
     /**
      * Send invitations to multiple members for an event or group
@@ -83,8 +84,9 @@ public class InvitationService {
                 
                 log.info("Created notification {} for member {}", notification.getId(), recipientId);
                 
-                // Send email notification (if user has email notifications enabled)
-                if (recipient.getEmailNotificationsEnabled()) {
+                // Send email notification (if globally enabled by admin AND user has email notifications enabled)
+                boolean emailsGloballyEnabled = featureFlagService.isEmailNotificationsEnabled();
+                if (emailsGloballyEnabled && recipient.getEmailNotificationsEnabled()) {
                     emailService.sendInvitationEmail(
                         recipient,
                         sender,
@@ -95,7 +97,11 @@ public class InvitationService {
                     );
                     log.info("Sent invitation email to {}", recipient.getEmail());
                 } else {
-                    log.info("Email notifications disabled for member {}, skipping email", recipientId);
+                    if (!emailsGloballyEnabled) {
+                        log.info("Email notifications globally disabled by admin, skipping email for member {}", recipientId);
+                    } else {
+                        log.info("Email notifications disabled for member {}, skipping email", recipientId);
+                    }
                 }
                 
                 successfulInvitations.add(recipientId);

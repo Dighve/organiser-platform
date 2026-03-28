@@ -1,6 +1,6 @@
 package com.organiser.platform.repository;
 
-import com.organiser.platform.entity.FeatureFlag;
+import com.organiser.platform.model.FeatureFlag;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
