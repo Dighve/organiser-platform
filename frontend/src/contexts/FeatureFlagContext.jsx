@@ -21,6 +21,7 @@ export const FeatureFlagProvider = ({ children }) => {
     DISABLE_BECOME_ORGANISER_BUTTON: false,
     PASSCODE_AUTH_ENABLED: false,
     USER_AGREEMENT_ENABLED: true, // When false, skip user agreement modal and auto-join
+    FLYER_ENABLED: true, // When false, hides "Share as Flyer" option everywhere
   })
 
   const { data: flagsData, isLoading, error } = useQuery({
@@ -44,6 +45,7 @@ export const FeatureFlagProvider = ({ children }) => {
   const isStaticMapsEnabled = () => featureFlags.STATIC_MAPS_ENABLED
 
   const isPasscodeAuthEnabled = () => featureFlags.PASSCODE_AUTH_ENABLED
+  const isFlyerEnabled = () => featureFlags.FLYER_ENABLED !== false
 
   // Check if any location features are enabled
   const isAnyLocationFeatureEnabled = () => {
@@ -62,6 +64,7 @@ export const FeatureFlagProvider = ({ children }) => {
     isStaticMapsEnabled,
     isAnyLocationFeatureEnabled,
     isPasscodeAuthEnabled,
+    isFlyerEnabled,
   }
 
   return (
