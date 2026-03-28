@@ -15,6 +15,7 @@ import AddToCalendar from '../components/AddToCalendar'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
 import ShareButton from '../components/ShareButton'
+import EventFlyerModal from '../components/EventFlyerModal'
 import InviteMembersModal from '../components/InviteMembersModal'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
@@ -51,7 +52,7 @@ export default function EventDetailPage() {
   const queryClient = useQueryClient()
   const { isAuthenticated, user, setReturnUrl } = useAuthStore()
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
-  const { isEventLocationEnabled, isGoogleMapsEnabled, isStaticMapsEnabled } = useFeatureFlags()
+  const { isEventLocationEnabled, isGoogleMapsEnabled, isStaticMapsEnabled, isFlyerEnabled } = useFeatureFlags()
   const isIOS = useIsIOS()
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const trackedEventRef = useRef(null)
@@ -73,6 +74,7 @@ export default function EventDetailPage() {
   const [isCopying, setIsCopying] = useState(false) // Prevent multiple copy operations
   const [showPublishConfirm, setShowPublishConfirm] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showFlyerModal, setShowFlyerModal] = useState(false)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -877,6 +879,7 @@ export default function EventDetailPage() {
                       description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
                       url={window.location.href}
                       imageUrl={displayEvent.imageUrl}
+                      onFlyerShare={isFlyerEnabled() ? () => { setIsManageOpen(false); setShowFlyerModal(true) } : undefined}
                       variant="icon"
                       size="sm"
                       className="!p-0 !border-0 !bg-transparent hover:!bg-transparent text-purple-600"
@@ -1407,6 +1410,7 @@ export default function EventDetailPage() {
                               description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
                               url={window.location.href}
                               imageUrl={displayEvent.imageUrl}
+                              onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
                             />
                           </div>
                           
@@ -1497,6 +1501,7 @@ export default function EventDetailPage() {
                             description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
                             url={window.location.href}
                             imageUrl={displayEvent.imageUrl}
+                            onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
                           />
                         </div>
 
@@ -1908,6 +1913,17 @@ export default function EventDetailPage() {
         title={displayEvent?.title}
         url={window.location.href}
       />
+
+      {/* ============================================ */}
+      {/* EVENT FLYER MODAL */}
+      {/* ============================================ */}
+      {isFlyerEnabled() && (
+        <EventFlyerModal
+          isOpen={showFlyerModal}
+          onClose={() => setShowFlyerModal(false)}
+          event={displayEvent}
+        />
+      )}
     </div>
   )
 }

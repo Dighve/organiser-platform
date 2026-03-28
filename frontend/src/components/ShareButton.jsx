@@ -12,6 +12,7 @@ export default function ShareButton({
   description,
   url,
   imageUrl,
+  onFlyerShare, // optional: opens EventFlyerModal when provided
   className = '',
   variant = 'primary', // 'primary', 'secondary', 'icon'
   size = 'md' // 'sm', 'md', 'lg'
@@ -89,7 +90,16 @@ export default function ShareButton({
     setIsOpen(false)
   }
 
+  const flyerOption = onFlyerShare ? [{
+    id: 'flyer',
+    name: 'Share as Flyer',
+    icon: '🖼️',
+    color: 'from-orange-500 to-pink-500',
+    action: () => { onFlyerShare(); setIsOpen(false) }
+  }] : []
+
   const shareOptions = [
+    ...flyerOption,
     {
       id: 'invite',
       name: 'Invite Members',
