@@ -904,9 +904,15 @@ public class EventService {
     /**
      * Get all participants for an event.
      * Marks the event organiser with isOrganiser flag.
+     * Email addresses are NEVER exposed in participant lists for privacy protection (Meetup.com approach).
+     * Users can only see their own email via their profile endpoint.
+     * 
+     * @param eventId The ID of the event
+     * @param requesterId The ID of the user requesting the participant list (null if not authenticated)
+     * @return List of participant DTOs without email addresses
      */
     @Transactional(readOnly = true)
-    public java.util.List<com.organiser.platform.dto.MemberDTO> getEventParticipants(Long eventId) {
+    public java.util.List<com.organiser.platform.dto.MemberDTO> getEventParticipants(Long eventId, Long requesterId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
@@ -932,6 +938,8 @@ public class EventService {
                     
                     return com.organiser.platform.dto.MemberDTO.builder()
                             .id((isDeleted || isBanned) ? null : member.getId())
+                            // PRIVACY: Never expose email in participant lists (Meetup.com approach)
+                            // Users see their own email only via /api/v1/members/me
                             .displayName(displayName)
                             .profilePhotoUrl((isDeleted || isBanned) ? null : member.getProfilePhotoUrl())
                             // Check if this participant is the organiser of THIS event

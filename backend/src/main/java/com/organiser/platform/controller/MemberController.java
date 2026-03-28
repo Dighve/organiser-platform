@@ -34,12 +34,13 @@ public class MemberController {
     }
     
     /**
-     * Get member details by ID (for member detail page)
-     * Returns DTO with email, display name, and profile photo
+     * Get member details by ID (for viewing other users' profiles)
+     * PRIVACY: Only returns public-safe fields (id, displayName, profilePhotoUrl, imagePosition)
+     * Does NOT expose: email, isAdmin, agreement info, notification preferences
      */
     @GetMapping("/{memberId}")
     public ResponseEntity<MemberDTO> getMemberById(@PathVariable Long memberId) {
-        MemberDTO member = memberService.getMemberDTOById(memberId);
+        MemberDTO member = memberService.getPublicMemberProfile(memberId);
         return ResponseEntity.ok(member);
     }
     

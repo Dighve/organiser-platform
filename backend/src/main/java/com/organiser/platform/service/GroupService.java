@@ -371,9 +371,15 @@ public class GroupService {
     /**
      * Get all active members of a group.
      * Organiser is marked and sorted first.
+     * Email addresses are NEVER exposed in member lists for privacy protection (Meetup.com approach).
+     * Users can only see their own email via their profile endpoint.
+     * 
+     * @param groupId The ID of the group
+     * @param requesterId The ID of the user requesting the member list (null if not authenticated)
+     * @return List of member DTOs without email addresses
      */
     @Transactional(readOnly = true)
-    public java.util.List<com.organiser.platform.dto.MemberDTO> getGroupMembers(Long groupId) {
+    public java.util.List<com.organiser.platform.dto.MemberDTO> getGroupMembers(Long groupId, Long requesterId) {
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new RuntimeException("Group not found"));
         
@@ -388,6 +394,8 @@ public class GroupService {
                 .filter(sub -> sub.getStatus() == Subscription.SubscriptionStatus.ACTIVE)
                 .map(subscription -> com.organiser.platform.dto.MemberDTO.builder()
                         .id(subscription.getMember().getId())
+                        // PRIVACY: Never expose email in member lists (Meetup.com approach)
+                        // Users see their own email only via /api/v1/members/me
                         .displayName(subscription.getMember().getDisplayName())
                         .profilePhotoUrl(subscription.getMember().getProfilePhotoUrl())
                         // Mark if this member is the primary organiser
@@ -505,6 +513,7 @@ public class GroupService {
     
     /**
      * Get all banned members for a group (organiser only).
+     * Email addresses are NEVER exposed in member lists for privacy protection (Meetup.com approach).
      */
     public List<com.organiser.platform.dto.MemberDTO> getBannedMembers(Long groupId, Long organiserId) {
         // Verify group exists
@@ -523,6 +532,7 @@ public class GroupService {
         return bannedMembers.stream()
                 .map(ban -> com.organiser.platform.dto.MemberDTO.builder()
                         .id(ban.getMember().getId())
+                        // PRIVACY: Never expose email in member lists (Meetup.com approach)
                         .displayName(ban.getMember().getDisplayName())
                         .profilePhotoUrl(ban.getMember().getProfilePhotoUrl())
                         .bannedAt(ban.getBannedAt())
