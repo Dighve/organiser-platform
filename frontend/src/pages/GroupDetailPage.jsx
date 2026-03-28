@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
-import { Users, MapPin, Calendar, ArrowLeft, UserPlus, UserMinus, Edit, Trash2, MoreVertical, X, AlertTriangle, Ban, Shield, UserX, Search, LogIn } from 'lucide-react'
+import { Users, MapPin, Calendar, ArrowLeft, UserPlus, UserMinus, Edit, Trash2, MoreVertical, X, AlertTriangle, Ban, Shield, UserX, Search, LogIn, Plus, Share2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
 import ProfileAvatar from '../components/ProfileAvatar'
+import ShareButton from '../components/ShareButton'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -141,6 +142,7 @@ export default function GroupDetailPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [openMenuMemberId, setOpenMenuMemberId] = useState(null)
   const [isGroupActionsOpen, setIsGroupActionsOpen] = useState(false)
+  const [isMemberActionsOpen, setIsMemberActionsOpen] = useState(false)
 
   // Set initial tab from URL parameter (e.g., ?tab=events)
   useEffect(() => {
@@ -952,6 +954,18 @@ export default function GroupDetailPage() {
                               <Calendar className="h-5 w-5" />
                               View Events
                             </button>
+                            <div className="mb-3">
+                              <ShareButton
+                                type="group"
+                                title={displayGroup.name}
+                                description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
+                                url={window.location.href}
+                                imageUrl={displayGroup.imageUrl}
+                                variant="secondary"
+                                size="md"
+                                className="w-full py-3 px-6"
+                              />
+                            </div>
                             <button
                               onClick={handleUnsubscribe}
                               disabled={unsubscribeMutation.isLoading}
@@ -961,15 +975,27 @@ export default function GroupDetailPage() {
                             </button>
                           </>
                         ) : (
-                          /* Not a member - Show Join button */
-                          <button
-                            onClick={handleSubscribe}
-                            disabled={subscribeMutation.isLoading}
-                            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
-                          >
-                            <Users className="h-5 w-5" />
-                            {subscribeMutation.isLoading ? 'Joining...' : 'Join Group'}
-                          </button>
+                          /* Not a member - Show Join + Share buttons */
+                          <div className="space-y-3">
+                            <button
+                              onClick={handleSubscribe}
+                              disabled={subscribeMutation.isLoading}
+                              className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
+                            >
+                              <Users className="h-5 w-5" />
+                              {subscribeMutation.isLoading ? 'Joining...' : 'Join Group'}
+                            </button>
+                            <ShareButton
+                              type="group"
+                              title={displayGroup.name}
+                              description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
+                              url={window.location.href}
+                              imageUrl={displayGroup.imageUrl}
+                              variant="secondary"
+                              size="md"
+                              className="w-full py-3 px-6"
+                            />
+                          </div>
                         )}
                       </>
                     )}
@@ -1081,6 +1107,25 @@ export default function GroupDetailPage() {
                 <button
                   onClick={() => {
                     setIsGroupActionsOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <ShareButton
+                    type="group"
+                    title={displayGroup.name}
+                    description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
+                    url={window.location.href}
+                    imageUrl={displayGroup.imageUrl}
+                    variant="icon"
+                    size="sm"
+                    className="!p-0 !border-0 !bg-transparent hover:!bg-transparent text-purple-600"
+                  />
+                  <span>Share group</span>
+                </button>
+                <div className="h-px bg-gray-200 mx-3" />
+                <button
+                  onClick={() => {
+                    setIsGroupActionsOpen(false)
                     navigate(`/groups/${id}/transfer`)
                   }}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
@@ -1098,6 +1143,74 @@ export default function GroupDetailPage() {
                 >
                   <Trash2 className="h-5 w-5 text-red-600" />
                   Delete group
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* MOBILE MEMBER ACTIONS SHEET - Members only */}
+      {/* ============================================ */}
+      {isMemberActionsOpen && isSubscribed && !isGroupOrganiser && (
+        <div className="lg:hidden fixed inset-0 z-[60] flex items-end justify-center">
+          <button
+            type="button"
+            aria-label="Close member actions menu"
+            onClick={() => setIsMemberActionsOpen(false)}
+            className="absolute inset-0 bg-black/40"
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="relative w-full mx-4 mb-4 bg-white rounded-3xl shadow-2xl overflow-hidden"
+          >
+            <div className="flex items-center justify-center pt-3">
+              <div className="h-1.5 w-12 bg-gray-300 rounded-full" />
+            </div>
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setIsMemberActionsOpen(false)}
+              className="absolute right-4 top-3 text-gray-500 hover:text-gray-800"
+            >
+              <span className="text-2xl leading-none">×</span>
+            </button>
+            <div className="px-4 pb-4 pt-6">
+              <div className="space-y-1">
+                <button
+                  onClick={async () => {
+                    setIsMemberActionsOpen(false)
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: displayGroup.name,
+                          text: `Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`,
+                          url: window.location.href,
+                        })
+                      } catch (error) {
+                        if (error.name !== 'AbortError') {
+                          console.error('Share failed:', error)
+                        }
+                      }
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <Share2 className="h-5 w-5 text-gray-900" />
+                  <span>Share group</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setIsMemberActionsOpen(false)
+                    handleUnsubscribe()
+                  }}
+                  disabled={unsubscribeMutation.isLoading}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  <X className="h-5 w-5 text-red-600" />
+                  {unsubscribeMutation.isLoading ? 'Leaving...' : 'Leave group'}
                 </button>
               </div>
             </div>
@@ -1137,12 +1250,11 @@ export default function GroupDetailPage() {
                 View Events
               </button>
               <button
-                onClick={handleUnsubscribe}
-                disabled={unsubscribeMutation.isLoading}
-                className="px-4 py-3 bg-gray-100 text-gray-500 rounded-xl font-semibold flex items-center justify-center active:scale-95 transition-all disabled:opacity-50"
-                aria-label="Leave group"
+                onClick={() => setIsMemberActionsOpen(true)}
+                className="h-12 w-12 rounded-xl flex items-center justify-center bg-white border border-gray-200 text-gray-600 shadow hover:bg-gray-50"
+                aria-label="More actions"
               >
-                <X className="h-5 w-5" />
+                <MoreVertical className="h-5 w-5" />
               </button>
             </div>
           ) : (

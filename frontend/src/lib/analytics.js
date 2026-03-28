@@ -225,3 +225,25 @@ export const trackNotificationEnabled = () => {
 
 export const trackNotificationDismissed = () =>
   track('Push Notification Dismissed')
+
+// ─── Share ────────────────────────────────────────────────────────────────────
+
+export const trackShareOpened = (contentType, url) =>
+  track('Share Opened', { 
+    content_type: contentType, // 'event' | 'group'
+    url: url 
+  })
+
+export const trackShareMethodSelected = (contentType, method, url) =>
+  track('Share Method Selected', { 
+    content_type: contentType, // 'event' | 'group'
+    method: method, // 'native' | 'copy_link' | 'whatsapp' | 'email' | 'facebook' | 'twitter'
+    url: url 
+  })
+
+export const trackShareCompleted = (contentType, method, url) =>
+  track('Share Completed', { 
+    content_type: contentType,
+    method: method,
+    url: url 
+  })

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -14,6 +14,7 @@ import LoginModal from '../components/LoginModal'
 import AddToCalendar from '../components/AddToCalendar'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
+import ShareButton from '../components/ShareButton'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
 import {
@@ -848,6 +849,25 @@ export default function EventDetailPage() {
                   <button
                     onClick={() => {
                       setIsManageOpen(false)
+                    }}
+                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                  >
+                    <ShareButton
+                      type="event"
+                      title={displayEvent.title}
+                      description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                      url={window.location.href}
+                      imageUrl={displayEvent.imageUrl}
+                      variant="icon"
+                      size="sm"
+                      className="!p-0 !border-0 !bg-transparent hover:!bg-transparent text-purple-600"
+                    />
+                    <span>Share event</span>
+                  </button>
+                  <div className="h-px bg-gray-200 mx-3" />
+                  <button
+                    onClick={() => {
+                      setIsManageOpen(false)
                       handleDelete()
                     }}
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-red-700 hover:bg-red-50 transition-colors"
@@ -1355,10 +1375,19 @@ export default function EventDetailPage() {
                             </div>
                           )}
                           
-                          {/* Add to Calendar Button for Organiser */}
-                          {calendarData && (
-                            <AddToCalendar calendarData={calendarData} />
-                          )}
+                          {/* Add to Calendar & Share Buttons for Organiser - Stacked vertically */}
+                          <div className="space-y-3">
+                            {calendarData && (
+                              <AddToCalendar calendarData={calendarData} />
+                            )}
+                            <ShareButton
+                              type="event"
+                              title={displayEvent.title}
+                              description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                              url={window.location.href}
+                              imageUrl={displayEvent.imageUrl}
+                            />
+                          </div>
                           
                           <button
                             onClick={() => navigate(`/events/${id}/edit`)}
@@ -1434,10 +1463,19 @@ export default function EventDetailPage() {
                           </div>
                         </div>
                         
-                        {/* Add to Calendar Button */}
-                        {calendarData && (
-                          <AddToCalendar calendarData={calendarData} />
-                        )}
+                        {/* Add to Calendar & Share Buttons - Stacked vertically */}
+                        <div className="space-y-3">
+                          {calendarData && (
+                            <AddToCalendar calendarData={calendarData} />
+                          )}
+                          <ShareButton
+                            type="event"
+                            title={displayEvent.title}
+                            description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                            url={window.location.href}
+                            imageUrl={displayEvent.imageUrl}
+                          />
+                        </div>
 
                         <button
                           onClick={() => setShowLeaveConfirm(true)}
@@ -1689,17 +1727,41 @@ export default function EventDetailPage() {
                 setIsGuestActionsOpen(false)
                 openGuestModal(displayGuestCount)
               }}
-              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3"
+              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3 flex items-center gap-3"
             >
+              <Edit className="h-5 w-5 text-purple-600" />
               Edit guest count
+            </button>
+            <button
+              onClick={async () => {
+                setIsGuestActionsOpen(false)
+                if (navigator.share) {
+                  try {
+                    await navigator.share({
+                      title: displayEvent.title,
+                      text: `Join us for ${displayEvent.title} on ${formattedStartDate}`,
+                      url: window.location.href,
+                    })
+                  } catch (error) {
+                    if (error.name !== 'AbortError') {
+                      console.error('Share failed:', error)
+                    }
+                  }
+                }
+              }}
+              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3 flex items-center gap-3"
+            >
+              <Share2 className="h-5 w-5 text-purple-600" />
+              Share
             </button>
             <button
               onClick={() => {
                 setIsGuestActionsOpen(false)
                 setShowLeaveConfirm(true)
               }}
-              className="w-full text-left px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 font-semibold hover:bg-red-100"
+              className="w-full text-left px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 font-semibold hover:bg-red-100 flex items-center gap-3"
             >
+              <X className="h-5 w-5 text-red-600" />
               Leave event
             </button>
           </div>
