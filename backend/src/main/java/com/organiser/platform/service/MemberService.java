@@ -72,15 +72,27 @@ public class MemberService {
     }
     
     /**
-     * Get member details as DTO (for public display).
+     * Get member details as DTO (for current user's own profile).
      *
      * @param memberId The ID of the member to retrieve
-     * @return MemberDTO containing public member information
+     * @return MemberDTO containing full member information
      * @throws RuntimeException if member not found
      */
     public MemberDTO getMemberDTOById(Long memberId) {
         Member member = getMemberById(memberId);
         return convertToDTO(member);
+    }
+
+    /**
+     * Get public-safe member profile (for viewing other users).
+     *
+     * @param memberId The ID of the member to retrieve
+     * @return MemberDTO containing only public-safe fields
+     * @throws RuntimeException if member not found
+     */
+    public MemberDTO getPublicMemberProfile(Long memberId) {
+        Member member = getMemberById(memberId);
+        return convertToPublicDTO(member);
     }
     
     // ============================================================
@@ -222,38 +234,55 @@ public class MemberService {
     // ============================================================
     // PRIVATE DATA CONVERSION METHODS
     // ============================================================
-    
-    /**
-     * Convert Member entity to DTO.
-     * Now properly checks current active agreement versions instead of outdated flags.
-     *
-     * @param member The Member entity to convert
-     * @return MemberDTO containing member information
-     */
-    private MemberDTO convertToDTO(Member member) {
-        // Check if member has accepted CURRENT active versions
-        boolean hasAcceptedCurrentUserAgreement = enhancedLegalService
-                .hasAcceptedCurrentVersion(member.getId(), "USER");
-        boolean hasAcceptedCurrentOrganiserAgreement = enhancedLegalService
-                .hasAcceptedCurrentVersion(member.getId(), "ORGANISER");
-        
-        log.info("🔍 Member {} - Current User Agreement: {}, Current Organiser Agreement: {} (convertToDTO called)", 
-                member.getId(), hasAcceptedCurrentUserAgreement, hasAcceptedCurrentOrganiserAgreement);
-        
-        return MemberDTO.builder()
-                .id(member.getId())
-                .displayName(member.getDisplayName())
-                .profilePhotoUrl(member.getProfilePhotoUrl())
-                .imagePosition(member.getImagePosition())
-                .hasOrganiserRole(member.getHasOrganiserRole())
-                .isAdmin(member.getIsAdmin())
-                // Use current version checking instead of outdated boolean flags
-                .hasAcceptedOrganiserAgreement(hasAcceptedCurrentOrganiserAgreement)
-                .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())
-                .hasAcceptedUserAgreement(hasAcceptedCurrentUserAgreement)
-                .userAgreementAcceptedAt(member.getUserAgreementAcceptedAt())
-                .emailNotificationsEnabled(member.getEmailNotificationsEnabled())
-                .deleted(!member.getActive())
-                .build();
-    }
+
+/**
+ * Convert Member entity to DTO.
+ * Now properly checks current active agreement versions instead of outdated flags.
+ * Used for current user's own profile (/api/v1/members/me).
+ */
+public MemberDTO convertToDTO(Member member) {
+    // Check current agreement versions
+    boolean hasAcceptedCurrentUserAgreement = enhancedLegalService
+            .hasAcceptedCurrentVersion(member.getId(), "USER");
+    boolean hasAcceptedCurrentOrganiserAgreement = enhancedLegalService
+            .hasAcceptedCurrentVersion(member.getId(), "ORGANISER");
+
+    log.info("🔍 Member {} - Current User Agreement: {}, Current Organiser Agreement: {} (convertToDTO called)", 
+            member.getId(), hasAcceptedCurrentUserAgreement, hasAcceptedCurrentOrganiserAgreement);
+
+    return MemberDTO.builder()
+            .id(member.getId())
+            .email(member.getEmail())
+            .displayName(member.getDisplayName())
+            .profilePhotoUrl(member.getProfilePhotoUrl())
+            .imagePosition(member.getImagePosition())
+            .hasOrganiserRole(member.getHasOrganiserRole())
+            .isAdmin(member.getIsAdmin())
+            // Use current version checking instead of outdated boolean flags
+            .hasAcceptedOrganiserAgreement(hasAcceptedCurrentOrganiserAgreement)
+            .organiserAgreementAcceptedAt(member.getOrganiserAgreementAcceptedAt())
+            .hasAcceptedUserAgreement(hasAcceptedCurrentUserAgreement)
+            .userAgreementAcceptedAt(member.getUserAgreementAcceptedAt())
+            .emailNotificationsEnabled(member.getEmailNotificationsEnabled())
+            .deleted(!member.getActive())
+            .build();
+}
+
+/**
+ * Convert Member entity to public-safe DTO.
+ * Used for viewing other users' profiles (/api/v1/members/{id}).
+ * Only exposes: id, displayName, profilePhotoUrl, imagePosition.
+ * PRIVACY: No email, no admin status, no agreement info, no notification preferences.
+ */
+public MemberDTO convertToPublicDTO(Member member) {
+    return MemberDTO.builder()
+            .id(member.getId())
+            // PRIVACY: Never expose email in public profiles (Meetup.com approach)
+            .displayName(member.getDisplayName())
+            .profilePhotoUrl(member.getProfilePhotoUrl())
+            .imagePosition(member.getImagePosition())
+            // PRIVACY: Don't expose admin status, agreements, or preferences
+            .build();
+}
+
 }

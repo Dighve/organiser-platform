@@ -180,8 +180,20 @@ public class EventController {
     }
     
     @GetMapping("/public/{id}/participants")
-    public ResponseEntity<?> getEventParticipants(@PathVariable Long id) {
-        return ResponseEntity.ok(eventService.getEventParticipants(id));
+    public ResponseEntity<?> getEventParticipants(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        // Get requester ID (null if not authenticated)
+        Long requesterId = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                requesterId = getUserIdFromAuth(authentication);
+            } catch (Exception e) {
+                // Not authenticated, requesterId remains null
+            }
+        }
+        return ResponseEntity.ok(eventService.getEventParticipants(id, requesterId));
     }
     
     @GetMapping("/public/{id}/calendar")

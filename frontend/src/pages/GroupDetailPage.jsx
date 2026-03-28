@@ -717,7 +717,7 @@ export default function GroupDetailPage() {
                             />
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
-                                {member.displayName || member.email.split('@')[0]}
+                                {member.displayName || member.email?.split('@')[0] || 'Member'}
                               </p>
                               <p className="text-xs text-gray-500 truncate">
                                 Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
@@ -859,7 +859,7 @@ export default function GroupDetailPage() {
                           key={member.id}
                           onClick={() => setActiveTab('members')}
                           className="cursor-pointer group relative"
-                          title={member.displayName || member.email.split('@')[0]}
+                          title={member.displayName || member.email?.split('@')[0] || 'Member'}
                         >
                           <ProfileAvatar 
                             member={member} 

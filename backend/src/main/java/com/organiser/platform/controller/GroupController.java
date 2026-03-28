@@ -78,8 +78,20 @@ public class GroupController {
     }
     
     @GetMapping("/{groupId}/members")
-    public ResponseEntity<?> getGroupMembers(@PathVariable Long groupId) {
-        return ResponseEntity.ok(groupService.getGroupMembers(groupId));
+    public ResponseEntity<?> getGroupMembers(
+            @PathVariable Long groupId,
+            Authentication authentication
+    ) {
+        // Get requester ID (null if not authenticated)
+        Long requesterId = null;
+        if (authentication != null && authentication.isAuthenticated()) {
+            try {
+                requesterId = getUserIdFromAuth(authentication);
+            } catch (Exception e) {
+                // Not authenticated, requesterId remains null
+            }
+        }
+        return ResponseEntity.ok(groupService.getGroupMembers(groupId, requesterId));
     }
     
     @PostMapping("/{groupId}/subscribe")

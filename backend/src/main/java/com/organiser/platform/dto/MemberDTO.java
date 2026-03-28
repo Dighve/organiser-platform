@@ -1,5 +1,6 @@
 package com.organiser.platform.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,10 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class MemberDTO {
     private Long id;
+    private String email;
     private String displayName;
     private String profilePhotoUrl;
     private String imagePosition; // JSON string: {"x": 50, "y": 50}
