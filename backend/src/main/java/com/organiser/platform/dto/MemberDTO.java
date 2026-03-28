@@ -13,7 +13,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MemberDTO {
     private Long id;
-    private String email;
     private String displayName;
     private String profilePhotoUrl;
     private String imagePosition; // JSON string: {"x": 50, "y": 50}
@@ -30,6 +29,7 @@ public class MemberDTO {
     private LocalDateTime organiserAgreementAcceptedAt;
     private Boolean hasAcceptedUserAgreement;
     private LocalDateTime userAgreementAcceptedAt;
+    private Boolean emailNotificationsEnabled;
     private LocalDateTime joinedAt; // For event participants: registrationDate, for group members: subscription date
     private Boolean deleted;
     private Integer guestCount; // optional: populated for event participant listings

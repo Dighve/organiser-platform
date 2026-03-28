@@ -1,7 +1,7 @@
 package com.organiser.platform.service;
 
 import com.organiser.platform.dto.FeatureFlagDTO;
-import com.organiser.platform.entity.FeatureFlag;
+import com.organiser.platform.model.FeatureFlag;
 import com.organiser.platform.repository.FeatureFlagRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +35,7 @@ public class FeatureFlagService {
     public static final String PASSCODE_AUTH_ENABLED = "PASSCODE_AUTH_ENABLED";
     public static final String USER_AGREEMENT_ENABLED = "USER_AGREEMENT_ENABLED";
     public static final String WELCOME_SCREEN_ENABLED = "WELCOME_SCREEN_ENABLED";
+    public static final String EMAIL_NOTIFICATIONS_ENABLED = "EMAIL_NOTIFICATIONS_ENABLED";
     
     /**
      * Check if a specific feature is enabled
@@ -120,6 +121,10 @@ public class FeatureFlagService {
     
     public boolean isStaticMapsEnabled() {
         return isFeatureEnabled(STATIC_MAPS_ENABLED);
+    }
+    
+    public boolean isEmailNotificationsEnabled() {
+        return isFeatureEnabled(EMAIL_NOTIFICATIONS_ENABLED);
     }
     
     /**

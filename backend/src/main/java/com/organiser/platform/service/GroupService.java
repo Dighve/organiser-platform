@@ -388,7 +388,6 @@ public class GroupService {
                 .filter(sub -> sub.getStatus() == Subscription.SubscriptionStatus.ACTIVE)
                 .map(subscription -> com.organiser.platform.dto.MemberDTO.builder()
                         .id(subscription.getMember().getId())
-                        .email(subscription.getMember().getEmail())
                         .displayName(subscription.getMember().getDisplayName())
                         .profilePhotoUrl(subscription.getMember().getProfilePhotoUrl())
                         // Mark if this member is the primary organiser
@@ -524,7 +523,6 @@ public class GroupService {
         return bannedMembers.stream()
                 .map(ban -> com.organiser.platform.dto.MemberDTO.builder()
                         .id(ban.getMember().getId())
-                        .email(ban.getMember().getEmail())
                         .displayName(ban.getMember().getDisplayName())
                         .profilePhotoUrl(ban.getMember().getProfilePhotoUrl())
                         .bannedAt(ban.getBannedAt())

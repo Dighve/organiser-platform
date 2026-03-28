@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -40,6 +41,7 @@ import java.time.LocalDateTime;
  * @author OutMeets Platform Team
  */
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class EventService {
     
@@ -930,7 +932,6 @@ public class EventService {
                     
                     return com.organiser.platform.dto.MemberDTO.builder()
                             .id((isDeleted || isBanned) ? null : member.getId())
-                            .email((isDeleted || isBanned) ? null : member.getEmail())
                             .displayName(displayName)
                             .profilePhotoUrl((isDeleted || isBanned) ? null : member.getProfilePhotoUrl())
                             // Check if this participant is the organiser of THIS event
@@ -953,11 +954,19 @@ public class EventService {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
         
-        // Check if user is a member of the group (privacy check)
+        // Check if user is a member of the group OR a participant of the event
         if (memberId != null) {
             boolean isMember = groupService.isMemberOfGroup(memberId, event.getGroup().getId());
-            if (!isMember) {
-                throw new RuntimeException("You must be a member of the group to add this event to your calendar");
+            boolean isParticipant = event.getParticipants().stream()
+                    .anyMatch(p -> p.getMember().getId().equals(memberId));
+            boolean isOrganiser = event.getEventOrganisers().stream()
+                    .anyMatch(o -> o.getId().equals(memberId));
+            
+            log.info("Calendar access check - memberId: {}, isMember: {}, isParticipant: {}, isOrganiser: {}, participantCount: {}", 
+                    memberId, isMember, isParticipant, isOrganiser, event.getParticipants().size());
+            
+            if (!isMember && !isParticipant && !isOrganiser) {
+                throw new RuntimeException("You must be a member of the group or a participant of this event to add it to your calendar");
             }
         }
         

@@ -1,10 +1,13 @@
 import { useState, useRef, useEffect } from 'react'
-import { Share2, Copy, Check, ChevronDown, MessageCircle, Mail } from 'lucide-react'
+import { Share2, Copy, Check, ChevronDown, MessageCircle, Mail, UserPlus } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { trackShareOpened, trackShareCompleted, trackShareMethodSelected } from '../lib/analytics'
+import InviteMembersModal from './InviteMembersModal'
 
 export default function ShareButton({ 
   type = 'event', // 'event' or 'group'
+  itemId, // event ID or group ID
+  groupId, // group ID (for showing "Not Member" badge in invitations)
   title,
   description,
   url,
@@ -15,6 +18,7 @@ export default function ShareButton({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
   const dropdownRef = useRef(null)
 
   // Close dropdown when clicking outside
@@ -79,7 +83,20 @@ export default function ShareButton({
     setIsOpen(false)
   }
 
+  const openInviteModal = () => {
+    trackShareMethodSelected(type, 'invite_members', url)
+    setShowInviteModal(true)
+    setIsOpen(false)
+  }
+
   const shareOptions = [
+    {
+      id: 'invite',
+      name: 'Invite Members',
+      icon: '👥',
+      color: 'from-purple-600 to-pink-600',
+      action: openInviteModal
+    },
     {
       id: 'copy',
       name: 'Copy Link',
@@ -184,6 +201,17 @@ export default function ShareButton({
           </div>
         </div>
       )}
+
+      {/* Invite Members Modal */}
+      <InviteMembersModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        type={type}
+        itemId={itemId}
+        groupId={groupId}
+        title={title}
+        url={url}
+      />
     </div>
   )
 }

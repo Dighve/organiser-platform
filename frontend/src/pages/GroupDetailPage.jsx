@@ -1105,6 +1105,29 @@ export default function GroupDetailPage() {
                 </button>
                 <div className="h-px bg-gray-200 mx-3" />
                 <button
+                  onClick={async () => {
+                    setIsGroupActionsOpen(false)
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: displayGroup.name,
+                          text: `Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`,
+                          url: window.location.href,
+                        })
+                      } catch (error) {
+                        if (error.name !== 'AbortError') {
+                          console.error('Share failed:', error)
+                        }
+                      }
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <Share2 className="h-5 w-5 text-gray-900" />
+                  <span>Share group</span>
+                </button>
+                <div className="h-px bg-gray-200 mx-3" />
+                <button
                   onClick={() => {
                     setIsGroupActionsOpen(false)
                   }}

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { AlertTriangle, Trash2, Shield, ArrowLeft, Users, Calendar } from 'lucide-react'
+import { AlertTriangle, Trash2, Shield, ArrowLeft, Users, Calendar, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { membersAPI, groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -27,6 +27,17 @@ export default function SettingsPage() {
     queryKey: ['myEventsHosting'],
     queryFn: () => eventsAPI.searchAdvancedEvents({ q: ':hosting', page: 0, size: 100 }),
     enabled: !!memberData?.id,
+  })
+
+  const updateEmailNotificationsMutation = useMutation({
+    mutationFn: (enabled) => membersAPI.updateEmailNotifications(enabled),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['currentMember'])
+      toast.success('Email notification preferences updated')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to update preferences')
+    },
   })
 
   const deleteMutation = useMutation({
@@ -85,11 +96,49 @@ export default function SettingsPage() {
           <ArrowLeft className="h-4 w-4" /> Back
         </button>
 
+        {/* Email Notifications Section */}
+        <div className="bg-white/90 backdrop-blur shadow-xl rounded-3xl border border-slate-100 p-6 sm:p-10 mb-6">
+          <div className="space-y-4">
+            <div className="flex items-start gap-3">
+              <Bell className="h-6 w-6 text-purple-600 mt-1" />
+              <div className="flex-1">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Email Notifications</h2>
+                <p className="text-slate-600 text-sm sm:text-base mb-4">
+                  Receive email notifications when you're invited to events or groups.
+                </p>
+                
+                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">Invitation Emails</p>
+                    <p className="text-sm text-slate-600">Get notified when someone invites you</p>
+                  </div>
+                  <button
+                    onClick={() => updateEmailNotificationsMutation.mutate(!memberData?.emailNotificationsEnabled)}
+                    disabled={updateEmailNotificationsMutation.isLoading || memberLoading}
+                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 ${
+                      memberData?.emailNotificationsEnabled
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600'
+                        : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${
+                        memberData?.emailNotificationsEnabled ? 'translate-x-7' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Delete Account Section */}
         <div className="bg-white/90 backdrop-blur shadow-xl rounded-3xl border border-slate-100 p-6 sm:p-10 space-y-8">
           <div className="space-y-2">
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Delete your account</h1>
             <p className="text-slate-600 text-base sm:text-lg">
-              If you delete your OutMeets account you’ll need to create a new one to come back. This removes you from all future events and groups, and your past activity will be shown as “Deleted user”.
+              If you delete your OutMeets account you'll need to create a new one to come back. This removes you from all future events and groups, and your past activity will be shown as "Deleted user".
             </p>
           </div>
 

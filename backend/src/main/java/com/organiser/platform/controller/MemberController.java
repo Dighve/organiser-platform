@@ -42,6 +42,20 @@ public class MemberController {
         MemberDTO member = memberService.getMemberDTOById(memberId);
         return ResponseEntity.ok(member);
     }
+    
+    /**
+     * Get all members for invitation/search purposes.
+     * Returns list of all members with basic info (id, email, displayName, profilePhotoUrl).
+     * Requires authentication.
+     */
+    @GetMapping
+    public ResponseEntity<java.util.List<MemberDTO>> getAllMembers(Authentication authentication) {
+        // Ensure user is authenticated
+        if (authentication == null) {
+            throw new RuntimeException("Authentication required");
+        }
+        return ResponseEntity.ok(memberService.getAllMembers());
+    }
 
     /**
      * Delete current user's profile.
@@ -64,6 +78,22 @@ public class MemberController {
         Long userId = getUserIdFromAuth(authentication);
         MemberDTO updatedMember = memberService.updateMemberProfile(userId, request);
         return ResponseEntity.ok(updatedMember);
+    }
+    
+    /**
+     * Update email notification preferences
+     */
+    @PutMapping("/me/email-notifications")
+    public ResponseEntity<Void> updateEmailNotifications(
+            @RequestBody java.util.Map<String, Boolean> request,
+            Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        Boolean enabled = request.get("enabled");
+        if (enabled == null) {
+            throw new RuntimeException("'enabled' field is required");
+        }
+        memberService.updateEmailNotifications(userId, enabled);
+        return ResponseEntity.ok().build();
     }
     
     private Long getUserIdFromAuth(Authentication authentication) {

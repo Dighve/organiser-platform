@@ -210,4 +210,49 @@ public class NotificationService {
         notificationRepository.deleteByGroupId(groupId);
         log.info("Deleted all notifications for group {}", groupId);
     }
+    
+    /**
+     * Create notification when a member is invited to an event or group
+     */
+    @Transactional
+    public Notification createInvitationNotification(
+            Member recipient,
+            Member sender,
+            String itemType,
+            Long itemId,
+            String itemName,
+            String message,
+            String url) {
+        
+        log.info("Creating invitation notification for member {} from {}", recipient.getId(), sender.getId());
+        
+        String senderName = sender.getDisplayName() != null ? sender.getDisplayName() : sender.getEmail().split("@")[0];
+        
+        Notification.NotificationBuilder builder = Notification.builder()
+            .member(recipient)
+            .notificationType(Notification.NotificationType.INVITATION)
+            .title(senderName + " invited you")
+            .message(message);
+        
+        // Set related entity based on type
+        if ("event".equalsIgnoreCase(itemType)) {
+            builder.relatedEvent(Event.builder().id(itemId).build());
+        } else if ("group".equalsIgnoreCase(itemType)) {
+            builder.relatedGroup(Group.builder().id(itemId).build());
+        }
+        
+        Notification notification = builder.build();
+        notification = notificationRepository.save(notification);
+        
+        // Send web push notification
+        webPushService.sendToMember(
+            recipient.getId(),
+            notification.getTitle(),
+            notification.getMessage(),
+            url
+        );
+        
+        log.info("Created INVITATION notification {} for member {}", notification.getId(), recipient.getId());
+        return notification;
+    }
 }

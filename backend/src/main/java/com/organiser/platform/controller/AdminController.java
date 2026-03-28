@@ -136,7 +136,7 @@ public class AdminController {
         }
         
         try {
-            // Get admin email from authentication
+            // Get admin email from authentication for audit trail
             String adminEmail = authentication.getName(); // JWT contains email
             FeatureFlagDTO updatedFlag = featureFlagService.updateFeatureFlag(flagKey, isEnabled, adminEmail);
             return ResponseEntity.ok(updatedFlag);
