@@ -1130,6 +1130,25 @@ export default function GroupDetailPage() {
                 <button
                   onClick={() => {
                     setIsGroupActionsOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                >
+                  <ShareButton
+                    type="group"
+                    title={displayGroup.name}
+                    description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
+                    url={window.location.href}
+                    imageUrl={displayGroup.imageUrl}
+                    variant="icon"
+                    size="sm"
+                    className="!p-0 !border-0 !bg-transparent hover:!bg-transparent text-purple-600"
+                  />
+                  <span>Share group</span>
+                </button>
+                <div className="h-px bg-gray-200 mx-3" />
+                <button
+                  onClick={() => {
+                    setIsGroupActionsOpen(false)
                     navigate(`/groups/${id}/transfer`)
                   }}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
