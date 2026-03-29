@@ -138,8 +138,8 @@ We share data with trusted third parties who help us operate the Platform:
 |----------|---------|-------------|----------------|
 | **Cloudinary** | Image hosting | Uploaded photos, image URLs | [Link](https://cloudinary.com/privacy) |
 | **Google OAuth** | Authentication | Email, name, profile photo | [Link](https://policies.google.com/privacy) |
-| **Railway/Render** | Hosting | All platform data | [Railway](https://railway.app/legal/privacy) / [Render](https://render.com/privacy) |
-| **PostgreSQL** | Database | All platform data | Managed by hosting provider |
+| **Render** | Hosting | All platform data | [Render](https://render.com/privacy) |
+| **PostgreSQL** | Database | All platform data | Managed by Render |
 
 **Data Processing Agreements:** We have agreements with service providers to protect your data.
 

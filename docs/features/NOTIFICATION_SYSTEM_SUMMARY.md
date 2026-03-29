@@ -123,7 +123,7 @@ DELETE /api/v1/notifications/{id}            - Delete notification
 ## 🎯 Next Steps
 
 1. **Test** the notification flow end-to-end
-2. **Deploy** to production (Railway + Netlify)
+2. **Deploy** to production (Render + Netlify)
 3. **Monitor** notification creation and performance
 4. **Gather** user feedback
 5. **Plan** Phase 2 features (full notifications page, preferences, etc.)

@@ -181,7 +181,7 @@ Bandwidth limit = Bandwidth.classic(10, Refill.intervally(10, Duration.ofHours(1
 3. ✅ Check logs
 
 ### Before Production:
-1. Test on Railway deployment
+1. Test on Render deployment
 2. Monitor for false positives
 3. Adjust limits if needed
 
