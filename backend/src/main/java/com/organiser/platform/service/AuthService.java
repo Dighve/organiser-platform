@@ -15,6 +15,7 @@ import com.organiser.platform.repository.MagicLinkRepository;
 import com.organiser.platform.repository.MemberRepository;
 import com.organiser.platform.security.JwtUtil;
 import com.organiser.platform.util.AvatarGenerator;
+import com.organiser.platform.util.DisplayNameGenerator;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +54,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
     private final AvatarGenerator avatarGenerator;
+    private final DisplayNameGenerator displayNameGenerator;
     private final OrganiserInviteService organiserInviteService;
     private final RefreshTokenService refreshTokenService;
     
@@ -273,7 +275,11 @@ public class AuthService {
      * Create a new member with auto-generated avatar.
      */
     private Member createNewMember(String email, MagicLinkRequest request) {
+        // Always ensure displayName is set - generate from email if not provided
         String displayName = request.getDisplayName();
+        if (displayName == null || displayName.trim().isEmpty()) {
+            displayName = displayNameGenerator.generateFromEmail(email);
+        }
         
         // Generate avatar URL based on display name or email
         String avatarUrl = avatarGenerator.generateAvatarUrl(displayName, email);
