@@ -37,7 +37,7 @@ export default function MemberDetailPage() {
     if (name && name.trim()) {
       return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     }
-    if (email) {
+    if (email && email.length > 0) {
       return email[0].toUpperCase()
     }
     return '?'
@@ -110,7 +110,7 @@ export default function MemberDetailPage() {
               {member.profilePhotoUrl ? (
                 <img
                   src={member.profilePhotoUrl}
-                  alt={member.displayName || member.email}
+                  alt={member.displayName || (member.email ? member.email : 'Member')}
                   className="h-40 w-40 rounded-full border-8 border-white shadow-2xl object-cover"
                 />
               ) : (

@@ -23,7 +23,7 @@ export default function MemberAutocomplete({ groupId, value, onChange, error }) 
 
   // Filter members based on search term
   const filteredMembers = members.filter(member => {
-    const displayName = member.displayName || member.email.split('@')[0]
+    const displayName = member.displayName || (member.email ? member.email.split('@')[0] : 'Unknown')
     return displayName.toLowerCase().includes(searchTerm.toLowerCase())
   })
 
@@ -40,7 +40,7 @@ export default function MemberAutocomplete({ groupId, value, onChange, error }) 
   }, [])
 
   const handleSelect = (member) => {
-    const displayName = member.displayName || member.email.split('@')[0]
+    const displayName = member.displayName || (member.email ? member.email.split('@')[0] : 'Unknown')
     setSearchTerm(displayName)
     // Pass the member object with ID instead of just the name
     onChange({ id: member.id, name: displayName })
@@ -87,7 +87,7 @@ export default function MemberAutocomplete({ groupId, value, onChange, error }) 
                 <p className="text-xs font-semibold text-purple-700 uppercase">Group Members ({filteredMembers.length})</p>
               </div>
               {filteredMembers.map((member) => {
-                const displayName = member.displayName || member.email.split('@')[0]
+                const displayName = member.displayName || (member.email ? member.email.split('@')[0] : 'Unknown')
                 const isSelected = searchTerm === displayName
                 
                 return (

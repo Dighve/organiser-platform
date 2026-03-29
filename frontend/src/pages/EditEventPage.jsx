@@ -121,7 +121,7 @@ export default function EditEventPage() {
       
       const initialData = {
         title: event.title,
-        description: event.description,
+        description: event.description || '',  // Ensure empty string instead of null/undefined
         eventDate: startDateStr,
         startTime: startTimeStr,
         endDate: endDateStr,
