@@ -1252,7 +1252,7 @@ export default function EventDetailPage() {
                             />
                             <div className="flex-1 min-w-0 space-y-1">
                               <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all text-sm lg:text-base">
-                                {participant.displayName || participant.email.split('@')[0]}
+                                {participant.displayName || participant.email?.split('@')[0] || 'Anonymous'}
                               </p>
                               <div className="flex items-center flex-wrap gap-2 text-xs text-gray-500">
                                 <span>{new Date(participant.joinedAt).toLocaleDateString()}</span>
