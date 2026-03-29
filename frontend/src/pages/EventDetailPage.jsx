@@ -450,11 +450,16 @@ export default function EventDetailPage() {
   }
 
   // Check if event is in the past
-  const eventStart = event ? new Date(event?.eventDate) : null
-  const eventEnd = event ? (event?.endDate ? new Date(event.endDate) : eventStart) : null
+  // Parse dates from backend (Instant/UTC timestamps)
+  const eventStart = event?.eventDate ? new Date(event.eventDate) : null
+  const eventEnd = event?.endDate ? new Date(event.endDate) : eventStart
   const now = new Date()
-  const isPastEvent = eventStart ? eventEnd < now : false
-  const isOngoingEvent = eventStart ? eventStart <= now && now <= (eventEnd || eventStart) : false
+  
+  // Event is past if end date/time has passed
+  const isPastEvent = eventEnd ? eventEnd.getTime() < now.getTime() : false
+  // Event is ongoing if started but not yet ended
+  const isOngoingEvent = eventStart && eventEnd ? 
+    (eventStart.getTime() <= now.getTime() && now.getTime() <= eventEnd.getTime()) : false
   
   // Check if access is denied (non-member trying to view a private group event)
   // Public groups: backend returns full data to everyone → never denied
@@ -658,9 +663,32 @@ export default function EventDetailPage() {
         {/* MOBILE STICKY ACTION BAR - Bottom of screen */}
         {/* ============================================ */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3">
-          {isPastEvent ? (
-            <div className="w-full py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
-              Event has ended
+          {isPastEvent && !isEventOrganiser ? (
+            <div className="flex items-center gap-2">
+              <div className="flex-1 py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
+                Event has ended
+              </div>
+              <button
+                onClick={() => setIsManageOpen(true)}
+                className="py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center"
+                aria-label="Share event"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </button>
+            </div>
+          ) : isPastEvent && isEventOrganiser ? (
+            // Past event - Organiser can copy and share
+            <div className="flex items-center gap-2">
+              <div className="flex-1 py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
+                Event has ended
+              </div>
+              <button
+                onClick={() => setIsManageOpen(true)}
+                className="py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center"
+                aria-label="Manage event"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </button>
             </div>
           ) : isAccessDenied ? (
             <button
@@ -813,9 +841,9 @@ export default function EventDetailPage() {
         </div>
 
         {/* ============================================ */}
-        {/* MOBILE MANAGE SHEET - Organiser only */}
+        {/* MOBILE MANAGE SHEET - Organiser and participants */}
         {/* ============================================ */}
-        {isManageOpen && isEventOrganiser && (
+        {isManageOpen && (
           <div className="lg:hidden fixed inset-0 z-[60] flex items-end justify-center">
             <button
               type="button"
@@ -841,62 +869,70 @@ export default function EventDetailPage() {
               </button>
               <div className="px-4 pb-4 pt-6">
                 <div className="space-y-1">
+                  {!isPastEvent && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setIsManageOpen(false)
+                          navigate(`/events/${id}/edit`)
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                      >
+                        <Edit className="h-5 w-5 text-purple-600" />
+                        Edit event
+                      </button>
+                      <div className="h-px bg-gray-200 mx-3" />
+                    </>
+                  )}
+                  {isEventOrganiser && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsManageOpen(false)
+                        handleCopyEvent()
+                      }}
+                      disabled={isCopying}
+                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Copy className="h-5 w-5 text-gray-900" />
+                      {isCopying ? 'Copying...' : 'Copy event'}
+                    </button>
+                  )}
                   <button
                     onClick={() => {
                       setIsManageOpen(false)
-                      navigate(`/events/${id}/edit`)
+                      // Trigger native share or copy link
+                      if (navigator.share) {
+                        navigator.share({
+                          title: displayEvent.title,
+                          text: `Join us for ${displayEvent.title} on ${formattedStartDate}`,
+                          url: window.location.href
+                        }).catch(() => {})
+                      } else {
+                        navigator.clipboard.writeText(window.location.href)
+                        toast.success('Link copied to clipboard!')
+                      }
                     }}
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
                   >
-                    <Edit className="h-5 w-5 text-purple-600" />
-                    Edit event
-                  </button>
-                  <div className="h-px bg-gray-200 mx-3" />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsManageOpen(false)
-                      handleCopyEvent()
-                    }}
-                    disabled={isCopying}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Copy className="h-5 w-5 text-blue-600" />
-                    {isCopying ? 'Copying...' : 'Copy event'}
-                  </button>
-                  <div className="h-px bg-gray-200 mx-3" />
-                  <button
-                    onClick={() => {
-                      setIsManageOpen(false)
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
-                  >
-                    <ShareButton
-                      type="event"
-                      itemId={id}
-                      groupId={displayEvent.groupId}
-                      title={displayEvent.title}
-                      description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
-                      url={window.location.href}
-                      imageUrl={displayEvent.imageUrl}
-                      onFlyerShare={isFlyerEnabled() ? () => { setIsManageOpen(false); setShowFlyerModal(true) } : undefined}
-                      variant="icon"
-                      size="sm"
-                      className="!p-0 !border-0 !bg-transparent hover:!bg-transparent text-purple-600"
-                    />
+                    <Share2 className="h-5 w-5 text-gray-900" />
                     <span>Share event</span>
                   </button>
-                  <div className="h-px bg-gray-200 mx-3" />
-                  <button
-                    onClick={() => {
-                      setIsManageOpen(false)
-                      handleDelete()
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-red-700 hover:bg-red-50 transition-colors"
-                  >
-                    <Trash2 className="h-5 w-5 text-red-600" />
-                    Delete event
-                  </button>
+                  {!isPastEvent && (
+                    <>
+                      <div className="h-px bg-gray-200 mx-3" />
+                      <button
+                        onClick={() => {
+                          setIsManageOpen(false)
+                          handleDelete()
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-red-700 hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="h-5 w-5 text-red-600" />
+                        Delete event
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -1301,13 +1337,23 @@ export default function EventDetailPage() {
               {/* Action Buttons Section - Varies based on user status */}
               {/* Hide sidebar buttons on mobile - mobile has sticky action bar */}
               <div className={`hidden lg:block ${!isAccessDenied ? "pt-6 border-t border-gray-200" : ""}`}>
-                {isPastEvent ? (
+                {isPastEvent && !isEventOrganiser ? (
                   <div className="space-y-4">
                     <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
                       <Clock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
                       <p className="text-sm font-semibold text-gray-600 mb-1">Event has ended</p>
                       <p className="text-xs text-gray-500">Joining is disabled for past events.</p>
                     </div>
+                    <ShareButton
+                      type="event"
+                      itemId={id}
+                      groupId={displayEvent.groupId}
+                      title={displayEvent.title}
+                      description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                      url={window.location.href}
+                      imageUrl={displayEvent.imageUrl}
+                      onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                    />
                   </div>
                 ) : isAccessDenied ? (
                   /* NON-MEMBER VIEW - Show Join Group button */
@@ -1433,27 +1479,37 @@ export default function EventDetailPage() {
                       ) : (
                         /* PAST EVENT - Show Copy Event button */
                         <div className="space-y-3">
-                          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
-                            <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
-                              <Clock className="h-5 w-5" />
-                              <p className="font-semibold">Event Has Ended</p>
+                            <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
+                              <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+                                <Clock className="h-5 w-5" />
+                                <p className="font-semibold">Event Has Ended</p>
+                              </div>
+                              <p className="text-sm text-gray-500 text-center">
+                                Past events cannot be edited to preserve event history.
+                              </p>
                             </div>
-                            <p className="text-sm text-gray-500 text-center">
-                              Past events cannot be edited to preserve event history.
-                            </p>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleCopyEvent()
+                              }}
+                              disabled={isCopying}
+                              className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            >
+                              <Copy className="h-5 w-5" />
+                              {isCopying ? 'Copying...' : 'Copy Event'}
+                            </button>
+                            <ShareButton
+                              type="event"
+                              itemId={id}
+                              groupId={displayEvent.groupId}
+                              title={displayEvent.title}
+                              description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                              url={window.location.href}
+                              imageUrl={displayEvent.imageUrl}
+                              onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                            />
                           </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleCopyEvent()
-                            }}
-                            disabled={isCopying}
-                            className="w-full py-3 px-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-blue-500/50 transition-all transform hover:scale-105 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                          >
-                            <Copy className="h-5 w-5" />
-                            {isCopying ? 'Copying...' : 'Copy Event for Future Date'}
-                          </button>
-                        </div>
                       )}
                     </div>
                   ) : hasJoined ? (
@@ -1518,7 +1574,30 @@ export default function EventDetailPage() {
                           {leaveMutation.isLoading ? 'Leaving...' : 'Leave Event'}
                         </button>
                       </div>
-                    ) : null
+                    ) : (
+                      /* PAST EVENT - Registered user can share */
+                      <>
+                        {console.log('Registered user past event - hasJoined:', hasJoined, 'isPastEvent:', isPastEvent)}
+                        <div className="space-y-3">
+                          <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                            <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+                              <Clock className="h-5 w-5" />
+                              <p className="font-semibold text-center">Event Has Ended</p>
+                            </div>
+                          </div>
+                          <ShareButton
+                            type="event"
+                            itemId={id}
+                            groupId={displayEvent.groupId}
+                            title={displayEvent.title}
+                            description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                            url={window.location.href}
+                            imageUrl={displayEvent.imageUrl}
+                            onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                          />
+                        </div>
+                      </>
+                    )
                   ) : !isPastEvent ? (
                     /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
                     <button
@@ -1533,7 +1612,27 @@ export default function EventDetailPage() {
                       )}
                       {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
                     </button>
-                  ) : null
+                  ) : (
+                    /* PAST EVENT - Non-registered user can share */
+                    <div className="space-y-3">
+                      <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                        <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+                          <Clock className="h-5 w-5" />
+                          <p className="font-semibold text-center">Event Has Ended</p>
+                        </div>
+                      </div>
+                      <ShareButton
+                        type="event"
+                        itemId={id}
+                        groupId={displayEvent.groupId}
+                        title={displayEvent.title}
+                        description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                        url={window.location.href}
+                        imageUrl={displayEvent.imageUrl}
+                        onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                      />
+                    </div>
+                  )
                 ) : !isPastEvent ? (
                   /* NOT AUTHENTICATED - Show login prompt */
                   <div className="space-y-3">
@@ -1551,8 +1650,24 @@ export default function EventDetailPage() {
                     </button>
                   </div>
                 ) : (
-                  <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center text-sm text-gray-600">
-                    Event has ended
+                  /* PAST EVENT - Unauthenticated user can share */
+                  <div className="space-y-3">
+                    <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
+                      <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">
+                        <Clock className="h-5 w-5" />
+                        <p className="font-semibold text-center">Event Has Ended</p>
+                      </div>
+                    </div>
+                    <ShareButton
+                      type="event"
+                      itemId={id}
+                      groupId={displayEvent.groupId}
+                      title={displayEvent.title}
+                      description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                      url={window.location.href}
+                      imageUrl={displayEvent.imageUrl}
+                      onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                    />
                   </div>
                 )}
 
