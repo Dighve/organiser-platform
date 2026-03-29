@@ -1011,7 +1011,7 @@ export default function GroupDetailPage() {
                     )}
                   </div>
                 ) : (
-                  /* NOT AUTHENTICATED - Show login prompt */
+                  /* NOT AUTHENTICATED - Show login prompt and share button */
                   <div className="space-y-3">
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100 mb-4">
                       <p className="text-sm text-gray-600">🔐 Login to join this group and participate in events</p>
@@ -1025,6 +1025,15 @@ export default function GroupDetailPage() {
                     >
                       Login
                     </button>
+                    <ShareButton
+                      type="group"
+                      title={displayGroup.name}
+                      description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
+                      url={window.location.href}
+                      imageUrl={displayGroup.imageUrl}
+                      variant="primary"
+                      size="md"
+                    />
                   </div>
                 )}
 
@@ -1293,16 +1302,42 @@ export default function GroupDetailPage() {
             </button>
           )
         ) : (
-          <button
-            onClick={() => {
-              useAuthStore.getState().setReturnUrl(location.pathname + location.search)
-              window.dispatchEvent(new CustomEvent('open-login-modal'))
-            }}
-            className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
-          >
-            <LogIn className="h-5 w-5" />
-            Login to Join
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                useAuthStore.getState().setReturnUrl(location.pathname + location.search)
+                window.dispatchEvent(new CustomEvent('open-login-modal'))
+              }}
+              className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl flex items-center justify-center gap-2 text-base active:scale-95 transition-all"
+            >
+              <LogIn className="h-5 w-5" />
+              Login to Join
+            </button>
+            <button
+              onClick={async () => {
+                if (navigator.share) {
+                  try {
+                    await navigator.share({
+                      title: displayGroup.name,
+                      text: `Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`,
+                      url: window.location.href,
+                    })
+                  } catch (error) {
+                    if (error.name !== 'AbortError') {
+                      console.error('Share failed:', error)
+                    }
+                  }
+                } else {
+                  navigator.clipboard.writeText(window.location.href)
+                  toast.success('Link copied to clipboard!')
+                }
+              }}
+              className="py-3 px-4 bg-white border-2 border-purple-600 text-purple-600 font-bold rounded-xl hover:bg-purple-50 transition-all flex items-center justify-center"
+              aria-label="Share group"
+            >
+              <Share2 className="h-5 w-5" />
+            </button>
+          </div>
         )}
       </div>
 

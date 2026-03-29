@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -691,18 +691,44 @@ export default function EventDetailPage() {
               </button>
             </div>
           ) : isAccessDenied ? (
-            <button
-              onClick={handleJoinClick}
-              disabled={joinMutation.isLoading || isJoiningFlow}
-              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-            >
-              {joinMutation.isLoading || isJoiningFlow ? (
-                <Loader className="h-5 w-5 animate-spin" />
-              ) : (
-                <Users className="h-5 w-5" />
-              )}
-              {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleJoinClick}
+                disabled={joinMutation.isLoading || isJoiningFlow}
+                className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-4 rounded-lg font-bold text-base hover:shadow-xl active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {joinMutation.isLoading || isJoiningFlow ? (
+                  <Loader className="h-5 w-5 animate-spin" />
+                ) : (
+                  <Users className="h-5 w-5" />
+                )}
+                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: displayEvent.title,
+                        text: `Join us for ${displayEvent.title} on ${formattedStartDate}`,
+                        url: window.location.href,
+                      })
+                    } catch (error) {
+                      if (error.name !== 'AbortError') {
+                        console.error('Share failed:', error)
+                      }
+                    }
+                  } else {
+                    navigator.clipboard.writeText(window.location.href)
+                    toast.success('Link copied to clipboard!')
+                  }
+                }}
+                className="py-3 px-4 bg-white border-2 border-purple-600 text-purple-600 font-bold rounded-lg hover:bg-purple-50 transition-all flex items-center justify-center"
+                aria-label="Share event"
+              >
+                <Share2 className="h-5 w-5" />
+              </button>
+            </div>
             ) : isAuthenticated ? (
             isEventOrganiser && hasJoined ? (
               // Organiser who has joined: Show guest count + Manage button (or Leave if not host)
@@ -827,16 +853,42 @@ export default function EventDetailPage() {
               </button>
             )
           ) : (
-            <button
-              onClick={() => {
-                setReturnUrl(`/events/${id}?action=join`)
-                setIsLoginModalOpen(true)
-              }}
-              className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-base"
-            >
-              <LogIn className="h-5 w-5" />
-              Login to Join
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setReturnUrl(`/events/${id}?action=join`)
+                  setIsLoginModalOpen(true)
+                }}
+                className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 text-base"
+              >
+                <LogIn className="h-5 w-5" />
+                Login to Join
+              </button>
+              <button
+                onClick={async () => {
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: displayEvent.title,
+                        text: `Join us for ${displayEvent.title} on ${formattedStartDate}`,
+                        url: window.location.href,
+                      })
+                    } catch (error) {
+                      if (error.name !== 'AbortError') {
+                        console.error('Share failed:', error)
+                      }
+                    }
+                  } else {
+                    navigator.clipboard.writeText(window.location.href)
+                    toast.success('Link copied to clipboard!')
+                  }
+                }}
+                className="py-3 px-4 bg-white border-2 border-purple-600 text-purple-600 font-bold rounded-lg hover:bg-purple-50 transition-all flex items-center justify-center"
+                aria-label="Share event"
+              >
+                <Share2 className="h-5 w-5" />
+              </button>
+            </div>
           )}
         </div>
 
@@ -885,18 +937,32 @@ export default function EventDetailPage() {
                     </>
                   )}
                   {isEventOrganiser && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setIsManageOpen(false)
-                        handleCopyEvent()
-                      }}
-                      disabled={isCopying}
-                      className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Copy className="h-5 w-5 text-gray-900" />
-                      {isCopying ? 'Copying...' : 'Copy event'}
-                    </button>
+                    <>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setIsManageOpen(false)
+                          handleCopyEvent()
+                        }}
+                        disabled={isCopying}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Copy className="h-5 w-5 text-gray-900" />
+                        {isCopying ? 'Copying...' : 'Copy event'}
+                      </button>
+                      <div className="h-px bg-gray-200 mx-3" />
+                      <button
+                        onClick={() => {
+                          setIsManageOpen(false)
+                          setShowInviteModal(true)
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+                      >
+                        <Mail className="h-5 w-5 text-purple-600" />
+                        <span>Invite members</span>
+                      </button>
+                      <div className="h-px bg-gray-200 mx-3" />
+                    </>
                   )}
                   <button
                     onClick={() => {
@@ -1356,7 +1422,7 @@ export default function EventDetailPage() {
                     />
                   </div>
                 ) : isAccessDenied ? (
-                  /* NON-MEMBER VIEW - Show Join Group button */
+                  /* NON-MEMBER VIEW - Show Join Group button and Share */
                   <div className="space-y-4">
                     <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
                       <Lock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
@@ -1375,6 +1441,16 @@ export default function EventDetailPage() {
                       )}
                       {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : 'Join Event'}
                     </button>
+                    <ShareButton
+                      type="event"
+                      itemId={id}
+                      groupId={displayEvent.groupId}
+                      title={displayEvent.title}
+                      description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                      url={window.location.href}
+                      imageUrl={displayEvent.imageUrl}
+                      onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                    />
                   </div>
                 ) : isAuthenticated ? (
                   isEventOrganiser ? (
@@ -1634,7 +1710,7 @@ export default function EventDetailPage() {
                     </div>
                   )
                 ) : !isPastEvent ? (
-                  /* NOT AUTHENTICATED - Show login prompt */
+                  /* NOT AUTHENTICATED - Show login prompt and share button */
                   <div className="space-y-3">
                     <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
                       <p className="text-sm text-gray-600">🔐 Login to join this event</p>
@@ -1648,6 +1724,16 @@ export default function EventDetailPage() {
                     >
                       Login to Join
                     </button>
+                    <ShareButton
+                      type="event"
+                      itemId={id}
+                      groupId={displayEvent.groupId}
+                      title={displayEvent.title}
+                      description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
+                      url={window.location.href}
+                      imageUrl={displayEvent.imageUrl}
+                      onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                    />
                   </div>
                 ) : (
                   /* PAST EVENT - Unauthenticated user can share */
