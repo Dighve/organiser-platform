@@ -866,24 +866,25 @@ export default function EventDetailPage() {
                   </button>
                   <div className="h-px bg-gray-200 mx-3" />
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       setIsManageOpen(false)
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: displayEvent.title,
+                            text: `Join us for ${displayEvent.title} on ${formattedStartDate}`,
+                            url: window.location.href,
+                          })
+                        } catch (error) {
+                          if (error.name !== 'AbortError') {
+                            console.error('Share failed:', error)
+                          }
+                        }
+                      }
                     }}
                     className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
                   >
-                    <ShareButton
-                      type="event"
-                      itemId={id}
-                      groupId={displayEvent.groupId}
-                      title={displayEvent.title}
-                      description={`Join us for ${displayEvent.title} on ${formattedStartDate}`}
-                      url={window.location.href}
-                      imageUrl={displayEvent.imageUrl}
-                      onFlyerShare={isFlyerEnabled() ? () => { setIsManageOpen(false); setShowFlyerModal(true) } : undefined}
-                      variant="icon"
-                      size="sm"
-                      className="!p-0 !border-0 !bg-transparent hover:!bg-transparent text-purple-600"
-                    />
+                    <Share2 className="h-5 w-5 text-gray-900" />
                     <span>Share event</span>
                   </button>
                   <div className="h-px bg-gray-200 mx-3" />

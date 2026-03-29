@@ -155,6 +155,7 @@ export default function ShareButton({
   const variantClasses = {
     primary: 'group w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105',
     secondary: 'bg-white text-gray-700 border border-gray-200 hover:border-purple-300 hover:bg-purple-50',
+    ghost: 'bg-transparent text-gray-700 border-0',
     icon: 'bg-white/90 backdrop-blur-sm text-gray-700 border border-gray-200 hover:border-purple-300 hover:bg-purple-50 p-2'
   }
 
@@ -164,7 +165,7 @@ export default function ShareButton({
       <button
         onClick={handleShare}
         className={`
-          ${variant === 'primary' ? variantClasses[variant] : `inline-flex items-center gap-2 rounded-xl font-semibold transition-all duration-200 ${variantClasses[variant]} ${variant === 'icon' ? 'p-2' : sizeClasses[size]} ${variant !== 'icon' ? 'justify-center' : ''}`}
+          ${variant === 'primary' ? variantClasses[variant] : `flex items-center gap-2 rounded-xl font-semibold transition-all duration-200 ${variantClasses[variant]} ${variant === 'icon' ? 'p-2' : sizeClasses[size]} ${variant !== 'icon' ? 'w-full justify-center' : ''}`}
         `}
         aria-label="Share"
       >
@@ -177,7 +178,7 @@ export default function ShareButton({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-[100] mt-2 w-full min-w-[280px] bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl border-2 border-gray-100 overflow-hidden animate-fade-in">
+        <div className="relative mt-2 z-[100] w-full min-w-[280px] bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl border-2 border-gray-100 animate-fade-in">
           <div className="p-2 space-y-1">
             {shareOptions.map((option) => (
               <button

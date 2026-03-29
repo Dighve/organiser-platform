@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI, eventsAPI } from '../lib/api'
-import { Users, MapPin, Calendar, ArrowLeft, UserPlus, UserMinus, Edit, Trash2, MoreVertical, X, AlertTriangle, Ban, Shield, UserX, Search, LogIn, Plus, Share2 } from 'lucide-react'
+import { Users, MapPin, Calendar, ArrowLeft, UserPlus, UserMinus, Edit, Trash2, MoreVertical, X, AlertTriangle, Ban, Shield, UserX, Search, LogIn, Plus, Share2, Mail } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -10,6 +10,7 @@ import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
 import ProfileAvatar from '../components/ProfileAvatar'
 import ShareButton from '../components/ShareButton'
+import InviteMembersModal from '../components/InviteMembersModal'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -143,6 +144,7 @@ export default function GroupDetailPage() {
   const [openMenuMemberId, setOpenMenuMemberId] = useState(null)
   const [isGroupActionsOpen, setIsGroupActionsOpen] = useState(false)
   const [isMemberActionsOpen, setIsMemberActionsOpen] = useState(false)
+  const [showInviteModal, setShowInviteModal] = useState(false)
 
   // Set initial tab from URL parameter (e.g., ?tab=events)
   useEffect(() => {
@@ -922,6 +924,16 @@ export default function GroupDetailPage() {
                             <Edit className="h-4 w-4" />
                             Edit Group
                           </button>
+                          <ShareButton
+                            type="group"
+                            title={displayGroup.name}
+                            description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
+                            url={window.location.href}
+                            imageUrl={displayGroup.imageUrl}
+                            variant="ghost"
+                            size="md"
+                            className="w-full py-2.5 px-4 bg-gray-50 text-gray-700 font-medium rounded-lg hover:bg-gray-100 transition-all !border-0"
+                          />
                           <button
                             onClick={() => navigate(`/groups/${id}/transfer`)}
                             className="w-full py-2.5 px-4 bg-indigo-50 text-indigo-700 font-medium rounded-lg hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 text-sm"
@@ -954,18 +966,16 @@ export default function GroupDetailPage() {
                               <Calendar className="h-5 w-5" />
                               View Events
                             </button>
-                            <div className="mb-3">
-                              <ShareButton
-                                type="group"
-                                title={displayGroup.name}
-                                description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
-                                url={window.location.href}
-                                imageUrl={displayGroup.imageUrl}
-                                variant="secondary"
-                                size="md"
-                                className="w-full py-3 px-6"
-                              />
-                            </div>
+                            <ShareButton
+                              type="group"
+                              title={displayGroup.name}
+                              description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
+                              url={window.location.href}
+                              imageUrl={displayGroup.imageUrl}
+                              variant="ghost"
+                              size="md"
+                              className="w-full py-3 px-6 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all !border-0 mb-3"
+                            />
                             <button
                               onClick={handleUnsubscribe}
                               disabled={unsubscribeMutation.isLoading}
@@ -1130,20 +1140,12 @@ export default function GroupDetailPage() {
                 <button
                   onClick={() => {
                     setIsGroupActionsOpen(false)
+                    setShowInviteModal(true)
                   }}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
                 >
-                  <ShareButton
-                    type="group"
-                    title={displayGroup.name}
-                    description={`Join ${displayGroup.name} - ${displayGroup.activityName} group in ${displayGroup.location || 'your area'}`}
-                    url={window.location.href}
-                    imageUrl={displayGroup.imageUrl}
-                    variant="icon"
-                    size="sm"
-                    className="!p-0 !border-0 !bg-transparent hover:!bg-transparent text-purple-600"
-                  />
-                  <span>Share group</span>
+                  <Mail className="h-5 w-5 text-purple-600" />
+                  <span>Invite members</span>
                 </button>
                 <div className="h-px bg-gray-200 mx-3" />
                 <button
@@ -1536,6 +1538,19 @@ export default function GroupDetailPage() {
           </div>
         </div>
       )}
+
+      {/* ============================================ */}
+      {/* INVITE MEMBERS MODAL */}
+      {/* ============================================ */}
+      <InviteMembersModal
+        isOpen={showInviteModal}
+        onClose={() => setShowInviteModal(false)}
+        type="group"
+        itemId={id}
+        groupId={id}
+        title={displayGroup.name}
+        url={window.location.href}
+      />
     </div>
   )
 }
