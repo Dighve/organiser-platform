@@ -181,7 +181,7 @@ export default function TransferOwnershipPage() {
                       <ProfileAvatar member={member} size="md" />
                       <div className="flex-1">
                         <p className="font-semibold text-gray-900">
-                          {member.displayName || member.email?.split('@')[0]}
+                          {member.displayName || (member.email ? member.email.split('@')[0] : 'Member')}
                         </p>
                         <p className="text-sm text-gray-500">
                           Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { 

@@ -37,7 +37,7 @@ const ProfileAvatar = ({
     if (member?.displayName && member.displayName.trim()) {
       return member.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     }
-    if (member?.email) {
+    if (member?.email && member.email.length > 0) {
       return member.email[0].toUpperCase()
     }
     return '?'
@@ -57,7 +57,7 @@ const ProfileAvatar = ({
       ) : (
         <img
           src={member.profilePhotoUrl}
-          alt={member.displayName || member.email || 'Member'}
+          alt={member.displayName || (member.email ? member.email : 'Member')}
           className={`${baseClasses} object-cover`}
           loading={loading}
           decoding="async"

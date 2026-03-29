@@ -717,7 +717,7 @@ export default function GroupDetailPage() {
                             />
                             <div className="flex-1 min-w-0">
                               <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
-                                {member.displayName || member.email?.split('@')[0] || 'Member'}
+                                {member.displayName || (member.email ? member.email.split('@')[0] : 'Member')}
                               </p>
                               <p className="text-xs text-gray-500 truncate">
                                 Member since {new Date(member.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
@@ -794,9 +794,9 @@ export default function GroupDetailPage() {
                               />
                               <div className="flex-1 min-w-0">
                                 <h3 className="font-semibold text-gray-900 truncate">
-                                  {member.displayName || member.email?.split('@')[0] || 'Unknown'}
+                                  {member.displayName || (member.email ? member.email.split('@')[0] : 'Unknown')}
                                 </h3>
-                                <p className="text-sm text-gray-600 truncate">{member.email}</p>
+                                <p className="text-sm text-gray-600 truncate">{member.email || 'No email'}</p>
                                 
                                 {/* Ban details */}
                                 <div className="mt-2 space-y-1">
@@ -859,7 +859,7 @@ export default function GroupDetailPage() {
                           key={member.id}
                           onClick={() => setActiveTab('members')}
                           className="cursor-pointer group relative"
-                          title={member.displayName || member.email?.split('@')[0] || 'Member'}
+                          title={member.displayName || (member.email ? member.email.split('@')[0] : 'Member')}
                         >
                           <ProfileAvatar 
                             member={member} 
