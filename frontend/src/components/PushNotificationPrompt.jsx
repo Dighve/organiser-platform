@@ -39,6 +39,7 @@ export default function PushNotificationPrompt() {
   const { isAuthenticated } = useAuthStore()
   const [visible, setVisible] = useState(false)
   const [showIOSHint, setShowIOSHint] = useState(false)
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false)
   // Track the previous auth value to detect fresh login (false → true)
   const prevAuthenticated = useRef(false)
 
@@ -66,38 +67,51 @@ export default function PushNotificationPrompt() {
 
     if (!isPushSupported()) return
     
-    // Don't show prompt if permission is already granted (regardless of localStorage)
-    // This fixes the issue where users granted permission but subscription failed
+    // Don't show prompt if permission is denied
+    if (getPermissionState() === 'denied') return
+    
+    // If permission is granted, verify there's an actual subscription before hiding prompt
     if (getPermissionState() === 'granted') {
-      // Double-check: if permission granted but not subscribed locally, 
-      // check if there's actually a real subscription
+      setIsCheckingSubscription(true)
       const checkRealSubscription = async () => {
         try {
           const registration = await navigator.serviceWorker.ready
           const subscription = await registration.pushManager.getSubscription()
           if (subscription) {
-            // Fix localStorage to match reality
+            // Real subscription exists - fix localStorage and don't show prompt
             localStorage.setItem(PUSH_SUBSCRIPTION_KEY, 'true')
+            setIsCheckingSubscription(false)
+            return
+          } else {
+            // Permission granted but no subscription - clear localStorage and allow prompt
+            localStorage.removeItem(PUSH_SUBSCRIPTION_KEY)
+            setIsCheckingSubscription(false)
+            // Continue to show prompt logic below
+            showPromptIfNeeded()
           }
         } catch (error) {
           console.warn('Could not check push subscription:', error)
+          setIsCheckingSubscription(false)
         }
       }
       checkRealSubscription()
       return
     }
-    
-    if (getPermissionState() === 'denied') return
 
-    // On fresh login: always prompt (bypass snooze) so the user is asked after every sign-in.
-    // On page reload while already authenticated: respect the snooze.
-    if (!justLoggedIn && isSnoozed()) return
+    // Permission is 'default' - show prompt if conditions are met
+    showPromptIfNeeded()
 
-    const timer = setTimeout(() => {
-      setVisible(true)
-      trackNotificationPromptShown()
-    }, 3000)
-    return () => clearTimeout(timer)
+    function showPromptIfNeeded() {
+      // On fresh login: always prompt (bypass snooze) so the user is asked after every sign-in.
+      // On page reload while already authenticated: respect the snooze.
+      if (!justLoggedIn && isSnoozed()) return
+
+      const timer = setTimeout(() => {
+        setVisible(true)
+        trackNotificationPromptShown()
+      }, 3000)
+      return () => clearTimeout(timer)
+    }
   }, [isAuthenticated])
 
   const handleEnable = async () => {
