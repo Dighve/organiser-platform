@@ -141,7 +141,7 @@ api.interceptors.response.use(
       const delay = RETRY_DELAY * Math.pow(2, retryCount)
       
       if (import.meta.env.DEV) {
-        console.log(`[API] Retrying request (${retryCount + 1}/${MAX_RETRIES}) after ${delay}ms:`, originalRequest.url)
+        console.debug(`[API] Retrying request (${retryCount + 1}/${MAX_RETRIES}) after ${delay}ms:`, originalRequest.url)
       }
       
       await wait(delay)
