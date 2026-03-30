@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 import PushNotificationPrompt from './components/PushNotificationPrompt'
 import { trackPageView, identifyUser, resetUser } from './lib/analytics'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // Critical pages - loaded immediately
 import HomePage from './pages/HomePage'
@@ -126,7 +127,11 @@ function App() {
       <PushNotificationPrompt />
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<HomePage />} />  
+          <Route index element={
+            <ErrorBoundary name="HomePage" title="Unable to load home page" message="We're having trouble loading the home page. Please try refreshing.">
+              <HomePage />
+            </ErrorBoundary>
+          } />  
           <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
         <Route path="events" element={
           <Suspense fallback={<PageLoader />}>
@@ -135,7 +140,9 @@ function App() {
         } />
         <Route path="events/:id" element={
           <Suspense fallback={<PageLoader />}>
-            <EventDetailPage />
+            <ErrorBoundary name="EventDetailPage" title="Unable to load event" message="We're having trouble loading this event. Please try again.">
+              <EventDetailPage />
+            </ErrorBoundary>
           </Suspense>
         } />
         <Route
@@ -185,7 +192,9 @@ function App() {
         } />
         <Route path="groups/:id" element={
           <Suspense fallback={<PageLoader />}>
-            <GroupDetailPage />
+            <ErrorBoundary name="GroupDetailPage" title="Unable to load group" message="We're having trouble loading this group. Please try again.">
+              <GroupDetailPage />
+            </ErrorBoundary>
           </Suspense>
         } />
         <Route

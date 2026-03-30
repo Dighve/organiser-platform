@@ -247,3 +247,31 @@ export const trackShareCompleted = (contentType, method, url) =>
     method: method,
     url: url 
   })
+
+// ─── Error Tracking ───────────────────────────────────────────────────────────
+
+export const trackError = (error, context = {}) => {
+  const errorData = {
+    error_message: error?.message || String(error),
+    error_name: error?.name || 'Error',
+    error_stack: error?.stack?.substring(0, 500), // Limit stack trace
+    page: window.location.pathname,
+    url: window.location.href,
+    ...context
+  }
+  
+  track('Error Occurred', errorData)
+  
+  // Also log to console in development
+  if (import.meta.env.DEV) {
+    console.error('[Analytics] Error tracked:', errorData)
+  }
+}
+
+export const trackAPIError = (endpoint, statusCode, errorMessage) =>
+  track('API Error', {
+    endpoint,
+    status_code: statusCode,
+    error_message: errorMessage,
+    page: window.location.pathname
+  })

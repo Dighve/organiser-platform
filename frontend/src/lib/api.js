@@ -1,13 +1,20 @@
 import axios from 'axios'
 import { useAuthStore, isTokenExpired } from '../store/authStore'
+import { trackAPIError } from './analytics'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
+
+// Retry configuration
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000 // 1 second
+const RETRY_STATUS_CODES = [408, 429, 500, 502, 503, 504]
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 30000, // 30 second timeout
 })
 
 // Request interceptor to add auth token
@@ -42,12 +49,28 @@ const processQueue = (error, token = null) => {
   failedQueue = []
 }
 
+// Helper function to wait before retry
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+
 // Response interceptor to handle errors and automatic token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
     const { refreshToken, logout, login } = useAuthStore.getState()
+    
+    // Track API errors in analytics
+    if (error.response) {
+      trackAPIError(
+        originalRequest.url,
+        error.response.status,
+        error.response.data?.message || error.message
+      )
+    } else if (error.code === 'ECONNABORTED') {
+      trackAPIError(originalRequest.url, 0, 'Request timeout')
+    } else if (error.code === 'ERR_NETWORK') {
+      trackAPIError(originalRequest.url, 0, 'Network error')
+    }
     
     // Handle 401 Unauthorized responses
     if (error.response?.status === 401 && refreshToken && !originalRequest._retry) {
@@ -97,6 +120,32 @@ api.interceptors.response.use(
         logout('Your session has expired. Please log in again.')
         return Promise.reject(refreshError)
       }
+    }
+    
+    // Retry logic for network errors and specific status codes
+    const retryCount = originalRequest.__retryCount || 0
+    const shouldRetry = 
+      retryCount < MAX_RETRIES &&
+      (
+        !error.response || // Network error
+        RETRY_STATUS_CODES.includes(error.response.status) ||
+        error.code === 'ECONNABORTED' || // Timeout
+        error.code === 'ERR_NETWORK' // Network error
+      ) &&
+      originalRequest.method?.toLowerCase() === 'get' // Only retry GET requests
+    
+    if (shouldRetry) {
+      originalRequest.__retryCount = retryCount + 1
+      
+      // Exponential backoff: 1s, 2s, 4s
+      const delay = RETRY_DELAY * Math.pow(2, retryCount)
+      
+      if (import.meta.env.DEV) {
+        console.log(`[API] Retrying request (${retryCount + 1}/${MAX_RETRIES}) after ${delay}ms:`, originalRequest.url)
+      }
+      
+      await wait(delay)
+      return api(originalRequest)
     }
     
     // For other errors or if no refresh token, just reject
