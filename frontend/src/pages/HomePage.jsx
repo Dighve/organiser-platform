@@ -128,16 +128,26 @@ export default function HomePage() {
   // EFFECTS
   // ============================================================
   
+  // Check if welcome screen is enabled via admin feature flag
+  const isWelcomeScreenEnabled = featureFlags?.WELCOME_SCREEN_ENABLED ?? true // Default to true if not loaded yet
+  
   // Handle welcome URL parameter on mount
   useEffect(() => {
-    if (showDiscover) {
+    if (showDiscover && isWelcomeScreenEnabled) {
       const currentUrl = new URL(window.location)
       if (!currentUrl.searchParams.has('welcome')) {
         currentUrl.searchParams.set('welcome', 'true')
         navigate(`/?welcome=true`, { replace: true })
       }
+    } else {
+      // Safety check: If user has already discovered OR feature is disabled, ensure welcome param is removed
+      const currentUrl = new URL(window.location)
+      if (currentUrl.searchParams.has('welcome')) {
+        window.history.replaceState({}, '', '/')
+        navigate('/', { replace: true })
+      }
     }
-  }, [showDiscover, navigate])
+  }, [showDiscover, isWelcomeScreenEnabled, navigate])
   
   // Smart tab selection: Auto-select organiser tab if user has organised groups
   useEffect(() => {
@@ -168,9 +178,6 @@ export default function HomePage() {
   // ============================================================
   // HERO VIEW - First-time visitor landing page
   // ============================================================
-  // Check if welcome screen is enabled via admin feature flag
-  const isWelcomeScreenEnabled = featureFlags?.WELCOME_SCREEN_ENABLED ?? true // Default to true if not loaded yet
-  
   if (showDiscover && isWelcomeScreenEnabled) {
     return <WelcomeScreen onDiscoverClick={handleDiscoverClick} />
   }
