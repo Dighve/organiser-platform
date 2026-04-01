@@ -77,7 +77,7 @@ export default function HomePage() {
   })
   
   // Fetch feature flags to check if welcome screen is enabled
-  const { data: featureFlags } = useQuery({
+  const { data: featureFlags, isLoading: featureFlagsLoading } = useQuery({
     queryKey: ['featureFlags'],
     queryFn: () => featureFlagsAPI.getFeatureFlagsMap(),
     staleTime: 5 * 60 * 1000, // 5 minutes - feature flags don't change often
@@ -129,7 +129,8 @@ export default function HomePage() {
   // ============================================================
   
   // Check if welcome screen is enabled via admin feature flag
-  const isWelcomeScreenEnabled = featureFlags?.WELCOME_SCREEN_ENABLED ?? true // Default to true if not loaded yet
+  // Default to false while loading to prevent flash of welcome screen when feature is disabled
+  const isWelcomeScreenEnabled = featureFlagsLoading ? false : (featureFlags?.WELCOME_SCREEN_ENABLED ?? true)
   
   // Handle welcome URL parameter on mount
   useEffect(() => {
