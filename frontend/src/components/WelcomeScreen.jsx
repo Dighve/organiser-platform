@@ -20,7 +20,11 @@ export default function WelcomeScreen({ onDiscoverClick }) {
   }
 
   const handleLoginSuccess = () => {
-    // After successful login, automatically move to discover events view
+    // After successful login, clear welcome state and show dashboard
+    localStorage.setItem('hasDiscovered', 'true')
+    // Clean URL by removing welcome parameter
+    window.history.replaceState({}, '', '/')
+    // Call parent handler to update state
     onDiscoverClick()
   }
   // HERO BACKGROUND - Optimized animated gradient with floating shapes
