@@ -2,6 +2,7 @@ package com.organiser.platform.config;
 
 import com.organiser.platform.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -26,6 +27,9 @@ import java.util.List;
 public class SecurityConfig {
     
     private final JwtAuthenticationFilter jwtAuthFilter;
+    
+    @Value("${cors.allowed-origins}")
+    private String allowedOrigins;
     
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -166,32 +170,25 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
-                "http://localhost:3002",
-                "http://localhost:3003",
-                "http://127.0.0.1:3002",
-                "http://localhost:5173",
-                "http://192.168.0.114:3000",
-                "https://organiser-platform.netlify.app",
-                "https://hikehub-poc.netlify.app",
-                "https://www.outmeets.com"
-        ));
+        
+        // Parse comma-separated origins from properties
+        List<String> origins = Arrays.asList(allowedOrigins.split(","));
+        configuration.setAllowedOrigins(origins);
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        // Temporarily allow all headers to isolate CORS issue
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(Arrays.asList(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin",
+                "X-Requested-With"
+        ));
         configuration.setExposedHeaders(Arrays.asList(
                 "Authorization",
                 "Content-Type"
         ));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        
-        // Log CORS configuration for debugging
-        System.out.println("CORS Configuration:");
-        System.out.println("Allowed Origins: " + configuration.getAllowedOrigins());
-        System.out.println("Allowed Methods: " + configuration.getAllowedMethods());
-        System.out.println("Allowed Headers: " + configuration.getAllowedHeaders());
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
