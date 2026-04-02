@@ -138,11 +138,13 @@ cors.allowed-origins=http://localhost:3000,http://localhost:3002,http://localhos
 1. **Set Environment Variable:**
    ```
    SPRING_PROFILES_ACTIVE=staging
+   DATABASE_URL=<your_render_postgres_url>
    ```
 
 2. **Deploy from staging branch**
    - Backend will use `application-staging.properties`
    - Only `https://outmeet-stage.netlify.app` allowed
+   - **Important:** `DatabaseConfig.java` handles URL conversion for both `prod` and `staging` profiles
 
 ### Local Development
 
