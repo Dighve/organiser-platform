@@ -1,0 +1,71 @@
+name: Daily Staging to Main PR
+
+on:
+  schedule:
+    # Runs at 6 PM UTC every day (18:00 UTC)
+    # Adjust timezone as needed: 6 PM UTC+1 would be 17:00 UTC
+    - cron: '0 18 * * *'
+  workflow_dispatch: # Allows manual trigger for testing
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches
+          
+      - name: Check if PR already exists
+        id: check-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if there's already an open PR from staging to main
+          EXISTING_PR=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$EXISTING_PR" >> $GITHUB_OUTPUT
+            echo "✅ PR #$EXISTING_PR already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "No existing PR found"
+          fi
+          
+      - name: Create Pull Request
+        if: steps.check-pr.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get current date for PR title
+          DATE=$(date +"%Y-%m-%d")
+          
+          # Create PR from staging to main
+          gh pr create \
+            --base main \
+            --head staging \
+            --title "🚀 Daily Release: Staging → Main ($DATE)" \
+            --body "## Automated Daily Release
+          
+          This PR merges the latest changes from \`staging\` branch into \`main\` branch.
+          
+          **Created:** $DATE at 6 PM UTC
+          **Source:** \`staging\`
+          **Target:** \`main\`
+          
+          ### Review Checklist
+          - [ ] All tests passing in staging
+          - [ ] No breaking changes
+          - [ ] Documentation updated
+          - [ ] Ready for production deployment
+          
+          ---
+          *This PR was automatically created by the Daily Staging to Main PR workflow.*" \
+            --label "automated,release" || echo "⚠️ Failed to create PR - branches may be in sync"
+          
+      - name: PR Already Exists
+        if: steps.check-pr.outputs.exists == 'true'
+        run: |
+          echo "ℹ️ Skipping PR creation - PR #${{ steps.check-pr.outputs.pr_number }} already exists"
+          echo "View it at: ${{ github.server_url }}/${{ github.repository }}/pull/${{ steps.check-pr.outputs.pr_number }}"
