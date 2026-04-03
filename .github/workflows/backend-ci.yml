@@ -6,6 +6,10 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [staging]
+    paths:
+      - 'backend/**'
 
 env:
   JAVA_VERSION: '21'
