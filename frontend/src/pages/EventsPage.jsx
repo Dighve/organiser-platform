@@ -87,7 +87,18 @@ export default function EventsPage() {
         return eventsAPI.getMyEvents(page, 100, hasPast)
       }
 
-      return eventsAPI.searchAdvancedEvents({ q: searchKeyword, page, size: 50 })
+      // If using tokens that require authentication (:me or :hosting), use advanced search
+      if (hasMe || hasHosting) {
+        return eventsAPI.searchAdvancedEvents({ q: searchKeyword, page, size: 50 })
+      }
+
+      // For regular search (including :group and :past tokens), use public search endpoint
+      if (searchKeyword) {
+        return eventsAPI.searchEvents(searchKeyword, page, 50)
+      }
+
+      // Default: get all upcoming events
+      return eventsAPI.getUpcomingEvents(page, 50)
     },
   })
 
