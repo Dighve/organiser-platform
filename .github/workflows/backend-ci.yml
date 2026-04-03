@@ -119,15 +119,14 @@ jobs:
         env:
           SPRING_PROFILES_ACTIVE: ${{ matrix.environment }}
 
-      - name: Check JAR file
+      - name: Verify build artifacts
         working-directory: backend
         run: |
-          if [ ! -f build/libs/*.jar ]; then
-            echo "❌ Build failed - JAR file not found"
+          if ! compgen -G "build/libs/*.jar" > /dev/null; then
+            echo "❌ Build failed: JAR file not found"
             exit 1
           fi
-          
-          echo "✅ Build successful"
+          echo "✅ Build artifacts verified"
           ls -lh build/libs/
 
       - name: Upload build artifacts
@@ -205,18 +204,6 @@ jobs:
           service-id: ${{ secrets.RENDER_STAGING_SERVICE_ID }}
           api-key: ${{ secrets.RENDER_API_KEY }}
           wait-for-success: true
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🚀 Staging backend deployed!\n\n**API URL:** https://organiser-platform.onrender.com\n**Commit:** ${{ github.sha }}'
-            })
 
   deploy-production:
     name: Deploy to Production

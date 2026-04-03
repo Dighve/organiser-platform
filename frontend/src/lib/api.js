@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useAuthStore, isTokenExpired } from '../store/authStore'
+import { useAuthStore } from '../store/authStore'
 import { trackAPIError } from './analytics'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'

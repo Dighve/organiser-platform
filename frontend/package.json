@@ -6,9 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "lint": "eslint .",
-    "prepare": "cd .. && husky install .husky"
+    "prepare": "cd .. && if [ -d .git ] && [ -d .husky ]; then husky install .husky; else echo 'husky install skipped: .git or .husky not found'; fi"
   },
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",

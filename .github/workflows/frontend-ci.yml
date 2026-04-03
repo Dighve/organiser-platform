@@ -170,29 +170,18 @@ jobs:
           name: frontend-build-staging
           path: frontend/dist/
 
-      - name: Deploy to Netlify (Staging)
-        uses: nwtgck/actions-netlify@v2
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
         with:
-          publish-dir: './frontend/dist'
-          production-branch: staging
+          publish-dir: frontend/dist
+          production-deploy: false
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions - ${{ github.sha }}"
-          alias: staging
+          deploy-message: "Deploy from GitHub Actions - Staging"
+          enable-pull-request-comment: true
+          enable-commit-comment: false
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_STAGING_SITE_ID }}
-
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🚀 Staging deployment successful!\n\n**Preview URL:** https://staging.outmeets.com\n**Commit:** ${{ github.sha }}'
-            })
 
   deploy-production:
     name: Deploy to Production
