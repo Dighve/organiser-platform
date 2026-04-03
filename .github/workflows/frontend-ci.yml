@@ -6,10 +6,6 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci.yml'
-  pull_request:
-    branches: [staging]
-    paths:
-      - 'frontend/**'
 
 env:
   NODE_VERSION: '18'
