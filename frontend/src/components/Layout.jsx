@@ -91,7 +91,6 @@ export default function Layout() {
       // Skipped entirely when USER_AGREEMENT_ENABLED feature flag is false
       if (!memberData.hasAcceptedUserAgreement && !userAgreementShownRef.current) {
         userAgreementShownRef.current = true
-        console.log('USER_AGREEMENT_ENABLED:', featureFlags.USER_AGREEMENT_ENABLED)
         if (featureFlags.USER_AGREEMENT_ENABLED !== false) {
           setShowUserAgreementModal(true)
         }
@@ -99,7 +98,6 @@ export default function Layout() {
       
       // Show organiser agreement modal if user has organiser role but hasn't accepted current agreement - only once per session
       if (memberData.hasOrganiserRole && !memberData.hasAcceptedOrganiserAgreement && !organiserAgreementShownRef.current) {
-        console.log('⚠️ Existing organiser has not accepted current Organiser Agreement - showing modal')
         organiserAgreementShownRef.current = true
         setShowOrganiserModal(true)
       }
@@ -425,7 +423,6 @@ export default function Layout() {
         isOpen={showUserAgreementModal}
         onClose={() => {
           // User agreement cannot be dismissed - they must accept
-          console.log('⚠️ User Agreement modal cannot be closed without accepting')
         }}
         onAccept={() => {
           setShowUserAgreementModal(false)

@@ -121,9 +121,6 @@ export default function EventDetailPage() {
   
   // Debug logging for calendar data
   useEffect(() => {
-    if (calendarData) {
-      console.log('✅ Calendar data loaded:', calendarData)
-    }
     if (calendarError) {
       console.error('❌ Calendar data error:', {
         message: calendarError?.message,
@@ -502,15 +499,7 @@ export default function EventDetailPage() {
   const hasHost = Boolean((event?.hostMemberId !== null && event?.hostMemberId !== undefined) || (hostName && hostName.trim()))
   
   // Debug logging for host data
-  if (event && !isLoading) {
-    console.log('Event host data:', {
-      hostMemberId: event.hostMemberId,
-      hostMemberName: event.hostMemberName,
-      hostName: event.hostName,
-      computed_hostName: hostName,
-      hasHost: hasHost
-    })
-  }
+  // Event host data available: hostMemberId, hostMemberName, hostName, computed_hostName, hasHost
   const hasEventDetails = Boolean(
     event?.difficultyLevel ||
     event?.distanceKm ||
@@ -1653,7 +1642,6 @@ export default function EventDetailPage() {
                     ) : (
                       /* PAST EVENT - Registered user can share */
                       <>
-                        {console.log('Registered user past event - hasJoined:', hasJoined, 'isPastEvent:', isPastEvent)}
                         <div className="space-y-3">
                           <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
                             <div className="flex items-center justify-center gap-2 text-gray-600 mb-2">

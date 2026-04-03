@@ -1,0 +1,56 @@
+name: Daily Staging to Main PR
+
+on:
+  schedule:
+    - cron: '0 18 * * *'
+  workflow_dispatch:
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if PR already exists
+        id: check-pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use GH CLI to find open PRs
+          EXISTING_PR=$(gh pr list --base main --head staging --state open --json number --jq '.[0].number')
+          if [ -n "$EXISTING_PR" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$EXISTING_PR" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check-pr.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          DATE=$(date +"%Y-%m-%d")
+          
+          # Ensure branches are available
+          git fetch origin main staging
+          
+          DIFF_COUNT=$(git rev-list --count origin/main..origin/staging)
+          
+          if [ "$DIFF_COUNT" -eq 0 ]; then
+            echo "No changes to merge."
+            exit 0
+          fi
+
+          gh pr create \
+            --base main \
+            --head staging \
+            --title "🚀 Daily Release: Staging → Main ($DATE)" \
+            --body "Automated daily release of $DIFF_COUNT commits."

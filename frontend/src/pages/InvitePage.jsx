@@ -31,9 +31,7 @@ export default function InvitePage() {
 
   const handleAcceptInvite = () => {
     // Store invite token so it survives the auth flow (magic link redirect)
-    console.log('🔄 InvitePage - Storing invite token:', token)
     setInviteToken(token)
-    console.log('✅ InvitePage - Token stored, opening login modal')
     setLoginModalOpen(true)
   }
 

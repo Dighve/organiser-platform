@@ -30,8 +30,6 @@ export default function VerifyMagicLinkPage() {
 
   const verifyToken = async (token, redirectParam) => {
     try {
-      console.log('🔍 VerifyMagicLinkPage - inviteToken from store:', inviteToken)
-      console.log('🔍 VerifyMagicLinkPage - calling verifyMagicLink with:', { token: token.substring(0, 8) + '...', inviteToken })
       const response = await authAPI.verifyMagicLink(token, inviteToken)
       const { token: jwtToken, refreshToken, userId, email, role, hasOrganiserRole, isNewUser, inviteRedeemed } = response.data
       
@@ -75,8 +73,7 @@ export default function VerifyMagicLinkPage() {
           const url = new URL(redirectTo, window.location.origin)
           redirectTo = url.pathname + url.search + url.hash
         } catch {
-          // If it's already a relative path, use it as-is
-          redirectTo = redirectTo
+          // If it's already a relative path, use it as-is (no reassignment needed)
         }
         
         clearReturnUrl() // Clear the return URL after using it

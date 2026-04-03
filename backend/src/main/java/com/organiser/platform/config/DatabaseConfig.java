@@ -12,12 +12,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 /**
- * Database configuration for production environment.
+ * Database configuration for production and staging environments.
  * Handles conversion of Render's DATABASE_URL format (postgresql://)
  * to JDBC format (jdbc:postgresql://)
  */
 @Configuration
-@Profile("prod")
+@Profile({"prod", "staging"})
 public class DatabaseConfig {
 
     @Bean

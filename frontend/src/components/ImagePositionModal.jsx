@@ -34,8 +34,6 @@ export default function ImagePositionModal({ imageUrl, onSave, onClose }) {
     const newX = Math.round(Math.max(0, Math.min(100, x)) * 10) / 10
     const newY = Math.round(Math.max(0, Math.min(100, y)) * 10) / 10
     
-    console.log('Position updated:', { x: newX, y: newY }) // Debug log
-    
     setPosition({
       x: newX,
       y: newY

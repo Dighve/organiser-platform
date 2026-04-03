@@ -39,7 +39,6 @@ export default function PushNotificationPrompt() {
   const { isAuthenticated } = useAuthStore()
   const [visible, setVisible] = useState(false)
   const [showIOSHint, setShowIOSHint] = useState(false)
-  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false)
   // Track the previous auth value to detect fresh login (false → true)
   const prevAuthenticated = useRef(false)
 
@@ -72,7 +71,6 @@ export default function PushNotificationPrompt() {
     
     // If permission is granted, verify there's an actual subscription before hiding prompt
     if (getPermissionState() === 'granted') {
-      setIsCheckingSubscription(true)
       const checkRealSubscription = async () => {
         try {
           const registration = await navigator.serviceWorker.ready
@@ -80,18 +78,15 @@ export default function PushNotificationPrompt() {
           if (subscription) {
             // Real subscription exists - fix localStorage and don't show prompt
             localStorage.setItem(PUSH_SUBSCRIPTION_KEY, 'true')
-            setIsCheckingSubscription(false)
             return
           } else {
             // Permission granted but no subscription - clear localStorage and allow prompt
             localStorage.removeItem(PUSH_SUBSCRIPTION_KEY)
-            setIsCheckingSubscription(false)
             // Continue to show prompt logic below
             showPromptIfNeeded()
           }
         } catch (error) {
           console.warn('Could not check push subscription:', error)
-          setIsCheckingSubscription(false)
         }
       }
       checkRealSubscription()
@@ -110,8 +105,14 @@ export default function PushNotificationPrompt() {
         setVisible(true)
         trackNotificationPromptShown()
       }, 3000)
-      return () => clearTimeout(timer)
+      
+      // Return cleanup function to clear timer on unmount
+      return timer
     }
+    
+    // Call showPromptIfNeeded and return its cleanup
+    const cleanup = showPromptIfNeeded()
+    return cleanup ? () => clearTimeout(cleanup) : undefined
   }, [isAuthenticated])
 
   const handleEnable = async () => {
