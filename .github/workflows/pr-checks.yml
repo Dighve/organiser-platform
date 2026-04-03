@@ -1,0 +1,227 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main, develop, staging]
+
+jobs:
+  validate-pr:
+    name: Validate PR
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|docs|style|refactor|perf|test|chore|ci)(\(.+\))?: ]]; then
+            echo "❌ PR title must follow conventional commits format"
+            echo "Examples: feat: add user login, fix: resolve API timeout"
+            exit 1
+          fi
+          echo "✅ PR title is valid"
+
+      - name: Check for breaking changes
+        run: |
+          if git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q "migration\|schema"; then
+            echo "⚠️ Warning: Database schema changes detected"
+            echo "Please ensure backward compatibility and update CHANGELOG.md"
+          fi
+
+      - name: Check file sizes
+        run: |
+          LARGE_FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | xargs -I {} find {} -type f -size +1M 2>/dev/null || true)
+          if [ ! -z "$LARGE_FILES" ]; then
+            echo "⚠️ Warning: Large files detected:"
+            echo "$LARGE_FILES"
+            echo "Consider using Git LFS for large files"
+          fi
+
+      - name: Check for TODO comments
+        run: |
+          TODO_COUNT=$(git diff origin/${{ github.base_ref }}...HEAD | grep -c "TODO\|FIXME" || true)
+          if [ $TODO_COUNT -gt 0 ]; then
+            echo "⚠️ Found $TODO_COUNT TODO/FIXME comments"
+            echo "Consider creating issues for these items"
+          fi
+
+  changed-files:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      docs: ${{ steps.filter.outputs.docs }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check changed files
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+            docs:
+              - 'docs/**'
+              - '*.md'
+
+  frontend-checks:
+    name: Frontend PR Checks
+    needs: changed-files
+    if: needs.changed-files.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run linter
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Frontend checks passed!\n\n- Linting: ✅\n- Build: ✅'
+            })
+
+  backend-checks:
+    name: Backend PR Checks
+    needs: changed-files
+    if: needs.changed-files.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: outmeets_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Grant execute permission
+        working-directory: backend
+        run: chmod +x gradlew
+
+      - name: Run tests
+        working-directory: backend
+        run: ./gradlew test
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/outmeets_test
+          SPRING_DATASOURCE_USERNAME: postgres
+          SPRING_DATASOURCE_PASSWORD: postgres
+
+      - name: Build
+        working-directory: backend
+        run: ./gradlew build -x test
+
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Backend checks passed!\n\n- Tests: ✅\n- Build: ✅'
+            })
+
+  size-check:
+    name: Bundle Size Check
+    needs: changed-files
+    if: needs.changed-files.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout base
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build base
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          BASE_SIZE=$(du -sb dist/ | cut -f1)
+          echo "BASE_SIZE=$BASE_SIZE" >> $GITHUB_ENV
+
+      - name: Checkout PR
+        uses: actions/checkout@v4
+
+      - name: Build PR
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+          PR_SIZE=$(du -sb dist/ | cut -f1)
+          echo "PR_SIZE=$PR_SIZE" >> $GITHUB_ENV
+
+      - name: Compare sizes
+        run: |
+          DIFF=$((PR_SIZE - BASE_SIZE))
+          PERCENT=$((DIFF * 100 / BASE_SIZE))
+          
+          echo "Base size: $BASE_SIZE bytes"
+          echo "PR size: $PR_SIZE bytes"
+          echo "Difference: $DIFF bytes ($PERCENT%)"
+          
+          if [ $PERCENT -gt 10 ]; then
+            echo "⚠️ Warning: Bundle size increased by more than 10%"
+          else
+            echo "✅ Bundle size change is acceptable"
+          fi

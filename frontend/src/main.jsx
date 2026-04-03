@@ -12,8 +12,6 @@ import { initAnalytics, trackPWAInstallPromptShown, trackPWAInstalled } from './
 // Google OAuth Client ID - You'll need to get this from Google Cloud Console
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'
 
-// Debug: Log the Client ID (remove in production)
-console.log('🔑 Google Client ID loaded:', GOOGLE_CLIENT_ID ? '✅ Present' : '❌ Missing')
 if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
   console.error('⚠️ Google OAuth will not work! Add VITE_GOOGLE_CLIENT_ID to your .env file')
 }
@@ -51,7 +49,6 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js')
-      .then(() => console.log('✅ Service worker registered'))
       .catch((err) => console.error('Service worker registration failed', err))
   })
 }
