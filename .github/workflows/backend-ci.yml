@@ -195,11 +195,11 @@ jobs:
           path: backend/build/libs/
 
       - name: Deploy to Render (Staging)
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.RENDER_STAGING_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
-          wait-for-success: true
+        run: |
+          curl -X POST "${{ secrets.RENDER_STAGING_DEPLOY_HOOK }}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json"
+          echo "✅ Deploy triggered successfully"
 
   deploy-production:
     name: Deploy to Production
@@ -221,11 +221,11 @@ jobs:
           path: backend/build/libs/
 
       - name: Deploy to Render (Production)
-        uses: johnbeynon/render-deploy-action@v0.0.8
-        with:
-          service-id: ${{ secrets.RENDER_PRODUCTION_SERVICE_ID }}
-          api-key: ${{ secrets.RENDER_API_KEY }}
-          wait-for-success: true
+        run: |
+          curl -X POST "${{ secrets.RENDER_PRODUCTION_DEPLOY_HOOK }}" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json"
+          echo "✅ Deploy triggered successfully"
 
       - name: Notify deployment
         run: |
