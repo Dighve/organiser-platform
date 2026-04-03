@@ -228,7 +228,7 @@ jobs:
 
       - name: Check staging homepage
         run: |
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://staging.outmeets.com)
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://outmeet-stage.netlify.app)
           if [ $STATUS -eq 200 ]; then
             echo "✅ Staging homepage is accessible"
           else
@@ -240,7 +240,7 @@ jobs:
         run: |
           PAGES=("/events" "/groups" "/browse-groups")
           for PAGE in "${PAGES[@]}"; do
-            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://staging.outmeets.com$PAGE")
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://outmeet-stage.netlify.app$PAGE")
             if [ $STATUS -eq 200 ]; then
               echo "✅ $PAGE is accessible"
             else
@@ -251,7 +251,7 @@ jobs:
 
       - name: Check for JavaScript errors
         run: |
-          RESPONSE=$(curl -s https://staging.outmeets.com)
+          RESPONSE=$(curl -s https://outmeet-stage.netlify.app)
           if echo "$RESPONSE" | grep -q "error"; then
             echo "⚠️ Warning: Potential errors detected in response"
           else
