@@ -9,8 +9,9 @@ import App from './App'
 import './index.css'
 import { initAnalytics, trackPWAInstallPromptShown, trackPWAInstalled } from './lib/analytics'
 
-// Google OAuth Client ID - You'll need to get this from Google Cloud Console
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE'
+// Google OAuth Client ID - Public value (not a secret, safe to commit)
+// Client ID is designed to be public - only Client Secret must be kept private
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '186262195438-bp7r0m2sjuhvmnft144haohh98blqeo5.apps.googleusercontent.com'
 
 if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
   console.error('⚠️ Google OAuth will not work! Add VITE_GOOGLE_CLIENT_ID to your .env file')
