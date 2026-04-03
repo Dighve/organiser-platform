@@ -41,8 +41,20 @@ jobs:
           # Get current date for PR title
           DATE=$(date +"%Y-%m-%d")
           
-          # Create PR from staging to main
-          gh pr create \
+          echo "📊 Checking branch differences..."
+          git fetch origin main staging
+          DIFF_COUNT=$(git rev-list --count origin/main..origin/staging)
+          echo "Commits in staging not in main: $DIFF_COUNT"
+          
+          if [ "$DIFF_COUNT" -eq 0 ]; then
+            echo "ℹ️ Branches are in sync - no PR needed"
+            exit 0
+          fi
+          
+          echo "🚀 Creating PR from staging to main..."
+          
+          # Create PR from staging to main (without labels to avoid errors)
+          PR_OUTPUT=$(gh pr create \
             --base main \
             --head staging \
             --title "🚀 Daily Release: Staging → Main ($DATE)" \
@@ -53,6 +65,7 @@ jobs:
           **Created:** $DATE at 6 PM UTC
           **Source:** \`staging\`
           **Target:** \`main\`
+          **Commits:** $DIFF_COUNT commits to merge
           
           ### Review Checklist
           - [ ] All tests passing in staging
@@ -61,8 +74,17 @@ jobs:
           - [ ] Ready for production deployment
           
           ---
-          *This PR was automatically created by the Daily Staging to Main PR workflow.*" \
-            --label "automated,release" || echo "⚠️ Failed to create PR - branches may be in sync"
+          *This PR was automatically created by the Daily Staging to Main PR workflow.*" 2>&1)
+          
+          if [ $? -eq 0 ]; then
+            echo "✅ PR created successfully"
+            echo "$PR_OUTPUT"
+          else
+            echo "❌ Failed to create PR"
+            echo "Error details:"
+            echo "$PR_OUTPUT"
+            exit 1
+          fi
           
       - name: PR Already Exists
         if: steps.check-pr.outputs.exists == 'true'
