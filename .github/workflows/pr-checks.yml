@@ -103,6 +103,13 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-pr-build
+          path: frontend/dist/
+          retention-days: 1
+
       - name: Comment on PR
         uses: actions/github-script@v7
         with:
@@ -175,7 +182,7 @@ jobs:
 
   size-check:
     name: Bundle Size Check
-    needs: changed-files
+    needs: [changed-files, frontend-checks]
     if: needs.changed-files.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     
@@ -200,19 +207,15 @@ jobs:
           BASE_SIZE=$(du -sb dist/ | cut -f1)
           echo "BASE_SIZE=$BASE_SIZE" >> $GITHUB_ENV
 
-      - name: Checkout PR
-        uses: actions/checkout@v4
-
-      - name: Build PR
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run build
-          PR_SIZE=$(du -sb dist/ | cut -f1)
-          echo "PR_SIZE=$PR_SIZE" >> $GITHUB_ENV
+      - name: Download PR build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-pr-build
+          path: frontend/dist-pr/
 
       - name: Compare sizes
         run: |
+          PR_SIZE=$(du -sb frontend/dist-pr/ | cut -f1)
           DIFF=$((PR_SIZE - BASE_SIZE))
           PERCENT=$((DIFF * 100 / BASE_SIZE))
           
