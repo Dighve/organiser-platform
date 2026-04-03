@@ -19,9 +19,7 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept, isA
   } = useQuery({
     queryKey: ['currentOrganiserAgreement'],
     queryFn: async () => {
-      console.log('🔄 Fetching current organiser agreement from backend...')
       const response = await legalAPI.getCurrentOrganiserAgreement()
-      console.log('✅ Organiser agreement data fetched:', response.data)
       return response.data
     },
     enabled: isOpen, // Only fetch when modal is open
@@ -39,18 +37,12 @@ export default function OrganiserAgreementModal({ isOpen, onClose, onAccept, isA
 
   const acceptMutation = useMutation({
     mutationFn: async () => {
-      console.log('🔄 Accepting organiser agreement...')
-      console.log('📝 Request data:', {
-        ipAddress: null,
-        userAgent: navigator.userAgent || 'Unknown'
-      })
       
       try {
         const response = await legalAPI.acceptOrganiserAgreement({
           ipAddress: null, // Backend will extract from request
           userAgent: navigator.userAgent || 'Unknown'
         })
-        console.log('✅ Agreement accepted:', response)
         return response
       } catch (error) {
         console.error('❌ Accept agreement error:', error)

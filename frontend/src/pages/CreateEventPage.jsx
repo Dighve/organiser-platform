@@ -455,12 +455,6 @@ export default function CreateEventPage() {
       hostMemberId: data.hostMemberId ? Number(data.hostMemberId) : null
     }
 
-    // Debug logging
-    console.log('📅 Event Creation Debug:')
-    console.log('Current time:', new Date().toISOString())
-    console.log('Event date (payload):', payload.eventDate)
-    console.log('Form data - date:', data.eventDate, 'time:', data.startTime)
-
     try {
       // Create the event
       const response = await eventsAPI.createEvent(payload)
