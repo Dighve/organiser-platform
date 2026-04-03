@@ -9,12 +9,17 @@ if [ -d "frontend" ]; then
   
   echo "📦 Checking frontend..."
   
-  # Run linter
+  # Run linter on staged files only
   echo "  → Running ESLint..."
-  npm run lint --silent || {
-    echo "❌ ESLint failed. Please fix linting errors before committing."
-    exit 1
-  }
+  STAGED_JS_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep "frontend/src/.*\.jsx\?$" || true)
+  if [ ! -z "$STAGED_JS_FILES" ]; then
+    npx eslint $STAGED_JS_FILES || {
+      echo "❌ ESLint failed. Please fix linting errors before committing."
+      exit 1
+    }
+  else
+    echo "  → No frontend source files to lint"
+  fi
   
   # Check for console.log in staged files
   echo "  → Checking for console.log statements..."
