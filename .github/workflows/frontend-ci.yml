@@ -67,11 +67,14 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: |
+          npm ci
+          npm install -g netlify-cli
 
       - name: Create environment file
         working-directory: frontend
         run: |
+          export $(netlify env:list --context production --plain)
           if [ "${{ matrix.environment }}" == "staging" ]; then
             echo "VITE_API_URL=https://organiser-platform.onrender.com/api/v1" > .env.production
           else
