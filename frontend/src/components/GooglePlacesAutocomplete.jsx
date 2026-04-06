@@ -28,14 +28,17 @@ export default function GooglePlacesAutocomplete({
   const [inputValue, setInputValue] = useState(value || '')
   const [predictions, setPredictions] = useState([])
   const [showDropdown, setShowDropdown] = useState(false)
-  const [useFallbackMode, setUseFallbackMode] = useState(false)
   const [manualCoords, setManualCoords] = useState({ lat: '', lng: '' })
+  const [autocompleteWorking, setAutocompleteWorking] = useState(true)
+
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || ''
+  const hasApiKey = apiKey.trim().length > 0
 
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+    googleMapsApiKey: apiKey,
     libraries: MAPS_LIBRARIES,
-    // Skip loading Google Maps if feature flag is disabled
-    loadScriptExternally: !isGoogleMapsEnabled(),
+    // Skip loading Google Maps if feature flag is disabled or no API key
+    loadScriptExternally: !isGoogleMapsEnabled() || !hasApiKey,
   })
 
   // Keep callback ref current on every render without triggering any effects
@@ -85,6 +88,7 @@ export default function GooglePlacesAutocomplete({
       if (suggestions?.length) {
         setPredictions(suggestions)
         setShowDropdown(true)
+        setAutocompleteWorking(true)
       } else {
         setPredictions([])
         setShowDropdown(false)
@@ -93,6 +97,7 @@ export default function GooglePlacesAutocomplete({
       console.error('Error fetching autocomplete suggestions:', error)
       setPredictions([])
       setShowDropdown(false)
+      setAutocompleteWorking(false)
     }
   }, [isLoaded])
 
@@ -131,7 +136,7 @@ export default function GooglePlacesAutocomplete({
 
     try {
       // Fetch place details using new Place API
-      const place = suggestion.toPlace()
+      const place = suggestion.placePrediction.toPlace()
       await place.fetchFields({
         fields: ['displayName', 'formattedAddress', 'location'],
       })
@@ -193,19 +198,15 @@ export default function GooglePlacesAutocomplete({
     })
   }
 
-  // Fallback UI when Google Maps is disabled (feature flag), fails to load, or user manually switches
-  const shouldUseFallback = !isGoogleMapsEnabled() || loadError || useFallbackMode
+  // Fallback UI when Google Maps is disabled (feature flag), no API key, fails to load, or user manually switches
+  const shouldUseFallback = !isGoogleMapsEnabled() || !hasApiKey || loadError
   
   if (shouldUseFallback) {
     return (
       <div className="space-y-4">
-        {/* Warning banner */}
-        <div className="px-4 py-3 border-2 border-yellow-300 rounded-xl bg-yellow-50">
-          <p className="text-yellow-800 text-sm font-medium">
-            {!isGoogleMapsEnabled() 
-              ? '📍 Google Maps autocomplete is disabled. Using manual location entry.'
-              : '⚠️ Google Maps is temporarily unavailable. Using manual location entry.'
-            }
+        <div className="px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50">
+          <p className="text-gray-600 text-sm font-medium">
+            📍 Enter your location manually below
           </p>
         </div>
 
@@ -219,8 +220,23 @@ export default function GooglePlacesAutocomplete({
             type="text"
             value={inputValue}
             onChange={(e) => {
-              setInputValue(e.target.value)
-              if (onChange) onChange(e.target.value)
+              const newValue = e.target.value
+              setInputValue(newValue)
+              if (onChange) onChange(newValue)
+            }}
+            onBlur={() => {
+              // Trigger onPlaceSelect when user finishes typing (leaves the field)
+              if (inputValue.trim()) {
+                onPlaceSelectRef.current?.({
+                  address: inputValue,
+                  latitude: manualCoords.lat ? parseFloat(manualCoords.lat) : null,
+                  longitude: manualCoords.lng ? parseFloat(manualCoords.lng) : null,
+                  name: inputValue,
+                })
+              }
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.preventDefault()
             }}
             placeholder="Enter location name (e.g., Peak District, UK)"
             className={`w-full pl-12 pr-4 py-3 border-2 ${
@@ -273,13 +289,13 @@ export default function GooglePlacesAutocomplete({
         {/* Helper text */}
         <div className="space-y-2">
           <p className="text-xs text-gray-600">
-            💡 <strong>Option 1:</strong> Enter location name and coordinates, then click "Set Location"
+            💡 <strong>Quick:</strong> Enter location name, then click Continue (coordinates optional)
           </p>
           <p className="text-xs text-gray-600">
-            💡 <strong>Option 2:</strong> Enter just the location name (coordinates are optional)
+            💡 <strong>With coordinates:</strong> Add lat/long, then click "Set Location with Coordinates"
           </p>
           <p className="text-xs text-gray-500 italic">
-            Tip: You can find coordinates by searching the location on Google Maps and right-clicking the spot
+            Tip: Find coordinates by searching on Google Maps and right-clicking the location
           </p>
         </div>
 
@@ -313,6 +329,21 @@ export default function GooglePlacesAutocomplete({
           value={inputValue}
           onChange={handleInputChange}
           onFocus={() => predictions.length > 0 && setShowDropdown(true)}
+          onBlur={() => {
+            // When user leaves the field without selecting from dropdown,
+            // still capture the typed text as location (coordinates will be null)
+            if (inputValue.trim()) {
+              onPlaceSelectRef.current?.({
+                address: inputValue,
+                latitude: null,
+                longitude: null,
+                name: inputValue,
+              })
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') e.preventDefault()
+          }}
           placeholder={placeholder}
           autoComplete="off"
           className={`w-full pl-12 pr-10 py-3 border-2 ${
@@ -381,18 +412,17 @@ export default function GooglePlacesAutocomplete({
           <span>⚠️</span> {error}
         </p>
       )}
-      <div className="flex items-center justify-between mt-2">
-        <p className="text-xs text-gray-500 flex items-center gap-1">
+      {!autocompleteWorking && inputValue.trim().length >= 2 ? (
+        <div className="mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-700 font-medium">
+            ⚠️ Google autocomplete is not available. Please type your location name and click <strong>Continue</strong> to proceed.
+          </p>
+        </div>
+      ) : (
+        <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
           💡 Start typing to search for hiking locations on Google Maps
         </p>
-        <button
-          type="button"
-          onClick={() => setUseFallbackMode(true)}
-          className="text-xs text-purple-600 hover:text-purple-700 underline"
-        >
-          Use manual entry instead
-        </button>
-      </div>
+      )}
     </div>
   )
 }

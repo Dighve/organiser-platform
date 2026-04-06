@@ -10,7 +10,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -76,10 +75,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
             }
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            // Token expired — return 401 so the frontend can trigger token refresh
+            System.err.println("JWT token expired: " + e.getMessage());
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\":\"Token expired\",\"message\":\"JWT token has expired\"}");
+            return; // Don't continue filter chain
         } catch (Exception e) {
-            // Log the error but continue - this allows public endpoints to work even with invalid tokens
+            // Other JWT errors (malformed, invalid signature, etc.) - continue to let Spring Security handle
             System.err.println("JWT token validation failed: " + e.getMessage());
-            // Don't set authentication, let Spring Security handle it based on endpoint permissions
         }
         
         filterChain.doFilter(request, response);
