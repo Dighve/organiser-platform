@@ -207,6 +207,10 @@ export const eventsAPI = {
   getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),
   
   getCalendarData: (id) => api.get(`/events/public/${id}/calendar`),
+  
+  // Get events for a specific group
+  getEventsByGroup: (groupId, page = 0, size = 50) =>
+    api.get(`/events/public/group/${groupId}?page=${page}&size=${size}`),
 }
 
 // Comments API
@@ -413,6 +417,9 @@ export const featureFlagsAPI = {
 export const reviewsAPI = {
   // Submit a review for an event
   submitReview: (eventId, data) => api.post(`/events/${eventId}/reviews`, data),
+  
+  // Get current user's review for an event
+  getMyReviewForEvent: (eventId) => api.get(`/events/${eventId}/reviews/my-review`),
   
   // Get all reviews for an event
   getEventReviews: (eventId, page = 0, size = 20) => 

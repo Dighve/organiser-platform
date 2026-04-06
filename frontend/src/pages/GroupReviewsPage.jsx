@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Star, Calendar, MapPin, ChevronRight, ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { groupsAPI, reviewsAPI } from '../lib/api';
+import { groupsAPI, reviewsAPI, eventsAPI } from '../lib/api';
 import ProfileAvatar from '../components/ProfileAvatar';
 import RatingStars from '../components/RatingStars';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -10,7 +10,8 @@ import { format, formatDistanceToNow } from 'date-fns';
 const GroupReviewsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('reviews'); // 'events' or 'reviews'
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'reviews'); // 'events' or 'reviews'
   const [expandedReviews, setExpandedReviews] = useState({});
   const [selectedRating, setSelectedRating] = useState('all'); // 'all', '5', '4', '3', '2', '1'
   const [showMobileFilter, setShowMobileFilter] = useState(false);
@@ -22,71 +23,32 @@ const GroupReviewsPage = () => {
     }));
   };
 
+  // Update URL when tab changes
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setSearchParams({ tab });
+  };
+
   // Fetch group details
-  const { data: group, isLoading: groupLoading } = useQuery({
+  const { data: groupData, isLoading: groupLoading } = useQuery({
     queryKey: ['group', id],
     queryFn: () => groupsAPI.getGroupById(id),
   });
 
-  // TODO: Replace with actual API call when backend is ready
-  // const { data: events, isLoading: eventsLoading } = useQuery({
-  //   queryKey: ['groupEvents', id],
-  //   queryFn: () => groupsAPI.getGroupEvents(id),
-  // });
-
-  // Using mock data for now - events with ratings
-  const events = [
-    {
-      id: 1,
-      title: 'Peak District Sunrise Hike',
-      eventDate: '2024-03-15T06:00:00Z',
-      location: 'Mam Tor, Peak District',
-      imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&h=300&fit=crop',
-      averageRating: 4.8,
-      totalReviews: 12,
-      organizationAvg: 4.9,
-      routeAvg: 4.7,
-      groupAvg: 4.8,
-      safetyAvg: 5.0,
-      valueAvg: 4.6
-    },
-    {
-      id: 2,
-      title: 'Lake District Challenge',
-      eventDate: '2024-03-08T08:00:00Z',
-      location: 'Scafell Pike, Lake District',
-      imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=300&fit=crop',
-      averageRating: 4.5,
-      totalReviews: 8,
-      organizationAvg: 4.6,
-      routeAvg: 4.4,
-      groupAvg: 4.5,
-      safetyAvg: 4.7,
-      valueAvg: 4.3
-    },
-    {
-      id: 3,
-      title: 'Snowdonia Adventure',
-      eventDate: '2024-02-28T07:30:00Z',
-      location: 'Mount Snowdon, Wales',
-      imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-      averageRating: 4.7,
-      totalReviews: 15,
-      organizationAvg: 4.8,
-      routeAvg: 4.6,
-      groupAvg: 4.7,
-      safetyAvg: 4.9,
-      valueAvg: 4.5
-    }
-  ];
-  const eventsLoading = false;
+  // Fetch events for this group
+  const { data: eventsData, isLoading: eventsLoading } = useQuery({
+    queryKey: ['groupEvents', id],
+    queryFn: () => eventsAPI.getEventsByGroup(id),
+  });
 
   // Fetch reviews for this group
-  const { data: reviewsData, isLoading: reviewsLoading } = useQuery({
+  const { data: reviewsData, isLoading: reviewsLoading, error: reviewsError } = useQuery({
     queryKey: ['groupReviews', id],
     queryFn: () => reviewsAPI.getGroupReviews(id),
   });
 
+  const group = groupData?.data;
+  const events = eventsData?.data?.content || [];
   const allReviews = reviewsData?.data?.content || [];
 
   // Filter reviews by selected rating
@@ -94,8 +56,40 @@ const GroupReviewsPage = () => {
     ? allReviews 
     : allReviews.filter(review => Math.floor(review.overallRating) === parseInt(selectedRating));
 
-  // Calculate total review count
-  const totalReviews = events.reduce((sum, event) => sum + event.totalReviews, 0);
+  // Calculate total review count from actual reviews
+  const totalReviews = allReviews.length;
+  
+  // Calculate recommendation percentage
+  const recommendationPercentage = allReviews.length > 0
+    ? Math.round((allReviews.filter(r => r.wouldRecommend).length / allReviews.length) * 100)
+    : 0;
+
+  // Calculate ratings for each event based on its reviews
+  const eventsWithRatings = events.map(event => {
+    const eventReviews = allReviews.filter(review => review.eventId === event.id);
+    
+    if (eventReviews.length === 0) {
+      return { ...event, averageRating: 0, totalReviews: 0 };
+    }
+
+    const averageRating = eventReviews.reduce((sum, r) => sum + r.overallRating, 0) / eventReviews.length;
+    const organizationAvg = eventReviews.reduce((sum, r) => sum + r.organizationRating, 0) / eventReviews.length;
+    const routeAvg = eventReviews.reduce((sum, r) => sum + r.routeRating, 0) / eventReviews.length;
+    const groupAvg = eventReviews.reduce((sum, r) => sum + r.groupRating, 0) / eventReviews.length;
+    const safetyAvg = eventReviews.reduce((sum, r) => sum + r.safetyRating, 0) / eventReviews.length;
+    const valueAvg = eventReviews.reduce((sum, r) => sum + r.valueRating, 0) / eventReviews.length;
+
+    return {
+      ...event,
+      averageRating,
+      totalReviews: eventReviews.length,
+      organizationAvg,
+      routeAvg,
+      groupAvg,
+      safetyAvg,
+      valueAvg
+    };
+  });
 
   if (groupLoading || eventsLoading) {
     return (
@@ -121,12 +115,22 @@ const GroupReviewsPage = () => {
             <span className="font-medium">Back</span>
           </button>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-3">
             <Star className="w-8 h-8 fill-yellow-400 text-yellow-400" />
             <h1 className="text-3xl lg:text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
               Group Reviews
             </h1>
           </div>
+          
+          <p className="text-lg text-gray-700">
+            Reviews for{' '}
+            <span 
+              onClick={() => navigate(`/groups/${id}`)}
+              className="font-bold text-purple-600 cursor-pointer hover:underline"
+            >
+              {group?.name}
+            </span>
+          </p>
         </div>
 
         {/* Overall Group Rating Summary - Without heading */}
@@ -135,14 +139,27 @@ const GroupReviewsPage = () => {
             {/* Total Rating Display */}
             <div className="text-center mb-6 pb-6 border-b border-gray-200">
               <div className="text-6xl font-bold text-purple-600 mb-2">
-                {((events.reduce((sum, e) => sum + e.organizationAvg + e.routeAvg + e.groupAvg + e.safetyAvg + e.valueAvg, 0) / events.length) / 5).toFixed(1)}
+                {allReviews.length > 0 
+                  ? (allReviews.reduce((sum, r) => sum + r.overallRating, 0) / allReviews.length).toFixed(1)
+                  : '0.0'
+                }
               </div>
               <div className="flex justify-center mb-2">
-                <RatingStars rating={(events.reduce((sum, e) => sum + e.organizationAvg + e.routeAvg + e.groupAvg + e.safetyAvg + e.valueAvg, 0) / events.length) / 5} size="lg" />
+                <RatingStars rating={allReviews.length > 0 ? allReviews.reduce((sum, r) => sum + r.overallRating, 0) / allReviews.length : 0} size="lg" />
               </div>
-              <p className="text-gray-600">
+              <p className="text-gray-600 mb-3">
                 Based on {totalReviews} {totalReviews === 1 ? 'review' : 'reviews'}
               </p>
+              
+              {/* Recommendation Percentage */}
+              {allReviews.length > 0 && (
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full">
+                  <span className="text-2xl">👍</span>
+                  <span className="text-lg font-bold text-green-700">
+                    {recommendationPercentage}% recommend
+                  </span>
+                </div>
+              )}
             </div>
 
             {/* Category Breakdown */}
@@ -150,46 +167,61 @@ const GroupReviewsPage = () => {
               <div className="text-center p-4 bg-purple-50 rounded-xl">
                 <div className="text-sm text-gray-600 mb-2">Organization</div>
                 <div className="text-3xl font-bold text-purple-600">
-                  {(events.reduce((sum, e) => sum + e.organizationAvg, 0) / events.length).toFixed(1)}
+                  {allReviews.length > 0 
+                    ? (allReviews.reduce((sum, r) => sum + r.organizationRating, 0) / allReviews.length).toFixed(1)
+                    : '0.0'
+                  }
                 </div>
                 <div className="flex justify-center mt-2">
-                  <RatingStars rating={events.reduce((sum, e) => sum + e.organizationAvg, 0) / events.length} size="sm" />
+                  <RatingStars rating={allReviews.length > 0 ? allReviews.reduce((sum, r) => sum + r.organizationRating, 0) / allReviews.length : 0} size="sm" />
                 </div>
               </div>
               <div className="text-center p-4 bg-blue-50 rounded-xl">
                 <div className="text-sm text-gray-600 mb-2">Route</div>
                 <div className="text-3xl font-bold text-blue-600">
-                  {(events.reduce((sum, e) => sum + e.routeAvg, 0) / events.length).toFixed(1)}
+                  {allReviews.length > 0 
+                    ? (allReviews.reduce((sum, r) => sum + r.routeRating, 0) / allReviews.length).toFixed(1)
+                    : '0.0'
+                  }
                 </div>
                 <div className="flex justify-center mt-2">
-                  <RatingStars rating={events.reduce((sum, e) => sum + e.routeAvg, 0) / events.length} size="sm" />
+                  <RatingStars rating={allReviews.length > 0 ? allReviews.reduce((sum, r) => sum + r.routeRating, 0) / allReviews.length : 0} size="sm" />
                 </div>
               </div>
               <div className="text-center p-4 bg-pink-50 rounded-xl">
                 <div className="text-sm text-gray-600 mb-2">Atmosphere</div>
                 <div className="text-3xl font-bold text-pink-600">
-                  {(events.reduce((sum, e) => sum + e.groupAvg, 0) / events.length).toFixed(1)}
+                  {allReviews.length > 0 
+                    ? (allReviews.reduce((sum, r) => sum + r.groupRating, 0) / allReviews.length).toFixed(1)
+                    : '0.0'
+                  }
                 </div>
                 <div className="flex justify-center mt-2">
-                  <RatingStars rating={events.reduce((sum, e) => sum + e.groupAvg, 0) / events.length} size="sm" />
+                  <RatingStars rating={allReviews.length > 0 ? allReviews.reduce((sum, r) => sum + r.groupRating, 0) / allReviews.length : 0} size="sm" />
                 </div>
               </div>
               <div className="text-center p-4 bg-green-50 rounded-xl">
                 <div className="text-sm text-gray-600 mb-2">Safety</div>
                 <div className="text-3xl font-bold text-green-600">
-                  {(events.reduce((sum, e) => sum + e.safetyAvg, 0) / events.length).toFixed(1)}
+                  {allReviews.length > 0 
+                    ? (allReviews.reduce((sum, r) => sum + r.safetyRating, 0) / allReviews.length).toFixed(1)
+                    : '0.0'
+                  }
                 </div>
                 <div className="flex justify-center mt-2">
-                  <RatingStars rating={events.reduce((sum, e) => sum + e.safetyAvg, 0) / events.length} size="sm" />
+                  <RatingStars rating={allReviews.length > 0 ? allReviews.reduce((sum, r) => sum + r.safetyRating, 0) / allReviews.length : 0} size="sm" />
                 </div>
               </div>
               <div className="text-center p-4 bg-orange-50 rounded-xl">
                 <div className="text-sm text-gray-600 mb-2">Value</div>
                 <div className="text-3xl font-bold text-orange-600">
-                  {(events.reduce((sum, e) => sum + e.valueAvg, 0) / events.length).toFixed(1)}
+                  {allReviews.length > 0 
+                    ? (allReviews.reduce((sum, r) => sum + r.valueRating, 0) / allReviews.length).toFixed(1)
+                    : '0.0'
+                  }
                 </div>
                 <div className="flex justify-center mt-2">
-                  <RatingStars rating={events.reduce((sum, e) => sum + e.valueAvg, 0) / events.length} size="sm" />
+                  <RatingStars rating={allReviews.length > 0 ? allReviews.reduce((sum, r) => sum + r.valueRating, 0) / allReviews.length : 0} size="sm" />
                 </div>
               </div>
             </div>
@@ -200,17 +232,17 @@ const GroupReviewsPage = () => {
         {activeTab === 'events' ? (
           /* Events List */
           <div className="space-y-6">
-            {events.length === 0 ? (
+            {eventsWithRatings.length === 0 ? (
               <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/20 p-12 text-center">
                 <div className="text-6xl mb-4">⭐</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-2">No events with reviews yet</h3>
-                <p className="text-gray-600">Events will appear here once they have reviews!</p>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">No events yet</h3>
+                <p className="text-gray-600">Events will appear here once the group creates them!</p>
               </div>
             ) : (
-              events.map((event) => (
+              eventsWithRatings.map((event) => (
                 <div
                   key={event.id}
-                  onClick={() => navigate(`/events/${event.id}/reviews`)}
+                  onClick={() => navigate(`/events/${event.id}/reviews?returnTab=events&groupId=${id}`)}
                   className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-white/20 overflow-hidden hover:shadow-2xl transition-all cursor-pointer group"
                 >
                   {/* Event Image Banner */}
@@ -227,13 +259,15 @@ const GroupReviewsPage = () => {
                         />
                       )}
                     </div>
-                    {/* Rating Badge */}
-                    <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                        <span className="font-bold text-gray-900">{event.averageRating.toFixed(1)}</span>
+                    {/* Rating Badge - Only show if event has reviews */}
+                    {event.totalReviews > 0 && (
+                      <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-lg">
+                        <div className="flex items-center gap-2">
+                          <RatingStars rating={event.averageRating} size="sm" />
+                          <span className="font-bold text-gray-900">{event.averageRating.toFixed(1)}</span>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Event Details */}
@@ -245,46 +279,54 @@ const GroupReviewsPage = () => {
                       <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors flex-shrink-0 mt-0.5" />
                     </div>
 
-                    {/* Date and Location - Compact */}
+                    {/* Date and Location */}
                     <div className="space-y-1.5 mb-3">
                       <div className="flex items-center gap-2 text-gray-600">
                         <Calendar className="w-3.5 h-3.5" />
-                        <span className="text-xs">
+                        <span className="text-sm">
                           {format(new Date(event.eventDate), 'MMM dd, yyyy')}
                         </span>
                       </div>
                       <div className="flex items-center gap-2 text-gray-600">
                         <MapPin className="w-3.5 h-3.5" />
-                        <span className="text-xs truncate">{event.location}</span>
+                        <span className="text-sm truncate">{event.location}</span>
                       </div>
                     </div>
 
-                    {/* Rating Info */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <RatingStars rating={event.averageRating} size="sm" />
-                      <span className="text-xs text-gray-600">
-                        ({event.totalReviews})
-                      </span>
-                    </div>
+                    {/* Rating Info - Only show if event has reviews */}
+                    {event.totalReviews > 0 ? (
+                      <>
+                        <div className="flex items-center gap-2 mb-3">
+                          <RatingStars rating={event.averageRating} size="sm" />
+                          <span className="text-xs text-gray-600">
+                            ({event.totalReviews} {event.totalReviews === 1 ? 'review' : 'reviews'})
+                          </span>
+                        </div>
 
-                    {/* Category Ratings - Compact Pills */}
-                    <div className="flex flex-wrap gap-1.5">
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
-                        Org {event.organizationAvg.toFixed(1)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                        Route {event.routeAvg.toFixed(1)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-pink-50 text-pink-700 rounded-full text-xs font-medium">
-                        Atmos {event.groupAvg.toFixed(1)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
-                        Safety {event.safetyAvg.toFixed(1)}
-                      </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-700 rounded-full text-xs font-medium">
-                        Value {event.valueAvg.toFixed(1)}
-                      </span>
-                    </div>
+                        {/* Category Ratings - Compact Pills */}
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 rounded-full text-xs font-medium">
+                            Org {event.organizationAvg.toFixed(1)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                            Route {event.routeAvg.toFixed(1)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-pink-50 text-pink-700 rounded-full text-xs font-medium">
+                            Atmos {event.groupAvg.toFixed(1)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-medium">
+                            Safety {event.safetyAvg.toFixed(1)}
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-50 text-orange-700 rounded-full text-xs font-medium">
+                            Value {event.valueAvg.toFixed(1)}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-xs text-gray-500 italic">
+                        No reviews yet
+                      </div>
+                    )}
                   </div>
                 </div>
               ))
@@ -600,31 +642,29 @@ const GroupReviewsPage = () => {
           <div className="max-w-4xl mx-auto">
             <div className="flex gap-2">
               <button
-                onClick={() => setActiveTab('reviews')}
+                onClick={() => handleTabChange('reviews')}
                 className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
                   activeTab === 'reviews'
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:bg-gray-100 border border-gray-300'
+                    : 'bg-white/80 text-gray-700 hover:bg-white'
                 }`}
               >
-                <span className="hidden sm:inline">All Reviews ({totalReviews})</span>
-                <span className="sm:hidden flex items-center justify-center gap-1">
+                <span className="flex items-center justify-center gap-2">
                   <Star className="w-4 h-4" />
-                  <span className="text-sm">({totalReviews})</span>
+                  Reviews
                 </span>
               </button>
               <button
-                onClick={() => setActiveTab('events')}
+                onClick={() => handleTabChange('events')}
                 className={`flex-1 py-3 px-4 rounded-xl font-semibold transition-all ${
                   activeTab === 'events'
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                    : 'text-gray-600 hover:bg-gray-100 border border-gray-300'
+                    : 'bg-white/80 text-gray-700 hover:bg-white'
                 }`}
               >
-                <span className="hidden sm:inline">Events ({events.length})</span>
-                <span className="sm:hidden flex items-center justify-center gap-1">
+                <span className="flex items-center justify-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span className="text-sm">({events.length})</span>
+                  Events
                 </span>
               </button>
             </div>

@@ -16,4 +16,9 @@ public interface EventReviewRepository extends JpaRepository<EventReview, Long> 
     
     @Query("SELECT r FROM EventReview r WHERE r.group.id = :groupId ORDER BY r.createdAt DESC")
     Page<EventReview> findByGroupId(@Param("groupId") Long groupId, Pageable pageable);
+    
+    boolean existsByEventIdAndMemberId(Long eventId, Long memberId);
+    
+    @Query("SELECT r FROM EventReview r WHERE r.event.id = :eventId AND r.member.id = :memberId")
+    java.util.Optional<EventReview> findByEventIdAndMemberId(@Param("eventId") Long eventId, @Param("memberId") Long memberId);
 }
