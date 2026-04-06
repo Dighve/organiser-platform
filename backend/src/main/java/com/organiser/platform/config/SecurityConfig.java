@@ -46,6 +46,12 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/auth/google", "POST")
                         ).permitAll()
                         
+                        // Public READ-ONLY endpoints for reviews (must be before other event/group patterns)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/reviews", "GET")
+                        ).permitAll()
+                        
                         // Public READ-ONLY endpoints for events
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/events/public", "GET"),

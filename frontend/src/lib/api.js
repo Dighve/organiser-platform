@@ -409,4 +409,34 @@ export const featureFlagsAPI = {
   },
 }
 
+// Reviews API
+export const reviewsAPI = {
+  // Submit a review for an event
+  submitReview: (eventId, data) => api.post(`/events/${eventId}/reviews`, data),
+  
+  // Get all reviews for an event
+  getEventReviews: (eventId, page = 0, size = 20) => 
+    api.get(`/events/${eventId}/reviews?page=${page}&size=${size}`),
+  
+  // Get all reviews for a group
+  getGroupReviews: (groupId, page = 0, size = 20) => 
+    api.get(`/groups/${groupId}/reviews?page=${page}&size=${size}`),
+  
+  // Get group rating summary
+  getGroupRating: (groupId) => api.get(`/groups/${groupId}/rating`),
+  
+  // Update own review
+  updateReview: (reviewId, data) => api.put(`/reviews/${reviewId}`, data),
+  
+  // Delete own review
+  deleteReview: (reviewId) => api.delete(`/reviews/${reviewId}`),
+  
+  // Get pending reviews for current user
+  getPendingReviews: () => api.get('/reviews/pending'),
+  
+  // Flag a review (report inappropriate content)
+  flagReview: (reviewId, reason) => 
+    api.post(`/reviews/${reviewId}/flag`, { reason }),
+}
+
 export default api

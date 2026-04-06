@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -1057,11 +1057,13 @@ export default function EventDetailPage() {
                   </div>
                   
                   {/* Group Details */}
-                  <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
-                    <h2 className="text-base lg:text-lg font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-gray-300 text-gray-600 text-[11px] font-semibold flex-shrink-0">
-                      {event?.groupIsPublic === false ? 'Private Group' : 'Public Group'}
-                    </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <h2 className="text-base lg:text-lg font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-gray-300 text-gray-600 text-[11px] font-semibold flex-shrink-0">
+                        {event?.groupIsPublic === false ? 'Private Group' : 'Public Group'}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

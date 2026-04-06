@@ -80,28 +80,45 @@ public class AuthService {
         }
         String email = request.getEmail().toLowerCase().trim();
         
+        log.debug("🔐 Magic Link Request - Email: {}, RedirectUrl: {}, DisplayName: {}", 
+                email, request.getRedirectUrl(), request.getDisplayName());
+        
         // Create member if doesn't exist, or reactivate if soft-deleted
         Member member = memberRepository.findByEmail(email)
-                .map(existingMember -> reactivateMemberIfDeleted(existingMember, request))
-                .orElseGet(() -> createNewMember(email, request));
+                .map(existingMember -> {
+                    log.debug("👤 Found existing member: id={}, active={}, verified={}", 
+                            existingMember.getId(), existingMember.getActive(), existingMember.getVerified());
+                    return reactivateMemberIfDeleted(existingMember, request);
+                })
+                .orElseGet(() -> {
+                    log.debug("✨ Creating new member for email: {}", email);
+                    return createNewMember(email, request);
+                });
+        
+        log.debug("👤 Member prepared: id={}, email={}, displayName={}", 
+                member.getId(), member.getEmail(), member.getDisplayName());
         
         // Delete any existing unused magic links for this email
         magicLinkRepository.deleteUnusedLinksByEmail(email);
+        log.debug("🗑️ Deleted old unused magic links for: {}", email);
         
         // Generate new magic link
         String token = UUID.randomUUID().toString();
+        LocalDateTime expiresAt = LocalDateTime.now().plusMinutes(MAGIC_LINK_EXPIRY_MINUTES);
         MagicLink magicLink = MagicLink.builder()
                 .token(token)
                 .email(email)
-                .expiresAt(LocalDateTime.now().plusMinutes(MAGIC_LINK_EXPIRY_MINUTES))
+                .expiresAt(expiresAt)
                 .user(member)
                 .used(false)
                 .build();
         
         magicLinkRepository.save(magicLink);
+        log.debug("💾 Magic link saved: token={}, expiresAt={}", token, expiresAt);
         
         // Send magic link via email (include redirect URL for cross-browser support)
         emailService.sendMagicLink(email, token, request.getRedirectUrl());
+        log.debug("📧 Magic link email sent to: {}", email);
     }
     
     /**
@@ -109,10 +126,19 @@ public class AuthService {
      */
     @Transactional
     public AuthResponse verifyMagicLink(String token, String inviteToken, jakarta.servlet.http.HttpServletRequest request) {
+        log.debug("🔓 Verifying magic link: token={}, inviteToken={}", token, inviteToken != null ? "present" : "null");
+        
         MagicLink magicLink = magicLinkRepository.findByTokenAndUsedFalse(token)
-                .orElseThrow(() -> new RuntimeException("Invalid or expired magic link"));
+                .orElseThrow(() -> {
+                    log.warn("❌ Invalid or expired magic link token: {}", token);
+                    return new RuntimeException("Invalid or expired magic link");
+                });
+        
+        log.debug("🔍 Magic link found: email={}, expiresAt={}, used={}", 
+                magicLink.getEmail(), magicLink.getExpiresAt(), magicLink.getUsed());
         
         if (!magicLink.isValid()) {
+            log.warn("❌ Magic link validation failed: expired or already used");
             throw new RuntimeException("Magic link has expired or been used");
         }
         
@@ -120,9 +146,12 @@ public class AuthService {
         magicLink.setUsed(true);
         magicLink.setUsedAt(LocalDateTime.now());
         magicLinkRepository.save(magicLink);
+        log.debug("✅ Magic link marked as used at: {}", magicLink.getUsedAt());
         
         // Get user
         Member member = magicLink.getUser();
+        log.debug("👤 Member retrieved: id={}, email={}, verified={}, hasOrganiserRole={}", 
+                member.getId(), member.getEmail(), member.getVerified(), member.getHasOrganiserRole());
 
         // Note: Member reactivation is now handled in requestMagicLink() → reactivateMemberIfDeleted()
         // This ensures legal agreement flags are properly reset during reactivation
@@ -131,6 +160,9 @@ public class AuthService {
         if (!member.getVerified()) {
             member.setVerified(true);
             memberRepository.save(member);
+            log.debug("✅ Member marked as verified: {}", member.getEmail());
+        } else {
+            log.debug("ℹ️ Member already verified: {}", member.getEmail());
         }
         
         // Process organiser invite token if present
@@ -151,12 +183,18 @@ public class AuthService {
 
         // Determine role based on admin status
         String role = member.getIsAdmin() ? "ADMIN" : (member.getHasOrganiserRole() ? "ORGANISER" : "MEMBER");
+        log.debug("🎭 Role determined: {}", role);
         
         // Generate JWT access token (15 minutes)
         String jwtToken = jwtUtil.generateToken(member.getEmail(), member.getId(), role);
+        log.debug("🔑 JWT token generated for member: {}", member.getId());
         
         // Generate refresh token (30 days)
         com.organiser.platform.model.RefreshToken refreshToken = refreshTokenService.createRefreshToken(member.getId(), request);
+        log.debug("🔄 Refresh token created: {}", refreshToken.getToken());
+        
+        log.debug("✅ Magic link verification complete - userId={}, role={}, isNewOrganiser={}", 
+                member.getId(), role, becameOrganiser);
         
         return AuthResponse.builder()
                 .token(jwtToken)
