@@ -73,23 +73,19 @@ jobs:
       - name: Build application
         working-directory: frontend
         run: |
-          # Pull variables from the specific Netlify Site ID
-          export $(netlify env:list --context production --plain)
-          
-          # Handle API URL overrides
+          netlify link --id $NETLIFY_SITE_ID
+          eval $(netlify env:list --context production --plain)
           if [ "${{ matrix.environment }}" == "staging" ]; then
-            echo "VITE_API_URL=https://organiser-platform.onrender.com/api/v1" > .env.production
+            export VITE_API_URL="https://organiser-platform.onrender.com/api/v1"
           else
-            echo "VITE_API_URL=${{ secrets.PRODUCTION_API_URL }}" > .env.production
+            export VITE_API_URL="${{ secrets.PRODUCTION_API_URL }}"
           fi
-          
-          # Build - Vite will now see the Netlify variables
           npm run build
         env:
           NODE_ENV: production
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ matrix.environment == 'production' && secrets.NETLIFY_PRODUCTION_SITE_ID || secrets.NETLIFY_STAGING_SITE_ID }}
-
+      
       - name: Check build output
         working-directory: frontend
         run: |
@@ -97,7 +93,19 @@ jobs:
             echo "❌ Build failed"
             exit 1
           fi
+          echo "✅ Build successful"
           du -sh dist/
+
+      - name: Analyze bundle size
+        working-directory: frontend
+        run: |
+          BUNDLE_SIZE=$(du -sb dist/ | cut -f1)
+          MAX_SIZE=$((10 * 1024 * 1024)) # 10MB
+          if [ $BUNDLE_SIZE -gt $MAX_SIZE ]; then
+            echo "⚠️ Warning: Bundle size ($BUNDLE_SIZE bytes) exceeds 10MB"
+          else
+            echo "✅ Bundle size OK: $BUNDLE_SIZE bytes"
+          fi
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -112,9 +120,20 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
       - name: Run npm audit
         working-directory: frontend
-        run: npm audit --audit-level=high || true
+        run: |
+          npm audit --audit-level=high || true
+          echo "Security scan completed"
+
+      - name: Check for secrets in code
+        run: |
+          if grep -r "sk_live_\|pk_live_\|api_key\|secret_key" frontend/src/ --exclude-dir=node_modules; then
+            echo "⚠️ Warning: Potential secrets found in code"
+          else
+            echo "✅ No secrets detected"
+          fi
 
   deploy-staging:
     name: Deploy to Staging
@@ -183,3 +202,16 @@ jobs:
             echo "❌ Staging homepage returned status $STATUS"
             exit 1
           fi
+
+      - name: Check critical pages
+        run: |
+          PAGES=("/events" "/groups" "/browse-groups")
+          for PAGE in "${PAGES[@]}"; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" "https://outmeet-stage.netlify.app$PAGE")
+            if [ $STATUS -eq 200 ]; then
+              echo "✅ $PAGE is accessible"
+            else
+              echo "❌ $PAGE returned status $STATUS"
+              exit 1
+            fi
+          done
