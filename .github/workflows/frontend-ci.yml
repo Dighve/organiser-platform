@@ -76,7 +76,26 @@ jobs:
         working-directory: frontend
         run: |
           netlify link --id $NETLIFY_SITE_ID
+          set -a
           eval $(netlify env:list --context production --plain)
+          set +a
+          echo "--- Env var check ---"
+          if [ -n "$VITE_GOOGLE_MAPS_API_KEY" ]; then
+            echo "✅ VITE_GOOGLE_MAPS_API_KEY is set (${#VITE_GOOGLE_MAPS_API_KEY} chars)"
+          else
+            echo "❌ VITE_GOOGLE_MAPS_API_KEY is NOT set"
+          fi
+          if [ -n "$VITE_GOOGLE_CLIENT_ID" ]; then
+            echo "✅ VITE_GOOGLE_CLIENT_ID is set (${#VITE_GOOGLE_CLIENT_ID} chars)"
+          else
+            echo "❌ VITE_GOOGLE_CLIENT_ID is NOT set"
+          fi
+          if [ -n "$VITE_API_URL" ]; then
+            echo "✅ VITE_API_URL is set (${#VITE_API_URL} chars)"
+          else
+            echo "❌ VITE_API_URL is NOT set (will be set below)"
+          fi
+          echo "--- End env var check ---"
           if [ "${{ matrix.environment }}" == "staging" ]; then
             export VITE_API_URL="https://organiser-platform.onrender.com/api/v1"
           else
