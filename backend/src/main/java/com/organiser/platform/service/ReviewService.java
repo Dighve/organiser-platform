@@ -24,9 +24,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.organiser.platform.dto.PendingReviewDTO;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -46,6 +49,46 @@ public class ReviewService {
             EventParticipant.ParticipationStatus.ATTENDED
     );
     
+    public List<PendingReviewDTO> getPendingReviews() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
+
+        Instant now = Instant.now();
+        Instant windowStart = now.minus(31, ChronoUnit.DAYS);
+        Instant windowEnd   = now.minus(1,  ChronoUnit.DAYS);
+
+        return eventParticipantRepository
+                .findEligibleForReviewPrompt(windowStart, windowEnd)
+                .stream()
+                .filter(ep -> ep.getMember().getId().equals(member.getId()))
+                .filter(ep -> {
+                    Instant eventEnd = EventTimingUtils.effectiveEnd(ep.getEvent());
+                    long hours = ChronoUnit.HOURS.between(eventEnd, now);
+                    return hours >= 24 && hours <= 30 * 24;
+                })
+                .filter(ep -> {
+                    Long organiserId = ep.getEvent().getGroup().getPrimaryOrganiser().getId();
+                    Long hostId = ep.getEvent().getHostMember() != null
+                            ? ep.getEvent().getHostMember().getId() : null;
+                    return !member.getId().equals(organiserId) && !member.getId().equals(hostId);
+                })
+                .map(ep -> {
+                    Instant eventEnd = EventTimingUtils.effectiveEnd(ep.getEvent());
+                    return PendingReviewDTO.builder()
+                            .eventId(ep.getEvent().getId())
+                            .eventTitle(ep.getEvent().getTitle())
+                            .groupName(ep.getEvent().getGroup().getName())
+                            .imageUrl(ep.getEvent().getImageUrl())
+                            .eventDate(ep.getEvent().getEventDate())
+                            .reviewWindowClosesAt(eventEnd.plus(30, ChronoUnit.DAYS))
+                            .build();
+                })
+                .collect(Collectors.toList());
+    }
+
     public Page<EventReviewDTO> getEventReviews(Long eventId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return eventReviewRepository.findByEventId(eventId, pageable)

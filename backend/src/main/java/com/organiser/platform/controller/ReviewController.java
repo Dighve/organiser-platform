@@ -2,12 +2,14 @@ package com.organiser.platform.controller;
 
 import com.organiser.platform.dto.CreateReviewRequest;
 import com.organiser.platform.dto.EventReviewDTO;
+import com.organiser.platform.dto.PendingReviewDTO;
 import com.organiser.platform.service.ReviewService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +19,11 @@ public class ReviewController {
     
     private final ReviewService reviewService;
     
+    @GetMapping("/reviews/pending")
+    public ResponseEntity<List<PendingReviewDTO>> getPendingReviews() {
+        return ResponseEntity.ok(reviewService.getPendingReviews());
+    }
+
     @GetMapping("/events/{eventId}/reviews")
     public ResponseEntity<Page<EventReviewDTO>> getEventReviews(
             @PathVariable Long eventId,
