@@ -10,6 +10,7 @@ import com.organiser.platform.exception.AlreadyRegisteredException;
 import com.organiser.platform.model.*;
 import java.math.BigDecimal;
 import com.organiser.platform.repository.*;
+import com.organiser.platform.util.EventTimingUtils;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -29,7 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 
 // ============================================================
 // SERVICE CLASS
@@ -283,7 +287,7 @@ public class EventService {
     @Transactional(readOnly = true)
     @Cacheable(value = "upcomingEvents", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<EventDTO> getUpcomingEvents(Pageable pageable) {
-        return eventRepository.findUpcomingEvents(Instant.now(), pageable)
+        return eventRepository.findUpcomingEvents(Instant.now(), EventTimingUtils.startOfToday(), pageable)
                 .map(this::convertToDTO);
     }
     
@@ -297,7 +301,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByActivity(Long activityId, Pageable pageable) {
         return eventRepository.findUpcomingEventsByActivityId(
-                Instant.now(), activityId, pageable
+                Instant.now(), EventTimingUtils.startOfToday(), activityId, pageable
         ).map(this::convertToDTO);
     }
     
@@ -306,7 +310,7 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public Page<EventDTO> searchEvents(String keyword, Pageable pageable) {
-        return eventRepository.searchEvents(keyword, Instant.now(), pageable)
+        return eventRepository.searchEvents(keyword, Instant.now(), EventTimingUtils.startOfToday(), pageable)
                 .map(this::convertToDTO);
     }
 
@@ -326,6 +330,7 @@ public class EventService {
                 tokens.future,
                 tokens.text,
                 Instant.now(),
+                EventTimingUtils.startOfToday(),
                 pageable
         );
 
@@ -411,7 +416,7 @@ public class EventService {
         Page<Event> page = eventRepository.findByOrganiserId(organiserId, pageable);
         Instant now = Instant.now();
         List<EventDTO> filtered = page.getContent().stream()
-                .filter(e -> past ? e.getEventDate().isBefore(now) : e.getEventDate().isAfter(now))
+                .filter(e -> past ? EventTimingUtils.effectiveEnd(e).isBefore(now) : !EventTimingUtils.effectiveEnd(e).isBefore(now))
                 .sorted(past ? Comparator.comparing(Event::getEventDate).reversed() : Comparator.comparing(Event::getEventDate))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -441,7 +446,7 @@ public class EventService {
         Instant now = Instant.now();
         // Filter by past/upcoming
         events = events.stream()
-                .filter(e -> past ? e.getEventDate().isBefore(now) : e.getEventDate().isAfter(now))
+                .filter(e -> past ? EventTimingUtils.effectiveEnd(e).isBefore(now) : !EventTimingUtils.effectiveEnd(e).isBefore(now))
                 .collect(Collectors.toList());
         
         // Sort: past desc, upcoming asc
@@ -1048,4 +1053,5 @@ public class EventService {
     public void removeFutureParticipationsForMember(Long memberId) {
         eventParticipantRepository.deleteFutureParticipations(memberId, Instant.now());
     }
+
 }
