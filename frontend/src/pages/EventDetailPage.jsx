@@ -468,6 +468,14 @@ export default function EventDetailPage() {
   const isOngoingEvent = eventStart && eventEnd ? 
     (eventStart.getTime() <= now.getTime() && now.getTime() <= eventEnd.getTime()) : false
   
+  // Review eligibility: attended past event, within 24h–30d window, not organiser/host
+  const canReview = (() => {
+    if (!isPastEvent || !event?.userHasAttended || !isAuthenticated) return false
+    if (isEventOrganiser) return false
+    const hoursElapsed = eventEnd ? (now - eventEnd) / (1000 * 60 * 60) : 0
+    return hoursElapsed >= 24 && hoursElapsed <= 30 * 24
+  })()
+
   // Check if access is denied (non-member trying to view a private group event)
   // Public groups: backend returns full data to everyone → never denied
   // Private groups: backend returns partial data (null fields) for non-members
@@ -664,9 +672,19 @@ export default function EventDetailPage() {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3">
           {isPastEvent && !isEventOrganiser ? (
             <div className="flex items-center gap-2">
-              <div className="flex-1 py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
-                Event has ended
-              </div>
+              {canReview ? (
+                <Link
+                  to={`/events/${id}/review`}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2"
+                >
+                  <Star className="h-4 w-4" />
+                  Write a Review
+                </Link>
+              ) : (
+                <div className="flex-1 py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
+                  Event has ended
+                </div>
+              )}
               <button
                 onClick={() => setIsManageOpen(true)}
                 className="py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center"
@@ -1448,11 +1466,21 @@ export default function EventDetailPage() {
               <div className={`hidden lg:block ${!isAccessDenied ? "pt-6 border-t border-gray-200" : ""}`}>
                 {isPastEvent && !isEventOrganiser ? (
                   <div className="space-y-4">
-                    <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
-                      <Clock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-                      <p className="text-sm font-semibold text-gray-600 mb-1">Event has ended</p>
-                      <p className="text-xs text-gray-500">Joining is disabled for past events.</p>
-                    </div>
+                    {canReview ? (
+                      <Link
+                        to={`/events/${id}/review`}
+                        className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                      >
+                        <Star className="h-5 w-5" />
+                        Write a Review
+                      </Link>
+                    ) : (
+                      <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
+                        <Clock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
+                        <p className="text-sm font-semibold text-gray-600 mb-1">Event has ended</p>
+                        <p className="text-xs text-gray-500">Joining is disabled for past events.</p>
+                      </div>
+                    )}
                     <ShareButton
                       type="event"
                       itemId={id}

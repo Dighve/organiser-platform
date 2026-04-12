@@ -15,8 +15,8 @@ const MAX_DAYS_AFTER_EVENT = 30;
  * @returns {Object} - { canReview: boolean, reason: string, message: string, daysRemaining?: number }
  */
 export const checkReviewEligibility = (event) => {
-  // Must have joined the event
-  if (!event.hasJoined) {
+  // Must have attended the event (REGISTERED, CONFIRMED, or ATTENDED status)
+  if (!event.userHasAttended) {
     return {
       canReview: false,
       reason: 'NOT_ATTENDED',
@@ -26,7 +26,7 @@ export const checkReviewEligibility = (event) => {
   }
 
   // Calculate event end time
-  const eventEnd = new Date(event.endTime || event.eventDate);
+  const eventEnd = new Date(event.endDate || event.eventDate);
   const now = new Date();
 
   // Event must be in the past
