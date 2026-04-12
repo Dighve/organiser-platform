@@ -70,8 +70,21 @@ const ReviewSubmissionPage = () => {
       }, 3000);
     },
     onError: (error) => {
-      console.error('Failed to submit review:', error);
-      throw error;
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message || error?.response?.data || 'Failed to submit review';
+
+      if (status === 403) {
+        toast.error('You must have attended this event to leave a review.');
+      } else if (status === 409) {
+        toast.error('You have already reviewed this event.');
+      } else if (status === 410) {
+        toast.error('The review window has closed (30 days after the event).');
+      } else if (status === 422) {
+        // Server sends the exact message e.g. "You can review this event in 3 hours"
+        toast.error(message);
+      } else {
+        toast.error(typeof message === 'string' ? message : 'Failed to submit review. Please try again.');
+      }
     }
   });
 
