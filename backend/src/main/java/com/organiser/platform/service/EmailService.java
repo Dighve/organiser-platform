@@ -467,6 +467,7 @@ public class EmailService {
     private String buildReviewPromptEmailHtml(String eventTitle, String groupName, String reviewUrl) {
         String escapedTitle = escapeHtml(eventTitle);
         String escapedGroup = escapeHtml(groupName);
+        String settingsUrl = frontendUrl + "/settings";
         return """
             <!DOCTYPE html>
             <html>
@@ -490,14 +491,15 @@ public class EmailService {
                                 ⭐ Write a Review
                             </a>
                         </div>
-                        <p style="color:#6b7280;font-size:13px;margin-bottom:0;">
-                            The review window is open for 30 days after the event. You can disable these emails in your account settings.
+                        <p style="color:#9ca3af;font-size:12px;margin-bottom:0;padding-top:20px;border-top:1px solid #f3f4f6;">
+                            The review window is open for 30 days after the event.
+                            Don't want these emails? <a href="%s" style="color:#9333ea;text-decoration:underline;">Manage your notification settings</a>.
                         </p>
                     </div>
                 </div>
             </body>
             </html>
-            """.formatted(escapedTitle, escapedGroup, reviewUrl);
+            """.formatted(escapedTitle, escapedGroup, reviewUrl, settingsUrl);
     }
 
     /**
