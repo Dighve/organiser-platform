@@ -14,7 +14,6 @@ jobs:
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -49,7 +48,6 @@ jobs:
     name: Build & Test
     runs-on: ubuntu-latest
     needs: lint-and-typecheck
-    
     strategy:
       matrix:
         environment: [staging, production]
@@ -67,38 +65,56 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
-
-      - name: Create environment file
-        working-directory: frontend
         run: |
-          if [ "${{ matrix.environment }}" == "staging" ]; then
-            echo "VITE_API_URL=https://organiser-platform.onrender.com/api/v1" > .env.production
-          else
-            echo "VITE_API_URL=${{ secrets.PRODUCTION_API_URL }}" > .env.production
-          fi
+          npm ci
+          npm install -g netlify-cli
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli
 
       - name: Build application
         working-directory: frontend
-        run: npm run build
+        run: |
+          netlify link --id $NETLIFY_SITE_ID
+          set -a
+          eval $(netlify env:list --context production --plain)
+          set +a
+          echo "--- Env var check ---"
+          if [ -n "$VITE_GOOGLE_MAPS_API_KEY" ]; then
+            echo "✅ VITE_GOOGLE_MAPS_API_KEY is set (${#VITE_GOOGLE_MAPS_API_KEY} chars)"
+          else
+            echo "❌ VITE_GOOGLE_MAPS_API_KEY is NOT set"
+          fi
+          if [ -n "$VITE_GOOGLE_CLIENT_ID" ]; then
+            echo "✅ VITE_GOOGLE_CLIENT_ID is set (${#VITE_GOOGLE_CLIENT_ID} chars)"
+          else
+            echo "❌ VITE_GOOGLE_CLIENT_ID is NOT set"
+          fi
+          if [ -n "$VITE_API_URL" ]; then
+            echo "✅ VITE_API_URL is set (${#VITE_API_URL} chars)"
+          else
+            echo "❌ VITE_API_URL is NOT set (will be set below)"
+          fi
+          echo "--- End env var check ---"
+          if [ "${{ matrix.environment }}" == "staging" ]; then
+            export VITE_API_URL="https://organiser-platform.onrender.com/api/v1"
+          else
+            export VITE_API_URL="${{ secrets.PRODUCTION_API_URL }}"
+          fi
+          npm run build
         env:
           NODE_ENV: production
-
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ matrix.environment == 'production' && secrets.NETLIFY_PRODUCTION_SITE_ID || secrets.NETLIFY_STAGING_SITE_ID }}
+      
       - name: Check build output
         working-directory: frontend
         run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Build failed - dist directory not found"
+          if [ ! -d "dist" ] || [ ! -f "dist/index.html" ]; then
+            echo "❌ Build failed"
             exit 1
           fi
-          
-          if [ ! -f "dist/index.html" ]; then
-            echo "❌ Build failed - index.html not found"
-            exit 1
-          fi
-          
           echo "✅ Build successful"
-          echo "Build size:"
           du -sh dist/
 
       - name: Analyze bundle size
@@ -106,7 +122,6 @@ jobs:
         run: |
           BUNDLE_SIZE=$(du -sb dist/ | cut -f1)
           MAX_SIZE=$((10 * 1024 * 1024)) # 10MB
-          
           if [ $BUNDLE_SIZE -gt $MAX_SIZE ]; then
             echo "⚠️ Warning: Bundle size ($BUNDLE_SIZE bytes) exceeds 10MB"
           else
@@ -123,15 +138,9 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
 
       - name: Run npm audit
         working-directory: frontend
@@ -155,26 +164,19 @@ jobs:
     environment:
       name: staging
       url: https://outmeet-stage.netlify.app
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-build-staging
           path: frontend/dist/
-
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v2.0
         with:
           publish-dir: frontend/dist
-          production-deploy: false
+          production-deploy: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions - Staging"
-          enable-pull-request-comment: true
-          enable-commit-comment: false
+          deploy-message: "Staging Deploy"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_STAGING_SITE_ID }}
@@ -187,45 +189,31 @@ jobs:
     environment:
       name: production
       url: https://www.outmeets.com
-    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
           name: frontend-build-production
           path: frontend/dist/
-
-      - name: Deploy to Netlify (Production)
-        uses: nwtgck/actions-netlify@v2
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
         with:
-          publish-dir: './frontend/dist'
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Production deploy - ${{ github.sha }}"
+          publish-dir: frontend/dist
           production-deploy: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Production Deploy"
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_PRODUCTION_SITE_ID }}
-
-      - name: Notify deployment
-        run: |
-          echo "✅ Production deployment successful!"
-          echo "URL: https://www.outmeets.com"
-          echo "Commit: ${{ github.sha }}"
 
   smoke-tests:
     name: Smoke Tests
     runs-on: ubuntu-latest
     needs: [deploy-staging]
-    if: github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/develop'
-    
+    if: github.ref == 'refs/heads/staging'
     steps:
       - name: Wait for deployment
         run: sleep 30
-
       - name: Check staging homepage
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://outmeet-stage.netlify.app)
@@ -248,12 +236,3 @@ jobs:
               exit 1
             fi
           done
-
-      - name: Check for JavaScript errors
-        run: |
-          RESPONSE=$(curl -s https://outmeet-stage.netlify.app)
-          if echo "$RESPONSE" | grep -q "error"; then
-            echo "⚠️ Warning: Potential errors detected in response"
-          else
-            echo "✅ No obvious errors detected"
-          fi

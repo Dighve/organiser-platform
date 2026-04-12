@@ -40,23 +40,28 @@ public interface EventRepository extends JpaRepository<Event, Long> {
            "LEFT JOIN FETCH e.group g " +
            "LEFT JOIN FETCH g.primaryOrganiser " +
            // "LEFT JOIN FETCH g.activity " +  // TODO: Uncomment when supporting multiple activities
-           "WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
+           "WHERE e.status = 'PUBLISHED' AND " +
+           "((e.endDate IS NOT NULL AND e.endDate > :now) OR (e.endDate IS NULL AND e.eventDate >= :startOfToday)) " +
            "ORDER BY e.eventDate ASC")
-    Page<Event> findUpcomingEvents(@Param("now") Instant now, Pageable pageable);
+    Page<Event> findUpcomingEvents(@Param("now") Instant now, @Param("startOfToday") Instant startOfToday, Pageable pageable);
     
     // Get upcoming events by activity through group relationship
-    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
+    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND " +
+           "((e.endDate IS NOT NULL AND e.endDate > :now) OR (e.endDate IS NULL AND e.eventDate >= :startOfToday)) " +
            "AND e.group.activity.id = :activityId ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEventsByActivityId(
         @Param("now") Instant now,
+        @Param("startOfToday") Instant startOfToday,
         @Param("activityId") Long activityId,
         Pageable pageable
     );
     
-    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
+    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND " +
+           "((e.endDate IS NOT NULL AND e.endDate > :now) OR (e.endDate IS NULL AND e.eventDate >= :startOfToday)) " +
            "AND LOWER(e.location) LIKE LOWER(CONCAT('%', :location, '%')) ORDER BY e.eventDate ASC")
     Page<Event> findUpcomingEventsByLocation(
         @Param("now") Instant now,
+        @Param("startOfToday") Instant startOfToday,
         @Param("location") String location,
         Pageable pageable
     );
@@ -64,7 +69,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     @Query("SELECT e FROM Event e JOIN e.participants p WHERE p.id = :userId ORDER BY e.eventDate ASC")
     Page<Event> findEventsByParticipant(@Param("userId") Long userId, Pageable pageable);
     
-    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND e.eventDate > :now " +
+    @Query("SELECT e FROM Event e WHERE e.status = 'PUBLISHED' AND " +
+           "((e.endDate IS NOT NULL AND e.endDate > :now) OR (e.endDate IS NULL AND e.eventDate >= :startOfToday)) " +
            "AND (LOWER(e.title) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.description) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.location) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
@@ -73,7 +79,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
            "OR LOWER(e.group.primaryOrganiser.displayName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "OR LOWER(e.group.primaryOrganiser.email) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
            "ORDER BY e.eventDate ASC")
-    Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") Instant now, Pageable pageable);
+    Page<Event> searchEvents(@Param("keyword") String keyword, @Param("now") Instant now, @Param("startOfToday") Instant startOfToday, Pageable pageable);
 
     @Query("""
         SELECT DISTINCT e FROM Event e
@@ -82,8 +88,8 @@ public interface EventRepository extends JpaRepository<Event, Long> {
         WHERE (:groupId IS NULL OR e.group.id = :groupId)
           AND (:hostingId IS NULL OR h.id = :hostingId)
           AND (:participantId IS NULL OR p.member.id = :participantId)
-          AND (:pastOnly = FALSE OR e.eventDate < :now)
-          AND (:futureOnly = FALSE OR e.eventDate >= :now)
+          AND (:pastOnly = FALSE OR (e.endDate IS NOT NULL AND e.endDate <= :now) OR (e.endDate IS NULL AND e.eventDate < :startOfToday))
+          AND (:futureOnly = FALSE OR (e.endDate IS NOT NULL AND e.endDate > :now) OR (e.endDate IS NULL AND e.eventDate >= :startOfToday))
           AND (
             :text IS NULL OR :text = '' OR
             LOWER(e.title) LIKE LOWER(CONCAT('%', :text, '%')) OR
@@ -100,6 +106,7 @@ public interface EventRepository extends JpaRepository<Event, Long> {
                                @Param("futureOnly") boolean futureOnly,
                                @Param("text") String text,
                                @Param("now") Instant now,
+                               @Param("startOfToday") Instant startOfToday,
                                Pageable pageable);
     
     // Admin dashboard queries
