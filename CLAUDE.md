@@ -131,6 +131,34 @@ git commit -m "feat: describe the change"
 - On app load, expired access tokens are not force-logged-out if a valid refresh token exists — the API interceptor silently refreshes on the next API call (`frontend/src/store/authStore.js`, `frontend/src/lib/api.js`)
 - Security config: `backend/src/main/java/com/organiser/platform/config/` and `security/`
 
+## Business Domain Rules
+
+### Event Timing
+Events have three time-related fields — always check all three before writing filtering logic:
+
+| Field | Type | Required | Purpose |
+|---|---|---|---|
+| `eventDate` | `Instant` | Yes | Start time |
+| `endDate` | `Instant` | No | Explicit end time set by organiser |
+| `estimatedDurationHours` | `BigDecimal` | No | Duration when no explicit end time |
+
+**Effective end time priority** (used for filtering past/upcoming/live):
+1. `endDate` — use if set
+2. `eventDate + estimatedDurationHours` — use if endDate null but duration set
+3. `23:59:59 UTC` on the event's start day — fallback (keeps event visible all day)
+
+This logic lives in `EventTimingUtils` (`backend/src/main/java/com/organiser/platform/util/EventTimingUtils.java`) and is mirrored in `EventDetailPage.jsx` (`eventEnd` calculation).
+
+**Tests:** `EventTimingUtilsTest` covers all boundary cases — run before changing any timing logic.
+
+**JPQL note:** Discover queries use `eventDate >= startOfToday` as the DB-level fallback (can't compute duration in JPQL). The precise `effectiveEnd` filtering happens at the service layer.
+
+### Frontend — No Test Framework
+The frontend has no test framework installed (no Jest/Vitest). When adding business logic to the frontend, extract it to a pure utility function and add Vitest tests. Install with:
+```bash
+cd frontend && npm install -D vitest @vitest/ui jsdom @testing-library/react @testing-library/jest-dom
+```
+
 ## Key Docs
 
 - `STARTUP_GUIDE.md` — full local setup walkthrough
