@@ -1,0 +1,119 @@
+# CLAUDE.md — OutMeets (organiser-platform)
+
+Outdoor event & group management platform. Backend: Spring Boot API. Frontend: React SPA.
+
+## Project Structure
+
+```
+organiser-platform/
+├── backend/                  # Spring Boot 3.1.5, Java 17, Gradle
+│   └── src/main/java/com/organiser/platform/
+│       ├── controller/       # REST endpoints
+│       ├── service/          # Business logic
+│       ├── repository/       # JPA repositories
+│       ├── model/            # JPA entities
+│       ├── dto/              # Request/response DTOs (admin/ subdirectory too)
+│       ├── config/           # Security, database, etc.
+│       ├── security/         # JWT, auth filters
+│       ├── enums/            # Shared enums
+│       ├── scheduler/        # Scheduled tasks
+│       ├── exception/        # Custom exceptions
+│       └── util/             # Utilities
+│   └── src/main/resources/db/migration/postgresql/
+│       └── V{n}__{Description}.sql   # Flyway migrations (currently at V9)
+├── frontend/                 # React 18, Vite, Tailwind CSS
+│   └── src/
+│       ├── pages/            # Page-level components (one per route)
+│       ├── components/       # Reusable UI components
+│       ├── contexts/         # React context providers
+│       ├── hooks/            # Custom hooks
+│       ├── lib/              # API client (Axios)
+│       ├── store/            # State management
+│       └── utils/            # Helpers
+├── docker-compose.yml        # Local PostgreSQL
+└── docs/                     # Additional docs
+```
+
+## Local Development
+
+### Start backend
+```bash
+docker-compose up -d postgres   # start DB
+cd backend && ./gradlew bootRun  # API on http://localhost:8080
+```
+
+### Start frontend
+```bash
+cd frontend
+npm install
+npm run dev                      # App on http://localhost:5173
+```
+
+Frontend `.env`:
+```
+VITE_API_BASE_URL=http://localhost:8080/api/v1
+```
+
+### Run tests
+```bash
+cd backend && ./gradlew test
+cd frontend && npm test
+```
+
+## Key Conventions
+
+### Backend (Java/Spring Boot)
+- Lombok used extensively — avoid adding boilerplate getters/setters manually
+- REST endpoints in `controller/`, business logic in `service/`, DB in `repository/`
+- Database changes must be done via Flyway migration files: `V{next}__Description.sql` in `backend/src/main/resources/db/migration/postgresql/`
+- Next migration version is **V10**
+- Java package root: `com.organiser.platform`
+
+### Frontend (React)
+- Functional components with hooks only — no class components
+- Tailwind CSS for all styling — purple/pink/orange gradient palette (`purple-600`, `pink-600`, `orange-500/600`)
+- Keep components under ~200 lines; split if larger
+- API calls go through `src/lib/` (Axios client)
+- Pages live in `src/pages/`, reusable UI in `src/components/`
+
+## Deployment
+
+| Layer    | Service  | Branch trigger |
+|----------|----------|---------------|
+| Backend  | Render.com | `main`      |
+| Frontend | Netlify    | `main`      |
+| Database | PostgreSQL on Render | — |
+| Email    | Resend.com (magic links) | — |
+
+- **`staging` branch** = staging environment; PRs go `feature/* → staging → main`
+- Auto-deploy on push to `main`
+
+## Git & PRs
+
+Conventional commits: `feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`
+
+```bash
+git checkout -b feature/your-feature
+# work...
+git commit -m "feat: describe the change"
+# PR into staging first, then staging → main for prod deploy
+```
+
+## Auth
+
+- Default: passwordless **magic link** via email (Resend.com)
+- Alternative: **6-digit passcode** via email — toggled by the `PASSCODE_AUTH_ENABLED` feature flag
+  - When enabled, login UI switches from magic link to passcode entry
+  - Admin toggles this at runtime via the Admin Dashboard → Feature Flags (no deploy needed)
+  - Backend: `POST /api/v1/auth/passcode` (request) + `POST /api/v1/auth/passcode/verify` (verify)
+  - Rate limited: 5 requests/hour per IP+email, 10 verify attempts per 15 min
+- JWT access token: 24h expiry; **refresh token: 90 days** with rotation on every use
+- On app load, expired access tokens are not force-logged-out if a valid refresh token exists — the API interceptor silently refreshes on the next API call (`frontend/src/store/authStore.js`, `frontend/src/lib/api.js`)
+- Security config: `backend/src/main/java/com/organiser/platform/config/` and `security/`
+
+## Key Docs
+
+- `STARTUP_GUIDE.md` — full local setup walkthrough
+- `DEPLOYMENT.md` — production deploy steps
+- `ENV_VARIABLES_REFERENCE.md` — all environment variables
+- `CONTRIBUTING.md` — code style and PR checklist
