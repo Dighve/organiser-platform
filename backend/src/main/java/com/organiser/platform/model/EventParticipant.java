@@ -73,6 +73,10 @@ public class EventParticipant {
 
     @Column(name = "join_question_answer", columnDefinition = "TEXT")
     private String joinQuestionAnswer;
+
+    @Column(name = "review_prompt_sent", nullable = false)
+    @Builder.Default
+    private Boolean reviewPromptSent = false;
     
     public enum ParticipationStatus {
         REGISTERED,
