@@ -3,21 +3,30 @@ package com.organiser.platform.service;
 import com.organiser.platform.dto.CreateReviewRequest;
 import com.organiser.platform.dto.EventReviewDTO;
 import com.organiser.platform.model.Event;
+import com.organiser.platform.model.EventParticipant;
 import com.organiser.platform.model.EventReview;
 import com.organiser.platform.model.Group;
 import com.organiser.platform.model.Member;
+import com.organiser.platform.repository.EventParticipantRepository;
 import com.organiser.platform.repository.EventRepository;
 import com.organiser.platform.repository.EventReviewRepository;
 import com.organiser.platform.repository.GroupRepository;
 import com.organiser.platform.repository.MemberRepository;
+import com.organiser.platform.util.EventTimingUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +34,17 @@ public class ReviewService {
     
     private final EventReviewRepository eventReviewRepository;
     private final EventRepository eventRepository;
+    private final EventParticipantRepository eventParticipantRepository;
     private final MemberRepository memberRepository;
     private final GroupRepository groupRepository;
+
+    // Statuses that count as "attended" for review eligibility.
+    // CANCELLED and NO_SHOW are excluded.
+    private static final List<EventParticipant.ParticipationStatus> ELIGIBLE_STATUSES = List.of(
+            EventParticipant.ParticipationStatus.REGISTERED,
+            EventParticipant.ParticipationStatus.CONFIRMED,
+            EventParticipant.ParticipationStatus.ATTENDED
+    );
     
     public Page<EventReviewDTO> getEventReviews(Long eventId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
@@ -46,7 +64,7 @@ public class ReviewService {
         String email = authentication.getName();
         
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Member not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
         
         // Find review by event and member
         return eventReviewRepository.findByEventIdAndMemberId(eventId, member.getId())
@@ -56,23 +74,52 @@ public class ReviewService {
     
     @Transactional
     public EventReviewDTO submitReview(Long eventId, CreateReviewRequest request) {
-        // Get authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
-        
+
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Member not found"));
-        
-        // Get event
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
+
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Event not found"));
-        
-        // Get group from event
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Event not found"));
+
         Group group = event.getGroup();
-        
-        // Check if member has already reviewed this event
+
+        // --- Attendance check ---
+        // Member must have registered and not cancelled/no-showed
+        boolean wasParticipant = eventParticipantRepository
+                .existsByEventIdAndMemberIdAndStatusIn(eventId, member.getId(), ELIGIBLE_STATUSES);
+        if (!wasParticipant) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You must have attended this event to submit a review");
+        }
+
+        // --- Time window checks ---
+        Instant now = Instant.now();
+        Instant eventEnd = EventTimingUtils.effectiveEnd(event);
+
+        if (!eventEnd.isBefore(now)) {
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Reviews can only be submitted after the event has ended");
+        }
+
+        long hoursSinceEnd = Duration.between(eventEnd, now).toHours();
+        if (hoursSinceEnd < 24) {
+            long hoursRemaining = 24 - hoursSinceEnd;
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "You can review this event in " + hoursRemaining + " hour" + (hoursRemaining == 1 ? "" : "s"));
+        }
+
+        long daysSinceEnd = Duration.between(eventEnd, now).toDays();
+        if (daysSinceEnd > 30) {
+            throw new ResponseStatusException(HttpStatus.GONE,
+                    "Review window has closed (30 days after the event)");
+        }
+
+        // --- Duplicate check ---
         if (eventReviewRepository.existsByEventIdAndMemberId(eventId, member.getId())) {
-            throw new RuntimeException("You have already reviewed this event");
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "You have already reviewed this event");
         }
         
         // Calculate overall rating (average of all 5 ratings)
@@ -110,15 +157,13 @@ public class ReviewService {
         String email = authentication.getName();
         
         Member member = memberRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Member not found"));
-        
-        // Get existing review
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
+
         EventReview review = eventReviewRepository.findById(reviewId)
-                .orElseThrow(() -> new RuntimeException("Review not found"));
-        
-        // Check if the review belongs to the current user
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+
         if (!review.getMember().getId().equals(member.getId())) {
-            throw new RuntimeException("You can only update your own reviews");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own reviews");
         }
         
         // Calculate new overall rating

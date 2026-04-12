@@ -22,6 +22,9 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     Optional<EventParticipant> findByEventIdAndMemberId(Long eventId, Long memberId);
     
     boolean existsByEventIdAndMemberId(Long eventId, Long memberId);
+
+    boolean existsByEventIdAndMemberIdAndStatusIn(Long eventId, Long memberId,
+            java.util.Collection<EventParticipant.ParticipationStatus> statuses);
     
     long countByEventIdAndStatus(Long eventId, EventParticipant.ParticipationStatus status);
     
