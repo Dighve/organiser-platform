@@ -230,21 +230,27 @@ export default function CommentSection({ eventId }) {
       {/* New Comment Form */}
       {isAuthenticated ? (
         <form onSubmit={handleCreateComment} className="mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-end gap-3">
             <ProfileAvatar member={currentMemberData} size="md" />
             <div className="flex-1">
-              <div className="flex items-center gap-2 bg-white border-2 border-gray-200 rounded-full px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all">
-                <input
+              <div className={`flex items-end gap-2 bg-white border-2 border-gray-200 px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all ${newComment.trim().length > 0 ? 'rounded-2xl' : 'rounded-full'}`}>
+                <textarea
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={(e) => {
+                    setNewComment(e.target.value)
+                    e.target.style.height = 'auto'
+                    e.target.style.height = `${e.target.scrollHeight}px`
+                  }}
                   placeholder="Add a comment"
-                  className="flex-1 bg-transparent outline-none text-sm sm:text-base"
+                  rows={1}
+                  className="flex-1 bg-transparent outline-none text-sm sm:text-base resize-none overflow-hidden"
+                  style={{ minHeight: '1.5rem' }}
                 />
                 {newComment.trim().length > 0 && (
                   <button
                     type="submit"
                     disabled={createCommentMutation.isLoading}
-                    className="h-9 w-9 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50"
+                    className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50"
                     aria-label="Send comment"
                   >
                     {createCommentMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
