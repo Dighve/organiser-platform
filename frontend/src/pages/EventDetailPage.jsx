@@ -598,7 +598,7 @@ export default function EventDetailPage() {
         {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
         {isIOS && (
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
             className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
           >
             <ArrowLeft className="h-5 w-5" />
