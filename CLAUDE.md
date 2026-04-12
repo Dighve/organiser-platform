@@ -46,12 +46,12 @@ cd backend && ./gradlew bootRun  # API on http://localhost:8080
 ```bash
 cd frontend
 npm install
-npm run dev                      # App on http://localhost:5173
+npm run dev                      # App on http://localhost:3000
 ```
 
-Frontend `.env`:
+Frontend `.env` (only needed for production builds — local dev uses Vite proxy):
 ```
-VITE_API_BASE_URL=http://localhost:8080/api/v1
+VITE_API_URL=http://localhost:8080/api/v1
 ```
 
 ### Run tests
@@ -66,7 +66,7 @@ cd frontend && npm test
 - Lombok used extensively — avoid adding boilerplate getters/setters manually
 - REST endpoints in `controller/`, business logic in `service/`, DB in `repository/`
 - Database changes must be done via Flyway migration files: `V{next}__Description.sql` in `backend/src/main/resources/db/migration/postgresql/`
-- Next migration version is **V10**
+- To find the next migration version: `ls backend/src/main/resources/db/migration/postgresql/ | grep -oE 'V[0-9]+' | sed 's/V//' | sort -n | tail -1`
 - Java package root: `com.organiser.platform`
 
 ### Frontend (React)
