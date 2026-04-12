@@ -76,6 +76,26 @@ cd frontend && npm test
 - API calls go through `src/lib/` (Axios client)
 - Pages live in `src/pages/`, reusable UI in `src/components/`
 
+### Mobile vs Desktop UI
+- Mobile and desktop are **different interfaces within the same page component** — not separate files
+- Mobile sticky action bar: `lg:hidden fixed bottom-0` — only visible below 1024px
+- Desktop sidebar: right-column layout visible at `lg+`
+- Never alter desktop layout when fixing mobile issues and vice versa
+- **Always clarify which surface (mobile or desktop) is in scope before making UI changes**
+
+### User Roles — Different UI per Role
+Pages render different interfaces depending on the viewer's role. Always confirm which role(s) a change applies to before implementing.
+
+| Role | Primary device | Notes |
+|---|---|---|
+| **Attendee** | Mobile | Joins events, manages guests, leaves events |
+| **Host** | Mobile + Desktop | Leads the event on the day, cannot leave |
+| **Organiser** | Desktop | Creates/manages events, uses Manage panel — power user |
+
+- On `EventDetailPage`, the action bar conditionally renders one of: attendee view, host view, organiser view, or guest (not logged in)
+- UI improvements for attendees do **not** automatically apply to organisers/hosts and vice versa
+- Organiser and host views are intentionally more functional than visual — prioritise desktop usability for those roles
+
 ## Deployment
 
 | Layer    | Service  | Branch trigger |
