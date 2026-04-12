@@ -22,6 +22,9 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     Optional<EventParticipant> findByEventIdAndMemberId(Long eventId, Long memberId);
     
     boolean existsByEventIdAndMemberId(Long eventId, Long memberId);
+
+    boolean existsByEventIdAndMemberIdAndStatusIn(Long eventId, Long memberId,
+            java.util.Collection<EventParticipant.ParticipationStatus> statuses);
     
     long countByEventIdAndStatus(Long eventId, EventParticipant.ParticipationStatus status);
     
@@ -36,4 +39,31 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
      * Delete all participants for an event (used when permanently deleting event)
      */
     void deleteByEventId(Long eventId);
+
+    /**
+     * Find participants who have not yet received a review prompt and are eligible:
+     * - Status is REGISTERED, CONFIRMED, or ATTENDED (not cancelled/no-show)
+     * - Prompt not yet sent
+     * - No review already submitted for this event
+     * - Event ended within the review window (eventDate between cutoffOld and cutoffRecent)
+     *   NOTE: Java-side filtering via EventTimingUtils handles endDate/duration fallback,
+     *   so we use a broad eventDate window here and filter precisely in the scheduler.
+     */
+    @Query("""
+        SELECT ep FROM EventParticipant ep
+        JOIN FETCH ep.member
+        JOIN FETCH ep.event e
+        JOIN FETCH e.group g
+        JOIN FETCH g.primaryOrganiser
+        WHERE ep.reviewPromptSent = false
+          AND ep.status IN ('REGISTERED', 'CONFIRMED', 'ATTENDED')
+          AND e.eventDate BETWEEN :windowStart AND :windowEnd
+          AND NOT EXISTS (
+              SELECT r FROM EventReview r
+              WHERE r.event = e AND r.member = ep.member
+          )
+        """)
+    List<EventParticipant> findEligibleForReviewPrompt(
+            @Param("windowStart") Instant windowStart,
+            @Param("windowEnd") Instant windowEnd);
 }

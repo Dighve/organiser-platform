@@ -4,8 +4,8 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Lock } from 'lucide-react'
-import { groupsAPI, eventsAPI, featureFlagsAPI } from '../lib/api'
+import { Search, Lock, Star, X } from 'lucide-react'
+import { groupsAPI, eventsAPI, featureFlagsAPI, reviewsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import LoginModal from '../components/LoginModal'
 import WelcomeScreen from '../components/WelcomeScreen'
@@ -26,6 +26,9 @@ export default function HomePage() {
   const [activeGroupTab, setActiveGroupTab] = useState('member')  // Tab selection: 'member' or 'organiser'
   const [hasInitializedTab, setHasInitializedTab] = useState(false)  // Track if tab has been auto-selected
   const [loginModalOpen, setLoginModalOpen] = useState(false)  // Login modal state
+  const [dismissedReviews, setDismissedReviews] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('dismissed-review-prompts') || '[]') } catch { return [] }
+  })
   
   // Check if user has already clicked discover before (localStorage)
   const [showDiscover, setShowDiscover] = useState(() => {
@@ -77,6 +80,21 @@ export default function HomePage() {
   })
   
   // Fetch feature flags to check if welcome screen is enabled
+  const { data: pendingReviewsData } = useQuery({
+    queryKey: ['pendingReviews'],
+    queryFn: () => reviewsAPI.getPendingReviews().then(res => res.data),
+    enabled: isAuthenticated,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const pendingReviews = (pendingReviewsData || []).filter(r => !dismissedReviews.includes(r.eventId))
+
+  const dismissReview = (eventId) => {
+    const updated = [...dismissedReviews, eventId]
+    setDismissedReviews(updated)
+    try { localStorage.setItem('dismissed-review-prompts', JSON.stringify(updated)) } catch {}
+  }
+
   const { data: featureFlags, isLoading: featureFlagsLoading } = useQuery({
     queryKey: ['featureFlags'],
     queryFn: () => featureFlagsAPI.getFeatureFlagsMap(),
@@ -509,6 +527,42 @@ export default function HomePage() {
             </div>
           </div>
           
+          {/* ========== PENDING REVIEWS CARD ========== */}
+          {isAuthenticated && pendingReviews.length > 0 && (
+            <div className="order-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-2xl p-4 lg:p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                <h3 className="font-bold text-gray-900">Waiting for your review</h3>
+              </div>
+              <div className="space-y-2">
+                {pendingReviews.map(review => {
+                  const daysLeft = Math.floor((new Date(review.reviewWindowClosesAt) - Date.now()) / (1000 * 60 * 60 * 24))
+                  return (
+                    <div key={review.eventId} className="flex items-center gap-3 bg-white/80 rounded-xl px-3 py-2.5 border border-purple-100">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-gray-900 truncate">{review.eventTitle}</p>
+                        <p className="text-xs text-gray-500 truncate">{review.groupName} · {daysLeft > 0 ? `${daysLeft}d left` : 'Closes today'}</p>
+                      </div>
+                      <button
+                        onClick={() => navigate(`/events/${review.eventId}/review`)}
+                        className="flex-shrink-0 px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold rounded-lg hover:shadow-md transition-all"
+                      >
+                        Review
+                      </button>
+                      <button
+                        onClick={() => dismissReview(review.eventId)}
+                        className="flex-shrink-0 p-1 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                        aria-label="Dismiss"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
           {/* ========== YOUR EVENTS SECTION (SECOND ON MOBILE FOR UNAUTHENTICATED, FIRST FOR AUTHENTICATED) ========== */}
           {isAuthenticated && (
             <div className="order-1">

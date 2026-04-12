@@ -45,7 +45,6 @@ export function initAnalytics() {
     return
   }
 
-  console.log('[Analytics] Initializing Mixpanel with token:', TOKEN.substring(0, 8) + '...')
 
   mixpanel.init(TOKEN, {
     debug: import.meta.env.DEV,

@@ -11,6 +11,8 @@ import { useIsIOS } from '../hooks/useIsIOS'
 import ProfileAvatar from '../components/ProfileAvatar'
 import ShareButton from '../components/ShareButton'
 import InviteMembersModal from '../components/InviteMembersModal'
+import GroupRatingCard from '../components/GroupRatingCard'
+import GroupRatingCardMobile from '../components/GroupRatingCardMobile'
 
 // ============================================
 // CONSTANTS - Default fallback images
@@ -442,6 +444,13 @@ export default function GroupDetailPage() {
             {/* Dark gradient from bottom */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
             
+            {/* Rating on mobile - Top Right Corner */}
+            {group?.rating && (
+              <div className="lg:hidden absolute top-2 right-2 bg-black/40 backdrop-blur-md rounded-md px-2 py-1">
+                <GroupRatingCardMobile rating={group.rating} />
+              </div>
+            )}
+
             {/* Header Content Overlay */}
             <div className="absolute bottom-0 left-0 right-0 px-4 pb-3 lg:px-8 lg:pb-8">
               <div className="flex items-end justify-between">
@@ -846,6 +855,13 @@ export default function GroupDetailPage() {
             {/* SIDEBAR - Member preview and actions */}
             {/* ============================================ */}
             <div className="lg:col-span-1 space-y-6">
+              {/* Group Rating Card - Desktop (shown only on About tab) */}
+              {activeTab === 'about' && group?.rating && (
+                <div className="hidden lg:block">
+                  <GroupRatingCard rating={group.rating} />
+                </div>
+              )}
+
               {/* Members Preview (shown only on About tab) */}
               {activeTab === 'about' && (
                 <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-6 border border-gray-100 shadow-lg">

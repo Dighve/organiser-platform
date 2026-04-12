@@ -159,6 +159,14 @@ The frontend has no test framework installed (no Jest/Vitest). When adding busin
 cd frontend && npm install -D vitest @vitest/ui jsdom @testing-library/react @testing-library/jest-dom
 ```
 
+## Working Style
+
+### Before implementing, always confirm first
+When the user asks a question or describes a problem, **do not start implementing**. First explain your approach and ask for confirmation. Only write code after the user explicitly says to go ahead.
+
+### Only do what was asked
+Do not fix, refactor, or improve anything beyond the explicit request — even if you spot related issues. If you notice something worth fixing, mention it separately and wait to be asked. Do not bundle unrequested changes into a commit.
+
 ## Key Docs
 
 - `STARTUP_GUIDE.md` — full local setup walkthrough

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Calendar, MapPin, Users, DollarSign, Mountain } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Mountain, Star } from 'lucide-react'
 import { format } from 'date-fns'
 import { useState } from 'react'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
@@ -91,6 +91,16 @@ export default function EventCard({ event, isPast = false }) {
                 </div>
               </div>
             )}
+
+            {event.totalReviews >= 3 && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                <span className="font-semibold text-xs">{Number(event.averageRating).toFixed(1)}</span>
+                <span className="text-xs text-gray-500">
+                  ({event.totalReviews})
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -108,6 +118,17 @@ export default function EventCard({ event, isPast = false }) {
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4 text-pink-500" />
                 <span className="truncate">{event.location}</span>
+              </div>
+            )}
+            {event.totalReviews >= 3 && (
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                  <span className="font-semibold text-sm">{Number(event.averageRating).toFixed(1)}</span>
+                </div>
+                <span className="text-xs text-gray-600">
+                  ({event.totalReviews} {event.totalReviews === 1 ? 'review' : 'reviews'})
+                </span>
               </div>
             )}
           </div>

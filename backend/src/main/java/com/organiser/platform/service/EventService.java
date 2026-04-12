@@ -261,15 +261,19 @@ public class EventService {
         // Public groups: everyone can see full event details
         if (isPublicGroup) {
             boolean isMember = memberId != null && groupService.isMemberOfGroup(memberId, event.getGroup().getId());
-            return convertToDTO(event, isMember);
+            EventDTO dto = convertToDTO(event, isMember);
+            dto.setUserHasAttended(computeUserHasAttended(event, memberId));
+            return dto;
         }
-        
+
         // Private groups: only members see full details
         if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
             return convertToPartialDTO(event);
         }
-        
-        return convertToDTO(event, true);
+
+        EventDTO dto = convertToDTO(event, true);
+        dto.setUserHasAttended(computeUserHasAttended(event, memberId));
+        return dto;
     }
     
     /**
@@ -641,6 +645,19 @@ public class EventService {
     // ============================================================
     // PRIVATE METHODS - Data Conversion
     // ============================================================
+
+    private static final List<EventParticipant.ParticipationStatus> REVIEW_ELIGIBLE_STATUSES = List.of(
+            EventParticipant.ParticipationStatus.REGISTERED,
+            EventParticipant.ParticipationStatus.CONFIRMED,
+            EventParticipant.ParticipationStatus.ATTENDED
+    );
+
+    private boolean computeUserHasAttended(Event event, Long memberId) {
+        if (memberId == null || event.getParticipants() == null) return false;
+        return event.getParticipants().stream()
+                .anyMatch(p -> memberId.equals(p.getMember().getId())
+                        && REVIEW_ELIGIBLE_STATUSES.contains(p.getStatus()));
+    }
     
     /**
      * Convert Event entity to full EventDTO (for group members).

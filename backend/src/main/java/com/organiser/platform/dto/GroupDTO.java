@@ -29,8 +29,13 @@ public class GroupDTO {
     private String groupGuidelines;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private GroupRatingDTO rating;
     
     public static GroupDTO fromEntity(Group group, Integer currentMembers) {
+        return fromEntity(group, currentMembers, null);
+    }
+    
+    public static GroupDTO fromEntity(Group group, Integer currentMembers, GroupRatingDTO rating) {
         return GroupDTO.builder()
                 .id(group.getId())
                 .name(group.getName())
@@ -48,6 +53,7 @@ public class GroupDTO {
                 .groupGuidelines(group.getGroupGuidelines())
                 .createdAt(group.getCreatedAt())
                 .updatedAt(group.getUpdatedAt())
+                .rating(rating)
                 .build();
     }
 }

@@ -418,6 +418,91 @@ public class EmailService {
     }
     
     /**
+     * Send a "How was your event?" review prompt email to an attendee.
+     * Respects the member's emailNotificationsEnabled preference.
+     */
+    public void sendReviewPromptEmail(
+            com.organiser.platform.model.Member member,
+            String eventTitle,
+            String groupName,
+            Long eventId) {
+
+        if (!Boolean.TRUE.equals(member.getEmailNotificationsEnabled())) {
+            log.info("Email notifications disabled for {}, skipping review prompt", member.getEmail());
+            return;
+        }
+
+        String reviewUrl = frontendUrl + "/events/" + eventId + "/review";
+        String subject = "How was " + eventTitle + "? Share your experience";
+        String html = buildReviewPromptEmailHtml(eventTitle, groupName, reviewUrl);
+
+        if (resendApiKey == null || resendApiKey.isEmpty()) {
+            log.info("=".repeat(80));
+            log.info("Review Prompt Email for: {}", member.getEmail());
+            log.info("Event: {} ({})", eventTitle, groupName);
+            log.info("URL: {}", reviewUrl);
+            log.info("=".repeat(80));
+            return;
+        }
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(resendApiKey);
+
+            Map<String, Object> emailData = new HashMap<>();
+            emailData.put("from", fromEmail);
+            emailData.put("to", new String[]{member.getEmail()});
+            emailData.put("subject", subject);
+            emailData.put("html", html);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailData, headers);
+            restTemplate.postForObject("https://api.resend.com/emails", request, String.class);
+            log.info("Review prompt email sent to {}", member.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send review prompt email to {}: {}", member.getEmail(), e.getMessage());
+        }
+    }
+
+    private String buildReviewPromptEmailHtml(String eventTitle, String groupName, String reviewUrl) {
+        String escapedTitle = escapeHtml(eventTitle);
+        String escapedGroup = escapeHtml(groupName);
+        String settingsUrl = frontendUrl + "/settings";
+        return """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fdf2f8;">
+                <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+                    <div style="text-align:center;margin-bottom:24px;">
+                        <div style="font-size:40px;margin-bottom:12px;">🏔️</div>
+                        <h1 style="margin:0;background:linear-gradient(135deg,#9333ea 0%%,#ec4899 50%%,#f97316 100%%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;font-weight:700;">OutMeets</h1>
+                    </div>
+                    <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px rgba(0,0,0,0.08);">
+                        <h2 style="margin-top:0;font-size:22px;color:#1f2937;">How was <span style="color:#9333ea;">%s</span>?</h2>
+                        <p style="font-size:15px;color:#4b5563;line-height:1.6;">
+                            You attended an event with <strong>%s</strong>. Your review helps others discover great events and gives organisers valuable feedback.
+                        </p>
+                        <div style="text-align:center;margin:32px 0;">
+                            <a href="%s" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#9333ea,#ec4899);color:white;text-decoration:none;border-radius:12px;font-weight:700;font-size:16px;">
+                                ⭐ Write a Review
+                            </a>
+                        </div>
+                        <p style="color:#9ca3af;font-size:12px;margin-bottom:0;padding-top:20px;border-top:1px solid #f3f4f6;">
+                            The review window is open for 30 days after the event.
+                            Don't want these emails? <a href="%s" style="color:#9333ea;text-decoration:underline;">Manage your notification settings</a>.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(escapedTitle, escapedGroup, reviewUrl, settingsUrl);
+    }
+
+    /**
      * Send invitation email to a member.
      * Notifies member they've been invited to an event or group.
      */
