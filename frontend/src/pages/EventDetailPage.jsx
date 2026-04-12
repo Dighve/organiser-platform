@@ -449,8 +449,18 @@ export default function EventDetailPage() {
   // Check if event is in the past
   // Parse dates from backend (Instant/UTC timestamps)
   const eventStart = event?.eventDate ? new Date(event.eventDate) : null
-  const eventEnd = event?.endDate ? new Date(event.endDate) : eventStart
   const now = new Date()
+  // Priority: endDate → eventDate + estimatedDurationHours → 23:59:59 of start day
+  const eventEnd = (() => {
+    if (event?.endDate) return new Date(event.endDate)
+    if (event?.estimatedDurationHours && eventStart) {
+      return new Date(eventStart.getTime() + event.estimatedDurationHours * 60 * 60 * 1000)
+    }
+    if (!eventStart) return null
+    const d = new Date(eventStart)
+    d.setHours(23, 59, 59, 999)
+    return d
+  })()
   
   // Event is past if end date/time has passed
   const isPastEvent = eventEnd ? eventEnd.getTime() < now.getTime() : false
