@@ -2,6 +2,7 @@ package com.organiser.platform.scheduler;
 
 import com.organiser.platform.model.EventParticipant;
 import com.organiser.platform.repository.EventParticipantRepository;
+import com.organiser.platform.service.EmailService;
 import com.organiser.platform.service.WebPushService;
 import com.organiser.platform.util.EventTimingUtils;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class ReviewNotificationScheduler {
 
     private final EventParticipantRepository eventParticipantRepository;
     private final WebPushService webPushService;
+    private final EmailService emailService;
 
     @Scheduled(cron = "0 0 10 * * *") // 10:00 AM UTC daily
     @Transactional
@@ -78,6 +80,13 @@ public class ReviewNotificationScheduler {
                     "How was " + eventTitle + "?",
                     "Share your experience and help others discover great events.",
                     path
+            );
+
+            emailService.sendReviewPromptEmail(
+                    ep.getMember(),
+                    eventTitle,
+                    ep.getEvent().getGroup().getName(),
+                    ep.getEvent().getId()
             );
 
             ep.setReviewPromptSent(true);
