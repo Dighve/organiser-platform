@@ -1071,34 +1071,41 @@ export default function EventDetailPage() {
             {/* GROUP DETAILS SECTION - Meetup-style layout */}
             {/* ============================================ */}
             {displayEvent.groupName && (
-              <div 
-                className="bg-white rounded-2xl lg:rounded-3xl shadow-md lg:shadow-lg border border-gray-200 cursor-pointer hover:shadow-lg lg:hover:shadow-xl hover:border-purple-200 hover:bg-purple-50/40 transition-all duration-200 p-3 lg:p-4"
+              <div
+                className="relative bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100 cursor-pointer hover:shadow-md hover:border-purple-300 hover:from-purple-100 hover:to-pink-100 transition-all duration-200 p-3 lg:p-4 overflow-hidden"
                 onClick={() => navigate(`/groups/${displayEvent.groupId}`)}
               >
-                <div className="flex items-center gap-4">
-                  {/* Group Image */}
-                  <div className="w-20 h-16 lg:w-24 lg:h-18 flex-shrink-0">
-                    <div className="relative w-full h-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-xl lg:rounded-2xl overflow-hidden p-1.5">
-                      {event?.group?.bannerUrl ? (
-                        <img 
-                          src={event.group.bannerUrl} 
-                          alt={displayEvent.groupName}
-                          className="w-full h-full object-cover rounded-lg lg:rounded-xl"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Mountain className="w-4 h-4 lg:w-6 lg:h-6 text-white/60" />
-                        </div>
-                      )}
-                    </div>
+                {/* Accent bar */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-pink-500 rounded-l-2xl" />
+
+                <div className="flex items-center gap-3 pl-2">
+                  {/* Group banner thumbnail */}
+                  <div className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl overflow-hidden relative">
+                    {event?.group?.bannerUrl ? (
+                      <img
+                        src={event.group.bannerUrl}
+                        alt={displayEvent.groupName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Mountain className="w-5 h-5 text-white/70" />
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Group Details */}
-                  <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
-                    <h2 className="text-base lg:text-lg font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-gray-300 text-gray-600 text-[11px] font-semibold flex-shrink-0">
-                      {event?.groupIsPublic === false ? 'Private Group' : 'Public Group'}
+
+                  {/* Group name + badge */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-purple-500 uppercase tracking-wide leading-none mb-0.5">Organised by</p>
+                    <h2 className="text-sm lg:text-base font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
+                  </div>
+
+                  {/* Badge + arrow */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${event?.groupIsPublic === false ? 'bg-gray-100 text-gray-600' : 'bg-purple-100 text-purple-700'}`}>
+                      {event?.groupIsPublic === false ? 'Private' : 'Public'}
                     </span>
+                    <ChevronRight className="w-4 h-4 text-purple-400" />
                   </div>
                 </div>
               </div>
