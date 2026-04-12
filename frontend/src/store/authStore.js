@@ -141,7 +141,11 @@ export const useAuthStore = create(
 const initializeAuth = () => {
   const state = useAuthStore.getState()
   if (state.token && isTokenExpired(state.token)) {
-    state.logout('Your session has expired. Please log in again.')
+    // If we have a refresh token, leave the session alone —
+    // the API interceptor will silently refresh on the first API call
+    if (!state.refreshToken) {
+      state.logout('Your session has expired. Please log in again.')
+    }
   }
 }
 
