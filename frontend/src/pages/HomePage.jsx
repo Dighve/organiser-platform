@@ -147,8 +147,7 @@ export default function HomePage() {
   // ============================================================
   
   // Check if welcome screen is enabled via admin feature flag
-  // Default to false while loading to prevent flash of welcome screen when feature is disabled
-  const isWelcomeScreenEnabled = featureFlagsLoading ? false : (featureFlags?.WELCOME_SCREEN_ENABLED ?? true)
+  const isWelcomeScreenEnabled = featureFlags?.WELCOME_SCREEN_ENABLED ?? false
   
   // Handle welcome URL parameter on mount
   useEffect(() => {
@@ -192,6 +191,28 @@ export default function HomePage() {
     window.history.replaceState({}, '', '/')
     // Also use navigate to ensure React Router state is updated
     navigate('/', { replace: true })
+  }
+
+  // ============================================================
+  // LOADING STATE - Wait for feature flags to resolve
+  // ============================================================
+  // Prevent flash by showing blank screen while feature flags load
+  // Only applies to first-time visitors who haven't cached the flags yet
+  if (featureFlagsLoading && showDiscover) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-20 h-20 mx-auto mb-4">
+            <img 
+              src="/favicon1.svg" 
+              alt="OutMeets" 
+              className="w-full h-full object-contain drop-shadow-2xl animate-pulse"
+            />
+          </div>
+          <div className="text-white/80 text-sm font-medium">Loading...</div>
+        </div>
+      </div>
+    )
   }
 
   // ============================================================
