@@ -147,7 +147,7 @@ export default function HomePage() {
   // ============================================================
   
   // Check if welcome screen is enabled via admin feature flag
-  const isWelcomeScreenEnabled = featureFlags?.WELCOME_SCREEN_ENABLED ?? true
+  const isWelcomeScreenEnabled = featureFlags?.WELCOME_SCREEN_ENABLED ?? false
   
   // Handle welcome URL parameter on mount
   useEffect(() => {
