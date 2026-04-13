@@ -1,3 +1,4 @@
+/* global Netlify */
 // Escape HTML special characters to prevent XSS
 function escapeHtml(str) {
   if (!str) return '';
