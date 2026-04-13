@@ -54,6 +54,12 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/groups/*/reviews", "GET")
                         ).permitAll()
                         
+                        // Public READ-ONLY endpoints for reviews (must be before other event/group patterns)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/reviews", "GET")
+                        ).permitAll()
+                        
                         // Public READ-ONLY endpoints for events
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/events/public", "GET"),
@@ -134,6 +140,14 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/reviews/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/reviews/pending", "GET"),
                                 new AntPathRequestMatcher("/api/v1/reviews/*/flag", "POST")
+                        ).authenticated()
+                        
+                        // Review write operations - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews/my-review", "GET"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*", "DELETE")
                         ).authenticated()
                         
                         // Group write operations - require authentication
