@@ -1,7 +1,6 @@
 package com.organiser.platform.service;
 
 import com.organiser.platform.config.TestConfig;
-import com.organiser.platform.config.TestDatabaseConfig;
 import com.organiser.platform.config.TestJwtConfig;
 import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.model.MagicLink;
@@ -32,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
-@Import({TestConfig.class, TestJwtConfig.class, TestDatabaseConfig.class})
+@Import({TestConfig.class, TestJwtConfig.class})
 @Transactional
 class AuthServiceIntegrationTest {
 

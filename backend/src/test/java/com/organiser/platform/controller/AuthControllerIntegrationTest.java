@@ -41,8 +41,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AuthControllerIntegrationTest {
 
-    // Using H2 in-memory database for testing
-
     @Autowired
     private MockMvc mockMvc;
 
