@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Loader, CheckCircle, AlertCircle, Clock, Ban } from 'lucide-react';
+import { ArrowLeft, Loader, CheckCircle, AlertCircle, Clock, Ban, Trash2 } from 'lucide-react';
 import ReviewForm from '../components/ReviewForm';
 import { eventsAPI, reviewsAPI } from '../lib/api';
 import toast from 'react-hot-toast';
@@ -87,6 +87,31 @@ const ReviewSubmissionPage = () => {
       }
     }
   });
+
+  // Delete review mutation
+  const deleteReviewMutation = useMutation({
+    mutationFn: () => reviewsAPI.deleteReview(existingReview.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['eventReviews', eventId]);
+      queryClient.invalidateQueries(['myReview', eventId]);
+      queryClient.invalidateQueries(['groupRating', event?.group?.id]);
+      queryClient.invalidateQueries(['groupReviews', event?.group?.id]);
+      queryClient.invalidateQueries(['pendingReviews']);
+      
+      toast.success('Your review has been deleted.');
+      navigate(`/events/${eventId}`);
+    },
+    onError: (error) => {
+      const message = error?.response?.data?.message || error?.response?.data || 'Failed to delete review';
+      toast.error(typeof message === 'string' ? message : 'Failed to delete review. Please try again.');
+    }
+  });
+
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete your review? This cannot be undone.')) {
+      deleteReviewMutation.mutate();
+    }
+  };
 
   const handleSubmit = async (reviewData) => {
     await submitReviewMutation.mutateAsync(reviewData);
@@ -304,13 +329,21 @@ const ReviewSubmissionPage = () => {
               </div>
             </div>
 
-            {/* Edit Button */}
+            {/* Action Buttons */}
             <div className="flex gap-4">
               <button
                 onClick={() => setIsEditMode(true)}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg transition-all"
               >
                 Edit Review
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleteReviewMutation.isPending}
+                className="px-6 py-3 border-2 border-red-300 text-red-600 font-bold rounded-xl hover:bg-red-50 hover:border-red-400 transition-all flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {deleteReviewMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>
               <button
                 onClick={() => navigate(`/events/${eventId}`)}
