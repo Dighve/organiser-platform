@@ -66,4 +66,10 @@ public class ReviewController {
         EventReviewDTO review = reviewService.updateReview(reviewId, request);
         return ResponseEntity.ok(review);
     }
+    
+    @DeleteMapping("/reviews/{reviewId}")
+    public ResponseEntity<Void> deleteReview(@PathVariable Long reviewId) {
+        reviewService.deleteReview(reviewId);
+        return ResponseEntity.noContent().build();
+    }
 }

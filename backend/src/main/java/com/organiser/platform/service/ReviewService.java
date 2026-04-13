@@ -165,12 +165,12 @@ public class ReviewService {
                     "You have already reviewed this event");
         }
         
-        // Calculate overall rating (average of all 5 ratings)
-        double overallRating = (request.getOrganizationRating() + 
-                               request.getRouteRating() + 
-                               request.getGroupRating() + 
-                               request.getSafetyRating() + 
-                               request.getValueRating()) / 5.0;
+        // Weighted overall rating — must match the DB trigger (calculate_overall_rating)
+        double overallRating = (request.getOrganizationRating() * 0.25) +
+                               (request.getRouteRating()       * 0.20) +
+                               (request.getGroupRating()       * 0.20) +
+                               (request.getSafetyRating()      * 0.20) +
+                               (request.getValueRating()       * 0.15);
         
         // Create review
         EventReview review = EventReview.builder()
@@ -209,12 +209,12 @@ public class ReviewService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only update your own reviews");
         }
         
-        // Calculate new overall rating
-        double overallRating = (request.getOrganizationRating() + 
-                               request.getRouteRating() + 
-                               request.getGroupRating() + 
-                               request.getSafetyRating() + 
-                               request.getValueRating()) / 5.0;
+        // Weighted overall rating — must match the DB trigger (calculate_overall_rating)
+        double overallRating = (request.getOrganizationRating() * 0.25) +
+                               (request.getRouteRating()       * 0.20) +
+                               (request.getGroupRating()       * 0.20) +
+                               (request.getSafetyRating()      * 0.20) +
+                               (request.getValueRating()       * 0.15);
         
         // Update review fields
         review.setOrganizationRating(request.getOrganizationRating());
@@ -230,5 +230,23 @@ public class ReviewService {
         EventReview updatedReview = eventReviewRepository.save(review);
         
         return EventReviewDTO.fromEntity(updatedReview);
+    }
+    
+    @Transactional
+    public void deleteReview(Long reviewId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+        
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
+
+        EventReview review = eventReviewRepository.findById(reviewId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Review not found"));
+
+        if (!review.getMember().getId().equals(member.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only delete your own reviews");
+        }
+        
+        eventReviewRepository.delete(review);
     }
 }
