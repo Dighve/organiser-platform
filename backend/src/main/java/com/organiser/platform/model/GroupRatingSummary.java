@@ -25,31 +25,31 @@ public class GroupRatingSummary {
     @JoinColumn(name = "group_id")
     private Group group;
 
-    @Column(name = "average_rating", nullable = false, columnDefinition = "DECIMAL(3,2)")
+    @Column(name = "average_rating", nullable = false, columnDefinition = "NUMERIC(3,2)")
     private Double averageRating;
 
     @Column(name = "total_reviews", nullable = false)
     private Integer totalReviews;
 
-    @Column(name = "organization_avg", columnDefinition = "DECIMAL(3,2)")
+    @Column(name = "organization_avg", columnDefinition = "NUMERIC(3,2)")
     private Double organizationAvg;
 
-    @Column(name = "route_avg", columnDefinition = "DECIMAL(3,2)")
+    @Column(name = "route_avg", columnDefinition = "NUMERIC(3,2)")
     private Double routeAvg;
 
-    @Column(name = "group_avg", columnDefinition = "DECIMAL(3,2)")
+    @Column(name = "group_avg", columnDefinition = "NUMERIC(3,2)")
     private Double groupAvg;
 
-    @Column(name = "safety_avg", columnDefinition = "DECIMAL(3,2)")
+    @Column(name = "safety_avg", columnDefinition = "NUMERIC(3,2)")
     private Double safetyAvg;
 
-    @Column(name = "value_avg", columnDefinition = "DECIMAL(3,2)")
+    @Column(name = "value_avg", columnDefinition = "NUMERIC(3,2)")
     private Double valueAvg;
 
     @Column(name = "recommendation_count")
     private Integer recommendationCount;
 
-    @Column(name = "recommendation_percentage", columnDefinition = "DECIMAL(5,2)")
+    @Column(name = "recommendation_percentage", columnDefinition = "NUMERIC(5,2)")
     private Double recommendationPercentage;
 
     @Column(name = "last_updated", nullable = false)

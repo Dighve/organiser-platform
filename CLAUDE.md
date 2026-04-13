@@ -68,6 +68,9 @@ cd frontend && npm test
 - Database changes must be done via Flyway migration files: `V{next}__Description.sql` in `backend/src/main/resources/db/migration/postgresql/`
 - To find the next migration version: `ls backend/src/main/resources/db/migration/postgresql/ | grep -oE 'V[0-9]+' | sed 's/V//' | sort -n | tail -1`
 - Java package root: `com.organiser.platform`
+- **Never use H2** — tests always run against real PostgreSQL (`outmeets_test` DB, port 5433). H2 hides PostgreSQL-specific behaviour. The Gradle `createTestDb` task auto-creates `outmeets_test` before tests run.
+- **`@Column(columnDefinition)` — always use `NUMERIC`, never `DECIMAL`**: PostgreSQL reports column metadata as `numeric`. Hibernate maps `DECIMAL` → JDBC FLOAT but finds NUMERIC in the DB → startup failure: `wrong column type encountered; found [numeric (Types#NUMERIC)], but expecting [decimal(x,y) (Types#FLOAT)]`.
+- **SecurityConfig — every new endpoint must be explicitly listed**: The config ends with `.anyRequest().denyAll()`. Any endpoint not in the list returns 403. Always add a matching `AntPathRequestMatcher` when adding a new controller method.
 
 ### Frontend (React)
 - Functional components with hooks only — no class components

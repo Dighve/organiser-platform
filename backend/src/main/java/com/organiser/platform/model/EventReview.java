@@ -47,7 +47,7 @@ public class EventReview {
     @Column(name = "value_rating", nullable = false)
     private Short valueRating;
 
-    @Column(name = "overall_rating", nullable = false, columnDefinition = "DECIMAL(3,2)")
+    @Column(name = "overall_rating", nullable = false, columnDefinition = "NUMERIC(3,2)")
     private Double overallRating;
 
     @Column(name = "comment", columnDefinition = "TEXT")
