@@ -43,7 +43,15 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/auth/passcode", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/verify", "GET"),
                                 new AntPathRequestMatcher("/api/v1/auth/passcode/verify", "POST"),
-                                new AntPathRequestMatcher("/api/v1/auth/google", "POST")
+                                new AntPathRequestMatcher("/api/v1/auth/google", "POST"),
+                                new AntPathRequestMatcher("/api/v1/auth/refresh", "POST"),
+                                new AntPathRequestMatcher("/api/v1/auth/logout", "POST")
+                        ).permitAll()
+                        
+                        // Public READ-ONLY endpoints for reviews (must be before other event/group patterns)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/reviews", "GET")
                         ).permitAll()
                         
                         // Public READ-ONLY endpoints for reviews (must be before other event/group patterns)
@@ -60,7 +68,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/public/activity/*", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/public/group/*", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/public/*/participants", "GET"),
-                                new AntPathRequestMatcher("/api/v1/events/public/*/calendar", "GET")
+                                new AntPathRequestMatcher("/api/v1/events/public/*/calendar", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/search", "GET")
                         ).permitAll()
                         
                         // Public READ-ONLY endpoints for groups
@@ -108,6 +117,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/events/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/events/*/publish", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/join", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/leave", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/participants", "GET"),
@@ -117,7 +127,19 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/comments/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/events/comments/*/replies", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/replies/*", "PUT"),
-                                new AntPathRequestMatcher("/api/v1/events/replies/*", "DELETE")
+                                new AntPathRequestMatcher("/api/v1/events/replies/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/events/organiser/my-events", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/my-joined-events", "GET")
+                        ).authenticated()
+                        
+                        // Review write operations - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews/my-review", "GET"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/reviews/pending", "GET"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*/flag", "POST")
                         ).authenticated()
                         
                         // Review write operations - require authentication
@@ -134,7 +156,14 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/groups/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/groups/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/groups/*/subscribe", "POST"),
-                                new AntPathRequestMatcher("/api/v1/groups/*/unsubscribe", "POST")
+                                new AntPathRequestMatcher("/api/v1/groups/*/unsubscribe", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/ban/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/unban/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/remove/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/banned-members", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/transfer-ownership/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/permanent", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/groups/invitations", "POST")
                         ).authenticated()
                         
                         // File upload - require authentication
@@ -147,8 +176,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/members/me", "GET"),
                                 new AntPathRequestMatcher("/api/v1/members/me", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/me", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/members/me/events", "GET"),
-                                new AntPathRequestMatcher("/api/v1/members/me/groups", "GET")
+                                new AntPathRequestMatcher("/api/v1/members/me/groups", "GET"),
+                                new AntPathRequestMatcher("/api/v1/members/me/email-notifications", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/become-organiser", "POST"),
+                                new AntPathRequestMatcher("/api/v1/members", "GET")
                         ).authenticated()
                         
                         // Admin check endpoint - authenticated users can check their status
