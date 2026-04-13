@@ -138,9 +138,11 @@ export default async (request, context) => {
     };
     
     // Inject structured data before </head>
+    // Replace '</' in JSON to prevent </script> injection breaking the document
+    const safeJsonLd = JSON.stringify(structuredData).replace(/</g, '\\u003c');
     html = html.replace(
       '</head>',
-      `<script type="application/ld+json">${JSON.stringify(structuredData)}</script></head>`
+      `<script type="application/ld+json">${safeJsonLd}</script></head>`
     );
     
     return new Response(html, {
