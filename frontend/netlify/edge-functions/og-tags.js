@@ -1,3 +1,13 @@
+// Escape HTML special characters to prevent XSS
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export default async (request, context) => {
   const url = new URL(request.url);
   
@@ -20,8 +30,9 @@ export default async (request, context) => {
     return context.next();
   }
   
-  // Fetch event data from your backend API
-  const apiUrl = `https://hikehub-backend-nd4r.onrender.com/api/v1/events/public/${eventId}`;
+  // Fetch event data from backend API
+  const backendUrl = Netlify.env.get('BACKEND_API_URL') || 'https://hikehub-backend-nd4r.onrender.com';
+  const apiUrl = `${backendUrl}/api/v1/events/public/${eventId}`;
   
   try {
     const response = await fetch(apiUrl);
@@ -32,11 +43,12 @@ export default async (request, context) => {
     
     const event = await response.json();
     
-    // Generate dynamic meta tags
-    const title = `${event.title} | OutMeets`;
-    const description = event.description 
-      ? event.description.substring(0, 160) + '...'
+    // Generate dynamic meta tags (escaped to prevent XSS)
+    const title = escapeHtml(event.title ? `${event.title} | OutMeets` : 'OutMeets');
+    const rawDescription = event.description 
+      ? (event.description.length > 160 ? event.description.substring(0, 160) + '...' : event.description)
       : `Join this hiking event on ${new Date(event.eventDate).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
+    const description = escapeHtml(rawDescription);
     const image = event.imageUrl || 'https://www.outmeets.com/og-image.jpg';
     const eventUrl = `https://www.outmeets.com/events/${eventId}`;
     
@@ -53,45 +65,45 @@ export default async (request, context) => {
       )
       // Description
       .replace(
-        /<meta name="description" content=".*?">/,
+        /<meta name="description" content=".*?"\s*\/?>/,
         `<meta name="description" content="${description}">`
       )
       // OG tags
       .replace(
-        /<meta property="og:title" content=".*?">/,
+        /<meta property="og:title" content=".*?"\s*\/?>/,
         `<meta property="og:title" content="${title}">`
       )
       .replace(
-        /<meta property="og:description" content=".*?">/,
+        /<meta property="og:description" content=".*?"\s*\/?>/,
         `<meta property="og:description" content="${description}">`
       )
       .replace(
-        /<meta property="og:image" content=".*?">/,
+        /<meta property="og:image" content=".*?"\s*\/?>/,
         `<meta property="og:image" content="${image}">`
       )
       .replace(
-        /<meta property="og:url" content=".*?">/,
+        /<meta property="og:url" content=".*?"\s*\/?>/,
         `<meta property="og:url" content="${eventUrl}">`
       )
       .replace(
-        /<meta property="og:type" content=".*?">/,
+        /<meta property="og:type" content=".*?"\s*\/?>/,
         `<meta property="og:type" content="article">`
       )
       // Twitter tags
       .replace(
-        /<meta name="twitter:title" content=".*?">/,
+        /<meta name="twitter:title" content=".*?"\s*\/?>/,
         `<meta name="twitter:title" content="${title}">`
       )
       .replace(
-        /<meta name="twitter:description" content=".*?">/,
+        /<meta name="twitter:description" content=".*?"\s*\/?>/,
         `<meta name="twitter:description" content="${description}">`
       )
       .replace(
-        /<meta name="twitter:image" content=".*?">/,
+        /<meta name="twitter:image" content=".*?"\s*\/?>/,
         `<meta name="twitter:image" content="${image}">`
       )
       .replace(
-        /<meta name="twitter:url" content=".*?">/,
+        /<meta name="twitter:url" content=".*?"\s*\/?>/,
         `<meta name="twitter:url" content="${eventUrl}">`
       );
     

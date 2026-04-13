@@ -42,7 +42,7 @@
 
 ### Image Storage - Cloudinary
 - **Platform:** Cloudinary
-- **Cloud Name:** drdttgry4
+- **Cloud Name:** (see environment variables)
 - **Folders:** hikehub/events/, hikehub/groups/, hikehub/profiles/
 - **Free Tier:** 25GB storage, 25GB bandwidth/month
 
@@ -219,9 +219,9 @@ DATABASE_URL=postgresql://...
 JWT_SECRET=<64-character-random-string>
 
 # Cloudinary
-CLOUDINARY_CLOUD_NAME=drdttgry4
-CLOUDINARY_API_KEY=478746114596374
-CLOUDINARY_API_SECRET=<secret>
+CLOUDINARY_CLOUD_NAME=<your-cloud-name>
+CLOUDINARY_API_KEY=<your-api-key>
+CLOUDINARY_API_SECRET=<your-api-secret>
 
 # Google OAuth
 GOOGLE_CLIENT_ID=<your-client-id>
