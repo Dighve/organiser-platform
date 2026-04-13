@@ -1,7 +1,8 @@
 package com.organiser.platform.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.organiser.platform.OrganiserPlatformApplication;
+import com.organiser.platform.config.TestConfig;
+import com.organiser.platform.config.TestJwtConfig;
 import com.organiser.platform.dto.AuthResponse;
 import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.model.MagicLink;
@@ -14,9 +15,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultActions;
@@ -32,16 +33,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    classes = OrganiserPlatformApplication.class
-)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@Import({TestConfig.class, TestJwtConfig.class})
 @Transactional
 class AuthControllerIntegrationTest {
-
-    // Using H2 in-memory database for testing
 
     @Autowired
     private MockMvc mockMvc;

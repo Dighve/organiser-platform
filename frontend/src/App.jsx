@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { lazy, Suspense, useEffect } from 'react'
 import { useAuthStore } from './store/authStore'
 import Layout from './components/Layout'
@@ -29,6 +29,9 @@ const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const InvitePage = lazy(() => import('./pages/InvitePage'))
+const ReviewSubmissionPage = lazy(() => import('./pages/ReviewSubmissionPage'))
+const GroupReviewsPage = lazy(() => import('./pages/GroupReviewsPage'))
+const EventReviewsPage = lazy(() => import('./pages/EventReviewsPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -80,6 +83,7 @@ const PAGE_NAMES = {
 
 function getPageName(pathname) {
   if (PAGE_NAMES[pathname]) return PAGE_NAMES[pathname]
+  if (/^\/events\/[^/]+\/review$/.test(pathname)) return 'Submit Review'
   if (/^\/events\/[^/]+\/edit$/.test(pathname)) return 'Edit Event'
   if (/^\/events\/[^/]+$/.test(pathname)) return 'Event Detail'
   if (/^\/groups\/[^/]+\/edit$/.test(pathname)) return 'Edit Group'
@@ -113,6 +117,35 @@ function UserIdentitySync() {
   return null
 }
 
+// Handles SW_NAVIGATE messages sent by the service worker's notificationclick handler.
+// WindowClient.navigate() is unreliable on iOS PWA, so we postMessage the URL and
+// let React Router handle the navigation instead of causing a full page reload.
+function ServiceWorkerNavigationHandler() {
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return
+
+    const handleMessage = (event) => {
+      if (event.data?.type === 'SW_NAVIGATE' && event.data.url) {
+        try {
+          const url = new URL(event.data.url)
+          if (url.origin === window.location.origin) {
+            navigate(url.pathname + url.search + url.hash, { replace: false })
+          }
+        } catch {
+          // ignore malformed URLs
+        }
+      }
+    }
+
+    navigator.serviceWorker.addEventListener('message', handleMessage)
+    return () => navigator.serviceWorker.removeEventListener('message', handleMessage)
+  }, [navigate])
+
+  return null
+}
+
 function PrivateRoute({ children }) {
   const { isAuthenticated } = useAuthStore()
   return isAuthenticated ? children : <Navigate to="/" />
@@ -124,6 +157,7 @@ function App() {
       <ScrollToTop />
       <RouteTracker />
       <UserIdentitySync />
+      <ServiceWorkerNavigationHandler />
       <PushNotificationPrompt />
       <Routes>
         <Route path="/" element={<Layout />}>
@@ -145,6 +179,21 @@ function App() {
             </ErrorBoundary>
           </Suspense>
         } />
+        <Route path="events/:id/reviews" element={
+          <Suspense fallback={<PageLoader />}>
+            <EventReviewsPage />
+          </Suspense>
+        } />
+        <Route
+          path="events/:eventId/review"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <ReviewSubmissionPage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
         <Route
           path="events/:id/edit"
           element={
@@ -195,6 +244,11 @@ function App() {
             <ErrorBoundary name="GroupDetailPage" title="Unable to load group" message="We're having trouble loading this group. Please try again.">
               <GroupDetailPage />
             </ErrorBoundary>
+          </Suspense>
+        } />
+        <Route path="groups/:id/reviews" element={
+          <Suspense fallback={<PageLoader />}>
+            <GroupReviewsPage />
           </Suspense>
         } />
         <Route

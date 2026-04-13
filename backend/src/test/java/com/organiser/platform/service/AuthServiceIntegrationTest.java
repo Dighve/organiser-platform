@@ -1,7 +1,6 @@
 package com.organiser.platform.service;
 
 import com.organiser.platform.config.TestConfig;
-import com.organiser.platform.config.TestDatabaseConfig;
 import com.organiser.platform.config.TestJwtConfig;
 import com.organiser.platform.dto.MagicLinkRequest;
 import com.organiser.platform.model.MagicLink;
@@ -11,11 +10,10 @@ import com.organiser.platform.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import jakarta.persistence.EntityManager;
@@ -30,9 +28,10 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import({TestConfig.class, TestJwtConfig.class, TestDatabaseConfig.class})
+@Import({TestConfig.class, TestJwtConfig.class})
 @Transactional
 class AuthServiceIntegrationTest {
 

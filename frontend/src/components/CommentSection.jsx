@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, X, Lock, Loader } from 'lucide-react'
+import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import { commentsAPI, membersAPI } from '../lib/api'
@@ -20,7 +20,6 @@ export default function CommentSection({ eventId }) {
   const [editingReply, setEditingReply] = useState(null)
   const [editContent, setEditContent] = useState('')
   const [showAllComments, setShowAllComments] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
   const [expandedReplies, setExpandedReplies] = useState({})
   const [showAllReplies, setShowAllReplies] = useState({})
 
@@ -186,23 +185,12 @@ export default function CommentSection({ eventId }) {
   const comments = commentsData?.data || []
   const visibleCount = 3
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 768px)')
-    const update = () => setIsMobile(mediaQuery.matches)
-    update()
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', update)
-      return () => mediaQuery.removeEventListener('change', update)
-    }
-    mediaQuery.addListener(update)
-    return () => mediaQuery.removeListener(update)
-  }, [])
 
   const renderMarkdown = (text) => (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
-        a: ({node, ...props}) => (
+        a: ({_node, ...props}) => (
           <a
             className="text-purple-600 underline decoration-2 hover:text-pink-600"
             target="_blank"
@@ -210,10 +198,10 @@ export default function CommentSection({ eventId }) {
             {...props}
           />
         ),
-        p: ({node, ...props}) => <p className="mb-1 text-sm sm:text-base leading-relaxed" {...props} />,
-        ul: ({node, ...props}) => <ul className="list-disc ml-5 mb-1 text-sm sm:text-base" {...props} />,
-        ol: ({node, ...props}) => <ol className="list-decimal ml-5 mb-1 text-sm sm:text-base" {...props} />,
-        li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
+        p: ({_node, ...props}) => <p className="mb-1 text-sm sm:text-base leading-relaxed" {...props} />,
+        ul: ({_node, ...props}) => <ul className="list-disc ml-5 mb-1 text-sm sm:text-base" {...props} />,
+        ol: ({_node, ...props}) => <ol className="list-decimal ml-5 mb-1 text-sm sm:text-base" {...props} />,
+        li: ({_node, ...props}) => <li className="mb-0.5" {...props} />,
       }}
     >
       {text}
@@ -230,21 +218,27 @@ export default function CommentSection({ eventId }) {
       {/* New Comment Form */}
       {isAuthenticated ? (
         <form onSubmit={handleCreateComment} className="mb-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-end gap-3">
             <ProfileAvatar member={currentMemberData} size="md" />
             <div className="flex-1">
-              <div className="flex items-center gap-2 bg-white border-2 border-gray-200 rounded-full px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all">
-                <input
+              <div className={`flex items-end gap-2 bg-white border-2 border-gray-200 px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all ${newComment.trim().length > 0 ? 'rounded-2xl' : 'rounded-full'}`}>
+                <textarea
                   value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
+                  onChange={(e) => {
+                    setNewComment(e.target.value)
+                    e.target.style.height = 'auto'
+                    e.target.style.height = `${e.target.scrollHeight}px`
+                  }}
                   placeholder="Add a comment"
-                  className="flex-1 bg-transparent outline-none text-sm sm:text-base"
+                  rows={1}
+                  className="flex-1 bg-transparent outline-none text-sm sm:text-base resize-none overflow-hidden"
+                  style={{ minHeight: '1.5rem' }}
                 />
                 {newComment.trim().length > 0 && (
                   <button
                     type="submit"
                     disabled={createCommentMutation.isLoading}
-                    className="h-9 w-9 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50"
+                    className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50"
                     aria-label="Send comment"
                   >
                     {createCommentMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

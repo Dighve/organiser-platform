@@ -10,6 +10,7 @@ import com.organiser.platform.exception.AlreadyRegisteredException;
 import com.organiser.platform.model.*;
 import java.math.BigDecimal;
 import com.organiser.platform.repository.*;
+import com.organiser.platform.util.EventTimingUtils;
 
 import java.util.Comparator;
 import java.util.HashSet;
@@ -29,7 +30,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 
 // ============================================================
 // SERVICE CLASS
@@ -257,15 +261,19 @@ public class EventService {
         // Public groups: everyone can see full event details
         if (isPublicGroup) {
             boolean isMember = memberId != null && groupService.isMemberOfGroup(memberId, event.getGroup().getId());
-            return convertToDTO(event, isMember);
+            EventDTO dto = convertToDTO(event, isMember);
+            dto.setUserHasAttended(computeUserHasAttended(event, memberId));
+            return dto;
         }
-        
+
         // Private groups: only members see full details
         if (memberId == null || !groupService.isMemberOfGroup(memberId, event.getGroup().getId())) {
             return convertToPartialDTO(event);
         }
-        
-        return convertToDTO(event, true);
+
+        EventDTO dto = convertToDTO(event, true);
+        dto.setUserHasAttended(computeUserHasAttended(event, memberId));
+        return dto;
     }
     
     /**
@@ -283,7 +291,7 @@ public class EventService {
     @Transactional(readOnly = true)
     @Cacheable(value = "upcomingEvents", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<EventDTO> getUpcomingEvents(Pageable pageable) {
-        return eventRepository.findUpcomingEvents(Instant.now(), pageable)
+        return eventRepository.findUpcomingEvents(Instant.now(), EventTimingUtils.startOfToday(), pageable)
                 .map(this::convertToDTO);
     }
     
@@ -297,7 +305,7 @@ public class EventService {
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByActivity(Long activityId, Pageable pageable) {
         return eventRepository.findUpcomingEventsByActivityId(
-                Instant.now(), activityId, pageable
+                Instant.now(), EventTimingUtils.startOfToday(), activityId, pageable
         ).map(this::convertToDTO);
     }
     
@@ -306,7 +314,7 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public Page<EventDTO> searchEvents(String keyword, Pageable pageable) {
-        return eventRepository.searchEvents(keyword, Instant.now(), pageable)
+        return eventRepository.searchEvents(keyword, Instant.now(), EventTimingUtils.startOfToday(), pageable)
                 .map(this::convertToDTO);
     }
 
@@ -326,6 +334,7 @@ public class EventService {
                 tokens.future,
                 tokens.text,
                 Instant.now(),
+                EventTimingUtils.startOfToday(),
                 pageable
         );
 
@@ -411,7 +420,7 @@ public class EventService {
         Page<Event> page = eventRepository.findByOrganiserId(organiserId, pageable);
         Instant now = Instant.now();
         List<EventDTO> filtered = page.getContent().stream()
-                .filter(e -> past ? e.getEventDate().isBefore(now) : e.getEventDate().isAfter(now))
+                .filter(e -> past ? EventTimingUtils.effectiveEnd(e).isBefore(now) : !EventTimingUtils.effectiveEnd(e).isBefore(now))
                 .sorted(past ? Comparator.comparing(Event::getEventDate).reversed() : Comparator.comparing(Event::getEventDate))
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -441,7 +450,7 @@ public class EventService {
         Instant now = Instant.now();
         // Filter by past/upcoming
         events = events.stream()
-                .filter(e -> past ? e.getEventDate().isBefore(now) : e.getEventDate().isAfter(now))
+                .filter(e -> past ? EventTimingUtils.effectiveEnd(e).isBefore(now) : !EventTimingUtils.effectiveEnd(e).isBefore(now))
                 .collect(Collectors.toList());
         
         // Sort: past desc, upcoming asc
@@ -636,6 +645,19 @@ public class EventService {
     // ============================================================
     // PRIVATE METHODS - Data Conversion
     // ============================================================
+
+    private static final List<EventParticipant.ParticipationStatus> REVIEW_ELIGIBLE_STATUSES = List.of(
+            EventParticipant.ParticipationStatus.REGISTERED,
+            EventParticipant.ParticipationStatus.CONFIRMED,
+            EventParticipant.ParticipationStatus.ATTENDED
+    );
+
+    private boolean computeUserHasAttended(Event event, Long memberId) {
+        if (memberId == null || event.getParticipants() == null) return false;
+        return event.getParticipants().stream()
+                .anyMatch(p -> memberId.equals(p.getMember().getId())
+                        && REVIEW_ELIGIBLE_STATUSES.contains(p.getStatus()));
+    }
     
     /**
      * Convert Event entity to full EventDTO (for group members).
@@ -1048,4 +1070,5 @@ public class EventService {
     public void removeFutureParticipationsForMember(Long memberId) {
         eventParticipantRepository.deleteFutureParticipations(memberId, Instant.now());
     }
+
 }

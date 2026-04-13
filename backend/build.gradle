@@ -93,7 +93,6 @@ dependencies {
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
-    testImplementation 'com.h2database:h2'
     testImplementation 'org.testcontainers:junit-jupiter'
     testImplementation 'org.testcontainers:mysql'
     testImplementation 'org.testcontainers:postgresql'
@@ -102,7 +101,36 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 }
 
+def isCI = System.getenv('CI') != null
+
+// Start postgres via docker compose (idempotent — safe to run when already up)
+// Skipped on CI — postgres is provided by the GHA service container
+task dockerComposeUp(type: Exec) {
+    onlyIf { !isCI }
+    workingDir '../'
+    commandLine 'sh', '-c', 'docker compose up -d'
+}
+
+// Wait for postgres to be healthy before proceeding
+task waitForPostgres(type: Exec) {
+    dependsOn dockerComposeUp
+    onlyIf { !isCI }
+    commandLine 'sh', '-c',
+        'docker exec outmeets-postgres sh -c "until pg_isready -U organiser_user -d organiser_platform; do sleep 1; done"'
+}
+
+// Drop and recreate outmeets_test for a clean slate on every build
+// On CI the test DB is created by the GHA workflow
+task createTestDb(type: Exec) {
+    dependsOn waitForPostgres
+    onlyIf { !isCI }
+    commandLine 'sh', '-c',
+        'docker exec outmeets-postgres psql -U organiser_user -d organiser_platform -c "DROP DATABASE IF EXISTS outmeets_test" && ' +
+        'docker exec outmeets-postgres psql -U organiser_user -d organiser_platform -c "CREATE DATABASE outmeets_test OWNER organiser_user"'
+}
+
 test {
+    dependsOn createTestDb
     useJUnitPlatform()
     testLogging {
         events 'passed', 'skipped', 'failed'
@@ -140,6 +168,7 @@ tasks.named('flywayMigrate') {
 }
 
 bootRun {
+    dependsOn isCI ? [] : [waitForPostgres]
     // Environment variables are now loaded from .env.local file
     // Copy .env.example to .env.local and add your credentials
     environment(System.getenv())

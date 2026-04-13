@@ -7,6 +7,7 @@ import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.CreateGroupRequest;
 import com.organiser.platform.dto.EventDTO;
 import com.organiser.platform.dto.GroupDTO;
+import com.organiser.platform.dto.GroupRatingDTO;
 import com.organiser.platform.model.Activity;
 import com.organiser.platform.model.Event;
 import com.organiser.platform.model.EventParticipant;
@@ -63,6 +64,7 @@ public class GroupService {
     private final EventCommentRepository eventCommentRepository;
     private final BannedMemberRepository bannedMemberRepository;
     private final NotificationService notificationService;
+    private final com.organiser.platform.repository.GroupRatingSummaryRepository groupRatingSummaryRepository;
     
     // ============================================================
     // PUBLIC METHODS - Group CRUD Operations
@@ -224,7 +226,10 @@ public class GroupService {
                             group.getId(), 
                             Subscription.SubscriptionStatus.ACTIVE
                     );
-                    return GroupDTO.fromEntity(group, memberCount);
+                    GroupRatingDTO rating = groupRatingSummaryRepository.findByGroupId(group.getId())
+                            .map(GroupRatingDTO::fromEntity)
+                            .orElse(null);
+                    return GroupDTO.fromEntity(group, memberCount, rating);
                 })
                 .collect(Collectors.toList());
     }
@@ -242,7 +247,11 @@ public class GroupService {
                 Subscription.SubscriptionStatus.ACTIVE
         );
         
-        return GroupDTO.fromEntity(group, memberCount);
+        GroupRatingDTO rating = groupRatingSummaryRepository.findByGroupId(groupId)
+                .map(GroupRatingDTO::fromEntity)
+                .orElse(null);
+        
+        return GroupDTO.fromEntity(group, memberCount, rating);
     }
     
     // ============================================================

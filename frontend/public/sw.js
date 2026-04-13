@@ -71,8 +71,11 @@ self.addEventListener('notificationclick', (event) => {
           const clientUrl = new URL(client.url);
           if (clientUrl.origin === self.location.origin) {
             return client.focus().then((focused) => {
-              if (focused && 'navigate' in focused) {
-                return focused.navigate(targetUrl);
+              if (focused) {
+                // postMessage lets the React app navigate via React Router.
+                // This is more reliable than WindowClient.navigate() on iOS PWA,
+                // which can silently fail or navigate to the wrong URL.
+                focused.postMessage({ type: 'SW_NAVIGATE', url: targetUrl });
               }
               return focused;
             });

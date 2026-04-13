@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -449,8 +449,18 @@ export default function EventDetailPage() {
   // Check if event is in the past
   // Parse dates from backend (Instant/UTC timestamps)
   const eventStart = event?.eventDate ? new Date(event.eventDate) : null
-  const eventEnd = event?.endDate ? new Date(event.endDate) : eventStart
   const now = new Date()
+  // Priority: endDate → eventDate + estimatedDurationHours → 23:59:59 of start day
+  const eventEnd = (() => {
+    if (event?.endDate) return new Date(event.endDate)
+    if (event?.estimatedDurationHours && eventStart) {
+      return new Date(eventStart.getTime() + event.estimatedDurationHours * 60 * 60 * 1000)
+    }
+    if (!eventStart) return null
+    const d = new Date(eventStart)
+    d.setHours(23, 59, 59, 999)
+    return d
+  })()
   
   // Event is past if end date/time has passed
   const isPastEvent = eventEnd ? eventEnd.getTime() < now.getTime() : false
@@ -458,6 +468,14 @@ export default function EventDetailPage() {
   const isOngoingEvent = eventStart && eventEnd ? 
     (eventStart.getTime() <= now.getTime() && now.getTime() <= eventEnd.getTime()) : false
   
+  // Review eligibility: attended past event, within 24h–30d window, not organiser/host
+  const canReview = (() => {
+    if (!isPastEvent || !event?.userHasAttended || !isAuthenticated) return false
+    if (isEventOrganiser) return false
+    const hoursElapsed = eventEnd ? (now - eventEnd) / (1000 * 60 * 60) : 0
+    return hoursElapsed >= 24 && hoursElapsed <= 30 * 24
+  })()
+
   // Check if access is denied (non-member trying to view a private group event)
   // Public groups: backend returns full data to everyone → never denied
   // Private groups: backend returns partial data (null fields) for non-members
@@ -588,7 +606,7 @@ export default function EventDetailPage() {
         {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
         {isIOS && (
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
             className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
           >
             <ArrowLeft className="h-5 w-5" />
@@ -654,9 +672,19 @@ export default function EventDetailPage() {
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl p-3">
           {isPastEvent && !isEventOrganiser ? (
             <div className="flex items-center gap-2">
-              <div className="flex-1 py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
-                Event has ended
-              </div>
+              {canReview ? (
+                <Link
+                  to={`/events/${id}/review`}
+                  className="flex-1 py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg text-center text-sm flex items-center justify-center gap-2"
+                >
+                  <Star className="h-4 w-4" />
+                  Write a Review
+                </Link>
+              ) : (
+                <div className="flex-1 py-3 px-4 bg-gray-100 text-gray-600 font-semibold rounded-lg text-center text-sm">
+                  Event has ended
+                </div>
+              )}
               <button
                 onClick={() => setIsManageOpen(true)}
                 className="py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center"
@@ -808,23 +836,60 @@ export default function EventDetailPage() {
                 </button>
               </div>
             ) : hasJoined ? (
-              // Regular participant who has joined: Show guest count + actions menu
-              <div className="flex items-center gap-2">
-                <div className="flex-1 py-2.5 px-3 rounded-lg shadow bg-gray-100 text-gray-700">
-                  <p className="text-xs font-semibold">You're registered</p>
-                  <p className="text-sm font-bold text-gray-900">
-                    {displayGuestCount > 0
-                      ? `You + ${displayGuestCount} guest${displayGuestCount === 1 ? '' : 's'}`
-                      : 'You (no guests)'}
-                  </p>
-                </div>
+              // Regular participant who has joined
+              <div className="space-y-2">
+                {/* Status — tap guest count to edit */}
                 <button
-                  onClick={() => setIsGuestActionsOpen(true)}
-                  className="h-12 w-12 rounded-lg flex items-center justify-center bg-white border border-purple-200 text-purple-600 shadow hover:bg-purple-50"
-                  aria-label="Guest actions"
+                  onClick={() => openGuestModal(displayGuestCount)}
+                  className="w-full flex items-center justify-between py-2.5 px-3 rounded-lg bg-green-50 border border-green-200 hover:border-green-300 active:bg-green-100 transition-all text-left"
                 >
-                  <MoreVertical className="h-5 w-5" />
+                  <div>
+                    <p className="text-xs font-semibold text-green-700">✅ You're registered</p>
+                    <p className="text-sm font-bold text-gray-900">
+                      {displayGuestCount > 0
+                        ? `You + ${displayGuestCount} guest${displayGuestCount === 1 ? '' : 's'}`
+                        : 'You (no guests)'}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-green-500 flex-shrink-0" />
                 </button>
+                {/* Actions row */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      if (navigator.share) {
+                        try {
+                          await navigator.share({
+                            title: displayEvent.title,
+                            text: `Join us for ${displayEvent.title} on ${formattedStartDate}`,
+                            url: window.location.href,
+                          })
+                        } catch (error) {
+                          if (error.name !== 'AbortError') console.error('Share failed:', error)
+                        }
+                      }
+                    }}
+                    className="flex-1 py-2.5 px-3 bg-white border border-gray-200 text-gray-700 font-semibold rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Share
+                  </button>
+                  <button
+                    onClick={() => setShowLeaveConfirm(true)}
+                    disabled={leaveMutation.isLoading}
+                    className="flex-1 py-2.5 px-3 bg-red-50 border border-red-200 text-red-600 font-semibold rounded-lg hover:bg-red-100 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                  >
+                    {leaveMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
+                    {leaveMutation.isLoading ? 'Leaving...' : 'Leave'}
+                  </button>
+                  <button
+                    onClick={() => setIsGuestActionsOpen(true)}
+                    className="py-2.5 px-3 bg-white border border-gray-200 text-gray-600 rounded-lg hover:border-purple-300 hover:bg-purple-50 transition-all flex items-center justify-center"
+                    aria-label="More options"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             ) : (
               // Not joined: Show Join button
@@ -1034,34 +1099,41 @@ export default function EventDetailPage() {
             {/* GROUP DETAILS SECTION - Meetup-style layout */}
             {/* ============================================ */}
             {displayEvent.groupName && (
-              <div 
-                className="bg-white rounded-2xl lg:rounded-3xl shadow-md lg:shadow-lg border border-gray-200 cursor-pointer hover:shadow-lg lg:hover:shadow-xl hover:border-purple-200 hover:bg-purple-50/40 transition-all duration-200 p-3 lg:p-4"
+              <div
+                className="relative bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100 cursor-pointer hover:shadow-md hover:border-purple-300 hover:from-purple-100 hover:to-pink-100 transition-all duration-200 p-3 lg:p-4 overflow-hidden"
                 onClick={() => navigate(`/groups/${displayEvent.groupId}`)}
               >
-                <div className="flex items-center gap-4">
-                  {/* Group Image */}
-                  <div className="w-20 h-16 lg:w-24 lg:h-18 flex-shrink-0">
-                    <div className="relative w-full h-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-xl lg:rounded-2xl overflow-hidden p-1.5">
-                      {event?.group?.bannerUrl ? (
-                        <img 
-                          src={event.group.bannerUrl} 
-                          alt={displayEvent.groupName}
-                          className="w-full h-full object-cover rounded-lg lg:rounded-xl"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <Mountain className="w-4 h-4 lg:w-6 lg:h-6 text-white/60" />
-                        </div>
-                      )}
-                    </div>
+                {/* Accent bar */}
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-pink-500 rounded-l-2xl" />
+
+                <div className="flex items-center gap-3 pl-2">
+                  {/* Group banner thumbnail */}
+                  <div className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl overflow-hidden relative">
+                    {event?.group?.bannerUrl ? (
+                      <img
+                        src={event.group.bannerUrl}
+                        alt={displayEvent.groupName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Mountain className="w-5 h-5 text-white/70" />
+                      </div>
+                    )}
                   </div>
-                  
-                  {/* Group Details */}
-                  <div className="flex-1 min-w-0 flex items-start justify-between gap-3">
-                    <h2 className="text-base lg:text-lg font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full border border-gray-300 text-gray-600 text-[11px] font-semibold flex-shrink-0">
-                      {event?.groupIsPublic === false ? 'Private Group' : 'Public Group'}
+
+                  {/* Group name + badge */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-medium text-purple-500 uppercase tracking-wide leading-none mb-0.5">Organised by</p>
+                    <h2 className="text-sm lg:text-base font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
+                  </div>
+
+                  {/* Badge + arrow */}
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${event?.groupIsPublic === false ? 'bg-gray-100 text-gray-600' : 'bg-purple-100 text-purple-700'}`}>
+                      {event?.groupIsPublic === false ? 'Private' : 'Public'}
                     </span>
+                    <ChevronRight className="w-4 h-4 text-purple-400" />
                   </div>
                 </div>
               </div>
@@ -1394,11 +1466,21 @@ export default function EventDetailPage() {
               <div className={`hidden lg:block ${!isAccessDenied ? "pt-6 border-t border-gray-200" : ""}`}>
                 {isPastEvent && !isEventOrganiser ? (
                   <div className="space-y-4">
-                    <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
-                      <Clock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
-                      <p className="text-sm font-semibold text-gray-600 mb-1">Event has ended</p>
-                      <p className="text-xs text-gray-500">Joining is disabled for past events.</p>
-                    </div>
+                    {canReview ? (
+                      <Link
+                        to={`/events/${id}/review`}
+                        className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2"
+                      >
+                        <Star className="h-5 w-5" />
+                        Write a Review
+                      </Link>
+                    ) : (
+                      <div className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 text-center">
+                        <Clock className="h-10 w-10 mx-auto mb-3 text-gray-400" />
+                        <p className="text-sm font-semibold text-gray-600 mb-1">Event has ended</p>
+                        <p className="text-xs text-gray-500">Joining is disabled for past events.</p>
+                      </div>
+                    )}
                     <ShareButton
                       type="event"
                       itemId={id}
@@ -1590,21 +1672,12 @@ export default function EventDetailPage() {
                                 : 'You (no guests)'}
                             </p>
                             {!isPastEvent && (
-                              <>
-                                <button
-                                  onClick={() => openGuestModal(displayGuestCount)}
-                                  className="hidden sm:inline text-sm font-semibold text-purple-600 hover:text-purple-700"
-                                >
-                                  Edit
-                                </button>
-                                <button
-                                  onClick={() => setIsGuestActionsOpen(true)}
-                                  className="sm:hidden h-10 w-10 ml-2 flex items-center justify-center rounded-full bg-white border border-purple-200 text-purple-600 shadow hover:bg-purple-50"
-                                  aria-label="More actions"
-                                >
-                                  <MoreVertical className="h-5 w-5" />
-                                </button>
-                              </>
+                              <button
+                                onClick={() => openGuestModal(displayGuestCount)}
+                                className="text-sm font-semibold text-purple-600 hover:text-purple-800 underline underline-offset-2"
+                              >
+                                edit
+                              </button>
                             )}
                           </div>
                         </div>
@@ -1939,6 +2012,7 @@ export default function EventDetailPage() {
           />
           <div className="relative w-full max-w-md bg-white rounded-t-2xl shadow-2xl p-4">
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-gray-300" />
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 px-1">More options</p>
             <button
               onClick={() => {
                 setIsGuestActionsOpen(false)
@@ -1947,49 +2021,17 @@ export default function EventDetailPage() {
               className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3 flex items-center gap-3"
             >
               <Edit className="h-5 w-5 text-purple-600" />
-              Edit guest count
-            </button>
-            <button
-              onClick={async () => {
-                setIsGuestActionsOpen(false)
-                if (navigator.share) {
-                  try {
-                    await navigator.share({
-                      title: displayEvent.title,
-                      text: `Join us for ${displayEvent.title} on ${formattedStartDate}`,
-                      url: window.location.href,
-                    })
-                  } catch (error) {
-                    if (error.name !== 'AbortError') {
-                      console.error('Share failed:', error)
-                    }
-                  }
-                }
-              }}
-              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3 flex items-center gap-3"
-            >
-              <Share2 className="h-5 w-5 text-purple-600" />
-              Share
+              Edit guests
             </button>
             <button
               onClick={() => {
                 setIsGuestActionsOpen(false)
                 setShowInviteModal(true)
               }}
-              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 mb-3 flex items-center gap-3"
+              className="w-full text-left px-4 py-3 rounded-xl border border-gray-200 text-gray-800 font-semibold hover:border-purple-300 flex items-center gap-3"
             >
               <UserPlus className="h-5 w-5 text-purple-600" />
               Invite Members
-            </button>
-            <button
-              onClick={() => {
-                setIsGuestActionsOpen(false)
-                setShowLeaveConfirm(true)
-              }}
-              className="w-full text-left px-4 py-3 rounded-xl bg-red-50 border border-red-200 text-red-600 font-semibold hover:bg-red-100 flex items-center gap-3"
-            >
-              <X className="h-5 w-5 text-red-600" />
-              Leave event
             </button>
           </div>
         </div>

@@ -12,6 +12,8 @@ import { useState } from 'react'
 
 const ProfileAvatar = ({ 
   member, 
+  imageUrl, // Alternative to member.profilePhotoUrl
+  displayName, // Alternative to member.displayName
   size = 'md',
   className = '',
   showBadge = false,
@@ -32,13 +34,18 @@ const ProfileAvatar = ({
     '3xl': 'h-32 w-32 text-5xl',
   }
 
+  // Support both member object and individual props
+  const photoUrl = imageUrl || member?.profilePhotoUrl
+  const name = displayName || member?.displayName
+  const email = member?.email
+
   // Helper function to get initials
   const getInitials = () => {
-    if (member?.displayName && member.displayName.trim()) {
-      return member.displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    if (name && name.trim()) {
+      return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
     }
-    if (member?.email && member.email.length > 0) {
-      return member.email[0].toUpperCase()
+    if (email && email.length > 0) {
+      return email[0].toUpperCase()
     }
     return '?'
   }
@@ -46,7 +53,7 @@ const ProfileAvatar = ({
   const baseClasses = `${sizeClasses[size]} rounded-full ${className}`
 
   // Show fallback if no photo URL or if image failed to load
-  const showFallback = !member?.profilePhotoUrl || imageError
+  const showFallback = !photoUrl || imageError
 
   return (
     <div className="relative inline-block">
@@ -56,8 +63,8 @@ const ProfileAvatar = ({
         </div>
       ) : (
         <img
-          src={member.profilePhotoUrl}
-          alt={member.displayName || (member.email ? member.email : 'Member')}
+          src={photoUrl}
+          alt={name || (email ? email : 'Member')}
           className={`${baseClasses} object-cover`}
           loading={loading}
           decoding="async"

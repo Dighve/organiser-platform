@@ -43,7 +43,21 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/auth/passcode", "POST"),
                                 new AntPathRequestMatcher("/api/v1/auth/verify", "GET"),
                                 new AntPathRequestMatcher("/api/v1/auth/passcode/verify", "POST"),
-                                new AntPathRequestMatcher("/api/v1/auth/google", "POST")
+                                new AntPathRequestMatcher("/api/v1/auth/google", "POST"),
+                                new AntPathRequestMatcher("/api/v1/auth/refresh", "POST"),
+                                new AntPathRequestMatcher("/api/v1/auth/logout", "POST")
+                        ).permitAll()
+                        
+                        // Public READ-ONLY endpoints for reviews (must be before other event/group patterns)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/reviews", "GET")
+                        ).permitAll()
+                        
+                        // Public READ-ONLY endpoints for reviews (must be before other event/group patterns)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/reviews", "GET")
                         ).permitAll()
                         
                         // Public READ-ONLY endpoints for events
@@ -54,7 +68,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/public/activity/*", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/public/group/*", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/public/*/participants", "GET"),
-                                new AntPathRequestMatcher("/api/v1/events/public/*/calendar", "GET")
+                                new AntPathRequestMatcher("/api/v1/events/public/*/calendar", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/search", "GET")
                         ).permitAll()
                         
                         // Public READ-ONLY endpoints for groups
@@ -102,6 +117,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/events/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/events/*/publish", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/join", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/leave", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/participants", "GET"),
@@ -111,7 +127,19 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/comments/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/events/comments/*/replies", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/replies/*", "PUT"),
-                                new AntPathRequestMatcher("/api/v1/events/replies/*", "DELETE")
+                                new AntPathRequestMatcher("/api/v1/events/replies/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/events/organiser/my-events", "GET"),
+                                new AntPathRequestMatcher("/api/v1/events/my-joined-events", "GET")
+                        ).authenticated()
+                        
+                        // Review write operations - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/reviews/my-review", "GET"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/reviews/pending", "GET"),
+                                new AntPathRequestMatcher("/api/v1/reviews/*/flag", "POST")
                         ).authenticated()
                         
                         // Group write operations - require authentication
@@ -120,7 +148,14 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/groups/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/groups/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/groups/*/subscribe", "POST"),
-                                new AntPathRequestMatcher("/api/v1/groups/*/unsubscribe", "POST")
+                                new AntPathRequestMatcher("/api/v1/groups/*/unsubscribe", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/ban/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/unban/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/remove/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/banned-members", "GET"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/transfer-ownership/*", "POST"),
+                                new AntPathRequestMatcher("/api/v1/groups/*/permanent", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/groups/invitations", "POST")
                         ).authenticated()
                         
                         // File upload - require authentication
@@ -133,8 +168,12 @@ public class SecurityConfig {
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/members/me", "GET"),
                                 new AntPathRequestMatcher("/api/v1/members/me", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/me", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/members/me/events", "GET"),
-                                new AntPathRequestMatcher("/api/v1/members/me/groups", "GET")
+                                new AntPathRequestMatcher("/api/v1/members/me/groups", "GET"),
+                                new AntPathRequestMatcher("/api/v1/members/me/email-notifications", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/become-organiser", "POST"),
+                                new AntPathRequestMatcher("/api/v1/members", "GET")
                         ).authenticated()
                         
                         // Admin check endpoint - authenticated users can check their status
@@ -146,6 +185,44 @@ public class SecurityConfig {
                                          new AntPathRequestMatcher("/api/v1/admin/feature-flags/*", "PUT")
                                         ).hasRole("ADMIN")
                         
+                        // Notification endpoints - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/notifications", "GET"),
+                                new AntPathRequestMatcher("/api/v1/notifications/unread-count", "GET"),
+                                new AntPathRequestMatcher("/api/v1/notifications/*", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/notifications/read-all", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/notifications/*", "DELETE")
+                        ).authenticated()
+                        
+                        // Web Push endpoints - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/push/subscribe", "POST"),
+                                new AntPathRequestMatcher("/api/v1/push/subscribe", "DELETE"),
+                                new AntPathRequestMatcher("/api/v1/push/test", "POST")
+                        ).authenticated()
+                        
+                        // Feedback endpoints
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/feedback", "POST")
+                        ).permitAll()  // Allow unauthenticated feedback
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/feedback/admin", "GET"),
+                                new AntPathRequestMatcher("/api/v1/feedback/admin/*", "PATCH")
+                        ).hasRole("ADMIN")
+                        
+                        // Legal agreement endpoints - require authentication
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/legal/accept-organiser-agreement", "POST"),
+                                new AntPathRequestMatcher("/api/v1/legal/has-accepted-organiser-agreement", "GET"),
+                                new AntPathRequestMatcher("/api/v1/legal/accept-user-agreement", "POST"),
+                                new AntPathRequestMatcher("/api/v1/legal/has-accepted-user-agreement", "GET")
+                        ).authenticated()
+                        
+                        // Cache management endpoints - ADMIN only (development/debugging)
+                        .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/cache/**", "POST")
+                        ).hasRole("ADMIN")
+                        
                         // Organiser endpoints
                         .requestMatchers(new AntPathRequestMatcher("/api/v1/organiser/**")).hasAnyRole("ORGANISER", "ADMIN")
                         
@@ -156,8 +233,10 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/actuator/info", "GET")
                         ).permitAll()
                         
-                        // All other requests require authentication
-                        .anyRequest().authenticated()
+                        // SECURITY: Deny all other requests by default
+                        // This ensures any new endpoint must be explicitly added to security config
+                        // Better than .authenticated() which would auto-protect unknown endpoints
+                        .anyRequest().denyAll()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
