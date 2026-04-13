@@ -116,7 +116,7 @@ configuration.setAllowedHeaders(Arrays.asList(
 1. Generate strong 64+ character random secret
 2. Add to `.env.example` and `.env.local`
 3. Update `application.properties` to read from environment
-4. Set in Railway environment variables
+4. Set in Render environment variables
 
 **Commands:**
 ```bash
@@ -285,7 +285,7 @@ curl -X POST http://localhost:8080/api/v1/events \
 2. Settings → Security
 3. Click "Regenerate" for API Secret
 4. Update `backend/.env.local`
-5. Update Railway environment variables
+5. Update Render environment variables
 6. Redeploy
 
 ### 2. Generate Strong JWT Secret (15 min)
@@ -294,7 +294,7 @@ curl -X POST http://localhost:8080/api/v1/events \
 **Steps:**
 1. Generate: `openssl rand -base64 64 | tr -d '\n'`
 2. Add to `backend/.env.local`
-3. Update Railway environment variables
+3. Update Render environment variables
 4. Restart backend
 
 ### 3. Test Thoroughly
@@ -383,7 +383,7 @@ curl -X POST http://localhost:8080/api/v1/events \
 
 ### This Week:
 1. Implement token blacklisting (1-2 hours)
-2. Deploy to Railway
+2. Deploy to Render
 3. Monitor for issues
 4. Add security logging
 

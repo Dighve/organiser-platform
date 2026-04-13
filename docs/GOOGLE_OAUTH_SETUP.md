@@ -190,7 +190,7 @@ VITE_GOOGLE_CLIENT_ID=YOUR_CLIENT_ID
 
 ### Production
 
-**Backend (Railway/Render):**
+**Backend (Render):**
 ```
 GOOGLE_CLIENT_ID=your_client_id
 GOOGLE_CLIENT_SECRET=your_client_secret

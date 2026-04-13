@@ -59,7 +59,7 @@ export CLOUDINARY_API_SECRET=wXiHJlL_64SuSpyTUc7ajf8KdV4
 1. Go to https://console.cloudinary.com/
 2. Settings → Security → Regenerate API Secret
 3. Update `backend/.env.local` with new credentials
-4. Update Railway environment variables
+4. Update Render environment variables
 
 ---
 
@@ -120,7 +120,7 @@ Your Cloudinary keys might be expired. Rotate them at https://console.cloudinary
 - [ ] **Export environment variables**
 - [ ] **Test backend startup**
 - [ ] **Rotate Cloudinary keys**
-- [ ] **Update Railway environment variables**
+- [ ] **Update Render environment variables**
 
 ---
 
