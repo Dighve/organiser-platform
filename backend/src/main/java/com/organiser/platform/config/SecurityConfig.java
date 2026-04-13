@@ -142,14 +142,6 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/reviews/*/flag", "POST")
                         ).authenticated()
                         
-                        // Review write operations - require authentication
-                        .requestMatchers(
-                                new AntPathRequestMatcher("/api/v1/events/*/reviews", "POST"),
-                                new AntPathRequestMatcher("/api/v1/events/*/reviews/my-review", "GET"),
-                                new AntPathRequestMatcher("/api/v1/reviews/*", "PUT"),
-                                new AntPathRequestMatcher("/api/v1/reviews/*", "DELETE")
-                        ).authenticated()
-                        
                         // Group write operations - require authentication
                         .requestMatchers(
                                 new AntPathRequestMatcher("/api/v1/groups", "POST"),

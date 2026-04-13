@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, X, Lock, Loader } from 'lucide-react'
+import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import { commentsAPI, membersAPI } from '../lib/api'
@@ -20,7 +20,6 @@ export default function CommentSection({ eventId }) {
   const [editingReply, setEditingReply] = useState(null)
   const [editContent, setEditContent] = useState('')
   const [showAllComments, setShowAllComments] = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
   const [expandedReplies, setExpandedReplies] = useState({})
   const [showAllReplies, setShowAllReplies] = useState({})
 
@@ -186,23 +185,12 @@ export default function CommentSection({ eventId }) {
   const comments = commentsData?.data || []
   const visibleCount = 3
 
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(max-width: 768px)')
-    const update = () => setIsMobile(mediaQuery.matches)
-    update()
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', update)
-      return () => mediaQuery.removeEventListener('change', update)
-    }
-    mediaQuery.addListener(update)
-    return () => mediaQuery.removeListener(update)
-  }, [])
 
   const renderMarkdown = (text) => (
     <ReactMarkdown
       remarkPlugins={[remarkGfm]}
       components={{
-        a: ({node, ...props}) => (
+        a: ({_node, ...props}) => (
           <a
             className="text-purple-600 underline decoration-2 hover:text-pink-600"
             target="_blank"
@@ -210,10 +198,10 @@ export default function CommentSection({ eventId }) {
             {...props}
           />
         ),
-        p: ({node, ...props}) => <p className="mb-1 text-sm sm:text-base leading-relaxed" {...props} />,
-        ul: ({node, ...props}) => <ul className="list-disc ml-5 mb-1 text-sm sm:text-base" {...props} />,
-        ol: ({node, ...props}) => <ol className="list-decimal ml-5 mb-1 text-sm sm:text-base" {...props} />,
-        li: ({node, ...props}) => <li className="mb-0.5" {...props} />,
+        p: ({_node, ...props}) => <p className="mb-1 text-sm sm:text-base leading-relaxed" {...props} />,
+        ul: ({_node, ...props}) => <ul className="list-disc ml-5 mb-1 text-sm sm:text-base" {...props} />,
+        ol: ({_node, ...props}) => <ol className="list-decimal ml-5 mb-1 text-sm sm:text-base" {...props} />,
+        li: ({_node, ...props}) => <li className="mb-0.5" {...props} />,
       }}
     >
       {text}

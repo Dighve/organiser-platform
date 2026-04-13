@@ -55,8 +55,13 @@ public class ReviewNotificationScheduler {
 
             // Precise time window: event must have ended at least 24h ago and no more than 30 days ago
             long hoursElapsed = ChronoUnit.HOURS.between(eventEnd, now);
-            if (hoursElapsed < 24 || hoursElapsed > 30 * 24) {
+            if (hoursElapsed > 30 * 24) {
+                ep.setReviewPromptSent(true); // expired — stop revisiting on future runs
                 skipped++;
+                continue;
+            }
+            if (hoursElapsed < 24) {
+                skipped++; // too soon — will re-check on a future run
                 continue;
             }
 

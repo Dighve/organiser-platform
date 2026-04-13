@@ -207,10 +207,6 @@ export const eventsAPI = {
   getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),
   
   getCalendarData: (id) => api.get(`/events/public/${id}/calendar`),
-  
-  // Get events for a specific group
-  getEventsByGroup: (groupId, page = 0, size = 50) =>
-    api.get(`/events/public/group/${groupId}?page=${page}&size=${size}`),
 }
 
 // Comments API
