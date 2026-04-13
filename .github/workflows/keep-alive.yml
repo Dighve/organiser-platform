@@ -1,0 +1,22 @@
+name: Keep Render Alive
+
+on:
+  schedule:
+    # Every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Random Delay
+        run: |
+          DELAY=$((RANDOM % 120))
+          echo "Waiting ${DELAY}s..."
+          sleep $DELAY
+
+      - name: Ping Staging Backend
+        run: |
+          curl -sf --max-time 30 "${{ secrets.RENDER_STAGING_URL }}/api/v1/actuator/health" > /dev/null 2>&1 || true
