@@ -538,7 +538,7 @@ export default function HomePage() {
                           </div>
                           <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
                           {event.status === 'FULL' && (
-                            <span className="text-xs font-bold text-red-500">FULL</span>
+                            <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-bold">FULL</span>
                           )}
                         </div>
                         <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -661,7 +661,7 @@ export default function HomePage() {
                               <span>👤</span>
                               <span className="font-semibold">{event.currentParticipants}</span>
                               {event.status === 'FULL' && (
-                                <span className="text-[10px] font-bold text-red-500 ml-0.5">FULL</span>
+                                <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-bold ml-0.5">FULL</span>
                               )}
                             </div>
                           </div>
@@ -679,7 +679,7 @@ export default function HomePage() {
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
                             <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
                             {event.status === 'FULL' && (
-                              <span className="text-xs font-bold text-red-500">FULL</span>
+                              <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-bold">FULL</span>
                             )}
                           </div>
                           {/* Mobile: empty space on left */}
