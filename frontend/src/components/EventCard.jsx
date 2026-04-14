@@ -49,24 +49,24 @@ export default function EventCard({ event, isPast = false }) {
             }}
           />
         )}
-        {event.maxParticipants && event.currentParticipants >= event.maxParticipants && !isLive && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            Full
-          </div>
-        )}
-        {isLive && (
+        {/* Left badge: LIVE > FULL > Past */}
+        {isLive ? (
           <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
             <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             LIVE
           </div>
-        )}
-        {!isLive && (isPast || isPastLocal) && (
+        ) : event.maxParticipants && event.currentParticipants >= event.maxParticipants ? (
+          <div className="absolute top-2 left-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
+            Full
+          </div>
+        ) : (isPast || isPastLocal) ? (
           <div className="absolute top-2 left-2 bg-gray-700/80 text-white px-3 py-1 rounded-full text-sm font-medium">
             Past
           </div>
-        )}
+        ) : null}
+        {/* Right badge: always difficulty */}
         {event.difficultyLevel && (
-          <div className="absolute top-2 left-2 bg-white/90 px-3 py-1 rounded-full text-sm font-medium">
+          <div className="absolute top-2 right-2 bg-white/90 px-3 py-1 rounded-full text-sm font-medium">
             {event.difficultyLevel}
           </div>
         )}
