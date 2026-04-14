@@ -720,6 +720,7 @@ public class EventService {
                 .activityTypeName(activity.getName())
                 .groupId(group.getId())
                 .groupName(group.getName())
+                .groupImageUrl(group.getImageUrl())
                 .hostMemberId(hostMemberId)
                 .hostMemberName(hostMemberName)
                 .eventDate(event.getEventDate())
@@ -815,6 +816,7 @@ public class EventService {
                 .activityTypeName(activity.getName())
                 .groupId(group.getId())
                 .groupName(group.getName())
+                .groupImageUrl(group.getImageUrl())
                 .hostMemberId(hostMemberId)
                 .hostMemberName(hostMemberName)
                 .eventDate(event.getEventDate())
@@ -885,6 +887,7 @@ public class EventService {
                 .activityTypeName(activity.getName())
                 .groupId(group.getId())
                 .groupName(group.getName())
+                .groupImageUrl(group.getImageUrl())
                 .eventDate(event.getEventDate())
                 .imageUrl(null) // Hide image from non-members
                 .status(event.getStatus())

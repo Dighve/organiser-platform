@@ -1109,9 +1109,9 @@ export default function EventDetailPage() {
                 <div className="flex items-center gap-3 pl-2">
                   {/* Group banner thumbnail */}
                   <div className="w-10 h-10 flex-shrink-0 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl overflow-hidden relative">
-                    {event?.group?.bannerUrl ? (
+                    {event?.groupImageUrl ? (
                       <img
-                        src={event.group.bannerUrl}
+                        src={event.groupImageUrl}
                         alt={displayEvent.groupName}
                         className="w-full h-full object-cover"
                       />
