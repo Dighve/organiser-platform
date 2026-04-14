@@ -531,7 +531,7 @@ export default function HomePage() {
                           <div className="flex -space-x-2">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
                           </div>
-                          <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants} going</span>
+                          <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
                         </div>
                         <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -661,7 +661,7 @@ export default function HomePage() {
                           {/* Desktop: badge + text on left */}
                           <div className="hidden sm:flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
-                            <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}/{event.maxParticipants} going</span>
+                            <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
                           </div>
                           {/* Mobile: empty space on left */}
                           <div className="sm:hidden"></div>
