@@ -507,6 +507,11 @@ export default function HomePage() {
                       <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
                         {event.difficultyLevel}
                       </div>
+                      {event.status === 'FULL' && (
+                        <div className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
+                          FULL
+                        </div>
+                      )}
                     </div>
                     {/* Event Content */}
                     <div className="p-5">
@@ -532,6 +537,9 @@ export default function HomePage() {
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
                           </div>
                           <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
+                          {event.status === 'FULL' && (
+                            <span className="text-xs font-bold text-red-500">FULL</span>
+                          )}
                         </div>
                         <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -631,6 +639,11 @@ export default function HomePage() {
                         <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-purple-600 shadow-lg">
                           {event.difficultyLevel}
                         </div>
+                        {event.status === 'FULL' && (
+                          <div className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
+                            FULL
+                          </div>
+                        )}
                       </div>
                       {/* Event Content */}
                       <div className="p-5">
@@ -647,6 +660,9 @@ export default function HomePage() {
                             <div className="sm:hidden flex items-center gap-1 text-xs text-gray-600">
                               <span>👤</span>
                               <span className="font-semibold">{event.currentParticipants}</span>
+                              {event.status === 'FULL' && (
+                                <span className="text-[10px] font-bold text-red-500 ml-0.5">FULL</span>
+                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -662,6 +678,9 @@ export default function HomePage() {
                           <div className="hidden sm:flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
                             <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
+                            {event.status === 'FULL' && (
+                              <span className="text-xs font-bold text-red-500">FULL</span>
+                            )}
                           </div>
                           {/* Mobile: empty space on left */}
                           <div className="sm:hidden"></div>

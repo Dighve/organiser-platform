@@ -99,6 +99,9 @@ const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
           }`}>
             <Users className="w-3 h-3 flex-shrink-0" />
             {event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''}
+            {event.status === 'FULL' && (
+              <span className="text-[10px] font-bold text-red-500 ml-0.5">FULL</span>
+            )}
           </span>
           {showLocation && event.location && (
             <span className={`flex items-center gap-0.5 text-[11px] min-w-0 ${

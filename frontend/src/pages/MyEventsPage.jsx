@@ -215,6 +215,11 @@ export default function MyEventsPage() {
                         <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
                           👥 {event.currentParticipants}{event.maxParticipants ? ` / ${event.maxParticipants}` : ''}
                         </span>
+                        {event.status === 'FULL' && (
+                          <span className="px-3 py-1 bg-red-100 text-red-600 rounded-lg font-bold text-xs">
+                            FULL
+                          </span>
+                        )}
                         {event.cost > 0 && (
                           <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold">
                             £{event.cost.toFixed(2)}
