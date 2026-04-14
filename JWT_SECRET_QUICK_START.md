@@ -60,13 +60,13 @@ curl http://localhost:8080/api/v1/members/me \
 ### All Existing Tokens Are Invalid
 After changing JWT secret, all users need to log in again. This is expected!
 
-### For Production (Railway)
+### For Production (Render)
 Generate a **NEW** secret for production:
 ```bash
 openssl rand -base64 64 | tr -d '\n'
 ```
 
-Add to Railway environment variables:
+Add to Render environment variables:
 ```
 JWT_SECRET=<your_new_production_secret>
 ```
@@ -103,7 +103,7 @@ JWT_SECRET=<your_new_production_secret>
 - [ ] **Export JWT_SECRET** ← DO THIS
 - [ ] Test backend startup
 - [ ] Test authentication
-- [ ] Add to Railway (production)
+- [ ] Add to Render (production)
 
 ---
 

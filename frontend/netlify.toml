@@ -3,6 +3,11 @@
   publish = "dist"
   command = "npm run build"
 
+# Edge Functions for dynamic Open Graph tags
+[[edge_functions]]
+  function = "og-tags"
+  path = "/events/*"
+
 # SPA redirect rules (fallback to _redirects file)
 [[redirects]]
   from = "/assets/*"

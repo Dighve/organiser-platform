@@ -607,7 +607,7 @@ if (!request.getState().equals(session.getAttribute("oauth_state"))) {
 
 3. **Generate strong production JWT secret** ✅ Critical
    - Use `openssl rand -base64 64`
-   - Store in Railway/Netlify environment variables
+   - Store in Render/Netlify environment variables
 
 4. **Restrict CORS headers** ✅ High
    - Change from `"*"` to specific headers
@@ -665,7 +665,7 @@ if (!request.getState().equals(session.getAttribute("oauth_state"))) {
 
 ## 🎯 Production Readiness Checklist
 
-### Before Deploying to Railway/Netlify:
+### Before Deploying to Render/Netlify:
 
 - [ ] Secrets removed from build.gradle
 - [ ] Strong JWT secret generated (64+ chars)
@@ -674,10 +674,10 @@ if (!request.getState().equals(session.getAttribute("oauth_state"))) {
 - [ ] Rate limiting implemented (at least for auth endpoints)
 - [ ] Token blacklisting implemented
 - [ ] Security logging enabled
-- [ ] HTTPS enforced (Railway does this automatically)
+- [ ] HTTPS enforced (Render does this automatically)
 - [ ] Database connection encrypted
 - [ ] File upload validation added
-- [ ] Environment variables set in Railway
+- [ ] Environment variables set in Render
 - [ ] Google OAuth credentials configured for production domain
 - [ ] Cloudinary keys rotated after removing from Git
 - [ ] Security headers verified (SecurityHeadersFilter)
