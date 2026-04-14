@@ -170,6 +170,10 @@ When the user asks a question or describes a problem, **do not start implementin
 ### Only do what was asked
 Do not fix, refactor, or improve anything beyond the explicit request — even if you spot related issues. If you notice something worth fixing, mention it separately and wait to be asked. Do not bundle unrequested changes into a commit.
 
+## Activities
+
+Currently only **Hiking** is supported as an activity type. Do not suggest, display, or hardcode other activities (Cycling, Running, Swimming, Climbing, etc.) anywhere in the UI or copy unless explicitly told new activities have been added.
+
 ## Key Docs
 
 - `STARTUP_GUIDE.md` — full local setup walkthrough
