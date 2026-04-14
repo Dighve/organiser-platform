@@ -1,0 +1,22 @@
+name: Delete Feature Branch On Merge
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  delete-branch:
+    runs-on: ubuntu-latest
+    # Only run if merged AND it's not staging or main
+    if: github.event.pull_request.merged == true && 
+        github.head_ref != 'staging' && 
+        github.head_ref != 'main'
+    steps:
+      - name: Delete branch
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.git.deleteRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${context.payload.pull_request.head.ref}`
+            })
