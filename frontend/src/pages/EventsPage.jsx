@@ -87,12 +87,13 @@ export default function EventsPage() {
         return eventsAPI.getMyEvents(page, 100, hasPast)
       }
 
-      // If using tokens that require authentication (:me or :hosting), use advanced search
-      if (hasMe || hasHosting) {
+      // Any token-based search (:me, :hosting, :group, :past) uses advanced search endpoint
+      // which understands all tokens including group filtering and past events
+      if (hasMe || hasHosting || hasGroup || hasPast) {
         return eventsAPI.searchAdvancedEvents({ q: searchKeyword, page, size: 50 })
       }
 
-      // For regular search (including :group and :past tokens), use public search endpoint
+      // Plain keyword search — public search endpoint
       if (searchKeyword) {
         return eventsAPI.searchEvents(searchKeyword, page, 50)
       }
@@ -139,13 +140,14 @@ export default function EventsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           {/* ========== SEARCH RESULTS MESSAGE ========== */}
-          {searchKeyword && (
+          {plainSearch && (
             <div className="mt-4 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-purple-200">
               <p className="text-gray-700">
                 <span className="font-semibold">Searching for:</span>{' '}
-                <span className="text-purple-600 font-bold">"{searchKeyword}"</span>
+                <span className="text-purple-600 font-bold">"{plainSearch}"</span>
+                {pastOnly && <span className="ml-2 text-gray-500 text-sm">(past events)</span>}
                 {!isLoading && (
-                  <span className="ml-2 text-gray-600">- Found {events.length} event{events.length !== 1 ? 's' : ''}</span>
+                  <span className="ml-2 text-gray-600">— {events.length} event{events.length !== 1 ? 's' : ''}</span>
                 )}
               </p>
             </div>
@@ -199,8 +201,14 @@ export default function EventsPage() {
         ) : (
           <div className="bg-white/60 backdrop-blur-sm rounded-3xl p-16 text-center border border-gray-100 shadow-lg">
             <div className="text-6xl mb-4">🔍</div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">No events found</h3>
-            <p className="text-gray-600">Try a different search or browse all events.</p>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              {pastOnly && groupId ? 'No previous events yet' : 'No events found'}
+            </h3>
+            <p className="text-gray-600">
+              {pastOnly && groupId
+                ? 'This group has no past events to show.'
+                : 'Try a different search or browse all events.'}
+            </p>
           </div>
         )}
       </div>

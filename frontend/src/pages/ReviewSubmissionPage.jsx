@@ -190,10 +190,10 @@ const ReviewSubmissionPage = () => {
         </button>
 
         {/* Event Info Card */}
-        <div className="bg-white rounded-xl p-6 shadow-lg mb-6 border border-gray-100">
-          <div className="flex items-start gap-4">
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg mb-6 border border-gray-100">
+          <div className="flex items-start gap-3 sm:gap-4">
             {event.imageUrl && (
-              <div className="w-24 h-24 rounded-lg overflow-hidden flex-shrink-0">
+              <div className="w-14 h-14 sm:w-24 sm:h-24 rounded-lg overflow-hidden flex-shrink-0">
                 <img
                   src={event.imageUrl}
                   alt={event.title}
@@ -201,12 +201,12 @@ const ReviewSubmissionPage = () => {
                 />
               </div>
             )}
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{event.title}</h1>
-              <p className="text-gray-600 mb-1">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm sm:text-2xl font-bold text-gray-900 mb-1 sm:mb-2 line-clamp-2">{event.title}</h1>
+              <p className="text-xs sm:text-base text-gray-600 mb-0.5 sm:mb-1 truncate">
                 <span className="font-semibold">Group:</span> {event.group?.name}
               </p>
-              <p className="text-gray-600">
+              <p className="text-xs sm:text-base text-gray-600">
                 <span className="font-semibold">Date:</span>{' '}
                 {new Date(event.eventDate).toLocaleDateString('en-GB', {
                   weekday: 'long',
@@ -234,11 +234,11 @@ const ReviewSubmissionPage = () => {
 
         {/* Eligibility Status Banner */}
         {eligibility && (
-          <div className={`rounded-xl p-6 mb-6 border-2 ${getEligibilityClasses(eligibility)}`}>
-            <div className="flex items-start gap-4">
-              <div className="text-4xl">{getEligibilityIcon(eligibility)}</div>
+          <div className={`rounded-xl p-4 sm:p-6 mb-6 border-2 ${getEligibilityClasses(eligibility)}`}>
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="text-2xl sm:text-4xl">{getEligibilityIcon(eligibility)}</div>
               <div className="flex-1">
-                <h3 className="text-lg font-bold mb-1">
+                <h3 className="text-base sm:text-lg font-bold mb-1">
                   {eligibility.canReview ? 'Ready to Review' : 'Review Not Available'}
                 </h3>
                 <p className="text-sm font-medium">
@@ -259,9 +259,9 @@ const ReviewSubmissionPage = () => {
 
         {/* Existing Review Display or Edit Form */}
         {existingReview && !isEditMode ? (
-          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+          <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg border border-gray-100">
             <div className="mb-6">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-2">
+              <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 bg-clip-text text-transparent mb-2">
                 Your Review
               </h2>
               <p className="text-sm text-gray-600">
@@ -330,31 +330,25 @@ const ReviewSubmissionPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4">
+            <div className="flex gap-3 sm:gap-4">
               <button
                 onClick={() => setIsEditMode(true)}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg transition-all"
+                className="flex-1 px-4 sm:px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg transition-all text-sm sm:text-base"
               >
                 Edit Review
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleteReviewMutation.isPending}
-                className="px-6 py-3 border-2 border-red-300 text-red-600 font-bold rounded-xl hover:bg-red-50 hover:border-red-400 transition-all flex items-center gap-2"
+                className="px-4 sm:px-6 py-3 border-2 border-red-300 text-red-600 font-bold rounded-xl hover:bg-red-50 hover:border-red-400 transition-all flex items-center justify-center gap-2 text-sm sm:text-base"
               >
                 <Trash2 className="w-4 h-4" />
                 {deleteReviewMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>
-              <button
-                onClick={() => navigate(`/events/${eventId}`)}
-                className="px-6 py-3 border-2 border-gray-300 text-gray-700 font-bold rounded-xl hover:border-gray-400 transition-all"
-              >
-                Back to Event
-              </button>
             </div>
           </div>
         ) : canShowForm ? (
-          <div className="bg-white rounded-xl p-8 shadow-lg border border-gray-100">
+          <div className="bg-white rounded-xl p-4 sm:p-8 shadow-lg border border-gray-100">
             {isEditMode && (
               <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-900">

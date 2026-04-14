@@ -80,10 +80,9 @@ export default function PushNotificationPrompt() {
             localStorage.setItem(PUSH_SUBSCRIPTION_KEY, 'true')
             return
           } else {
-            // Permission granted but no subscription - clear localStorage and allow prompt
-            localStorage.removeItem(PUSH_SUBSCRIPTION_KEY)
-            // Continue to show prompt logic below
-            showPromptIfNeeded()
+            // Permission already granted but subscription missing — resubscribe silently
+            // without prompting the user (they already said yes in the browser)
+            subscribeToPush().catch(err => console.warn('Silent resubscribe failed:', err))
           }
         } catch (error) {
           console.warn('Could not check push subscription:', error)

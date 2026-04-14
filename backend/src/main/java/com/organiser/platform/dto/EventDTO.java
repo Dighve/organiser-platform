@@ -25,6 +25,7 @@ public class EventDTO {
     private String activityTypeName;
     private Long groupId;
     private String groupName;
+    private String groupImageUrl;
     private Long hostMemberId;
     private String hostMemberName;
     private Instant eventDate;  // UTC timestamp for proper timezone handling
