@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { groupsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
-import { Users, Search, Plus, Calendar, MapPin } from 'lucide-react'
+import { Users, Search, Plus, Calendar, MapPin, X, ArrowLeft } from 'lucide-react'
 import LoginModal from '../components/LoginModal'
 import toast from 'react-hot-toast'
 
@@ -25,6 +25,7 @@ export default function BrowseGroupsPage() {
   // LOCAL STATE
   // ============================================================
   const [searchQuery, setSearchQuery] = useState('')  // Search input for explore tab
+  const [searchOpen, setSearchOpen] = useState(false)  // Mobile search sheet
   const [activeTab, setActiveTab] = useState('explore')  // Forced to explore (tabs removed)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)  // Login modal state
   const [pendingGroupId, setPendingGroupId] = useState(null)  // Group to join after login
@@ -371,21 +372,99 @@ export default function BrowseGroupsPage() {
         </button>
       </div>
     )}
-    {/* Fixed bottom search bar (mobile only) */}
+    {/* Fixed bottom search trigger (mobile only) */}
     <div className="md:hidden fixed inset-x-0 bottom-0 z-30 px-4 pb-4 pt-3 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-12px_30px_-18px_rgba(0,0,0,0.35)]">
       <div className="max-w-7xl mx-auto">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search groups..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm sm:text-base"
-          />
+        <div
+          onClick={() => setSearchOpen(true)}
+          className="relative flex items-center cursor-text"
+        >
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
+          <div className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm flex items-center gap-2">
+            <span className="flex-1 text-sm text-gray-400 truncate">
+              {searchQuery || 'Search groups...'}
+            </span>
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setSearchQuery('') }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
+
+    {/* Mobile search bottom sheet */}
+    {searchOpen && (
+      <div className="fixed inset-0 z-50 md:hidden">
+        <div
+          className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+          onClick={() => setSearchOpen(false)}
+        />
+        <div className="fixed inset-x-0 bottom-0 bg-white rounded-t-3xl shadow-2xl flex flex-col" style={{ maxHeight: '90vh' }}>
+          {/* Drag handle */}
+          <div className="flex justify-center pt-3 pb-1">
+            <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
+          </div>
+          {/* Search input */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+            <button
+              onClick={() => setSearchOpen(false)}
+              className="p-1 text-gray-600 hover:text-gray-900 transition-colors"
+              aria-label="Close"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div className="flex-1 flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2">
+              <Search className="h-4 w-4 text-gray-400 flex-shrink-0" />
+              <input
+                autoFocus
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search groups..."
+                className="flex-1 text-base bg-transparent outline-none text-gray-900 placeholder-gray-400"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Clear"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          {/* Results */}
+          <div className="flex-1 overflow-y-auto p-4">
+            {filteredGroups.length === 0 ? (
+              <p className="text-center text-gray-500 py-8 text-sm">No groups found</p>
+            ) : (
+              <div className="space-y-1">
+                {filteredGroups.map(group => (
+                  <button
+                    key={group.id}
+                    onClick={() => { setSearchOpen(false); navigate(`/groups/${group.id}`) }}
+                    className="w-full text-left px-4 py-3 rounded-xl hover:bg-purple-50 active:bg-purple-100 transition-colors"
+                  >
+                    <p className="font-semibold text-gray-900">{group.name}</p>
+                    {group.activityName && <p className="text-sm text-purple-600">{group.activityName}</p>}
+                    {group.description && <p className="text-sm text-gray-500 line-clamp-1">{group.description}</p>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </>
   )
 }

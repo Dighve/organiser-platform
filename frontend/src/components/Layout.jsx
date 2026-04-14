@@ -15,6 +15,7 @@ import FeedbackWidget from './FeedbackWidget'
 
 export default function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [loginModalOpen, setLoginModalOpen] = useState(false)
   const [showOrganiserModal, setShowOrganiserModal] = useState(false)
@@ -146,8 +147,8 @@ export default function Layout() {
         </div>
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 gap-4">
-            {/* Logo */}
-            <div className="flex items-center flex-shrink-0">
+            {/* Logo — hidden on mobile when search is expanded */}
+            <div className={`flex items-center flex-shrink-0 ${searchOpen ? 'hidden md:flex' : 'flex'}`}>
               <Link to="/" className="flex items-center h-10">
                 {/* Modern Logo with text */}
                 <div className="flex items-center gap-3">
@@ -163,10 +164,11 @@ export default function Layout() {
               </Link>
             </div>
 
-            {/* Search Bar - Mobile & Desktop - Hide on welcome screen */}
+            {/* Search Bar - Hide on welcome screen */}
             {!(location.pathname === '/' && location.search.includes('welcome=true')) && (
-              <div className="flex-1 max-w-md mx-4 flex items-center">
-                <form onSubmit={handleSearch} className="w-full">
+              <div className={`flex items-center transition-all duration-200 ${searchOpen ? 'flex-1 mx-2' : 'flex-1 max-w-md mx-4'}`}>
+                {/* Desktop: always a real input */}
+                <form onSubmit={handleSearch} className="w-full hidden md:block">
                   <div className="relative">
                     <input
                       type="text"
@@ -188,6 +190,51 @@ export default function Layout() {
                     )}
                   </div>
                 </form>
+                {/* Mobile: tappable pill when closed, real input when expanded */}
+                {searchOpen ? (
+                  <form onSubmit={(e) => { handleSearch(e); setSearchOpen(false) }} className="w-full md:hidden">
+                    <div className="relative">
+                      <input
+                        autoFocus
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search events..."
+                        className="w-full px-4 py-1.5 text-base rounded-full border-2 border-white focus:outline-none bg-white/30 backdrop-blur-md placeholder-white/80 text-white font-medium"
+                      />
+                      {searchQuery && (
+                        <button
+                          type="button"
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition-colors"
+                          aria-label="Clear"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </form>
+                ) : (
+                  <div
+                    onClick={() => setSearchOpen(true)}
+                    className="w-full md:hidden flex items-center gap-2 px-3 py-1.5 rounded-full border-2 border-white/30 bg-white/20 backdrop-blur-md cursor-text"
+                  >
+                    <Search className="h-3.5 w-3.5 text-white/70 flex-shrink-0" />
+                    <span className="flex-1 text-sm text-white/70 font-medium truncate">
+                      {searchQuery || 'Search events...'}
+                    </span>
+                    {searchQuery && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setSearchQuery('') }}
+                        className="flex-shrink-0 text-white/70 hover:text-white transition-colors"
+                        aria-label="Clear search"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -263,21 +310,25 @@ export default function Layout() {
               )}
             </div>
             {/* Mobile actions */}
-            {isAuthenticated && (
-              <div className="md:hidden flex items-center gap-3">
+            <div className="md:hidden flex items-center gap-3 flex-shrink-0">
+              {searchOpen ? (
+                <button
+                  onClick={() => setSearchOpen(false)}
+                  className="text-white hover:text-white/80 transition-colors"
+                  aria-label="Close search"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              ) : isAuthenticated ? (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="text-white hover:text-white/80 transition-colors"
                   aria-label="Open menu"
                 >
-                  {mobileMenuOpen ? (
-                    <X className="h-6 w-6" />
-                  ) : (
-                    <Menu className="h-6 w-6" />
-                  )}
+                  {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
                 </button>
-              </div>
-            )}
+              ) : null}
+            </div>
           </div>
           {/* Mobile Navigation - side drawer */}
           {mobileMenuOpen && isAuthenticated && (
@@ -485,6 +536,14 @@ export default function Layout() {
 
       {/* Feedback floating button */}
       {isAuthenticated && <FeedbackWidget />}
+
+      {/* Mobile search backdrop — sits below the header, closes on tap */}
+      {searchOpen && (
+        <div
+          className="fixed inset-0 top-16 z-[998] bg-black/30 backdrop-blur-sm md:hidden"
+          onClick={() => setSearchOpen(false)}
+        />
+      )}
     </div>
   )
 }
