@@ -14,6 +14,17 @@ import InviteMembersModal from '../components/InviteMembersModal'
 import GroupRatingCard from '../components/GroupRatingCard'
 import GroupRatingCardMobile from '../components/GroupRatingCardMobile'
 
+function isEventLive(event) {
+  if (!event?.eventDate) return false
+  const now = new Date()
+  const start = new Date(event.eventDate)
+  let end
+  if (event.endDate) end = new Date(event.endDate)
+  else if (event.estimatedDurationHours) end = new Date(start.getTime() + event.estimatedDurationHours * 3600000)
+  else { end = new Date(start); end.setHours(23, 59, 59, 999) }
+  return start <= now && now <= end
+}
+
 // ============================================
 // CONSTANTS - Default fallback images
 // ============================================
@@ -79,6 +90,12 @@ const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
           {event.title}
         </h3>
         <div className="flex items-center gap-1.5 flex-wrap mb-1">
+          {isEventLive(event) && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold rounded-full px-1.5 py-0.5 bg-green-500 text-white">
+              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+              LIVE
+            </span>
+          )}
           {event.difficultyLevel && (
             <span className={`inline-flex items-center text-[10px] font-semibold rounded-full px-1.5 py-0.5 ${
               isPast ? 'bg-gray-100 text-gray-400' : 'bg-orange-50 text-orange-600 border border-orange-100'
@@ -98,7 +115,7 @@ const EventCard = ({ event, isPast = false, onClick, showLocation = true }) => {
             isPast ? 'text-gray-400' : 'text-gray-500'
           }`}>
             <Users className="w-3 h-3 flex-shrink-0" />
-            {event.currentParticipants}/{event.maxParticipants}
+            {event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''}
           </span>
           {showLocation && event.location && (
             <span className={`flex items-center gap-0.5 text-[11px] min-w-0 ${
