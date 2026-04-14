@@ -595,7 +595,7 @@ export default function GroupDetailPage() {
                               Past Events ({pastEvents.length})
                             </h2>
                             <button
-                              onClick={() => navigate(`/events?groupId=${id}&past=true&search=:past :group:${id}`)}
+                              onClick={() => navigate(`/events?search=:past :group:${id}`)}
                               className="flex items-center gap-2 text-sm font-semibold text-gray-600 hover:text-purple-600 px-3 py-1.5 rounded-lg border border-gray-200 hover:border-purple-300 bg-white"
                             >
                               <Search className="h-4 w-4" />
