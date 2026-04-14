@@ -7,6 +7,17 @@ import { useQuery } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
+function isEventLive(event) {
+  if (!event?.eventDate) return false
+  const now = new Date()
+  const start = new Date(event.eventDate)
+  let end
+  if (event.endDate) end = new Date(event.endDate)
+  else if (event.estimatedDurationHours) end = new Date(start.getTime() + event.estimatedDurationHours * 3600000)
+  else { end = new Date(start); end.setHours(23, 59, 59, 999) }
+  return start <= now && now <= end
+}
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -212,14 +223,17 @@ export default function MyEventsPage() {
                   
                     <div className="mt-4 pt-4 border-t border-gray-200">
                       <div className="flex justify-between items-center text-sm">
-                        <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
-                          👥 {event.currentParticipants}{event.maxParticipants ? ` / ${event.maxParticipants}` : ''}
-                        </span>
-                        {event.status === 'FULL' && (
-                          <span className="px-3 py-1 bg-red-100 text-red-600 rounded-lg font-bold text-xs">
-                            FULL
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-semibold">
+                            👥 {event.currentParticipants}{event.maxParticipants ? ` / ${event.maxParticipants}` : ''}
                           </span>
-                        )}
+                          {isEventLive(event) && (
+                            <span className="flex items-center gap-1 px-2 py-1 bg-green-500 text-white rounded-lg text-xs font-bold">
+                              <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                              LIVE
+                            </span>
+                          )}
+                        </div>
                         {event.cost > 0 && (
                           <span className="px-3 py-1 bg-green-100 text-green-700 rounded-lg font-bold">
                             £{event.cost.toFixed(2)}

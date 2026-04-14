@@ -10,6 +10,17 @@ import { useAuthStore } from '../store/authStore'
 import LoginModal from '../components/LoginModal'
 import WelcomeScreen from '../components/WelcomeScreen'
 
+function isEventLive(event) {
+  if (!event?.eventDate) return false
+  const now = new Date()
+  const start = new Date(event.eventDate)
+  let end
+  if (event.endDate) end = new Date(event.endDate)
+  else if (event.estimatedDurationHours) end = new Date(start.getTime() + event.estimatedDurationHours * 3600000)
+  else { end = new Date(start); end.setHours(23, 59, 59, 999) }
+  return start <= now && now <= end
+}
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -507,11 +518,16 @@ export default function HomePage() {
                       <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600 shadow-lg">
                         {event.difficultyLevel}
                       </div>
-                      {event.status === 'FULL' && (
+                      {isEventLive(event) ? (
+                        <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold shadow-lg">
+                          <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                          LIVE
+                        </div>
+                      ) : event.maxParticipants && event.currentParticipants >= event.maxParticipants ? (
                         <div className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
                           FULL
                         </div>
-                      )}
+                      ) : null}
                     </div>
                     {/* Event Content */}
                     <div className="p-5">
@@ -537,9 +553,6 @@ export default function HomePage() {
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
                           </div>
                           <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
-                          {event.status === 'FULL' && (
-                            <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-bold">FULL</span>
-                          )}
                         </div>
                         <svg className="w-5 h-5 text-orange-600 group-hover:translate-x-1 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -639,11 +652,16 @@ export default function HomePage() {
                         <div className="absolute top-3 right-3 px-3 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-purple-600 shadow-lg">
                           {event.difficultyLevel}
                         </div>
-                        {event.status === 'FULL' && (
+                        {isEventLive(event) ? (
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5 px-3 py-1 bg-green-500 text-white rounded-full text-xs font-bold shadow-lg">
+                            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                            LIVE
+                          </div>
+                        ) : event.maxParticipants && event.currentParticipants >= event.maxParticipants ? (
                           <div className="absolute top-3 left-3 px-3 py-1 bg-red-500 text-white rounded-full text-xs font-bold shadow-lg">
                             FULL
                           </div>
-                        )}
+                        ) : null}
                       </div>
                       {/* Event Content */}
                       <div className="p-5">
@@ -660,9 +678,6 @@ export default function HomePage() {
                             <div className="sm:hidden flex items-center gap-1 text-xs text-gray-600">
                               <span>👤</span>
                               <span className="font-semibold">{event.currentParticipants}</span>
-                              {event.status === 'FULL' && (
-                                <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded-full text-[10px] font-bold ml-0.5">FULL</span>
-                              )}
                             </div>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -678,9 +693,6 @@ export default function HomePage() {
                           <div className="hidden sm:flex items-center gap-2">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-white flex items-center justify-center text-white text-xs font-bold">{event.currentParticipants}</div>
                             <span className="text-sm text-gray-600 font-medium">{event.currentParticipants}{event.maxParticipants ? `/${event.maxParticipants}` : ''} going</span>
-                            {event.status === 'FULL' && (
-                              <span className="px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-bold">FULL</span>
-                            )}
                           </div>
                           {/* Mobile: empty space on left */}
                           <div className="sm:hidden"></div>

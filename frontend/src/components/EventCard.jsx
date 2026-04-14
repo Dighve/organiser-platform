@@ -8,6 +8,15 @@ export default function EventCard({ event, isPast = false }) {
   const formattedDate = format(new Date(event.eventDate), 'MMM dd, yyyy')
   const formattedTime = format(new Date(event.eventDate), 'h:mm a')
   const isPastLocal = new Date(event.eventDate) < new Date()
+  const now = new Date()
+  const eventStart = event.eventDate ? new Date(event.eventDate) : null
+  const eventEnd = (() => {
+    if (event.endDate) return new Date(event.endDate)
+    if (event.estimatedDurationHours && eventStart) return new Date(eventStart.getTime() + event.estimatedDurationHours * 60 * 60 * 1000)
+    if (!eventStart) return null
+    const d = new Date(eventStart); d.setHours(23, 59, 59, 999); return d
+  })()
+  const isLive = eventStart && eventEnd ? eventStart <= now && now <= eventEnd : false
   const [imageError, setImageError] = useState(false)
   const [imageLoaded, setImageLoaded] = useState(false)
   const { isEventLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
@@ -40,12 +49,18 @@ export default function EventCard({ event, isPast = false }) {
             }}
           />
         )}
-        {event.status === 'FULL' && (
+        {event.maxParticipants && event.currentParticipants >= event.maxParticipants && !isLive && (
           <div className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
             Full
           </div>
         )}
-        {(isPast || isPastLocal) && (
+        {isLive && (
+          <div className="absolute top-2 left-2 flex items-center gap-1.5 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">
+            <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+            LIVE
+          </div>
+        )}
+        {!isLive && (isPast || isPastLocal) && (
           <div className="absolute top-2 left-2 bg-gray-700/80 text-white px-3 py-1 rounded-full text-sm font-medium">
             Past
           </div>
