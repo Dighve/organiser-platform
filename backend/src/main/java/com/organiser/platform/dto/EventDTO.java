@@ -40,6 +40,7 @@ public class EventDTO {
     private BigDecimal price;
     private Event.EventStatus status;
     private Event.DifficultyLevel difficultyLevel;
+    private Event.PaceLevel paceLevel;
     private BigDecimal distanceKm;
     private Integer elevationGainM;
     private BigDecimal estimatedDurationHours;
