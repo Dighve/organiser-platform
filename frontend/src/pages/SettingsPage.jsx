@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSmartBack } from '../hooks/useSmartBack'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, Trash2, Shield, ArrowLeft, Users, Calendar, Bell } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -8,6 +9,7 @@ import { useAuthStore } from '../store/authStore'
 
 export default function SettingsPage() {
   const navigate = useNavigate()
+  const goBack = useSmartBack('/profile')
   const queryClient = useQueryClient()
   const { logout } = useAuthStore()
   const [deleting, setDeleting] = useState(false)
@@ -90,7 +92,7 @@ export default function SettingsPage() {
     <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-br from-slate-50 via-purple-50/20 to-pink-50/10">
       <div className="max-w-4xl mx-auto px-4 py-10 sm:py-14">
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="inline-flex items-center gap-2 text-sm font-semibold text-purple-700 hover:text-pink-700 mb-6"
         >
           <ArrowLeft className="h-4 w-4" /> Back

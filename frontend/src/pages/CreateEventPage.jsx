@@ -14,6 +14,7 @@ import MemberAutocomplete from '../components/MemberAutocomplete'
 import ImageUpload from '../components/ImageUpload'
 import MarkdownEditor from '../components/MarkdownEditor'
 import { useAuthStore } from '../store/authStore'
+import { useSmartBack } from '../hooks/useSmartBack'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import ReactMarkdown from 'react-markdown'
 
@@ -136,6 +137,7 @@ export default function CreateEventPage() {
   // HOOKS & ROUTING
   // ============================================================
   const navigate = useNavigate()
+  const goBack = useSmartBack('/')
   const [searchParams] = useSearchParams()
   const location = useLocation()
   const queryClient = useQueryClient()
@@ -535,7 +537,7 @@ export default function CreateEventPage() {
     <div className="flex-none flex items-center gap-3 px-4 py-3.5 bg-white border-b border-gray-100">
       <button
         type="button"
-        onClick={currentStep === 0 ? () => navigate(-1) : prevStep}
+        onClick={currentStep === 0 ? goBack : prevStep}
         className="flex items-center gap-1 text-sm text-gray-500 font-semibold -ml-1 py-1 pr-2 active:opacity-60"
       >
         <ArrowLeft className="h-4 w-4" />

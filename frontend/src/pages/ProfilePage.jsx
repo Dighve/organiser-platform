@@ -11,6 +11,7 @@ import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Ca
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useIsIOS } from '../hooks/useIsIOS'
+import { useSmartBack } from '../hooks/useSmartBack'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
@@ -25,6 +26,7 @@ export default function ProfilePage() {
   const { user, isAuthenticated, logout, token } = useAuthStore()  // Global auth state
   const queryClient = useQueryClient()  // React Query cache
   const isIOS = useIsIOS()  // Detect iOS devices
+  const goBack = useSmartBack('/')  // Smart back navigation
   
   // ============================================================
   // LOCAL STATE
@@ -299,7 +301,7 @@ export default function ProfilePage() {
         {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
         {isIOS && (
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
           >
             <ArrowLeft className="h-5 w-5" />

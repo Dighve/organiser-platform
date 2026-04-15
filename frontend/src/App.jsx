@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 import PushNotificationPrompt from './components/PushNotificationPrompt'
 import { trackPageView, identifyUser, resetUser } from './lib/analytics'
+import { incrementNavigationCount } from './hooks/useSmartBack'
 import ErrorBoundary from './components/ErrorBoundary'
 
 // Critical pages - loaded immediately
@@ -100,6 +101,7 @@ function RouteTracker() {
 
   useEffect(() => {
     trackPageView(getPageName(pathname))
+    incrementNavigationCount()
   }, [pathname])
 
   return null
