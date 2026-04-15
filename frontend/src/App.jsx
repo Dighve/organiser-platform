@@ -25,6 +25,7 @@ const TransferOwnershipPage = lazy(() => import('./pages/TransferOwnershipPage')
 const GroupDetailPage = lazy(() => import('./pages/GroupDetailPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const HikingGradeFAQPage = lazy(() => import('./pages/HikingGradeFAQPage'))
+const PaceFAQPage = lazy(() => import('./pages/PaceFAQPage'))
 const MemberDetailPage = lazy(() => import('./pages/MemberDetailPage'))
 const AdminDashboardPage = lazy(() => import('./pages/AdminDashboardPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
@@ -79,6 +80,7 @@ const PAGE_NAMES = {
   '/notifications': 'Notifications',
   '/admin': 'Admin',
   '/hiking-grade-faq': 'Hiking Grade FAQ',
+  '/pace-faq': 'Pace FAQ',
   '/auth/verify': 'Verify Magic Link',
 }
 
@@ -239,6 +241,11 @@ function App() {
         <Route path="hiking-grade-faq" element={
           <Suspense fallback={<PageLoader />}>
             <HikingGradeFAQPage />
+          </Suspense>
+        } />
+        <Route path="pace-faq" element={
+          <Suspense fallback={<PageLoader />}>
+            <PaceFAQPage />
           </Suspense>
         } />
         <Route path="groups/:id" element={
