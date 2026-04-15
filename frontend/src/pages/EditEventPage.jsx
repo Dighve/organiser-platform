@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package, X, Camera, ChevronDown, FileText, MessageSquare } from 'lucide-react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
 import toast from 'react-hot-toast'
@@ -42,6 +42,14 @@ const DIFFICULTY_OPTIONS = [
   { value: 'EXPERT', label: 'Expert', description: 'Very challenging, technical terrain', icon: '🔴' }
 ]
 
+// Pace level options with visual indicators
+const PACE_OPTIONS = [
+  { value: 'LEISURELY', label: 'Leisurely', description: 'Relaxed, frequent stops, social', icon: '🐢' },
+  { value: 'STEADY', label: 'Steady', description: 'Comfortable pace, regular breaks', icon: '🚶' },
+  { value: 'BRISK', label: 'Brisk', description: 'Purposeful, stops at key points only', icon: '🏃' },
+  { value: 'FAST', label: 'Fast', description: 'Demanding, very few stops', icon: '⚡' }
+]
+
 // ============================================================
 // MAIN COMPONENT
 // ============================================================
@@ -75,6 +83,7 @@ export default function EditEventPage() {
   const watchedHostName = watch('hostName')
   const watchedDescription = watch('description', '')
   const watchedDifficultyLevel = watch('difficultyLevel')
+  const watchedPaceLevel = watch('paceLevel')
   const selectedDate = watch('eventDate')
   const selectedEndDate = watch('endDate')
   
@@ -132,6 +141,7 @@ export default function EditEventPage() {
         maxParticipants: event.maxParticipants,
         price: event.price || 0,
         difficultyLevel: event.difficultyLevel,
+        paceLevel: event.paceLevel,
         distanceKm: event.distanceKm,
         elevationGainM: event.elevationGainM,
         imageUrl: event.imageUrl,
@@ -234,6 +244,7 @@ export default function EditEventPage() {
       minParticipants: 1,
       price: data.price ? Number(data.price) : 0,
       difficultyLevel: data.difficultyLevel || null,
+      paceLevel: data.paceLevel || null,
       distanceKm: data.distanceKm ? Number(data.distanceKm) : null,
       elevationGainM: data.elevationGainM ? Number(data.elevationGainM) : null,
       estimatedDurationHours: null,
@@ -598,6 +609,41 @@ export default function EditEventPage() {
         </div>
       </div>
 
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Pace</label>
+          <Link
+            to="/pace-faq"
+            className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+          >
+            <Info className="h-3.5 w-3.5" />
+            What do these mean?
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          {PACE_OPTIONS.map(opt => {
+            const selected = watchedPaceLevel === opt.value
+            const colorMap = {
+              LEISURELY: selected ? 'bg-purple-500 border-purple-500 text-white shadow-lg shadow-purple-200' : 'bg-white border-gray-200 text-gray-700',
+              STEADY: selected ? 'bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-200 text-gray-700',
+              BRISK: selected ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-200' : 'bg-white border-gray-200 text-gray-700',
+              FAST: selected ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-200' : 'bg-white border-gray-200 text-gray-700',
+            }
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { setValue('paceLevel', opt.value); updateFormData({ paceLevel: opt.value }) }}
+                className={`py-3.5 px-4 rounded-2xl border-2 font-semibold text-sm flex items-center gap-2.5 transition-all active:scale-95 ${colorMap[opt.value]}`}
+              >
+                <span className="text-base">{opt.icon}</span>
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Distance (km)</label>
@@ -760,6 +806,11 @@ export default function EditEventPage() {
         <div className="flex flex-wrap gap-2">
           {formData.difficultyLevel && (
             <span className="px-2.5 py-1 bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold rounded-lg">{formData.difficultyLevel}</span>
+          )}
+          {formData.paceLevel && (
+            <span className="px-2.5 py-1 bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold rounded-lg">
+              {PACE_OPTIONS.find(o => o.value === formData.paceLevel)?.icon} {formData.paceLevel}
+            </span>
           )}
           {formData.distanceKm && (
             <span className="px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold rounded-lg">{formData.distanceKm} km</span>
@@ -1303,6 +1354,48 @@ export default function EditEventPage() {
                   </div>
               </div>
 
+              {/* ========== PACE LEVEL ========== */}
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-6 border-2 border-purple-200">
+                <div className="flex items-center justify-between mb-4">
+                  <label className="block text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <Timer className="h-5 w-5 text-purple-600" />
+                    Pace
+                  </label>
+                  <Link
+                    to="/pace-faq"
+                    className="flex items-center gap-1 text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+                  >
+                    <Info className="h-4 w-4" />
+                    What do these mean?
+                  </Link>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {PACE_OPTIONS.map((option) => (
+                    <label
+                      key={option.value}
+                      className={`
+                        relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all
+                        ${watchedPaceLevel === option.value
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300'}
+                      `}
+                    >
+                      <input
+                        type="radio"
+                        {...register('paceLevel')}
+                        value={option.value}
+                        className="sr-only"
+                      />
+                      <span className="text-2xl mr-3">{option.icon}</span>
+                      <div>
+                        <div className="font-bold text-gray-900">{option.label}</div>
+                        <div className="text-xs text-gray-600">{option.description}</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               {/* ========== TRAIL STATISTICS (Optional) ========== */}
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border-2 border-blue-200">
                 <h3 className="font-bold text-gray-900 text-lg mb-5 flex items-center gap-2">
@@ -1559,6 +1652,11 @@ export default function EditEventPage() {
                       {formData.difficultyLevel && (
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <span className="font-semibold">Difficulty:</span> {formData.difficultyLevel}
+                        </div>
+                      )}
+                      {formData.paceLevel && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Pace:</span> {PACE_OPTIONS.find(o => o.value === formData.paceLevel)?.icon} {formData.paceLevel}
                         </div>
                       )}
                       {formData.distanceKm && (

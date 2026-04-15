@@ -250,9 +250,17 @@ export default function GroupDetailPage() {
   })
   
   // Split events into upcoming and past for easier rendering
+  // An event is only past once its effective end time has passed (same logic as home screen)
   const now = new Date()
-  const upcomingEvents = groupEvents.filter(event => new Date(event.eventDate) >= now)
-  const pastEvents = groupEvents.filter(event => new Date(event.eventDate) < now)
+  const getEffectiveEnd = (event) => {
+    const start = event.eventDate ? new Date(event.eventDate) : null
+    if (!start) return null
+    if (event.endDate) return new Date(event.endDate)
+    if (event.estimatedDurationHours) return new Date(start.getTime() + event.estimatedDurationHours * 3600000)
+    const d = new Date(start); d.setHours(23, 59, 59, 999); return d
+  }
+  const upcomingEvents = groupEvents.filter(event => { const end = getEffectiveEnd(event); return end ? end >= now : true })
+  const pastEvents = groupEvents.filter(event => { const end = getEffectiveEnd(event); return end ? end < now : false })
 
   // ============================================
   // MUTATIONS - API calls that change data
