@@ -4,6 +4,7 @@ import com.organiser.platform.dto.MemberDTO;
 import com.organiser.platform.dto.UpdateMemberProfileRequest;
 import com.organiser.platform.model.Member;
 import com.organiser.platform.service.MemberService;
+import com.organiser.platform.service.MemberSettingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,13 +12,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/members")
 @RequiredArgsConstructor
 public class MemberController {
-    
+
     private final MemberService memberService;
+    private final MemberSettingService memberSettingService;
     
     @PostMapping("/become-organiser")
     public ResponseEntity<Member> becomeOrganiser(Authentication authentication) {
@@ -82,11 +86,11 @@ public class MemberController {
     }
     
     /**
-     * Update email notification preferences
+     * Update master email notifications toggle
      */
     @PutMapping("/me/email-notifications")
     public ResponseEntity<Void> updateEmailNotifications(
-            @RequestBody java.util.Map<String, Boolean> request,
+            @RequestBody Map<String, Boolean> request,
             Authentication authentication) {
         Long userId = getUserIdFromAuth(authentication);
         Boolean enabled = request.get("enabled");
@@ -95,6 +99,28 @@ public class MemberController {
         }
         memberService.updateEmailNotifications(userId, enabled);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Get all notification sub-settings for the current member.
+     * Returns a map of key → boolean (missing keys default to true).
+     */
+    @GetMapping("/me/settings")
+    public ResponseEntity<Map<String, Boolean>> getSettings(Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(memberSettingService.getSettings(userId));
+    }
+
+    /**
+     * Update one or more notification sub-settings.
+     * Accepts a map of key → boolean, e.g. {"email.invitations": false}
+     */
+    @PutMapping("/me/settings")
+    public ResponseEntity<Map<String, Boolean>> updateSettings(
+            @RequestBody Map<String, Boolean> updates,
+            Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(memberSettingService.updateSettings(userId, updates));
     }
     
     private Long getUserIdFromAuth(Authentication authentication) {

@@ -291,6 +291,10 @@ export const membersAPI = {
 
   updateEmailNotifications: (enabled) => api.put('/members/me/email-notifications', { enabled }),
 
+  getSettings: () => api.get('/members/me/settings'),
+
+  updateSettings: (updates) => api.put('/members/me/settings', updates),
+
   deleteProfile: () => api.delete('/members/me'),
 }
 

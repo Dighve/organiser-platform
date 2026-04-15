@@ -173,6 +173,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/members/me/events", "GET"),
                                 new AntPathRequestMatcher("/api/v1/members/me/groups", "GET"),
                                 new AntPathRequestMatcher("/api/v1/members/me/email-notifications", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/me/settings", "GET"),
+                                new AntPathRequestMatcher("/api/v1/members/me/settings", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/members/become-organiser", "POST"),
                                 new AntPathRequestMatcher("/api/v1/members", "GET")
                         ).authenticated()

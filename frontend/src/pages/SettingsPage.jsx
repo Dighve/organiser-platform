@@ -7,6 +7,24 @@ import toast from 'react-hot-toast'
 import { membersAPI, groupsAPI, eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 
+function Toggle({ checked, onChange, disabled }) {
+  return (
+    <button
+      onClick={onChange}
+      disabled={disabled}
+      className={`relative inline-flex h-8 w-14 shrink-0 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 ${
+        checked ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-300'
+      }`}
+    >
+      <span
+        className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${
+          checked ? 'translate-x-7' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  )
+}
+
 export default function SettingsPage() {
   const navigate = useNavigate()
   const goBack = useSmartBack('/profile')
@@ -17,6 +35,11 @@ export default function SettingsPage() {
   const { data: memberData, isLoading: memberLoading } = useQuery({
     queryKey: ['currentMember'],
     queryFn: () => membersAPI.getCurrentMember().then(res => res.data),
+  })
+
+  const { data: settings, isLoading: settingsLoading } = useQuery({
+    queryKey: ['memberSettings'],
+    queryFn: () => membersAPI.getSettings().then(res => res.data),
   })
 
   const { data: organisedGroupsData } = useQuery({
@@ -35,6 +58,17 @@ export default function SettingsPage() {
     mutationFn: (enabled) => membersAPI.updateEmailNotifications(enabled),
     onSuccess: () => {
       queryClient.invalidateQueries(['currentMember'])
+      toast.success('Email notification preferences updated')
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to update preferences')
+    },
+  })
+
+  const updateSettingMutation = useMutation({
+    mutationFn: (updates) => membersAPI.updateSettings(updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['memberSettings'])
       toast.success('Email notification preferences updated')
     },
     onError: (error) => {
@@ -100,37 +134,59 @@ export default function SettingsPage() {
 
         {/* Email Notifications Section */}
         <div className="bg-white/90 backdrop-blur shadow-xl rounded-3xl border border-slate-100 p-6 sm:p-10 mb-6">
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <Bell className="h-6 w-6 text-purple-600 mt-1" />
-              <div className="flex-1">
-                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-2">Email Notifications</h2>
-                <p className="text-slate-600 text-sm sm:text-base mb-4">
-                  Receive email notifications when you're invited to events or groups.
+          <div className="flex items-start gap-3">
+            <Bell className="h-6 w-6 text-purple-600 mt-1 shrink-0" />
+            <div className="flex-1 space-y-4">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-1">Email Notifications</h2>
+                <p className="text-slate-600 text-sm sm:text-base">
+                  Control which emails OutMeets sends you.
                 </p>
-                
-                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
-                  <div className="flex-1">
-                    <p className="font-semibold text-slate-900">Invitation Emails</p>
-                    <p className="text-sm text-slate-600">Get notified when someone invites you</p>
-                  </div>
-                  <button
-                    onClick={() => updateEmailNotificationsMutation.mutate(!memberData?.emailNotificationsEnabled)}
-                    disabled={updateEmailNotificationsMutation.isLoading || memberLoading}
-                    className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 ${
-                      memberData?.emailNotificationsEnabled
-                        ? 'bg-gradient-to-r from-purple-600 to-pink-600'
-                        : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-6 w-6 transform rounded-full bg-white shadow-lg transition-transform ${
-                        memberData?.emailNotificationsEnabled ? 'translate-x-7' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
               </div>
+
+              {/* Master toggle */}
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
+                <div className="flex-1">
+                  <p className="font-semibold text-slate-900">All email notifications</p>
+                  <p className="text-sm text-slate-600">Master switch — turns all emails on or off</p>
+                </div>
+                <Toggle
+                  checked={!!memberData?.emailNotificationsEnabled}
+                  disabled={updateEmailNotificationsMutation.isLoading || memberLoading}
+                  onChange={() => updateEmailNotificationsMutation.mutate(!memberData?.emailNotificationsEnabled)}
+                />
+              </div>
+
+              {/* Sub-settings — only shown when master is on */}
+              {memberData?.emailNotificationsEnabled && (
+                <div className="pl-2 space-y-3">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">Individual emails</p>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-900">Invitations</p>
+                      <p className="text-sm text-slate-600">When someone invites you to an event or group</p>
+                    </div>
+                    <Toggle
+                      checked={settings?.['email.invitations'] ?? true}
+                      disabled={updateSettingMutation.isLoading || settingsLoading}
+                      onChange={() => updateSettingMutation.mutate({ 'email.invitations': !(settings?.['email.invitations'] ?? true) })}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <div className="flex-1">
+                      <p className="font-semibold text-slate-900">Review prompts</p>
+                      <p className="text-sm text-slate-600">Feedback requests after an event</p>
+                    </div>
+                    <Toggle
+                      checked={settings?.['email.reviews'] ?? true}
+                      disabled={updateSettingMutation.isLoading || settingsLoading}
+                      onChange={() => updateSettingMutation.mutate({ 'email.reviews': !(settings?.['email.reviews'] ?? true) })}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
