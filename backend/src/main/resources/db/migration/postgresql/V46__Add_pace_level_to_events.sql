@@ -1,0 +1,1 @@
+ALTER TABLE events ADD COLUMN pace_level VARCHAR(50);

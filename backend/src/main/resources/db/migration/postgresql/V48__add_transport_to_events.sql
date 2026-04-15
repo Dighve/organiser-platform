@@ -1,9 +1,9 @@
 -- Add structured transport/logistics fields to events
-ALTER TABLE events ADD COLUMN transport_detail_mode VARCHAR(20) DEFAULT 'FREEFORM';
-ALTER TABLE events ADD COLUMN transport_notes TEXT;
+ALTER TABLE events ADD COLUMN IF NOT EXISTS transport_detail_mode VARCHAR(20) DEFAULT 'FREEFORM';
+ALTER TABLE events ADD COLUMN IF NOT EXISTS transport_notes TEXT;
 
--- Transport legs: one OUTBOUND and one RETURN per event (direction-keyed)
-CREATE TABLE event_transport_legs (
+-- Transport legs table
+CREATE TABLE IF NOT EXISTS event_transport_legs (
     id                  BIGSERIAL PRIMARY KEY,
     event_id            BIGINT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     direction           VARCHAR(10) NOT NULL,   -- OUTBOUND | RETURN
@@ -17,4 +17,4 @@ CREATE TABLE event_transport_legs (
     sort_order          INT DEFAULT 0
 );
 
-CREATE INDEX idx_transport_legs_event ON event_transport_legs(event_id);
+CREATE INDEX IF NOT EXISTS idx_transport_legs_event ON event_transport_legs(event_id);
