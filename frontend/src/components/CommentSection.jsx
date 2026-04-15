@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader } from 'lucide-react'
+import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader, X } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import { commentsAPI, membersAPI } from '../lib/api'
@@ -16,6 +16,8 @@ export default function CommentSection({ eventId }) {
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState(null)
   const [replyContent, setReplyContent] = useState('')
+  const [commentModalOpen, setCommentModalOpen] = useState(false)
+  const [replyModalComment, setReplyModalComment] = useState(null)
   const [editingComment, setEditingComment] = useState(null)
   const [editingReply, setEditingReply] = useState(null)
   const [editContent, setEditContent] = useState('')
@@ -217,37 +219,50 @@ export default function CommentSection({ eventId }) {
 
       {/* New Comment Form */}
       {isAuthenticated ? (
-        <form onSubmit={handleCreateComment} className="mb-6">
-          <div className="flex items-end gap-3">
+        <>
+          {/* Mobile: tappable pill → fixed bottom bar (hidden while bar is open) */}
+          {!commentModalOpen && <div
+            onClick={() => setCommentModalOpen(true)}
+            className="lg:hidden mb-6 flex items-center gap-3 cursor-text"
+          >
             <ProfileAvatar member={currentMemberData} size="md" />
-            <div className="flex-1">
-              <div className={`flex items-end gap-2 bg-white border-2 border-gray-200 px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all ${newComment.trim().length > 0 ? 'rounded-2xl' : 'rounded-full'}`}>
-                <textarea
-                  value={newComment}
-                  onChange={(e) => {
-                    setNewComment(e.target.value)
-                    e.target.style.height = 'auto'
-                    e.target.style.height = `${e.target.scrollHeight}px`
-                  }}
-                  placeholder="Add a comment"
-                  rows={1}
-                  className="flex-1 bg-transparent outline-none text-sm sm:text-base resize-none overflow-hidden"
-                  style={{ minHeight: '1.5rem' }}
-                />
-                {newComment.trim().length > 0 && (
-                  <button
-                    type="submit"
-                    disabled={createCommentMutation.isLoading}
-                    className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50"
-                    aria-label="Send comment"
-                  >
-                    {createCommentMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </button>
-                )}
+            <div className="flex-1 flex items-center bg-white border-2 border-gray-200 rounded-full px-4 py-2">
+              <span className="text-sm text-gray-400">Add a comment</span>
+            </div>
+          </div>}
+          {/* Desktop: inline form */}
+          <form onSubmit={handleCreateComment} className="hidden lg:block mb-6">
+            <div className="flex items-end gap-3">
+              <ProfileAvatar member={currentMemberData} size="md" />
+              <div className="flex-1">
+                <div className={`flex items-end gap-2 bg-white border-2 border-gray-200 px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all ${newComment.trim().length > 0 ? 'rounded-2xl' : 'rounded-full'}`}>
+                  <textarea
+                    value={newComment}
+                    onChange={(e) => {
+                      setNewComment(e.target.value)
+                      e.target.style.height = 'auto'
+                      e.target.style.height = `${e.target.scrollHeight}px`
+                    }}
+                    placeholder="Add a comment"
+                    rows={1}
+                    className="flex-1 bg-transparent outline-none text-sm sm:text-base resize-none overflow-hidden"
+                    style={{ minHeight: '1.5rem' }}
+                  />
+                  {newComment.trim().length > 0 && (
+                    <button
+                      type="submit"
+                      disabled={createCommentMutation.isLoading}
+                      className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-50"
+                      aria-label="Send comment"
+                    >
+                      {createCommentMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </>
       ) : (
         <div className="mb-8 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl border border-purple-100">
           <p className="text-gray-600 text-center">
@@ -310,7 +325,7 @@ export default function CommentSection({ eventId }) {
                     <ProfileAvatar member={commentMember} size="md" />
                   )}
                   <div className="flex-1 min-w-0">
-                    <div className="bg-gradient-to-r from-purple-50/50 to-pink-50/50 rounded-xl p-4 border border-purple-100/50 relative">
+                    <div className="relative py-1">
                       <div className="flex items-start justify-between gap-2 mb-2">
                         <div>
                           {commentLink ? (
@@ -380,22 +395,34 @@ export default function CommentSection({ eventId }) {
                       )}
 
                       {isAuthenticated && editingComment !== comment.id && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (replyingTo === comment.id) {
-                              setReplyingTo(null)
-                              setReplyContent('')
-                            } else {
-                              setReplyingTo(comment.id)
-                              setReplyContent('')
-                            }
-                          }}
-                          className="absolute right-2 bottom-2 h-8 w-8 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-purple-600 hover:border-purple-200 transition-colors flex items-center justify-center"
-                          aria-label="Reply"
-                        >
-                          <CornerDownRight className="h-4 w-4 transform -rotate-180" />
-                        </button>
+                        <>
+                          {/* Mobile: fixed bottom bar */}
+                          <button
+                            type="button"
+                            onClick={() => { setReplyModalComment(comment.id); setReplyContent('') }}
+                            className="lg:hidden absolute right-2 bottom-2 h-8 w-8 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-purple-600 hover:border-purple-200 transition-colors flex items-center justify-center"
+                            aria-label="Reply"
+                          >
+                            <CornerDownRight className="h-4 w-4 transform -rotate-180" />
+                          </button>
+                          {/* Desktop: inline */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (replyingTo === comment.id) {
+                                setReplyingTo(null)
+                                setReplyContent('')
+                              } else {
+                                setReplyingTo(comment.id)
+                                setReplyContent('')
+                              }
+                            }}
+                            className="hidden lg:flex absolute right-2 bottom-2 h-8 w-8 rounded-full bg-white border border-gray-200 text-gray-600 hover:text-purple-600 hover:border-purple-200 transition-colors items-center justify-center"
+                            aria-label="Reply"
+                          >
+                            <CornerDownRight className="h-4 w-4 transform -rotate-180" />
+                          </button>
+                        </>
                       )}
                     </div>
 
@@ -427,7 +454,7 @@ export default function CommentSection({ eventId }) {
                                         email: reply.memberEmail,
                                         profilePhotoUrl: reply.memberPhotoUrl,
                                       }}
-                                      size="sm"
+                                      size="xs"
                                     />
                                   </Link>
                                 ) : (
@@ -441,7 +468,7 @@ export default function CommentSection({ eventId }) {
                                   />
                                 )}
                                 <div className="flex-1 min-w-0">
-                                  <div className="bg-white/80 rounded-lg p-3 border border-gray-200">
+                                  <div className="py-1">
                                     <div className="flex items-start justify-between gap-2 mb-1">
                                       <div>
                                         {!reply.deleted && reply.memberId ? (
@@ -454,7 +481,7 @@ export default function CommentSection({ eventId }) {
                                         ) : (
                                           <h5 className="font-semibold text-gray-900 text-sm">{reply.memberName}</h5>
                                         )}
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-xs text-gray-500 whitespace-nowrap">
                                           {formatDistanceToNow(new Date(reply.createdAt), { addSuffix: true })}
                                           {reply.edited && <span className="ml-1">(edited)</span>}
                                         </p>
@@ -539,25 +566,31 @@ export default function CommentSection({ eventId }) {
 
                     {/* Reply Input */}
                     {isAuthenticated && editingComment !== comment.id && replyingTo === comment.id && (
-                      <form onSubmit={(e) => handleCreateReply(e, comment.id)} className="mt-2 ml-4">
-                        <div className="flex items-center gap-2 bg-white border-2 border-gray-200 rounded-full px-3 py-1.5 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all">
+                      <form onSubmit={(e) => handleCreateReply(e, comment.id)} className="hidden lg:block mt-2 ml-4">
+                        <div className="flex items-center gap-2 bg-white border-2 border-purple-400 ring-2 ring-purple-200 rounded-2xl px-3 py-1.5 transition-all">
                           <input
                             value={replyContent}
                             onChange={(e) => setReplyContent(e.target.value)}
                             placeholder="Write a reply..."
-                            className="flex-1 bg-transparent outline-none text-sm"
+                            className="flex-1 bg-transparent outline-none text-base"
                             autoFocus
                           />
-                          {replyContent.trim().length > 0 && (
-                            <button
-                              type="submit"
-                              disabled={createReplyMutation.isLoading}
-                              className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg transition-all disabled:opacity-50"
-                              aria-label="Send reply"
-                            >
-                              {createReplyMutation.isLoading ? <Loader className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => { setReplyingTo(null); setReplyContent('') }}
+                            className="h-7 w-7 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center flex-shrink-0"
+                            aria-label="Cancel"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={!replyContent.trim() || createReplyMutation.isLoading}
+                            className="h-7 w-7 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg transition-all disabled:opacity-40 flex-shrink-0"
+                            aria-label="Send reply"
+                          >
+                            {createReplyMutation.isLoading ? <Loader className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                          </button>
                         </div>
                       </form>
                     )}
@@ -578,6 +611,66 @@ export default function CommentSection({ eventId }) {
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Mobile: fixed input bar attached to keyboard */}
+      {(commentModalOpen || replyModalComment) && (
+        <div
+          className="fixed inset-x-0 bottom-0 z-50 bg-white border-t border-gray-200 lg:hidden"
+          style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        >
+          <div className="flex items-end gap-2 px-3 py-2">
+            <ProfileAvatar member={currentMemberData} size="sm" />
+            <div className="flex-1 flex items-end bg-gray-100 rounded-2xl px-3 py-2">
+              <textarea
+                autoFocus
+                value={commentModalOpen ? newComment : replyContent}
+                onChange={(e) => {
+                  const val = e.target.value
+                  commentModalOpen ? setNewComment(val) : setReplyContent(val)
+                  e.target.style.height = 'auto'
+                  e.target.style.height = `${e.target.scrollHeight}px`
+                }}
+                placeholder={commentModalOpen ? 'Add a comment...' : 'Write a reply...'}
+                rows={1}
+                className="flex-1 bg-transparent outline-none text-base resize-none overflow-hidden"
+                style={{ minHeight: '1.25rem', maxHeight: '100px' }}
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCommentModalOpen(false)
+                setReplyModalComment(null)
+                setNewComment('')
+                setReplyContent('')
+              }}
+              className="h-9 w-9 shrink-0 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center"
+              aria-label="Cancel"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (commentModalOpen && newComment.trim()) {
+                  createCommentMutation.mutate(newComment)
+                  setCommentModalOpen(false)
+                } else if (replyModalComment && replyContent.trim()) {
+                  createReplyMutation.mutate({ commentId: replyModalComment, content: replyContent })
+                  setReplyModalComment(null)
+                }
+              }}
+              disabled={createCommentMutation.isLoading || createReplyMutation.isLoading || (commentModalOpen ? !newComment.trim() : !replyContent.trim())}
+              className="h-9 w-9 shrink-0 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/50 transition-all disabled:opacity-40"
+              aria-label="Send"
+            >
+              {(createCommentMutation.isLoading || createReplyMutation.isLoading)
+                ? <Loader className="h-4 w-4 animate-spin" />
+                : <Send className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
       )}
     </div>
