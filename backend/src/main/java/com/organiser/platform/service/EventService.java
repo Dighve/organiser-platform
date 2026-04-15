@@ -6,6 +6,7 @@ package com.organiser.platform.service;
 import com.organiser.platform.dto.CalendarEventDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
+import com.organiser.platform.dto.TransportLegDTO;
 import com.organiser.platform.exception.AlreadyRegisteredException;
 import com.organiser.platform.model.*;
 import java.math.BigDecimal;
@@ -59,6 +60,7 @@ public class EventService {
     private final EventParticipantRepository eventParticipantRepository;
     private final NotificationService notificationService;
     private final BannedMemberRepository bannedMemberRepository;
+    private final EventTransportLegRepository eventTransportLegRepository;
     
     // ============================================================
     // PUBLIC METHODS - Event CRUD Operations
@@ -136,9 +138,14 @@ public class EventService {
         if (request.getIncludedItems() != null) {
             event.setIncludedItems(new HashSet<>(request.getIncludedItems()));
         }
-        
+
+        event.setTransportDetailMode(request.getTransportDetailMode() != null ? request.getTransportDetailMode() : "FREEFORM");
+        event.setTransportNotes(request.getTransportNotes());
+
         event = eventRepository.save(event);
-        
+
+        saveTransportLegs(event, request.getTransportLegs());
+
         // Automatically add the host as a participant (if host is specified)
         if (event.getHostMember() != null) {
             EventParticipant hostParticipant = EventParticipant.builder()
@@ -220,9 +227,14 @@ public class EventService {
         if (request.getIncludedItems() != null) {
             event.setIncludedItems(new HashSet<>(request.getIncludedItems()));
         }
-        
+
+        event.setTransportDetailMode(request.getTransportDetailMode() != null ? request.getTransportDetailMode() : "FREEFORM");
+        event.setTransportNotes(request.getTransportNotes());
+
         event = eventRepository.save(event);
-        
+
+        saveTransportLegs(event, request.getTransportLegs());
+
         // Ensure the new host has a participant record (preserves existing guest count if already registered)
         if (newHostMember != null) {
             // Check if host already has a participant record
@@ -664,6 +676,51 @@ public class EventService {
     /**
      * Convert Event entity to full EventDTO (for group members).
      */
+    // ============================================================
+    // PRIVATE HELPERS - Transport legs
+    // ============================================================
+
+    private void saveTransportLegs(Event event, List<TransportLegDTO> legDTOs) {
+        eventTransportLegRepository.deleteByEventId(event.getId());
+        if (legDTOs == null || legDTOs.isEmpty()) {
+            return;
+        }
+        int order = 0;
+        for (TransportLegDTO dto : legDTOs) {
+            EventTransportLeg leg = EventTransportLeg.builder()
+                    .event(event)
+                    .direction(dto.getDirection())
+                    .mode(dto.getMode())
+                    .departureLocation(dto.getDepartureLocation())
+                    .arrivalLocation(dto.getArrivalLocation())
+                    .departureTime(dto.getDepartureTime())
+                    .arrivalTime(dto.getArrivalTime())
+                    .openReturn(Boolean.TRUE.equals(dto.getOpenReturn()))
+                    .notes(dto.getNotes())
+                    .sortOrder(order++)
+                    .build();
+            eventTransportLegRepository.save(leg);
+        }
+    }
+
+    private List<TransportLegDTO> toTransportLegDTOs(Event event) {
+        return eventTransportLegRepository.findByEventIdOrderBySortOrderAsc(event.getId())
+                .stream()
+                .map(leg -> TransportLegDTO.builder()
+                        .id(leg.getId())
+                        .direction(leg.getDirection())
+                        .mode(leg.getMode())
+                        .departureLocation(leg.getDepartureLocation())
+                        .arrivalLocation(leg.getArrivalLocation())
+                        .departureTime(leg.getDepartureTime())
+                        .arrivalTime(leg.getArrivalTime())
+                        .openReturn(leg.getOpenReturn())
+                        .notes(leg.getNotes())
+                        .sortOrder(leg.getSortOrder())
+                        .build())
+                .collect(Collectors.toList());
+    }
+
     private EventDTO convertToDTO(Event event) {
         if (event == null) {
             return null;
@@ -755,6 +812,9 @@ public class EventService {
                 .groupIsPublic(group.getIsPublic())
                 .joinQuestion(event.getJoinQuestion())
                 .groupGuidelines(group.getGroupGuidelines())
+                .transportDetailMode(event.getTransportDetailMode())
+                .transportNotes(event.getTransportNotes())
+                .transportLegs(toTransportLegDTOs(event))
                 .build();
     }
 
@@ -852,9 +912,12 @@ public class EventService {
                 .groupIsPublic(group.getIsPublic())
                 .joinQuestion(event.getJoinQuestion())
                 .groupGuidelines(group.getGroupGuidelines())
+                .transportDetailMode(event.getTransportDetailMode())
+                .transportNotes(event.getTransportNotes())
+                .transportLegs(toTransportLegDTOs(event))
                 .build();
     }
-    
+
     /**
      * Convert Event entity to partial EventDTO (for non-members of private groups).
      * Only includes basic information: title, date, organiser, activity type, group info, image.

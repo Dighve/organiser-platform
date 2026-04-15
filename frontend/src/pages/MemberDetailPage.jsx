@@ -6,6 +6,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { membersAPI } from '../lib/api'
 import { ArrowLeft, Calendar } from 'lucide-react'
+import { useSmartBack } from '../hooks/useSmartBack'
 
 // ============================================================
 // MAIN COMPONENT
@@ -16,6 +17,7 @@ export default function MemberDetailPage() {
   // ============================================================
   const { id } = useParams()  // Get member ID from URL
   const navigate = useNavigate()
+  const goBack = useSmartBack('/')
 
   // ============================================================
   // DATA FETCHING
@@ -68,7 +70,7 @@ export default function MemberDetailPage() {
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Member Not Found</h2>
           <p className="text-gray-600 mb-6">We couldn't find the member you're looking for.</p>
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="py-3 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
           >
             Go Back
@@ -87,7 +89,7 @@ export default function MemberDetailPage() {
         
         {/* ========== BACK BUTTON ========== */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="group flex items-center text-gray-600 hover:text-purple-600 mb-6 font-semibold transition-colors"
         >
           <ArrowLeft className="h-5 w-5 mr-2 group-hover:-translate-x-1 transition-transform" />
@@ -159,7 +161,7 @@ export default function MemberDetailPage() {
             {/* ========== ACTION BUTTONS ========== */}
             <div className="mt-8 flex gap-4 justify-center">
               <button
-                onClick={() => navigate(-1)}
+                onClick={goBack}
                 className="py-3 px-8 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105"
               >
                 Go Back

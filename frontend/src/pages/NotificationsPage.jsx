@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useSmartBack } from '../hooks/useSmartBack'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bell, ArrowLeft, CheckCheck, Loader2, BellOff, BellRing, Smartphone, Settings } from 'lucide-react'
 import { notificationsAPI } from '../lib/api'
@@ -111,6 +112,7 @@ function PushNotificationStatus() {
 
 export default function NotificationsPage() {
   const navigate = useNavigate()
+  const goBack = useSmartBack('/')
   const queryClient = useQueryClient()
   const { isAuthenticated } = useAuthStore()
 
@@ -171,7 +173,7 @@ export default function NotificationsPage() {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-white/60 bg-white/70 backdrop-blur-md">
         <button
-          onClick={() => navigate(-1)}
+          onClick={goBack}
           className="p-2 rounded-full bg-white shadow text-gray-700"
           aria-label="Back"
         >
