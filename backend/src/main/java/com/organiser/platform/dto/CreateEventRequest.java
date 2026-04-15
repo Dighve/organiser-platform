@@ -47,6 +47,7 @@ public class CreateEventRequest {
     private Integer minParticipants = 1;
     private BigDecimal price = BigDecimal.ZERO;
     private Event.DifficultyLevel difficultyLevel;
+    private Event.PaceLevel paceLevel;
     private BigDecimal distanceKm;
     private Integer elevationGainM;
     private BigDecimal estimatedDurationHours;

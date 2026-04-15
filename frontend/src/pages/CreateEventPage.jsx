@@ -110,6 +110,14 @@ const DIFFICULTY_OPTIONS = [
   { value: 'EXPERT', label: 'Expert', description: 'Very challenging, technical terrain', icon: '🔴' }
 ]
 
+// Pace level options with visual indicators
+const PACE_OPTIONS = [
+  { value: 'LEISURELY', label: 'Leisurely', description: 'Relaxed, frequent stops, social', icon: '🐢' },
+  { value: 'STEADY', label: 'Steady', description: 'Comfortable pace, regular breaks', icon: '🚶' },
+  { value: 'BRISK', label: 'Brisk', description: 'Purposeful, stops at key points only', icon: '🏃' },
+  { value: 'FAST', label: 'Fast', description: 'Demanding, very few stops', icon: '⚡' }
+]
+
 // Duration options for mobile step 1 dropdown
 const DURATION_OPTIONS = [
   { value: '', label: 'Duration: Select' },
@@ -258,6 +266,7 @@ export default function CreateEventPage() {
         latitude: copiedEventData.latitude || '',
         longitude: copiedEventData.longitude || '',
         difficultyLevel: copiedEventData.difficultyLevel || '',
+        paceLevel: copiedEventData.paceLevel || '',
         distanceKm: copiedEventData.distanceKm || '',
         elevationGainM: copiedEventData.elevationGainM || '',
         estimatedDurationHours: copiedEventData.estimatedDurationHours || '',
@@ -514,6 +523,7 @@ export default function CreateEventPage() {
       minParticipants: data.minParticipants ? Number(data.minParticipants) : 1,
       price: data.price ? Number(data.price) : 0,  // Fixed: 'cost' -> 'price' to match backend
       difficultyLevel: data.difficultyLevel || null,
+      paceLevel: data.paceLevel || null,
       distanceKm: data.distanceKm ? Number(data.distanceKm) : null,
       elevationGainM: data.elevationGainM ? Number(data.elevationGainM) : null,
       estimatedDurationHours: data.estimatedDurationHours ? Number(data.estimatedDurationHours) : null,
@@ -1143,6 +1153,41 @@ export default function CreateEventPage() {
       </div>
 
       <div>
+        <div className="flex items-center justify-between mb-3">
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Pace</label>
+          <Link
+            to="/pace-faq"
+            className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+          >
+            <Info className="h-3.5 w-3.5" />
+            What do these mean?
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-2.5">
+          {PACE_OPTIONS.map(opt => {
+            const selected = watch('paceLevel') === opt.value
+            const colorMap = {
+              LEISURELY: selected ? 'bg-purple-500 border-purple-500 text-white shadow-lg shadow-purple-200' : 'bg-white border-gray-200 text-gray-700',
+              STEADY: selected ? 'bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-200' : 'bg-white border-gray-200 text-gray-700',
+              BRISK: selected ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-200' : 'bg-white border-gray-200 text-gray-700',
+              FAST: selected ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-200' : 'bg-white border-gray-200 text-gray-700',
+            }
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => { setValue('paceLevel', opt.value); updateFormData({ paceLevel: opt.value }) }}
+                className={`py-3.5 px-4 rounded-2xl border-2 font-semibold text-sm flex items-center gap-2.5 transition-all active:scale-95 ${colorMap[opt.value]}`}
+              >
+                <span className="text-base">{opt.icon}</span>
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      <div>
         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Trail stats</label>
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -1289,6 +1334,7 @@ export default function CreateEventPage() {
       ? (formData.endDate ? `Until ${new Date(formData.endDate + 'T00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}${formData.endTime ? ` ${formData.endTime}` : ''}` : 'Custom end date')
       : durOpt?.label || ''
     const diffOpt = DIFFICULTY_OPTIONS.find(o => o.value === formData.difficultyLevel)
+    const paceOpt = PACE_OPTIONS.find(o => o.value === formData.paceLevel)
     const diffBadge = { BEGINNER: 'bg-green-100 text-green-700', INTERMEDIATE: 'bg-amber-100 text-amber-800', ADVANCED: 'bg-orange-100 text-orange-700', EXPERT: 'bg-red-100 text-red-700' }
     return (
       <div className="px-4 pt-6 pb-36 space-y-5">
@@ -1338,7 +1384,7 @@ export default function CreateEventPage() {
           </div>
           )}
 
-          {(formData.difficultyLevel || formData.distanceKm || formData.elevationGainM || formData.maxParticipants) && (
+          {(formData.difficultyLevel || formData.paceLevel || formData.distanceKm || formData.elevationGainM || formData.maxParticipants) && (
             <div className="px-5 py-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
@@ -1347,6 +1393,11 @@ export default function CreateEventPage() {
                     {diffOpt && (
                       <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${diffBadge[formData.difficultyLevel] || 'bg-gray-100 text-gray-600'}`}>
                         {diffOpt.icon} {diffOpt.label}
+                      </span>
+                    )}
+                    {paceOpt && (
+                      <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                        {paceOpt.icon} {paceOpt.label}
                       </span>
                     )}
                     {formData.distanceKm && <span className="text-xs text-gray-600 font-medium">📏 {formData.distanceKm}km</span>}
@@ -2190,6 +2241,34 @@ export default function CreateEventPage() {
         </div>
       </div>
 
+      {/* MOBILE ONLY: Pace select dropdown */}
+      <div className="sm:hidden">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-semibold text-gray-700">Pace</label>
+          <Link
+            to="/pace-faq"
+            className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+          >
+            <Info className="h-3.5 w-3.5" />
+            What do these mean?
+          </Link>
+        </div>
+        <div className="relative">
+          <select
+            value={watch('paceLevel') || ''}
+            onChange={(e) => { setValue('paceLevel', e.target.value); updateFormData({ paceLevel: e.target.value }) }}
+            className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white appearance-none pr-10"
+          >
+            <option value="">Select pace</option>
+            <option value="LEISURELY">🐢 Leisurely</option>
+            <option value="STEADY">🚶 Steady</option>
+            <option value="BRISK">🏃 Brisk</option>
+            <option value="FAST">⚡ Fast</option>
+          </select>
+          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">▼</div>
+        </div>
+      </div>
+
       {/* DESKTOP ONLY: Difficulty radio buttons */}
       <div className="hidden sm:block bg-gradient-to-r from-orange-50 to-yellow-50 rounded-2xl p-4 sm:p-6 border-2 border-orange-200">
         <div className="flex items-center justify-between mb-4">
@@ -2215,6 +2294,42 @@ export default function CreateEventPage() {
                 className="peer sr-only"
               />
               <div className="bg-white border-2 border-gray-300 rounded-xl p-4 hover:border-orange-500 peer-checked:border-orange-500 peer-checked:bg-orange-50 transition-all">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-2xl">{opt.icon}</span>
+                  <span className="font-bold text-gray-900">{opt.label}</span>
+                </div>
+                <p className="text-sm text-gray-600">{opt.description}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* DESKTOP ONLY: Pace radio buttons */}
+      <div className="hidden sm:block bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-4 sm:p-6 border-2 border-purple-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+            <Timer className="h-5 w-5 text-purple-600" />
+            Pace
+          </h3>
+          <Link
+            to="/pace-faq"
+            className="flex items-center gap-1 text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+          >
+            <Info className="h-4 w-4" />
+            What do these mean?
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {PACE_OPTIONS.map(opt => (
+            <label key={opt.value} className="relative cursor-pointer">
+              <input
+                type="radio"
+                {...register('paceLevel')}
+                value={opt.value}
+                className="peer sr-only"
+              />
+              <div className="bg-white border-2 border-gray-300 rounded-xl p-4 hover:border-purple-500 peer-checked:border-purple-500 peer-checked:bg-purple-50 transition-all">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="text-2xl">{opt.icon}</span>
                   <span className="font-bold text-gray-900">{opt.label}</span>
@@ -2456,6 +2571,7 @@ export default function CreateEventPage() {
   // STEP 4: REVIEW - Final review of all entered data before publishing
   const renderReviewStep = () => {
     const difficultyOption = DIFFICULTY_OPTIONS.find(opt => opt.value === formData.difficultyLevel)
+    const paceOption = PACE_OPTIONS.find(opt => opt.value === formData.paceLevel)
     const durationLabel = formData.estimatedDurationHours === 'custom'
       ? (formData.endDate ? `Until ${new Date(formData.endDate + 'T00:00').toLocaleDateString('en-GB')}${formData.endTime ? ` ${formData.endTime}` : ''}` : 'Custom end date')
       : DURATION_OPTIONS.find(o => o.value === (formData.estimatedDurationHours || ''))?.label || ''
@@ -2521,13 +2637,18 @@ export default function CreateEventPage() {
               <button type="button" onClick={() => goToStep(STEPS.LOCATION)} className="ml-auto text-xs text-purple-600 font-semibold flex-shrink-0">Edit</button>
             </div>
           </div>
-          {/* Difficulty + Stats */}
-          {(difficultyOption || formData.distanceKm || formData.elevationGainM) && (
+          {/* Difficulty + Pace + Stats */}
+          {(difficultyOption || paceOption || formData.distanceKm || formData.elevationGainM) && (
             <div className="px-4 py-3 border-b border-gray-100">
               <div className="flex items-center gap-2 flex-wrap">
                 {difficultyOption && (
                   <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${diffColors[difficultyOption.value] || 'bg-gray-200'} ${diffTextColors[difficultyOption.value] || 'text-gray-800'}`}>
-                    {difficultyOption.label}
+                    {difficultyOption.icon} {difficultyOption.label}
+                  </span>
+                )}
+                {paceOption && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-purple-100 text-purple-700">
+                    {paceOption.icon} {paceOption.label}
                   </span>
                 )}
                 {(formData.distanceKm || formData.elevationGainM) && (
@@ -2698,6 +2819,11 @@ export default function CreateEventPage() {
               {difficultyOption && (
                 <div className="bg-gray-50 p-3 rounded-lg">
                   <span className="font-semibold">Difficulty:</span> {difficultyOption.icon} {difficultyOption.label}
+                </div>
+              )}
+              {paceOption && (
+                <div className="bg-gray-50 p-3 rounded-lg">
+                  <span className="font-semibold">Pace:</span> {paceOption.icon} {paceOption.label}
                 </div>
               )}
               {formData.distanceKm && (

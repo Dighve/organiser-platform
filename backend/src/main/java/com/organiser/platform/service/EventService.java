@@ -118,6 +118,7 @@ public class EventService {
                 .price(request.getPrice())
                 .status(Event.EventStatus.DRAFT)
                 .difficultyLevel(request.getDifficultyLevel())
+                .paceLevel(request.getPaceLevel())
                 .distanceKm(request.getDistanceKm())
                 .elevationGainM(request.getElevationGainM())
                 .estimatedDurationHours(request.getEstimatedDurationHours())
@@ -208,6 +209,7 @@ public class EventService {
         event.setMinParticipants(request.getMinParticipants());
         event.setPrice(request.getPrice());
         event.setDifficultyLevel(request.getDifficultyLevel());
+        event.setPaceLevel(request.getPaceLevel());
         event.setDistanceKm(request.getDistanceKm());
         event.setElevationGainM(request.getElevationGainM());
         event.setEstimatedDurationHours(request.getEstimatedDurationHours());
@@ -793,6 +795,7 @@ public class EventService {
                 .price(event.getPrice())
                 .status(event.getStatus())
                 .difficultyLevel(event.getDifficultyLevel())
+                .paceLevel(event.getPaceLevel())
                 .distanceKm(event.getDistanceKm())
                 .elevationGainM(event.getElevationGainM())
                 .estimatedDurationHours(event.getEstimatedDurationHours())
@@ -892,6 +895,7 @@ public class EventService {
                 .price(event.getPrice())
                 .status(event.getStatus())
                 .difficultyLevel(event.getDifficultyLevel())
+                .paceLevel(event.getPaceLevel())
                 .distanceKm(event.getDistanceKm())
                 .elevationGainM(event.getElevationGainM())
                 .estimatedDurationHours(event.getEstimatedDurationHours())
@@ -968,6 +972,7 @@ public class EventService {
                 .participantIds(new HashSet<>())
                 .price(null)
                 .difficultyLevel(null)
+                .paceLevel(null)
                 .distanceKm(null)
                 .elevationGainM(null)
                 .estimatedDurationHours(null)
