@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star, ChevronRight, Info } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star, ChevronRight, Info, Train, Car, Bus, Footprints, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -1144,18 +1144,13 @@ export default function EventDetailPage() {
             {/* ============================================ */}
             <div className="bg-white/60 backdrop-blur-sm rounded-xl lg:rounded-2xl p-4 lg:p-6 border border-gray-100 shadow-md lg:shadow-lg">
               <div className="space-y-3 lg:space-y-5">
+
                 {/* Date & Time */}
                 <button
                   type="button"
-                  onClick={() => {
-                    if (canOpenCalendar) {
-                      setIsCalendarPickerOpen(true)
-                    }
-                  }}
+                  onClick={() => { if (canOpenCalendar) setIsCalendarPickerOpen(true) }}
                   disabled={!canOpenCalendar}
-                  className={`w-full flex items-start p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl text-left transition-all ${
-                    canOpenCalendar ? 'hover:shadow-md' : 'opacity-80 cursor-default'
-                  }`}
+                  className={`w-full flex items-start p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl text-left transition-all ${canOpenCalendar ? 'hover:shadow-md' : 'opacity-80 cursor-default'}`}
                 >
                   <Calendar className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-purple-600" />
                   <div>
@@ -1179,57 +1174,144 @@ export default function EventDetailPage() {
                   </div>
                 </button>
 
-                {/* Location (members only) */}
-                {!isAccessDenied && event?.location && isEventLocationEnabled() && (
-                  <div className="space-y-3">
-                    <div className="h-px bg-gradient-to-r from-purple-100 via-pink-100 to-orange-100" />
-                    <div className="flex items-center gap-2 text-sm text-gray-700">
-                      <MapPin className="h-5 w-5 text-purple-600" />
-                      <span className="truncate">{event?.location}</span>
-                    </div>
-                    <div className="px-2">
-                    <button
-                      onClick={() => {
-                        const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event?.location || '')}`
-                        window.open(googleMapsUrl, '_blank')
-                      }}
-                      className="relative w-full h-24 md:h-32 rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01]"
-                    >
-                      {isStaticMapsEnabled() && (
-                        <img
-                          src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event?.location || '')}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event?.location || '')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
-                          alt={`Map of ${event?.location || 'Event location'}`}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                          decoding="async"
-                          onError={(e) => {
-                            e.target.style.opacity = '0'
-                          }}
-                        />
-                      )}
-                      {!isStaticMapsEnabled() && (
-                        <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                          <div className="text-center">
-                            <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                            <p className="text-sm text-gray-600 font-medium">{event?.location}</p>
+                {/* Location + Getting there — side-by-side on desktop when both present */}
+                {!isAccessDenied && (() => {
+                  const hasLocation = event?.location && isEventLocationEnabled()
+                  const hasTransport = event?.transportNotes || event?.transportLegs?.length > 0
+                  if (!hasLocation && !hasTransport) return null
+                  return (
+                    <div className={`${hasLocation && hasTransport ? 'lg:grid lg:grid-cols-2 lg:gap-4 space-y-3 lg:space-y-0' : 'space-y-3'}`}>
+                      {/* Location */}
+                      {hasLocation && (
+                        <div className="space-y-3">
+                          <div className="h-px bg-gradient-to-r from-purple-100 via-pink-100 to-orange-100" />
+                          <div className="flex items-start gap-2 text-sm text-gray-700">
+                            <MapPin className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                            <span className="truncate">{event?.location}</span>
+                          </div>
+                          <div className="px-2">
+                            <button
+                              onClick={() => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(event?.location || '')}`, '_blank')}
+                              className="relative w-full h-24 md:h-32 rounded-xl overflow-hidden group cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01]"
+                            >
+                              {isStaticMapsEnabled() && (
+                                <img
+                                  src={`https://maps.googleapis.com/maps/api/staticmap?center=${encodeURIComponent(event?.location || '')}&zoom=13&size=400x200&maptype=roadmap&markers=color:red%7C${encodeURIComponent(event?.location || '')}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`}
+                                  alt={`Map of ${event?.location || 'Event location'}`}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                  decoding="async"
+                                  onError={(e) => { e.target.style.opacity = '0' }}
+                                />
+                              )}
+                              {!isStaticMapsEnabled() && (
+                                <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                                  <div className="text-center">
+                                    <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                    <p className="text-sm text-gray-600 font-medium">{event?.location}</p>
+                                  </div>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transform scale-95 group-hover:scale-100 transition-transform duration-300">
+                                  <MapPin className="h-4 w-4 text-pink-600" />
+                                  <span className="font-semibold text-gray-900 text-sm">Open Maps</span>
+                                </div>
+                              </div>
+                            </button>
                           </div>
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <div className="bg-white/90 backdrop-blur-sm px-4 py-2 rounded-full flex items-center gap-2 shadow-lg transform scale-95 group-hover:scale-100 transition-transform duration-300">
-                          <MapPin className="h-4 w-4 text-pink-600" />
-                          <span className="font-semibold text-gray-900 text-sm">Open Maps</span>
-                        </div>
+
+                      {/* Getting there (transport) */}
+                      {hasTransport && (
+                  <div className="space-y-3">
+                    <div className="h-px bg-gradient-to-r from-blue-100 via-indigo-100 to-purple-100" />
+                    <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg lg:rounded-xl">
+                      <Train className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-gray-900 text-sm lg:text-base mb-1.5">Getting there</div>
+
+                        {/* Freeform */}
+                        {event.transportDetailMode === 'FREEFORM' && event.transportNotes && (
+                          <p className="text-blue-700 text-xs lg:text-sm whitespace-pre-wrap">{event.transportNotes}</p>
+                        )}
+
+                        {/* Structured */}
+                        {event.transportDetailMode === 'STRUCTURED' && event.transportLegs?.length > 0 && (() => {
+                          const outboundLeg = event.transportLegs.find(l => l.direction === 'OUTBOUND')
+                          const returnLeg = event.transportLegs.find(l => l.direction === 'RETURN')
+                          const isOpenReturn = returnLeg?.openReturn
+                          const combinedNotes = event.transportLegs.map(l => l.notes).filter(Boolean).join(' • ')
+                          const divider = <div className="h-px bg-blue-100/70" />
+                          return (
+                            <div className="space-y-1.5">
+                              {/* Outbound */}
+                              {outboundLeg && (
+                                <div>
+                                  {(outboundLeg.departureLocation || outboundLeg.arrivalLocation) && (
+                                    <div className="flex items-center gap-1 text-sm font-semibold text-gray-800">
+                                      {outboundLeg.departureLocation && <span>{outboundLeg.departureLocation}</span>}
+                                      {outboundLeg.departureLocation && outboundLeg.arrivalLocation && <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0" />}
+                                      {outboundLeg.arrivalLocation && <span>{outboundLeg.arrivalLocation}</span>}
+                                    </div>
+                                  )}
+                                  {(outboundLeg.departureTime || outboundLeg.arrivalTime) && (
+                                    <p className="text-xs text-gray-500">
+                                      {outboundLeg.departureTime}{outboundLeg.departureTime && outboundLeg.arrivalTime && ' → '}{outboundLeg.arrivalTime}
+                                    </p>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Return */}
+                              {returnLeg && (
+                                <>
+                                  {divider}
+                                  {isOpenReturn ? (
+                                    <p className="text-sm text-gray-700">Open return</p>
+                                  ) : (
+                                    <div>
+                                      {(returnLeg.departureLocation || returnLeg.arrivalLocation) && (
+                                        <div className="flex items-center gap-1 text-sm font-semibold text-gray-800">
+                                          {returnLeg.departureLocation && <span>{returnLeg.departureLocation}</span>}
+                                          {returnLeg.departureLocation && returnLeg.arrivalLocation && <ArrowRight className="h-3 w-3 text-gray-400 flex-shrink-0" />}
+                                          {returnLeg.arrivalLocation && <span>{returnLeg.arrivalLocation}</span>}
+                                        </div>
+                                      )}
+                                      {(returnLeg.departureTime || returnLeg.arrivalTime) && (
+                                        <p className="text-xs text-gray-500">
+                                          {returnLeg.departureTime}{returnLeg.departureTime && returnLeg.arrivalTime && ' → '}{returnLeg.arrivalTime}
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+
+                              {/* Notes */}
+                              {combinedNotes && (
+                                <>
+                                  {divider}
+                                  <p className="text-xs text-gray-400 italic">{combinedNotes}</p>
+                                </>
+                              )}
+                            </div>
+                          )
+                        })()}
                       </div>
-                    </button>
                     </div>
                   </div>
-                )}
+                      )}
+                    </div>
+                  )
+                })()}
 
-                {/* Event Details (members only) */}
+                {/* Event Details — difficulty + stats (members only) */}
                 {!isAccessDenied && hasEventDetails && (
                   <div className="space-y-3 lg:space-y-5">
                     <div className="h-px bg-gradient-to-r from-purple-100 via-pink-100 to-orange-100" />
+
                     {/* Difficulty Level */}
                     {event?.difficultyLevel && (
                       <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg lg:rounded-xl">
@@ -1267,6 +1349,7 @@ export default function EventDetailPage() {
                     )}
                   </div>
                 )}
+
               </div>
             </div>
 
@@ -1299,6 +1382,7 @@ export default function EventDetailPage() {
                 </div>
               </div>
             )}
+
 
             {/* ============================================ */}
             {/* REQUIREMENTS SECTION - Members only */}

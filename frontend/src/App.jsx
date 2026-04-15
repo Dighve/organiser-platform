@@ -5,6 +5,7 @@ import Layout from './components/Layout'
 import { FeatureFlagProvider } from './contexts/FeatureFlagContext'
 import PushNotificationPrompt from './components/PushNotificationPrompt'
 import { trackPageView, identifyUser, resetUser } from './lib/analytics'
+import { incrementNavigationCount } from './hooks/useSmartBack'
 import ErrorBoundary from './components/ErrorBoundary'
 
 // Critical pages - loaded immediately
@@ -98,6 +99,16 @@ function RouteTracker() {
 
   useEffect(() => {
     trackPageView(getPageName(pathname))
+    incrementNavigationCount()
+    // Reset any iOS zoom that may have been triggered by a small-font input.
+    // Temporarily adding maximum-scale=1 forces the browser back to scale 1,
+    // then restoring the original content re-enables pinch-zoom for accessibility.
+    const meta = document.querySelector('meta[name="viewport"]')
+    if (meta) {
+      const original = meta.content
+      meta.content = original + ', maximum-scale=1'
+      setTimeout(() => { meta.content = original }, 100)
+    }
   }, [pathname])
 
   return null

@@ -9,6 +9,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -55,4 +56,7 @@ public class CreateEventRequest {
     private Set<String> includedItems;
     private String cancellationPolicy;
     private String joinQuestion;
+    private String transportDetailMode;
+    private String transportNotes;
+    private List<TransportLegDTO> transportLegs;
 }

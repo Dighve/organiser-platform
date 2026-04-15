@@ -3,7 +3,7 @@
 // ============================================================
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package, X, Camera, ChevronDown, FileText, MessageSquare } from 'lucide-react'
+import { MapPin, Clock, Users, ArrowRight, ArrowLeft, Check, Edit2, Mountain, Compass, Activity, TrendingUp, DollarSign, Info, Upload, UserPlus, Calendar, Timer, Image, Backpack, Package, X, Camera, ChevronDown, ChevronUp, FileText, MessageSquare, Train, Car, Bus, Footprints, AlignLeft, Plus } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { activityTypesAPI, eventsAPI } from '../lib/api'
@@ -63,6 +63,14 @@ export default function EditEventPage() {
   const [showPhotoDescription, setShowPhotoDescription] = useState(false) // Mobile: toggle photo/description section
   const [showDescriptionModal, setShowDescriptionModal] = useState(false)  // Mobile: full-screen description editor modal
   const [joinQuestionEnabled, setJoinQuestionEnabled] = useState(false)    // Whether organiser wants to ask attendees a question
+  const [transportDetailMode, setTransportDetailMode] = useState('FREEFORM')
+  const [transportNotes, setTransportNotes] = useState('')
+  const [transportLegNotes, setTransportLegNotes] = useState('')
+  const [transportLegs, setTransportLegs] = useState({
+    OUTBOUND: { mode: 'TRAIN', departureLocation: '', arrivalLocation: '', departureTime: '', arrivalTime: '' },
+    RETURN: { mode: 'TRAIN', departureLocation: '', arrivalLocation: '', departureTime: '', arrivalTime: '', openReturn: false }
+  })
+  const [transportOpen, setTransportOpen] = useState(false)
   
   // Watch individual fields for validation and conditional rendering
   const watchedTitle = watch('title')
@@ -143,7 +151,29 @@ export default function EditEventPage() {
       if (event.joinQuestion) {
         setJoinQuestionEnabled(true)
       }
-      
+
+      // Pre-fill transport
+      if (event.transportDetailMode) {
+        setTransportDetailMode(event.transportDetailMode)
+      }
+      if (event.transportNotes) {
+        setTransportNotes(event.transportNotes)
+      }
+      if (event.transportLegs?.length > 0) {
+        const ob = event.transportLegs.find(l => l.direction === 'OUTBOUND')
+        const ret = event.transportLegs.find(l => l.direction === 'RETURN')
+        setTransportLegs({
+          OUTBOUND: ob
+            ? { mode: ob.mode || 'TRAIN', departureLocation: ob.departureLocation || '', arrivalLocation: ob.arrivalLocation || '', departureTime: ob.departureTime || '', arrivalTime: ob.arrivalTime || '' }
+            : { mode: 'TRAIN', departureLocation: '', arrivalLocation: '', departureTime: '', arrivalTime: '' },
+          RETURN: ret
+            ? { mode: ret.mode || 'TRAIN', departureLocation: ret.departureLocation || '', arrivalLocation: ret.arrivalLocation || '', departureTime: ret.departureTime || '', arrivalTime: ret.arrivalTime || '', openReturn: ret.openReturn || false }
+            : { mode: 'TRAIN', departureLocation: '', arrivalLocation: '', departureTime: '', arrivalTime: '', openReturn: false }
+        })
+        const combinedNotes = event.transportLegs.map(l => l.notes).filter(Boolean).join(' • ')
+        if (combinedNotes) setTransportLegNotes(combinedNotes)
+      }
+
       setFormData(initialData)
       setSelectedRequirements(event.requirements || [])
       
@@ -243,7 +273,10 @@ export default function EditEventPage() {
       includedItems: [],
       cancellationPolicy: null,
       joinQuestion: joinQuestionEnabled ? (data.joinQuestion?.trim() || null) : null,
-      hostMemberId: formData.hostMemberId ? Number(formData.hostMemberId) : null
+      hostMemberId: formData.hostMemberId ? Number(formData.hostMemberId) : null,
+      transportDetailMode,
+      transportNotes: transportDetailMode === 'FREEFORM' ? (transportNotes || null) : null,
+      transportLegs: transportDetailMode === 'STRUCTURED' ? buildTransportLegsPayload() : []
     }
 
     try {
@@ -257,6 +290,23 @@ export default function EditEventPage() {
       console.error('Error updating event:', error)
       toast.error('Failed to update event. Please try again.')
     }
+  }
+
+  const buildTransportLegsPayload = () => {
+    const legs = []
+    const ob = transportLegs.OUTBOUND
+    if (ob.departureLocation || ob.arrivalLocation || ob.departureTime) {
+      legs.push({ direction: 'OUTBOUND', mode: ob.mode, departureLocation: ob.departureLocation || null, arrivalLocation: ob.arrivalLocation || null, departureTime: ob.departureTime || null, arrivalTime: ob.arrivalTime || null, openReturn: false, notes: transportLegNotes || null, sortOrder: 0 })
+    }
+    const ret = transportLegs.RETURN
+    if (ret.openReturn || ret.departureLocation || ret.arrivalLocation || ret.departureTime) {
+      legs.push({ direction: 'RETURN', mode: ret.mode, departureLocation: ret.openReturn ? null : (ret.departureLocation || null), arrivalLocation: ret.openReturn ? null : (ret.arrivalLocation || null), departureTime: ret.openReturn ? null : (ret.departureTime || null), arrivalTime: ret.openReturn ? null : (ret.arrivalTime || null), openReturn: ret.openReturn, notes: legs.length === 0 ? (transportLegNotes || null) : null, sortOrder: 1 })
+    }
+    return legs
+  }
+
+  const updateTransportLeg = (direction, field, value) => {
+    setTransportLegs(prev => ({ ...prev, [direction]: { ...prev[direction], [field]: value } }))
   }
 
   // ============================================================
@@ -559,6 +609,104 @@ export default function EditEventPage() {
           </div>
         </div>
       )}
+
+      {/* Getting there */}
+      <div className="border border-gray-200 rounded-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setTransportOpen(prev => !prev)}
+          className="w-full flex items-center justify-between px-4 py-3.5 bg-white text-left"
+        >
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500">
+              <Train className="h-3.5 w-3.5 text-white" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Getting there</p>
+              {!transportOpen && (transportDetailMode === 'FREEFORM' ? (
+                <p className="text-xs text-gray-400">{transportNotes ? 'Free text added' : 'Optional — add transport info'}</p>
+              ) : (
+                <p className="text-xs text-gray-400">Structured legs</p>
+              ))}
+            </div>
+          </div>
+          {transportOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+        </button>
+
+        {transportOpen && (
+          <div className="px-4 pb-4 pt-1 space-y-4 border-t border-gray-100">
+            <div className="flex gap-2 pt-1">
+              <button type="button" onClick={() => setTransportDetailMode('FREEFORM')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-sm font-semibold border-2 transition-all ${transportDetailMode === 'FREEFORM' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500'}`}>
+                <AlignLeft className="h-3.5 w-3.5" /> Free text
+              </button>
+              <button type="button" onClick={() => setTransportDetailMode('STRUCTURED')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-sm font-semibold border-2 transition-all ${transportDetailMode === 'STRUCTURED' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500'}`}>
+                <Plus className="h-3.5 w-3.5" /> Build it out
+              </button>
+            </div>
+            {transportDetailMode === 'FREEFORM' ? (
+              <textarea value={transportNotes} onChange={e => setTransportNotes(e.target.value)} rows={4}
+                placeholder={"Train Departs: 9:45 AM from London Waterloo (arriving Guildford 10:24 AM).\nReturn: Open return — last train ~22:30.\nTrain ticket: approx £12 with Network Railcard."}
+                className="w-full px-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-700 placeholder-gray-300" />
+            ) : (
+              <div className="space-y-4">
+                {['OUTBOUND', 'RETURN'].map(direction => {
+                  const leg = transportLegs[direction]
+                  const isReturn = direction === 'RETURN'
+                  const modeOptions = [
+                    { value: 'TRAIN', icon: <Train className="h-3.5 w-3.5" />, label: 'Train' },
+                    { value: 'CAR', icon: <Car className="h-3.5 w-3.5" />, label: 'Car' },
+                    { value: 'BUS', icon: <Bus className="h-3.5 w-3.5" />, label: 'Bus' },
+                    { value: 'WALK', icon: <Footprints className="h-3.5 w-3.5" />, label: 'Walk' },
+                    { value: 'OTHER', icon: <MapPin className="h-3.5 w-3.5" />, label: 'Other' },
+                  ]
+                  return (
+                    <div key={direction} className="space-y-3">
+                      <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{isReturn ? '↩ Return' : '→ Outbound'}</p>
+                      <div className="flex gap-1.5 flex-wrap">
+                        {modeOptions.map(opt => (
+                          <button key={opt.value} type="button" onClick={() => updateTransportLeg(direction, 'mode', opt.value)}
+                            className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${leg.mode === opt.value ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 bg-white'}`}>
+                            {opt.icon} {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                      {isReturn && (
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input type="checkbox" checked={leg.openReturn} onChange={e => updateTransportLeg(direction, 'openReturn', e.target.checked)}
+                            className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                          <span className="text-sm text-gray-700 font-medium">Open return</span>
+                        </label>
+                      )}
+                      {!(isReturn && leg.openReturn) && (
+                        <div className="space-y-2">
+                          <div className="grid grid-cols-2 gap-2">
+                            <input type="text" value={leg.departureLocation} onChange={e => updateTransportLeg(direction, 'departureLocation', e.target.value)} placeholder="From"
+                              className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <input type="text" value={leg.arrivalLocation} onChange={e => updateTransportLeg(direction, 'arrivalLocation', e.target.value)} placeholder="To"
+                              className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <input type="text" value={leg.departureTime} onChange={e => updateTransportLeg(direction, 'departureTime', e.target.value)} placeholder="Departs (e.g. 9:45 AM)"
+                              className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                            <input type="text" value={leg.arrivalTime} onChange={e => updateTransportLeg(direction, 'arrivalTime', e.target.value)} placeholder="Arrives (e.g. 10:24 AM)"
+                              className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                          </div>
+                        </div>
+                      )}
+                      {direction === 'OUTBOUND' && <hr className="border-gray-100" />}
+                    </div>
+                  )
+                })}
+                <input type="text" value={transportLegNotes} onChange={e => setTransportLegNotes(e.target.value)}
+                  placeholder="Notes (e.g. approx £12 with Network Railcard)"
+                  className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 
@@ -800,6 +948,50 @@ export default function EditEventPage() {
           </div>
         )}
       </div>
+
+      {(transportDetailMode === 'FREEFORM' ? !!transportNotes : (transportLegs.OUTBOUND.departureLocation || transportLegs.OUTBOUND.departureTime || transportLegs.RETURN.openReturn || transportLegs.RETURN.departureLocation)) && (
+        <div className="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Getting here</p>
+            <button type="button" onClick={() => goToStep(STEPS.DETAILS)} className="text-xs font-semibold text-purple-600 active:opacity-60">Edit</button>
+          </div>
+          {transportDetailMode === 'FREEFORM' ? (
+            <p className="text-xs text-gray-600 leading-relaxed">{transportNotes}</p>
+          ) : (
+            <div className="space-y-2">
+              {(transportLegs.OUTBOUND.departureLocation || transportLegs.OUTBOUND.departureTime) && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">→ Outbound</p>
+                  <p className="text-xs text-gray-700 font-medium">
+                    {transportLegs.OUTBOUND.mode}
+                    {transportLegs.OUTBOUND.departureLocation && ` · ${transportLegs.OUTBOUND.departureLocation}`}
+                    {transportLegs.OUTBOUND.arrivalLocation && ` → ${transportLegs.OUTBOUND.arrivalLocation}`}
+                    {transportLegs.OUTBOUND.departureTime && ` · ${transportLegs.OUTBOUND.departureTime}`}
+                    {transportLegs.OUTBOUND.arrivalTime && ` → ${transportLegs.OUTBOUND.arrivalTime}`}
+                  </p>
+                </div>
+              )}
+              {(transportLegs.RETURN.openReturn || transportLegs.RETURN.departureLocation || transportLegs.RETURN.departureTime) && (
+                <div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">↩ Return</p>
+                  <p className="text-xs text-gray-700 font-medium">
+                    {transportLegs.RETURN.openReturn ? 'Open return' : (
+                      <>
+                        {transportLegs.RETURN.mode}
+                        {transportLegs.RETURN.departureLocation && ` · ${transportLegs.RETURN.departureLocation}`}
+                        {transportLegs.RETURN.arrivalLocation && ` → ${transportLegs.RETURN.arrivalLocation}`}
+                        {transportLegs.RETURN.departureTime && ` · ${transportLegs.RETURN.departureTime}`}
+                        {transportLegs.RETURN.arrivalTime && ` → ${transportLegs.RETURN.arrivalTime}`}
+                      </>
+                    )}
+                  </p>
+                </div>
+              )}
+              {transportLegNotes && <p className="text-xs text-gray-500 mt-1">{transportLegNotes}</p>}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 
@@ -1254,6 +1446,100 @@ export default function EditEventPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Getting there */}
+                <div className="border border-gray-200 rounded-2xl overflow-hidden">
+                  <button type="button" onClick={() => setTransportOpen(prev => !prev)}
+                    className="w-full flex items-center justify-between px-4 py-3.5 bg-white text-left">
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500">
+                        <Train className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">Getting there</p>
+                        {!transportOpen && (transportDetailMode === 'FREEFORM' ? (
+                          <p className="text-xs text-gray-400">{transportNotes ? 'Free text added' : 'Optional — add transport info'}</p>
+                        ) : (
+                          <p className="text-xs text-gray-400">Structured legs</p>
+                        ))}
+                      </div>
+                    </div>
+                    {transportOpen ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                  </button>
+                  {transportOpen && (
+                    <div className="px-4 pb-4 pt-1 space-y-4 border-t border-gray-100">
+                      <div className="flex gap-2 pt-1">
+                        <button type="button" onClick={() => setTransportDetailMode('FREEFORM')}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-sm font-semibold border-2 transition-all ${transportDetailMode === 'FREEFORM' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500'}`}>
+                          <AlignLeft className="h-3.5 w-3.5" /> Free text
+                        </button>
+                        <button type="button" onClick={() => setTransportDetailMode('STRUCTURED')}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-sm font-semibold border-2 transition-all ${transportDetailMode === 'STRUCTURED' ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500'}`}>
+                          <Plus className="h-3.5 w-3.5" /> Build it out
+                        </button>
+                      </div>
+                      {transportDetailMode === 'FREEFORM' ? (
+                        <textarea value={transportNotes} onChange={e => setTransportNotes(e.target.value)} rows={4}
+                          placeholder={"Train Departs: 9:45 AM from London Waterloo (arriving Guildford 10:24 AM).\nReturn: Open return — last train ~22:30.\nTrain ticket: approx £12 with Network Railcard."}
+                          className="w-full px-3 py-2.5 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-700 placeholder-gray-300" />
+                      ) : (
+                        <div className="space-y-4">
+                          {['OUTBOUND', 'RETURN'].map(direction => {
+                            const leg = transportLegs[direction]
+                            const isReturn = direction === 'RETURN'
+                            const modeOptions = [
+                              { value: 'TRAIN', icon: <Train className="h-3.5 w-3.5" />, label: 'Train' },
+                              { value: 'CAR', icon: <Car className="h-3.5 w-3.5" />, label: 'Car' },
+                              { value: 'BUS', icon: <Bus className="h-3.5 w-3.5" />, label: 'Bus' },
+                              { value: 'WALK', icon: <Footprints className="h-3.5 w-3.5" />, label: 'Walk' },
+                              { value: 'OTHER', icon: <MapPin className="h-3.5 w-3.5" />, label: 'Other' },
+                            ]
+                            return (
+                              <div key={direction} className="space-y-3">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">{isReturn ? '↩ Return' : '→ Outbound'}</p>
+                                <div className="flex gap-1.5 flex-wrap">
+                                  {modeOptions.map(opt => (
+                                    <button key={opt.value} type="button" onClick={() => updateTransportLeg(direction, 'mode', opt.value)}
+                                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${leg.mode === opt.value ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-500 bg-white'}`}>
+                                      {opt.icon} {opt.label}
+                                    </button>
+                                  ))}
+                                </div>
+                                {isReturn && (
+                                  <label className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={leg.openReturn} onChange={e => updateTransportLeg(direction, 'openReturn', e.target.checked)}
+                                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                                    <span className="text-sm text-gray-700 font-medium">Open return</span>
+                                  </label>
+                                )}
+                                {!(isReturn && leg.openReturn) && (
+                                  <div className="space-y-2">
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <input type="text" value={leg.departureLocation} onChange={e => updateTransportLeg(direction, 'departureLocation', e.target.value)} placeholder="From"
+                                        className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                      <input type="text" value={leg.arrivalLocation} onChange={e => updateTransportLeg(direction, 'arrivalLocation', e.target.value)} placeholder="To"
+                                        className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <input type="text" value={leg.departureTime} onChange={e => updateTransportLeg(direction, 'departureTime', e.target.value)} placeholder="Departs (e.g. 9:45 AM)"
+                                        className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                      <input type="text" value={leg.arrivalTime} onChange={e => updateTransportLeg(direction, 'arrivalTime', e.target.value)} placeholder="Arrives (e.g. 10:24 AM)"
+                                        className="px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                                    </div>
+                                  </div>
+                                )}
+                                {direction === 'OUTBOUND' && <hr className="border-gray-100" />}
+                              </div>
+                            )
+                          })}
+                          <input type="text" value={transportLegNotes} onChange={e => setTransportLegNotes(e.target.value)}
+                            placeholder="Notes (e.g. approx £12 with Network Railcard)"
+                            className="w-full px-3 py-2 text-sm border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -1612,6 +1898,62 @@ export default function EditEventPage() {
                     )}
                   </div>
                 </div>
+
+                {/* ========== REVIEW: TRANSPORT SECTION ========== */}
+                {(transportDetailMode === 'FREEFORM' ? !!transportNotes : (transportLegs.OUTBOUND.departureLocation || transportLegs.OUTBOUND.departureTime || transportLegs.RETURN.openReturn || transportLegs.RETURN.departureLocation)) && (
+                <div className="bg-white rounded-2xl p-6 border-2 border-blue-200 shadow-sm">
+                  <div className="flex justify-between items-start mb-4">
+                    <h3 className="font-bold text-gray-900 text-lg flex items-center gap-2">
+                      <Train className="h-6 w-6 text-blue-600" />
+                      Getting here
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => goToStep(STEPS.DETAILS)}
+                      className="py-2 px-4 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-lg font-semibold flex items-center gap-1 text-sm transition-all"
+                    >
+                      <Edit2 className="h-4 w-4" /> Edit
+                    </button>
+                  </div>
+                  {transportDetailMode === 'FREEFORM' ? (
+                    <p className="text-gray-700 text-sm whitespace-pre-line">{transportNotes}</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {(transportLegs.OUTBOUND.departureLocation || transportLegs.OUTBOUND.departureTime) && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">→ Outbound</p>
+                          <p className="text-sm text-gray-700 font-medium">
+                            {transportLegs.OUTBOUND.mode}
+                            {transportLegs.OUTBOUND.departureLocation && ` · ${transportLegs.OUTBOUND.departureLocation}`}
+                            {transportLegs.OUTBOUND.arrivalLocation && ` → ${transportLegs.OUTBOUND.arrivalLocation}`}
+                            {transportLegs.OUTBOUND.departureTime && ` · ${transportLegs.OUTBOUND.departureTime}`}
+                            {transportLegs.OUTBOUND.arrivalTime && ` → ${transportLegs.OUTBOUND.arrivalTime}`}
+                          </p>
+                        </div>
+                      )}
+                      {(transportLegs.RETURN.openReturn || transportLegs.RETURN.departureLocation || transportLegs.RETURN.departureTime) && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">↩ Return</p>
+                          <p className="text-sm text-gray-700 font-medium">
+                            {transportLegs.RETURN.openReturn ? 'Open return' : (
+                              <>
+                                {transportLegs.RETURN.mode}
+                                {transportLegs.RETURN.departureLocation && ` · ${transportLegs.RETURN.departureLocation}`}
+                                {transportLegs.RETURN.arrivalLocation && ` → ${transportLegs.RETURN.arrivalLocation}`}
+                                {transportLegs.RETURN.departureTime && ` · ${transportLegs.RETURN.departureTime}`}
+                                {transportLegs.RETURN.arrivalTime && ` → ${transportLegs.RETURN.arrivalTime}`}
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      )}
+                      {transportLegNotes && (
+                        <p className="text-sm text-gray-500 mt-1">{transportLegNotes}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                )}
               </div>
             )}
 

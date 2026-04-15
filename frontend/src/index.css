@@ -173,6 +173,17 @@ body {
   animation: slide-up 0.3s ease-out forwards;
 }
 
+/* Prevent iOS Safari from auto-zooming when focusing form inputs.
+   iOS zooms in whenever a focused element has font-size < 16px.
+   Scoped to iOS Safari only via -webkit-touch-callout support check. */
+@supports (-webkit-touch-callout: none) {
+  input[type],
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 /* Accessibility: Respect user's motion preferences */
 @media (prefers-reduced-motion: reduce) {
   *,
