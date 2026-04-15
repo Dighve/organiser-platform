@@ -7,7 +7,7 @@ import { useAuthStore } from '../store/authStore'
 import { membersAPI } from '../lib/api'
 import ImagePositionModal from '../components/ImagePositionModal'
 import toast from 'react-hot-toast'
-import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Calendar, ArrowLeft } from 'lucide-react'
+import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Calendar, Star, ArrowLeft } from 'lucide-react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useIsIOS } from '../hooks/useIsIOS'
@@ -441,14 +441,21 @@ export default function ProfilePage() {
               ))}
             </div>
 
-            <div className="pt-2">
-              <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Event history</h3>
+            <div className="pt-2 space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Activity</h3>
               <button
                 onClick={() => navigate('/events?search=:me :past')}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-indigo-100 text-sm font-semibold text-indigo-700 hover:border-indigo-200 hover:text-indigo-800 bg-indigo-50 shadow-sm"
               >
                 <Calendar className="h-4 w-4" />
                 Event History
+              </button>
+              <button
+                onClick={() => navigate('/profile/my-reviews')}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-yellow-100 text-sm font-semibold text-yellow-700 hover:border-yellow-200 hover:text-yellow-800 bg-yellow-50 shadow-sm"
+              >
+                <Star className="h-4 w-4" />
+                My Reviews
               </button>
             </div>
 

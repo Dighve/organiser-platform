@@ -34,6 +34,7 @@ const InvitePage = lazy(() => import('./pages/InvitePage'))
 const ReviewSubmissionPage = lazy(() => import('./pages/ReviewSubmissionPage'))
 const GroupReviewsPage = lazy(() => import('./pages/GroupReviewsPage'))
 const EventReviewsPage = lazy(() => import('./pages/EventReviewsPage'))
+const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -310,6 +311,16 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="profile/my-reviews"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <MyReviewsPage />
               </Suspense>
             </PrivateRoute>
           }

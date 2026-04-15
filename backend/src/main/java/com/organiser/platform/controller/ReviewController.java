@@ -24,6 +24,13 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getPendingReviews());
     }
 
+    @GetMapping("/reviews/my-reviews")
+    public ResponseEntity<Page<EventReviewDTO>> getMyReviews(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return ResponseEntity.ok(reviewService.getMyReviews(page, size));
+    }
+
     @GetMapping("/events/{eventId}/reviews")
     public ResponseEntity<Page<EventReviewDTO>> getEventReviews(
             @PathVariable Long eventId,
