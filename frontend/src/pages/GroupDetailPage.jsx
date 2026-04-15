@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
+import { useSmartBack } from '../hooks/useSmartBack'
 import ProfileAvatar from '../components/ProfileAvatar'
 import ShareButton from '../components/ShareButton'
 import InviteMembersModal from '../components/InviteMembersModal'
@@ -146,6 +147,7 @@ export default function GroupDetailPage() {
   const { isAuthenticated, user } = useAuthStore()
   const { isGroupLocationEnabled, isGoogleMapsEnabled } = useFeatureFlags()
   const isIOS = useIsIOS()
+  const goBack = useSmartBack('/')
   const [searchParams] = useSearchParams()
 
   // ============================================
@@ -446,7 +448,7 @@ export default function GroupDetailPage() {
         {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
         {isIOS && (
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
           >
             <ArrowLeft className="h-5 w-5" />

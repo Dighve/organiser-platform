@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 // Module-level counter that tracks in-app navigations.
-// Starts at 0. The RouteTracker component in App.jsx increments this
+// Starts at 0. The NavigationTracker component in App.jsx increments this
 // on every React Router location change. The first change (initial page load)
 // brings it to 1, so canGoBack is true only when count >= 2 (i.e. the user
 // has navigated at least once *within* the app).
