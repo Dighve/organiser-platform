@@ -42,6 +42,13 @@ public class Event {
         ADVANCED,
         EXPERT
     }
+
+    public enum PaceLevel {
+        LEISURELY,
+        STEADY,
+        BRISK,
+        FAST
+    }
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -115,7 +122,11 @@ public class Event {
     
     @Enumerated(EnumType.STRING)
     private DifficultyLevel difficultyLevel;
-    
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pace_level")
+    private PaceLevel paceLevel;
+
     @Column(name = "distance_km", precision = 10, scale = 2)
     private BigDecimal distanceKm;
     
