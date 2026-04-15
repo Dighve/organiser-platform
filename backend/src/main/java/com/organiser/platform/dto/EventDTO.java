@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Data
@@ -59,4 +60,7 @@ public class EventDTO {
     private Boolean userHasAttended; // Whether current user attended (eligible to review)
     private String joinQuestion;
     private String groupGuidelines; // Group guidelines for display during joining
+    private String transportDetailMode;
+    private String transportNotes;
+    private List<TransportLegDTO> transportLegs;
 }

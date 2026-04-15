@@ -67,10 +67,15 @@ cd frontend && npm test
 - REST endpoints in `controller/`, business logic in `service/`, DB in `repository/`
 - Database changes must be done via Flyway migration files: `V{next}__Description.sql` in `backend/src/main/resources/db/migration/postgresql/`
 - To find the next migration version: `ls backend/src/main/resources/db/migration/postgresql/ | grep -oE 'V[0-9]+' | sed 's/V//' | sort -n | tail -1`
+- **Never reuse a migration version number**: If a V{n} file previously existed (even if now deleted), Flyway has it in history. Creating a new V{n} with different content causes a checksum mismatch or silent skip — the DDL never runs but `bootRun` fails with Hibernate schema-validation errors. Always use the next unused version.
 - Java package root: `com.organiser.platform`
 - **Never use H2** — tests always run against real PostgreSQL (`outmeets_test` DB, port 5433). H2 hides PostgreSQL-specific behaviour. The Gradle `createTestDb` task auto-creates `outmeets_test` before tests run.
 - **`@Column(columnDefinition)` — always use `NUMERIC`, never `DECIMAL`**: PostgreSQL reports column metadata as `numeric`. Hibernate maps `DECIMAL` → JDBC FLOAT but finds NUMERIC in the DB → startup failure: `wrong column type encountered; found [numeric (Types#NUMERIC)], but expecting [decimal(x,y) (Types#FLOAT)]`.
 - **SecurityConfig — every new endpoint must be explicitly listed**: The config ends with `.anyRequest().denyAll()`. Any endpoint not in the list returns 403. Always add a matching `AntPathRequestMatcher` when adding a new controller method.
+- **Always verify the build compiles after backend changes**: Run `./gradlew compileJava --rerun-tasks` from `backend/` before finishing. Do not rely on Gradle's incremental cache — it can mask missing imports and still report success.
+- **Never use fully-qualified class names inline** (e.g. `java.util.List<Foo>`): Always add the import at the top of the file instead. Inline FQNs make the import unused and pollute the code.
+- **`@Builder.Default` is required for any field with an initialiser inside a `@Builder` class**: Without it Lombok silently ignores the default value at build time. Applies to collections (`new HashSet<>()`, `new ArrayList<>()`) and primitives with defaults.
+- **Add all imports explicitly**: When writing or editing a Java file always check the import block. Missing imports compile fine from Gradle's cache but fail on a clean build or CI.
 
 ### Frontend (React)
 - Functional components with hooks only — no class components
