@@ -127,6 +127,14 @@ git commit -m "feat: describe the change"
 # PR into staging first, then staging → main for prod deploy
 ```
 
+### Branch protection rules (enforced manually — free GitHub plan)
+
+- **Never push directly to `main`** — always via PR from `staging`
+- **Never push directly to `staging`** — always via PR from a `feature/*` branch
+- The only valid flow is: `feature/* → staging → main`
+- This applies to Claude too. When asked to make changes: create a feature branch, commit there, and open a PR targeting `staging`. Never commit directly to `staging` or `main`.
+- Exception: hotfixes to production may go `hotfix/* → main` directly, but only with explicit user instruction.
+
 ## Auth
 
 - Default: passwordless **magic link** via email (Resend.com)
