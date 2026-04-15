@@ -440,6 +440,9 @@ export const reviewsAPI = {
   
   // Get pending reviews for current user
   getPendingReviews: () => api.get('/reviews/pending'),
+
+  // Get all reviews submitted by the current user
+  getMyReviews: (page = 0, size = 20) => api.get(`/reviews/my-reviews?page=${page}&size=${size}`),
   
   // Flag a review (report inappropriate content)
   flagReview: (reviewId, reason) => 
