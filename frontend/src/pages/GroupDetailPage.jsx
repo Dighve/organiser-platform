@@ -262,7 +262,9 @@ export default function GroupDetailPage() {
     const d = new Date(start); d.setHours(23, 59, 59, 999); return d
   }
   const upcomingEvents = groupEvents.filter(event => { const end = getEffectiveEnd(event); return end ? end >= now : true })
-  const pastEvents = groupEvents.filter(event => { const end = getEffectiveEnd(event); return end ? end < now : false })
+  const pastEvents = groupEvents
+    .filter(event => { const end = getEffectiveEnd(event); return end ? end < now : false })
+    .sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate))
 
   // ============================================
   // MUTATIONS - API calls that change data

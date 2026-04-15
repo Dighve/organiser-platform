@@ -14,7 +14,9 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -32,8 +34,8 @@ import java.util.Set;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude = {"participants", "eventOrganisers", "group"})
-@ToString(exclude = {"participants", "eventOrganisers", "group"})
+@EqualsAndHashCode(exclude = {"participants", "eventOrganisers", "group", "transportLegs"})
+@ToString(exclude = {"participants", "eventOrganisers", "group", "transportLegs"})
 public class Event {
     
     public enum DifficultyLevel {
@@ -154,6 +156,17 @@ public class Event {
     @Builder.Default
     private Set<String> includedItems = new HashSet<>();
     
+    @Column(name = "transport_detail_mode", length = 20)
+    @Builder.Default
+    private String transportDetailMode = "FREEFORM";
+
+    @Column(name = "transport_notes", columnDefinition = "TEXT")
+    private String transportNotes;
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<EventTransportLeg> transportLegs = new ArrayList<>();
+
     @Column(name = "join_question", columnDefinition = "TEXT")
     private String joinQuestion;
     

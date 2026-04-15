@@ -102,6 +102,15 @@ function RouteTracker() {
   useEffect(() => {
     trackPageView(getPageName(pathname))
     incrementNavigationCount()
+    // Reset any iOS zoom that may have been triggered by a small-font input.
+    // Temporarily adding maximum-scale=1 forces the browser back to scale 1,
+    // then restoring the original content re-enables pinch-zoom for accessibility.
+    const meta = document.querySelector('meta[name="viewport"]')
+    if (meta) {
+      const original = meta.content
+      meta.content = original + ', maximum-scale=1'
+      setTimeout(() => { meta.content = original }, 100)
+    }
   }, [pathname])
 
   return null
