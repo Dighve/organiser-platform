@@ -44,6 +44,7 @@ public class EmailService {
     // DEPENDENCIES
     // ============================================================
     private final RestTemplate restTemplate = new RestTemplate();
+    private final MemberSettingService memberSettingService;
     
     // ============================================================
     // PUBLIC METHODS - Email Sending
@@ -431,6 +432,10 @@ public class EmailService {
             log.info("Email notifications disabled for {}, skipping review prompt", member.getEmail());
             return;
         }
+        if (!memberSettingService.getSetting(member.getId(), MemberSettingService.EMAIL_REVIEWS)) {
+            log.info("Review prompt emails disabled for {}, skipping", member.getEmail());
+            return;
+        }
 
         String reviewUrl = frontendUrl + "/events/" + eventId + "/review";
         String subject = "How was " + eventTitle + "? Share your experience";
@@ -516,6 +521,10 @@ public class EmailService {
         
         if (!recipient.getEmailNotificationsEnabled()) {
             log.info("Email notifications disabled for {}, skipping invitation email", recipient.getEmail());
+            return;
+        }
+        if (!memberSettingService.getSetting(recipient.getId(), MemberSettingService.EMAIL_INVITATIONS)) {
+            log.info("Invitation emails disabled for {}, skipping", recipient.getEmail());
             return;
         }
         
