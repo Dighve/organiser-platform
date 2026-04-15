@@ -879,7 +879,16 @@ export default function CreateEventPage() {
       </div>
 
       <div>
-        <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">Difficulty level</label>
+        <div className="flex items-center justify-between mb-3">
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest">Difficulty level</label>
+          <Link
+            to="/hiking-grade-faq"
+            className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+          >
+            <Info className="h-3.5 w-3.5" />
+            What do these mean?
+          </Link>
+        </div>
         <div className="grid grid-cols-2 gap-2.5">
           {DIFFICULTY_OPTIONS.map(opt => {
             const selected = watch('difficultyLevel') === opt.value
@@ -1765,7 +1774,16 @@ export default function CreateEventPage() {
 
       {/* MOBILE ONLY: Difficulty select dropdown */}
       <div className="sm:hidden">
-        <label className="block text-sm font-semibold text-gray-700 mb-2">Difficulty</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-semibold text-gray-700">Difficulty</label>
+          <Link
+            to="/hiking-grade-faq"
+            className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+          >
+            <Info className="h-3.5 w-3.5" />
+            What do these mean?
+          </Link>
+        </div>
         <div className="relative">
           <select
             value={watch('difficultyLevel') || ''}
@@ -1791,7 +1809,6 @@ export default function CreateEventPage() {
           </h3>
           <Link
             to="/hiking-grade-faq"
-            target="_blank"
             className="flex items-center gap-1 text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors"
           >
             <Info className="h-4 w-4" />

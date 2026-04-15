@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star, ChevronRight } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star, ChevronRight, Info } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -1234,8 +1234,17 @@ export default function EventDetailPage() {
                     {event?.difficultyLevel && (
                       <div className="flex items-start p-3 lg:p-4 bg-gradient-to-r from-orange-50 to-red-50 rounded-lg lg:rounded-xl">
                         <TrendingUp className="h-5 w-5 lg:h-6 lg:w-6 mr-3 lg:mr-4 mt-1 text-orange-600" />
-                        <div>
-                          <div className="font-bold text-gray-900 text-sm lg:text-base">Difficulty</div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div className="font-bold text-gray-900 text-sm lg:text-base">Difficulty</div>
+                            <Link
+                              to="/hiking-grade-faq"
+                              className="flex items-center gap-1 text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+                            >
+                              <Info className="h-3.5 w-3.5" />
+                              <span className="hidden sm:inline">What do these mean?</span>
+                            </Link>
+                          </div>
                           <div className="text-orange-600 font-semibold text-sm lg:text-base">{event.difficultyLevel}</div>
                         </div>
                       </div>
