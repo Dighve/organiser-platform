@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSmartBack } from '../hooks/useSmartBack';
 import { ArrowLeft, Star, Calendar, MapPin, ChevronRight, ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { groupsAPI, reviewsAPI, eventsAPI } from '../lib/api';
@@ -10,6 +11,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 const GroupReviewsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = useSmartBack(`/groups/${id}`);
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'reviews'); // 'events' or 'reviews'
   const [expandedReviews, setExpandedReviews] = useState({});
@@ -108,7 +110,7 @@ const GroupReviewsPage = () => {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="flex items-center gap-2 text-gray-600 hover:text-purple-600 mb-4 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

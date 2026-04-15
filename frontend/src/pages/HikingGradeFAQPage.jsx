@@ -1,5 +1,6 @@
 import { Mountain, TrendingUp, AlertTriangle, Zap, ArrowLeft } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
+import { useSmartBack } from '../hooks/useSmartBack'
 
 const DIFFICULTY_DETAILS = [
   {
@@ -124,6 +125,7 @@ const DIFFICULTY_DETAILS = [
 
 export default function HikingGradeFAQPage() {
   const navigate = useNavigate()
+  const goBack = useSmartBack('/')
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 py-6 sm:py-8">
@@ -131,7 +133,7 @@ export default function HikingGradeFAQPage() {
         {/* Header */}
         <div className="mb-5 sm:mb-8">
           <button
-            onClick={() => navigate(-1)}
+            onClick={goBack}
             className="mb-3 sm:mb-4 flex items-center gap-2 text-purple-600 hover:text-purple-800 font-semibold transition-colors text-sm sm:text-base"
           >
             <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5" />

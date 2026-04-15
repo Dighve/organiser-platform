@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
+import { useSmartBack } from '../hooks/useSmartBack';
 import { ArrowLeft, Star, ChevronDown, ChevronUp, Filter, X } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { eventsAPI, reviewsAPI } from '../lib/api';
@@ -10,6 +11,7 @@ import { formatDistanceToNow } from 'date-fns';
 const EventReviewsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const goBack = useSmartBack(`/events/${id}`);
   const [searchParams] = useSearchParams();
   const [expandedReviews, setExpandedReviews] = useState({});
   const [selectedRating, setSelectedRating] = useState('all'); // 'all', '5', '4', '3', '2', '1'
@@ -67,7 +69,7 @@ const EventReviewsPage = () => {
               if (returnTab && groupId) {
                 navigate(`/groups/${groupId}/reviews?tab=${returnTab}`);
               } else {
-                navigate(-1);
+                goBack();
               }
             }}
             className="flex items-center gap-2 text-gray-600 hover:text-purple-600 mb-4 transition-colors"

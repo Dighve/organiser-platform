@@ -19,6 +19,7 @@ import EventFlyerModal from '../components/EventFlyerModal'
 import InviteMembersModal from '../components/InviteMembersModal'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
+import { useSmartBack } from '../hooks/useSmartBack'
 import {
   trackEventViewed,
   trackJoinEventClicked,
@@ -54,6 +55,7 @@ export default function EventDetailPage() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false)
   const { isEventLocationEnabled, isGoogleMapsEnabled, isStaticMapsEnabled, isFlyerEnabled } = useFeatureFlags()
   const isIOS = useIsIOS()
+  const goBack = useSmartBack('/')
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const trackedEventRef = useRef(null)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
@@ -606,7 +608,7 @@ export default function EventDetailPage() {
         {/* ========== MOBILE HEADER (Back button - iOS only, fixed overlay) ========== */}
         {isIOS && (
           <button
-            onClick={() => window.history.length > 1 ? navigate(-1) : navigate('/')}
+            onClick={goBack}
             className="sm:hidden fixed top-20 left-4 z-[1000] flex items-center justify-center w-10 h-10 rounded-full bg-white/90 backdrop-blur-md shadow-xl text-gray-600 hover:text-purple-600 active:scale-95 transition-all"
           >
             <ArrowLeft className="h-5 w-5" />
