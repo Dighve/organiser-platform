@@ -89,6 +89,18 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    public Page<EventReviewDTO> getMyReviews(int page, int size) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
+
+        Pageable pageable = PageRequest.of(page, size);
+        return eventReviewRepository.findByMemberId(member.getId(), pageable)
+                .map(EventReviewDTO::fromEntity);
+    }
+
     public Page<EventReviewDTO> getEventReviews(Long eventId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return eventReviewRepository.findByEventId(eventId, pageable)

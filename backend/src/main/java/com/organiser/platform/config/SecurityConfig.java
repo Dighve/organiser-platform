@@ -139,6 +139,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/reviews/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/reviews/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/reviews/pending", "GET"),
+                                new AntPathRequestMatcher("/api/v1/reviews/my-reviews", "GET"),
                                 new AntPathRequestMatcher("/api/v1/reviews/*/flag", "POST")
                         ).authenticated()
                         
