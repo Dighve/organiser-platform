@@ -577,6 +577,7 @@ public class EventService {
             }
         }
 
+
         // AUTOMATIC GROUP SUBSCRIPTION (Meetup.com pattern)
         // When joining an event, automatically subscribe to the group if not already a member
         if (event.getGroup() != null) {

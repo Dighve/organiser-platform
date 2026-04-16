@@ -1523,7 +1523,12 @@ export default function EventDetailPage() {
                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600">Full</span>
                                   )}
                                   {isFull && event?.waitlistCount > 0 && (
-                                    <span className="text-[11px] font-medium text-orange-500">{event.waitlistCount} waiting</span>
+                                    <button
+                                      onClick={() => navigate(`/events/${id}/attendees?tab=waitlist`)}
+                                      className="text-[11px] font-medium text-orange-500 hover:text-orange-600 hover:underline"
+                                    >
+                                      {event.waitlistCount} waiting
+                                    </button>
                                   )}
                                 </span>
                               )}
@@ -1574,10 +1579,7 @@ export default function EventDetailPage() {
                     {(() => {
                       const allParticipants = participantsData?.data?.filter(p => p.id !== event?.hostMemberId) || []
                       const activeAttendees = allParticipants.filter(p => p.participationStatus !== 'NO_SHOW' && p.participationStatus !== 'WAITLISTED' && p.participationStatus !== 'CANCELLED')
-                      const waitlistedParticipants = allParticipants.filter(p => p.participationStatus === 'WAITLISTED')
-                      const noShows = allParticipants.filter(p => p.participationStatus === 'NO_SHOW')
                       const visibleAttendees = activeAttendees.slice(0, 5)
-                      const hasMore = activeAttendees.length > 5
 
                       const AttendeeCard = ({ participant, inOverlay = false }) => {
                         const isNoShow = participant.participationStatus === 'NO_SHOW'
@@ -1649,43 +1651,22 @@ export default function EventDetailPage() {
                               <span className="text-sm font-normal text-gray-400">({activeAttendees.length})</span>
                             )}
                           </h2>
-                          {activeAttendees.length > 0 ? (
-                            <>
-                              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                                {visibleAttendees.map(p => <AttendeeCard key={p.id} participant={p} />)}
-                              </div>
-                              {hasMore && (
-                                <button
-                                  onClick={() => navigate(`/events/${id}/attendees`)}
-                                  className="mt-3 w-full py-2 text-sm font-medium text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
-                                >
-                                  See all {activeAttendees.length} attendees
-                                  {isHost && noShows.length > 0 && ` · ${noShows.length} no-show${noShows.length === 1 ? '' : 's'}`}
-                                </button>
-                              )}
-                              {!hasMore && isHost && (noShows.length > 0 || allParticipants.filter(p => p.participationStatus === 'CANCELLED').length > 0) && (
-                                <button
-                                  onClick={() => navigate(`/events/${id}/attendees`)}
-                                  className="mt-3 w-full py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                                >
-                                  View no-shows &amp; cancellations
-                                </button>
-                              )}
-                            </>
-                          ) : (
-                            <div className="text-center py-6 lg:py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
-                              <Users className="h-8 w-8 lg:h-12 lg:w-12 mx-auto mb-2 lg:mb-3 text-gray-400" />
-                              <p className="text-gray-600 text-sm lg:text-base">No other attendees yet</p>
-                              {waitlistedParticipants.length > 0 && (
-                                <button
-                                  onClick={() => navigate(`/events/${id}/attendees?tab=waitlist`)}
-                                  className="mt-3 text-sm font-medium text-orange-600 hover:text-orange-700"
-                                >
-                                  View waitlist ({waitlistedParticipants.length})
-                                </button>
-                              )}
+                          {activeAttendees.length > 0 && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                              {visibleAttendees.map(p => <AttendeeCard key={p.id} participant={p} />)}
                             </div>
                           )}
+                          {activeAttendees.length === 0 && (
+                            <div className="text-center py-4 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
+                              <p className="text-gray-500 text-sm">No other attendees yet</p>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => navigate(`/events/${id}/attendees`)}
+                            className="mt-3 w-full py-2 text-sm font-medium text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
+                          >
+                            See all members
+                          </button>
 
                         </>
                       )
