@@ -183,6 +183,34 @@ When the user asks a question or describes a problem, **do not start implementin
 ### Only do what was asked
 Do not fix, refactor, or improve anything beyond the explicit request — even if you spot related issues. If you notice something worth fixing, mention it separately and wait to be asked. Do not bundle unrequested changes into a commit.
 
+## Adding a New Event Field
+
+Create, Edit, and Copy event are three separate large page files. Every new field must be threaded through all of them manually — things get missed easily. Use this checklist whenever adding a field to the event form.
+
+### Backend checklist
+- [ ] `Event.java` — add model field + `@Column`
+- [ ] `EventDTO.java` — add to DTO
+- [ ] `CreateEventRequest.java` — add to request DTO
+- [ ] `EventService.java` — set field in `createEvent`, `updateEvent`, and `convertToDTO`
+- [ ] Flyway migration — `V{next}__add_{field}_to_events.sql`
+
+### Frontend checklist — all three pages
+
+Each page has **multiple** places a field must appear:
+
+| Location | `CreateEventPage.jsx` | `EditEventPage.jsx` | `CopyEventPage / copied data init` |
+|---|---|---|---|
+| Form default values / initialisation | ✓ | ✓ | ✓ (copy pre-populate) |
+| Submission payload | ✓ | ✓ | ✓ |
+| Mobile UI input | ✓ | ✓ | ✓ |
+| Desktop UI input | ✓ | ✓ | ✓ |
+| Review page summary (create only) | ✓ | — | — |
+
+> **Note:** Mobile and desktop UI are separate JSX blocks within the same file — adding a field to mobile does **not** automatically add it to desktop and vice versa. Always check both.
+
+### Long-term goal
+Extract shared form section components (`<CapacitySection />`, `<LocationSection />`, etc.) so a field only needs to be added once. This refactor is tracked as a separate task — do not bundle it with feature work.
+
 ## Activities
 
 Currently only **Hiking** is supported as an activity type. Do not suggest, display, or hardcode other activities (Cycling, Running, Swimming, Climbing, etc.) anywhere in the UI or copy unless explicitly told new activities have been added.
