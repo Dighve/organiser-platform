@@ -1430,6 +1430,7 @@ export default function CreateEventPage() {
                     {formData.distanceKm && <span className="text-xs text-gray-600 font-medium">📏 {formData.distanceKm}km</span>}
                     {formData.elevationGainM && <span className="text-xs text-gray-600 font-medium">↑ {formData.elevationGainM}m</span>}
                     {formData.maxParticipants && <span className="text-xs text-gray-600 font-medium">👥 Max {formData.maxParticipants}</span>}
+                    {formData.maxWaitlist && <span className="text-xs text-gray-600 font-medium">⏳ Waitlist {formData.maxWaitlist}</span>}
                   </div>
                 </div>
                 <button type="button" onClick={() => goToStep(STEPS.DETAILS)} className="text-purple-600 text-xs font-bold flex-shrink-0 pt-0.5">Edit</button>
