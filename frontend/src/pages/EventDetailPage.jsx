@@ -1686,15 +1686,20 @@ export default function EventDetailPage() {
                                   </button>
                                 </div>
 
-                                {/* Tabs — only shown to host */}
-                                {isHost && (
-                                  <div className="flex border-b border-gray-100 flex-shrink-0">
-                                    {[
-                                      { key: 'attendees', label: 'Attending', count: activeAttendees.length },
-                                      { key: 'waitlist', label: 'Waitlist', count: allParticipants.filter(p => p.participationStatus === 'WAITLISTED').length },
+                                {/* Tabs — Waitlist visible to all members; No shows + Cancelled host-only */}
+                                {(() => {
+                                  const waitlistCount = allParticipants.filter(p => p.participationStatus === 'WAITLISTED').length
+                                  const visibleTabs = [
+                                    { key: 'attendees', label: 'Attending', count: activeAttendees.length },
+                                    ...(waitlistCount > 0 ? [{ key: 'waitlist', label: 'Waitlist', count: waitlistCount }] : []),
+                                    ...(isHost ? [
                                       { key: 'noshow', label: 'No shows', count: noShows.length },
                                       { key: 'cancelled', label: 'Cancelled', count: allParticipants.filter(p => p.participationStatus === 'CANCELLED').length },
-                                    ].map(tab => (
+                                    ] : []),
+                                  ]
+                                  return visibleTabs.length > 1 ? (
+                                  <div className="flex border-b border-gray-100 flex-shrink-0">
+                                    {visibleTabs.map(tab => (
                                       <button
                                         key={tab.key}
                                         onClick={() => setAttendeeOverlayTab(tab.key)}
@@ -1715,16 +1720,17 @@ export default function EventDetailPage() {
                                       </button>
                                     ))}
                                   </div>
-                                )}
+                                  ) : null
+                                })()}
 
                                 {/* Tab content */}
                                 <div className="overflow-y-auto flex-1 p-4 space-y-2">
-                                  {(!isHost || attendeeOverlayTab === 'attendees') && (
+                                  {attendeeOverlayTab === 'attendees' && (
                                     activeAttendees.length > 0
                                       ? activeAttendees.map(p => <AttendeeCard key={p.id} participant={p} inOverlay />)
                                       : <p className="text-sm text-gray-500 text-center py-6">No attendees yet</p>
                                   )}
-                                  {isHost && attendeeOverlayTab === 'waitlist' && (() => {
+                                  {attendeeOverlayTab === 'waitlist' && (() => {
                                     const waitlisted = allParticipants
                                       .filter(p => p.participationStatus === 'WAITLISTED')
                                       .sort((a, b) => new Date(a.waitlistJoinedAt) - new Date(b.waitlistJoinedAt))
