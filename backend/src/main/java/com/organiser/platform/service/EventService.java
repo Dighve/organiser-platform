@@ -61,6 +61,8 @@ public class EventService {
     private final NotificationService notificationService;
     private final BannedMemberRepository bannedMemberRepository;
     private final EventTransportLegRepository eventTransportLegRepository;
+    private final WebPushService webPushService;
+    private final EmailService emailService;
     
     // ============================================================
     // PUBLIC METHODS - Event CRUD Operations
@@ -114,6 +116,7 @@ public class EventService {
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .maxParticipants(request.getMaxParticipants())
+                .maxWaitlist(request.getMaxWaitlist())
                 .minParticipants(request.getMinParticipants())
                 .price(request.getPrice())
                 .status(Event.EventStatus.DRAFT)
@@ -161,10 +164,10 @@ public class EventService {
             event = eventRepository.findById(event.getId())
                     .orElseThrow(() -> new RuntimeException("Event not found after save"));
         }
-        
+
         return convertToDTO(event);
     }
-    
+
     /**
      * Update an existing event.
      * Only the group organiser can update events.
@@ -206,6 +209,7 @@ public class EventService {
         event.setLatitude(request.getLatitude());
         event.setLongitude(request.getLongitude());
         event.setMaxParticipants(request.getMaxParticipants());
+        event.setMaxWaitlist(request.getMaxWaitlist());
         event.setMinParticipants(request.getMinParticipants());
         event.setPrice(request.getPrice());
         event.setDifficultyLevel(request.getDifficultyLevel());
@@ -544,45 +548,100 @@ public class EventService {
         EventParticipant existing = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId).orElse(null);
         
         int guests = guestCount != null && guestCount > 0 ? guestCount : 0;
-        
-        // Check capacity (account for guests, and delta if already registered)
-        int currentHeadcount = getTotalHeadcount(event);
-        int currentSlotsForUser = existing != null ? 1 + (existing.getGuestCount() != null ? existing.getGuestCount() : 0) : 0;
-        int requestedSlots = 1 + guests;
-        int newTotal = currentHeadcount - currentSlotsForUser + requestedSlots;
-        if (event.getMaxParticipants() != null && newTotal > event.getMaxParticipants()) {
-            int remaining = Math.max(0, event.getMaxParticipants() - (currentHeadcount - currentSlotsForUser));
-            throw new RuntimeException(remaining <= 0
-                    ? "Event is full"
-                    : String.format("Only %d spot%s left", remaining, remaining == 1 ? "" : "s"));
-        }
-        
+
+        // A CANCELLED record means the member previously left — treat them as not currently registered
+        boolean existingIsActive = existing != null && existing.getStatus() != EventParticipant.ParticipationStatus.CANCELLED;
+
         if (event.getStatus() != Event.EventStatus.PUBLISHED) {
             throw new RuntimeException(String.format("Event is not open for registration - %s", event.getStatus()));
         }
-        
+
+        // Determine fullness before capacity check so waitlist path can bypass the slot limit
+        int currentHeadcount = getTotalHeadcount(event);
+        boolean eventIsFull = event.getMaxParticipants() != null && currentHeadcount >= event.getMaxParticipants();
+
+        if (eventIsFull && event.getMaxWaitlist() == null) {
+            throw new RuntimeException("Event is full");
+        }
+
+        // Check capacity only when the user will take a real participant slot (not going to waitlist)
+        if (!eventIsFull) {
+            int currentSlotsForUser = existingIsActive ? 1 + (existing.getGuestCount() != null ? existing.getGuestCount() : 0) : 0;
+            int requestedSlots = 1 + guests;
+            int newTotal = currentHeadcount - currentSlotsForUser + requestedSlots;
+            if (event.getMaxParticipants() != null && newTotal > event.getMaxParticipants()) {
+                int remaining = Math.max(0, event.getMaxParticipants() - (currentHeadcount - currentSlotsForUser));
+                throw new RuntimeException(remaining <= 0
+                        ? "Event is full"
+                        : String.format("Only %d spot%s left", remaining, remaining == 1 ? "" : "s"));
+            }
+        }
+
         // AUTOMATIC GROUP SUBSCRIPTION (Meetup.com pattern)
         // When joining an event, automatically subscribe to the group if not already a member
         if (event.getGroup() != null) {
             try {
-                // Check if user is already a member of the group
                 boolean isMember = groupService.isMemberOfGroup(memberId, event.getGroup().getId());
                 if (!isMember) {
-                    // Auto-subscribe to group (this will create ACTIVE subscription)
                     groupService.subscribeToGroup(event.getGroup().getId(), memberId);
                 }
             } catch (Exception e) {
-                // Log but don't fail the event join if group subscription fails
                 System.err.println("Warning: Failed to auto-subscribe to group: " + e.getMessage());
             }
         }
-        
-        if (existing != null) {
+
+        if (existing != null && existingIsActive) {
+            // Active record — update guest count / notes (not waitlisted, not cancelled)
+            if (existing.getStatus() == EventParticipant.ParticipationStatus.WAITLISTED) {
+                // Already on waitlist — just update their guest count
+                existing.setGuestCount(guests);
+                existing.setNotes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null);
+            } else {
+                existing.setGuestCount(guests);
+                existing.setNotes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null);
+                if (joinQuestionAnswer != null && !joinQuestionAnswer.isBlank()) {
+                    existing.setJoinQuestionAnswer(joinQuestionAnswer);
+                }
+            }
+        } else if (existing != null) {
+            // CANCELLED record — reactivate (or add to waitlist if full)
+            if (eventIsFull) {
+                long waitlistSize = event.getParticipants().stream()
+                        .filter(p -> p.getStatus() == EventParticipant.ParticipationStatus.WAITLISTED)
+                        .count();
+                if (event.getMaxWaitlist() != null && waitlistSize >= event.getMaxWaitlist()) {
+                    throw new RuntimeException("The waitlist is full");
+                }
+                existing.setStatus(EventParticipant.ParticipationStatus.WAITLISTED);
+                existing.setWaitlistJoinedAt(LocalDateTime.now());
+            } else {
+                existing.setStatus(EventParticipant.ParticipationStatus.REGISTERED);
+            }
+            existing.setCancelledAt(null);
             existing.setGuestCount(guests);
             existing.setNotes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null);
             if (joinQuestionAnswer != null && !joinQuestionAnswer.isBlank()) {
                 existing.setJoinQuestionAnswer(joinQuestionAnswer);
             }
+        } else if (eventIsFull) {
+            // New participant — add to waitlist
+            long waitlistSize = event.getParticipants().stream()
+                    .filter(p -> p.getStatus() == EventParticipant.ParticipationStatus.WAITLISTED)
+                    .count();
+            if (event.getMaxWaitlist() != null && waitlistSize >= event.getMaxWaitlist()) {
+                throw new RuntimeException("The waitlist is full");
+            }
+            EventParticipant participant = EventParticipant.builder()
+                    .event(event)
+                    .member(member)
+                    .status(EventParticipant.ParticipationStatus.WAITLISTED)
+                    .registeredAt(LocalDateTime.now())
+                    .waitlistJoinedAt(LocalDateTime.now())
+                    .guestCount(guests)
+                    .notes(guestNames != null && !guestNames.isEmpty() ? String.join(", ", guestNames) : null)
+                    .joinQuestionAnswer(joinQuestionAnswer != null && !joinQuestionAnswer.isBlank() ? joinQuestionAnswer : null)
+                    .build();
+            event.getParticipants().add(participant);
         } else {
             EventParticipant participant = EventParticipant.builder()
                     .event(event)
@@ -594,12 +653,6 @@ public class EventService {
                     .joinQuestionAnswer(joinQuestionAnswer != null && !joinQuestionAnswer.isBlank() ? joinQuestionAnswer : null)
                     .build();
             event.getParticipants().add(participant);
-        }
-        
-        // Update event status if it's now full
-        if (event.getMaxParticipants() != null &&
-            getTotalHeadcount(event) >= event.getMaxParticipants()) {
-            event.setStatus(Event.EventStatus.FULL);
         }
         
         event = eventRepository.save(event);
@@ -620,19 +673,17 @@ public class EventService {
         EventParticipant participant = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId)
                 .orElseThrow(() -> new RuntimeException("Member is not registered for this event"));
         
-        // Remove the participant from event's collection
-        event.getParticipants().remove(participant);
-        
-        // Explicitly delete the participant from database
-        eventParticipantRepository.delete(participant);
-        
-        // If the event was full, change status back to PUBLISHED when capacity frees up
-        if (event.getStatus() == Event.EventStatus.FULL
-                && event.getMaxParticipants() != null
-                && getTotalHeadcount(event) < event.getMaxParticipants()) {
-            event.setStatus(Event.EventStatus.PUBLISHED);
+        // Soft-delete: keep the record so hosts can see who left and when
+        participant.setStatus(EventParticipant.ParticipationStatus.CANCELLED);
+        participant.setCancelledAt(LocalDateTime.now());
+        eventParticipantRepository.save(participant);
+
+        // Promote from waitlist only if event hasn't started yet
+        boolean eventNotStarted = Instant.now().isBefore(event.getEventDate());
+        if (eventNotStarted) {
+            promoteFromWaitlist(event);
         }
-        
+
         event = eventRepository.save(event);
         return convertToDTO(event);
     }
@@ -750,6 +801,8 @@ public class EventService {
         // Get participant IDs for the DTO
         Set<Long> participantIds = event.getParticipants() != null ?
                 event.getParticipants().stream()
+                        .filter(p -> p.getStatus() != EventParticipant.ParticipationStatus.CANCELLED
+                                  && p.getStatus() != EventParticipant.ParticipationStatus.WAITLISTED)
                         .map(p -> p.getMember().getId())
                         .collect(Collectors.toSet()) :
                 new HashSet<>();
@@ -789,8 +842,12 @@ public class EventService {
                 .latitude(event.getLatitude())
                 .longitude(event.getLongitude())
                 .maxParticipants(event.getMaxParticipants())
+                .maxWaitlist(event.getMaxWaitlist())
                 .minParticipants(event.getMinParticipants())
                 .currentParticipants(participantCount)
+                .waitlistCount((int) (event.getParticipants() != null ? event.getParticipants().stream()
+                        .filter(p -> p.getStatus() == EventParticipant.ParticipationStatus.WAITLISTED)
+                        .count() : 0))
                 .participantIds(participantIds)
                 .price(event.getPrice())
                 .status(event.getStatus())
@@ -850,6 +907,8 @@ public class EventService {
         // Get participant IDs for the DTO
         Set<Long> participantIds = event.getParticipants() != null ?
                 event.getParticipants().stream()
+                        .filter(p -> p.getStatus() != EventParticipant.ParticipationStatus.CANCELLED
+                                  && p.getStatus() != EventParticipant.ParticipationStatus.WAITLISTED)
                         .map(p -> p.getMember().getId())
                         .collect(Collectors.toSet()) :
                 new HashSet<>();
@@ -889,8 +948,12 @@ public class EventService {
                 .latitude(event.getLatitude())
                 .longitude(event.getLongitude())
                 .maxParticipants(event.getMaxParticipants())
+                .maxWaitlist(event.getMaxWaitlist())
                 .minParticipants(event.getMinParticipants())
                 .currentParticipants(participantCount)
+                .waitlistCount((int) (event.getParticipants() != null ? event.getParticipants().stream()
+                        .filter(p -> p.getStatus() == EventParticipant.ParticipationStatus.WAITLISTED)
+                        .count() : 0))
                 .participantIds(participantIds)
                 .price(event.getPrice())
                 .status(event.getStatus())
@@ -1041,11 +1104,59 @@ public class EventService {
                             .guestCount(participant.getGuestCount())
                             .joinQuestionAnswer(participant.getJoinQuestionAnswer())
                             .deleted(isDeleted || isBanned)
+                            .participationStatus(participant.getStatus() != null ? participant.getStatus().name() : null)
+                            .cancelledAt(participant.getCancelledAt())
+                            .waitlistJoinedAt(participant.getWaitlistJoinedAt())
                             .build();
                 })
                 .collect(Collectors.toList());
     }
     
+    /**
+     * Mark a participant as no-show. Host-only, event must have started.
+     */
+    @Transactional
+    public void markNoShow(Long eventId, Long targetMemberId, Long requesterId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        if (event.getHostMember() == null || !event.getHostMember().getId().equals(requesterId)) {
+            throw new RuntimeException("Only the host can mark no-shows");
+        }
+        if (!Instant.now().isAfter(event.getEventDate())) {
+            throw new RuntimeException("Cannot mark no-shows before the event has started");
+        }
+
+        EventParticipant participant = eventParticipantRepository.findByEventIdAndMemberId(eventId, targetMemberId)
+                .orElseThrow(() -> new RuntimeException("Participant not found"));
+
+        participant.setStatus(EventParticipant.ParticipationStatus.NO_SHOW);
+        eventParticipantRepository.save(participant);
+    }
+
+    /**
+     * Unmark a participant's no-show status, reverting to REGISTERED. Host-only.
+     */
+    @Transactional
+    public void unmarkNoShow(Long eventId, Long targetMemberId, Long requesterId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        if (event.getHostMember() == null || !event.getHostMember().getId().equals(requesterId)) {
+            throw new RuntimeException("Only the host can update no-show status");
+        }
+
+        EventParticipant participant = eventParticipantRepository.findByEventIdAndMemberId(eventId, targetMemberId)
+                .orElseThrow(() -> new RuntimeException("Participant not found"));
+
+        if (participant.getStatus() != EventParticipant.ParticipationStatus.NO_SHOW) {
+            throw new RuntimeException("Participant is not marked as no-show");
+        }
+
+        participant.setStatus(EventParticipant.ParticipationStatus.REGISTERED);
+        eventParticipantRepository.save(participant);
+    }
+
     /**
      * Get calendar data for an event.
      * Returns event details formatted for calendar integration.
@@ -1119,6 +1230,43 @@ public class EventService {
     }
 
     /**
+     * Promotes the earliest waitlisted participant to REGISTERED and notifies them.
+     * Called after a cancellation, only when the event hasn't started.
+     */
+    private void promoteFromWaitlist(Event event) {
+        if (event.getParticipants() == null) return;
+
+        event.getParticipants().stream()
+                .filter(p -> p.getStatus() == EventParticipant.ParticipationStatus.WAITLISTED)
+                .min(Comparator.comparing(EventParticipant::getWaitlistJoinedAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
+                .ifPresent(next -> {
+                    next.setStatus(EventParticipant.ParticipationStatus.REGISTERED);
+                    eventParticipantRepository.save(next);
+
+                    // Send push notification
+                    try {
+                        webPushService.sendToMember(
+                                next.getMember().getId(),
+                                "You're in! 🎉",
+                                "A spot opened up — you've been moved off the waitlist for " + event.getTitle(),
+                                "/events/" + event.getId()
+                        );
+                    } catch (Exception e) {
+                        System.err.println("Warning: Failed to send waitlist promotion push: " + e.getMessage());
+                    }
+
+                    // Send email notification
+                    try {
+                        emailService.sendWaitlistPromotionEmail(next.getMember(), event.getTitle(),
+                                event.getGroup().getName(), event.getId());
+                    } catch (Exception e) {
+                        System.err.println("Warning: Failed to send waitlist promotion email: " + e.getMessage());
+                    }
+                });
+    }
+
+    /**
      * Calculates total headcount including guests (participant + guestCount).
      */
     private int getTotalHeadcount(Event event) {
@@ -1126,6 +1274,8 @@ public class EventService {
             return 0;
         }
         return event.getParticipants().stream()
+                .filter(p -> p.getStatus() != EventParticipant.ParticipationStatus.CANCELLED
+                          && p.getStatus() != EventParticipant.ParticipationStatus.WAITLISTED)
                 .mapToInt(p -> 1 + (p.getGuestCount() != null ? p.getGuestCount() : 0))
                 .sum();
     }

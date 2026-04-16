@@ -5,8 +5,10 @@ import React from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { membersAPI } from '../lib/api'
-import { ArrowLeft, Calendar } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
+import { ArrowLeft, Calendar, MessageCircle } from 'lucide-react'
 import { useSmartBack } from '../hooks/useSmartBack'
+import ContactInfoDisplay from '../components/ContactInfoDisplay'
 
 // ============================================================
 // MAIN COMPONENT
@@ -18,6 +20,7 @@ export default function MemberDetailPage() {
   const { id } = useParams()  // Get member ID from URL
   const navigate = useNavigate()
   const goBack = useSmartBack('/')
+  const { isAuthenticated } = useAuthStore()
 
   // ============================================================
   // DATA FETCHING
@@ -28,6 +31,13 @@ export default function MemberDetailPage() {
     queryKey: ['member', id],
     queryFn: () => membersAPI.getMemberById(id).then(res => res.data),
     enabled: !!id,
+  })
+
+  // Fetch member's visible contact info (privacy-filtered by backend)
+  const { data: contacts } = useQuery({
+    queryKey: ['memberContacts', id],
+    queryFn: () => membersAPI.getMemberContacts(id).then(res => res.data),
+    enabled: !!id && isAuthenticated,
   })
 
   // ============================================================
@@ -148,14 +158,16 @@ export default function MemberDetailPage() {
                 </p>
               </div>
 
-              {/* Additional Info Coming Soon */}
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-2xl p-6 border border-blue-100 text-center">
-                <div className="text-4xl mb-3">🚀</div>
-                <h3 className="font-bold text-gray-900 text-lg mb-2">More Features Coming Soon!</h3>
-                <p className="text-gray-600 text-sm">
-                  We're working on adding activity history, group memberships, and more details to member profiles.
-                </p>
-              </div>
+              {/* Contact Info */}
+              {contacts && contacts.length > 0 && (
+                <div className="rounded-2xl p-6 border border-purple-100 bg-gradient-to-r from-purple-50/50 to-pink-50/50">
+                  <div className="flex items-center justify-center gap-2 mb-4">
+                    <MessageCircle className="h-5 w-5 text-purple-600" />
+                    <h3 className="font-bold text-gray-900 text-lg">Contact Info</h3>
+                  </div>
+                  <ContactInfoDisplay contacts={contacts} />
+                </div>
+              )}
             </div>
 
             {/* ========== ACTION BUTTONS ========== */}

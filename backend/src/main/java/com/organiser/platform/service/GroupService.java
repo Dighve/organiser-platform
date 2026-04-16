@@ -329,11 +329,6 @@ public class GroupService {
                 event.getParticipants().remove(participant.get());
                 eventParticipantRepository.delete(participant.get());
                 
-                // If event was full, change status back to PUBLISHED
-                if (event.getStatus() == Event.EventStatus.FULL) {
-                    event.setStatus(Event.EventStatus.PUBLISHED);
-                }
-                
                 eventRepository.save(event);
             }
         }

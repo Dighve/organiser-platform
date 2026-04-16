@@ -147,6 +147,7 @@ export default function EditEventPage() {
         latitude: event.latitude,
         longitude: event.longitude,
         maxParticipants: event.maxParticipants,
+        maxWaitlist: event.maxWaitlist,
         price: event.price || 0,
         difficultyLevel: event.difficultyLevel,
         paceLevel: event.paceLevel,
@@ -271,6 +272,7 @@ export default function EditEventPage() {
       latitude: data.latitude ? Number(data.latitude) : null,
       longitude: data.longitude ? Number(data.longitude) : null,
       maxParticipants: data.maxParticipants ? Number(data.maxParticipants) : null,
+      maxWaitlist: data.maxWaitlist ? Number(data.maxWaitlist) : null,
       minParticipants: 1,
       price: data.price ? Number(data.price) : 0,
       difficultyLevel: data.difficultyLevel || null,
@@ -827,6 +829,19 @@ export default function EditEventPage() {
         />
       </div>
 
+      {watch('maxParticipants') && (
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Max waitlist</label>
+          <input
+            type="number"
+            value={watch('maxWaitlist') || ''}
+            onChange={(e) => { setValue('maxWaitlist', e.target.value); updateFormData({ maxWaitlist: e.target.value }) }}
+            className="w-full px-4 py-4 text-[15px] border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            placeholder="10 (leave empty for no waitlist)"
+          />
+        </div>
+      )}
+
       <div>
         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Required gear</label>
         <TagInput
@@ -968,6 +983,9 @@ export default function EditEventPage() {
           )}
           {formData.maxParticipants && (
             <span className="px-2.5 py-1 bg-purple-50 border border-purple-200 text-purple-700 text-xs font-semibold rounded-lg">{formData.maxParticipants} max</span>
+          )}
+          {formData.maxWaitlist && (
+            <span className="px-2.5 py-1 bg-orange-50 border border-orange-200 text-orange-700 text-xs font-semibold rounded-lg">⏳ {formData.maxWaitlist} waitlist</span>
           )}
           {(Number(formData.price) > 0) && (
             <span className="px-2.5 py-1 bg-amber-50 border border-amber-200 text-amber-700 text-xs font-semibold rounded-lg">£{formData.price}</span>
@@ -1735,6 +1753,32 @@ export default function EditEventPage() {
                 <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited participants</p>
               </div>
 
+              {/* ========== MAX WAITLIST ========== */}
+              {watch('maxParticipants') && (
+                <div>
+                  <label htmlFor="maxWaitlist" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-yellow-500 shadow-lg">
+                      <Users className="h-4 w-4 text-white" />
+                    </div>
+                    Max Waitlist
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                    <input
+                      {...register('maxWaitlist')}
+                      type="number"
+                      min="1"
+                      className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-orange-300 bg-white"
+                      placeholder="10"
+                    />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500">
+                      <Users className="h-6 w-6" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited waitlist</p>
+                </div>
+              )}
+
               {/* ========== REQUIRED GEAR (Custom Tags) ========== */}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
                 <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
@@ -1958,6 +2002,11 @@ export default function EditEventPage() {
                       {formData.maxParticipants && (
                         <div className="bg-gray-50 p-3 rounded-lg">
                           <span className="font-semibold">Max hikers:</span> {formData.maxParticipants}
+                        </div>
+                      )}
+                      {formData.maxWaitlist && (
+                        <div className="bg-gray-50 p-3 rounded-lg">
+                          <span className="font-semibold">Max waitlist:</span> {formData.maxWaitlist}
                         </div>
                       )}
                       <div className="bg-gray-50 p-3 rounded-lg">

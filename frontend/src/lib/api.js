@@ -205,7 +205,10 @@ export const eventsAPI = {
     api.get(`/events/organiser/my-events?page=${page}&size=${size}`),
   
   getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),
-  
+
+  markNoShow: (eventId, memberId) => api.post(`/events/${eventId}/participants/${memberId}/no-show`),
+  unmarkNoShow: (eventId, memberId) => api.delete(`/events/${eventId}/participants/${memberId}/no-show`),
+
   getCalendarData: (id) => api.get(`/events/public/${id}/calendar`),
 }
 
@@ -296,6 +299,11 @@ export const membersAPI = {
   updateSettings: (updates) => api.put('/members/me/settings', updates),
 
   deleteProfile: () => api.delete('/members/me'),
+
+  // Contact info
+  getMyContacts: () => api.get('/members/me/contacts'),
+  updateMyContacts: (data) => api.put('/members/me/contacts', data),
+  getMemberContacts: (memberId) => api.get(`/members/${memberId}/contacts`),
 }
 
 // Legal API

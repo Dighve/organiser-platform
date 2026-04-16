@@ -14,6 +14,7 @@ import ShareButton from '../components/ShareButton'
 import InviteMembersModal from '../components/InviteMembersModal'
 import GroupRatingCard from '../components/GroupRatingCard'
 import GroupRatingCardMobile from '../components/GroupRatingCardMobile'
+import ContactInfoPopover from '../components/ContactInfoPopover'
 
 function isEventLive(event) {
   if (!event?.eventDate) return false
@@ -767,6 +768,14 @@ export default function GroupDetailPage() {
                               <span className="text-xs bg-gradient-to-r from-orange-500 to-pink-500 text-white px-2 py-1 rounded-full font-semibold">Organiser</span>
                             )}
                           </div>
+                          
+                          {/* Contact info popover */}
+                          {member.id !== user?.id && (
+                            <ContactInfoPopover
+                              memberId={member.id}
+                              memberName={member.displayName}
+                            />
+                          )}
                           
                           {/* Triple dots menu - Only for organiser, not for themselves or other organisers */}
                           {isGroupOrganiser && !member.isOrganiser && member.id !== user?.id && (

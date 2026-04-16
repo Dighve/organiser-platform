@@ -120,6 +120,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/*/publish", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/join", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/leave", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/participants/*/no-show", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/participants/*/no-show", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/events/*/participants", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/*/comments", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/*/comments", "POST"),
@@ -175,6 +177,9 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/members/me/email-notifications", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/members/me/settings", "GET"),
                                 new AntPathRequestMatcher("/api/v1/members/me/settings", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/me/contacts", "GET"),
+                                new AntPathRequestMatcher("/api/v1/members/me/contacts", "PUT"),
+                                new AntPathRequestMatcher("/api/v1/members/*/contacts", "GET"),
                                 new AntPathRequestMatcher("/api/v1/members/become-organiser", "POST"),
                                 new AntPathRequestMatcher("/api/v1/members", "GET")
                         ).authenticated()
