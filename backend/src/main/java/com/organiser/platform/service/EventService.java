@@ -552,26 +552,29 @@ public class EventService {
         // A CANCELLED record means the member previously left — treat them as not currently registered
         boolean existingIsActive = existing != null && existing.getStatus() != EventParticipant.ParticipationStatus.CANCELLED;
 
-        // Check capacity (account for guests, and delta if already registered)
-        int currentHeadcount = getTotalHeadcount(event);
-        int currentSlotsForUser = existingIsActive ? 1 + (existing.getGuestCount() != null ? existing.getGuestCount() : 0) : 0;
-        int requestedSlots = 1 + guests;
-        int newTotal = currentHeadcount - currentSlotsForUser + requestedSlots;
-        if (event.getMaxParticipants() != null && newTotal > event.getMaxParticipants()) {
-            int remaining = Math.max(0, event.getMaxParticipants() - (currentHeadcount - currentSlotsForUser));
-            throw new RuntimeException(remaining <= 0
-                    ? "Event is full"
-                    : String.format("Only %d spot%s left", remaining, remaining == 1 ? "" : "s"));
+        if (event.getStatus() != Event.EventStatus.PUBLISHED) {
+            throw new RuntimeException(String.format("Event is not open for registration - %s", event.getStatus()));
         }
-        
-        boolean eventIsFull = event.getMaxParticipants() != null && getTotalHeadcount(event) >= event.getMaxParticipants();
+
+        // Determine fullness before capacity check so waitlist path can bypass the slot limit
+        int currentHeadcount = getTotalHeadcount(event);
+        boolean eventIsFull = event.getMaxParticipants() != null && currentHeadcount >= event.getMaxParticipants();
 
         if (eventIsFull && event.getMaxWaitlist() == null) {
             throw new RuntimeException("Event is full");
         }
 
-        if (event.getStatus() != Event.EventStatus.PUBLISHED) {
-            throw new RuntimeException(String.format("Event is not open for registration - %s", event.getStatus()));
+        // Check capacity only when the user will take a real participant slot (not going to waitlist)
+        if (!eventIsFull) {
+            int currentSlotsForUser = existingIsActive ? 1 + (existing.getGuestCount() != null ? existing.getGuestCount() : 0) : 0;
+            int requestedSlots = 1 + guests;
+            int newTotal = currentHeadcount - currentSlotsForUser + requestedSlots;
+            if (event.getMaxParticipants() != null && newTotal > event.getMaxParticipants()) {
+                int remaining = Math.max(0, event.getMaxParticipants() - (currentHeadcount - currentSlotsForUser));
+                throw new RuntimeException(remaining <= 0
+                        ? "Event is full"
+                        : String.format("Only %d spot%s left", remaining, remaining == 1 ? "" : "s"));
+            }
         }
 
         // AUTOMATIC GROUP SUBSCRIPTION (Meetup.com pattern)
