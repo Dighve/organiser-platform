@@ -151,6 +151,11 @@ export default function EventDetailPage() {
   const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
   const isHost = event && isAuthenticated && event.hostMemberId && Number(user?.id) === Number(event.hostMemberId)
   const isEventStarted = event?.eventDate && new Date(event.eventDate) <= new Date()
+  // guest info for current user
+  const userParticipant = (participantsData?.data || []).find(
+    (p) => p?.id && user?.id && Number(p.id) === Number(user.id)
+  )
+
   // Host is automatically registered as participant by backend
   const hasJoined = isAuthenticated && (participantIds.includes(Number(user?.id)) || isHost)
   const isWaitlisted = isAuthenticated && !hasJoined && userParticipant?.participationStatus === 'WAITLISTED'
@@ -162,11 +167,6 @@ export default function EventDetailPage() {
         .findIndex(p => Number(p.id) === Number(user?.id)) + 1)
     : 0
   const currentHeadcount = event?.currentParticipants || 0
-
-  // guest info for current user
-  const userParticipant = (participantsData?.data || []).find(
-    (p) => p?.id && user?.id && Number(p.id) === Number(user.id)
-  )
   const userGuestCount = userParticipant?.guestCount ? Number(userParticipant.guestCount) : 0
   const displayGuestCount = userGuestCount || guestCount || 0
 
