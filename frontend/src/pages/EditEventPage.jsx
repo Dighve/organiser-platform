@@ -1750,6 +1750,32 @@ export default function EditEventPage() {
                 <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited participants</p>
               </div>
 
+              {/* ========== MAX WAITLIST ========== */}
+              {watch('maxParticipants') && (
+                <div>
+                  <label htmlFor="maxWaitlist" className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-yellow-500 shadow-lg">
+                      <Users className="h-4 w-4 text-white" />
+                    </div>
+                    Max Waitlist
+                  </label>
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+                    <input
+                      {...register('maxWaitlist')}
+                      type="number"
+                      min="1"
+                      className="relative w-full pl-14 pr-4 py-5 text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-orange-300 bg-white"
+                      placeholder="10"
+                    />
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500">
+                      <Users className="h-6 w-6" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited waitlist</p>
+                </div>
+              )}
+
               {/* ========== REQUIRED GEAR (Custom Tags) ========== */}
               <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 border-2 border-purple-200">
                 <h3 className="font-bold text-gray-900 text-lg mb-3 flex items-center gap-2">
