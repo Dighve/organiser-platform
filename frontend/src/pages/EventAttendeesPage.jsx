@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, MessageCircle, User } from 'lucide-react'
 import { eventsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import ProfileAvatar from '../components/ProfileAvatar'
+import ContactInfoPopover from '../components/ContactInfoPopover'
 
 export default function EventAttendeesPage() {
   const { id } = useParams()
@@ -104,7 +105,7 @@ export default function EventAttendeesPage() {
           <>
             {activeTab === 'attendees' && (
               attending.length > 0
-                ? attending.map(p => <MemberRow key={p.id} participant={p} onClick={() => navigate(`/members/${p.id}`)} />)
+                ? attending.map(p => <MemberRow key={p.id} participant={p} onClick={() => navigate(`/members/${p.id}`)} showChat currentUserId={user?.id} />)
                 : <Empty message="No attendees yet" />
             )}
 
@@ -115,11 +116,20 @@ export default function EventAttendeesPage() {
                       <span className="flex-shrink-0 w-7 h-7 rounded-full bg-orange-200 text-orange-700 text-xs font-bold flex items-center justify-center">
                         {idx + 1}
                       </span>
-                      <ProfileAvatar member={p} size="md" className="flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-gray-900 text-sm truncate">{p.displayName || 'Anonymous'}</p>
+                      <div className="flex-shrink-0 cursor-pointer" onClick={() => navigate(`/members/${p.id}`)}>
+                        <ProfileAvatar member={p} size="md" />
+                      </div>
+                      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => navigate(`/members/${p.id}`)}>
+                        <p className="font-semibold text-gray-900 text-sm truncate hover:text-purple-600 transition-colors">{p.displayName || 'Anonymous'}</p>
                         <p className="text-xs text-gray-500">Joined {new Date(p.joinedAt).toLocaleDateString()}</p>
                       </div>
+                      {Number(p.id) !== Number(user?.id) && (
+                        <ContactInfoPopover
+                          memberId={p.id}
+                          memberName={p.displayName}
+                          iconClassName="text-orange-400 hover:text-orange-600 hover:bg-orange-100"
+                        />
+                      )}
                     </div>
                   ))
                 : <Empty message="No one on the waitlist" />
@@ -127,7 +137,7 @@ export default function EventAttendeesPage() {
 
             {isHostOrOrganiser && activeTab === 'noshow' && (
               noShows.length > 0
-                ? noShows.map(p => <MemberRow key={p.id} participant={p} badge="No show" badgeColor="red" onClick={() => navigate(`/members/${p.id}`)} />)
+                ? noShows.map(p => <MemberRow key={p.id} participant={p} badge="No show" badgeColor="red" onClick={() => navigate(`/members/${p.id}`)} showChat currentUserId={user?.id} />)
                 : <Empty message="No no-shows" />
             )}
 
@@ -154,16 +164,15 @@ export default function EventAttendeesPage() {
   )
 }
 
-function MemberRow({ participant, badge, badgeColor, onClick }) {
+function MemberRow({ participant, badge, badgeColor, onClick, showChat, currentUserId }) {
   return (
-    <div
-      className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl cursor-pointer active:opacity-70"
-      onClick={onClick}
-    >
-      <ProfileAvatar member={participant} size="md" className="flex-shrink-0" />
-      <div className="flex-1 min-w-0">
+    <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+      <div className="flex-shrink-0 cursor-pointer" onClick={onClick}>
+        <ProfileAvatar member={participant} size="md" />
+      </div>
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
         <div className="flex items-center gap-2">
-          <p className="font-semibold text-gray-900 text-sm truncate">{participant.displayName || 'Anonymous'}</p>
+          <p className="font-semibold text-gray-900 text-sm truncate hover:text-purple-600 transition-colors">{participant.displayName || 'Anonymous'}</p>
           {badge && (
             <span className={`text-xs px-1.5 py-0.5 rounded font-medium bg-${badgeColor}-100 text-${badgeColor}-600`}>
               {badge}
@@ -174,6 +183,12 @@ function MemberRow({ participant, badge, badgeColor, onClick }) {
           <p className="text-xs text-gray-500">+{participant.guestCount} guest{participant.guestCount === 1 ? '' : 's'}</p>
         )}
       </div>
+      {showChat && Number(participant.id) !== Number(currentUserId) && (
+        <ContactInfoPopover
+          memberId={participant.id}
+          memberName={participant.displayName}
+        />
+      )}
     </div>
   )
 }

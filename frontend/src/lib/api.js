@@ -299,6 +299,11 @@ export const membersAPI = {
   updateSettings: (updates) => api.put('/members/me/settings', updates),
 
   deleteProfile: () => api.delete('/members/me'),
+
+  // Contact info
+  getMyContacts: () => api.get('/members/me/contacts'),
+  updateMyContacts: (data) => api.put('/members/me/contacts', data),
+  getMemberContacts: (memberId) => api.get(`/members/${memberId}/contacts`),
 }
 
 // Legal API

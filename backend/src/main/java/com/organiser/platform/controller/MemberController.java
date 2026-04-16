@@ -1,8 +1,11 @@
 package com.organiser.platform.controller;
 
+import com.organiser.platform.dto.ContactInfoDTO;
 import com.organiser.platform.dto.MemberDTO;
+import com.organiser.platform.dto.UpdateContactInfoRequest;
 import com.organiser.platform.dto.UpdateMemberProfileRequest;
 import com.organiser.platform.model.Member;
+import com.organiser.platform.service.ContactInfoService;
 import com.organiser.platform.service.MemberService;
 import com.organiser.platform.service.MemberSettingService;
 import jakarta.validation.Valid;
@@ -12,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -22,6 +26,7 @@ public class MemberController {
 
     private final MemberService memberService;
     private final MemberSettingService memberSettingService;
+    private final ContactInfoService contactInfoService;
     
     @PostMapping("/become-organiser")
     public ResponseEntity<Member> becomeOrganiser(Authentication authentication) {
@@ -123,6 +128,32 @@ public class MemberController {
         return ResponseEntity.ok(memberSettingService.updateSettings(userId, updates));
     }
     
+    // ============================================================
+    // CONTACT INFO ENDPOINTS
+    // ============================================================
+
+    @GetMapping("/me/contacts")
+    public ResponseEntity<List<ContactInfoDTO>> getMyContacts(Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(contactInfoService.getOwnContacts(userId));
+    }
+
+    @PutMapping("/me/contacts")
+    public ResponseEntity<List<ContactInfoDTO>> updateMyContacts(
+            @Valid @RequestBody UpdateContactInfoRequest request,
+            Authentication authentication) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(contactInfoService.updateContacts(userId, request));
+    }
+
+    @GetMapping("/{memberId}/contacts")
+    public ResponseEntity<List<ContactInfoDTO>> getMemberContacts(
+            @PathVariable Long memberId,
+            Authentication authentication) {
+        Long viewerId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(contactInfoService.getVisibleContacts(memberId, viewerId));
+    }
+
     private Long getUserIdFromAuth(Authentication authentication) {
         if (authentication == null || authentication.getPrincipal() == null) {
             throw new RuntimeException("User not authenticated");

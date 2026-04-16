@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star, ChevronRight, Info, Timer, Train, Car, Bus, Footprints, ArrowRight } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, MessageCircle, Share2, UserPlus, Mail, Star, ChevronRight, Info, Timer, Train, Car, Bus, Footprints, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -12,6 +12,7 @@ import CommentSection from '../components/CommentSection'
 import ProfileAvatar from '../components/ProfileAvatar'
 import LoginModal from '../components/LoginModal'
 import AddToCalendar from '../components/AddToCalendar'
+import ContactInfoPopover from '../components/ContactInfoPopover'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
 import ShareButton from '../components/ShareButton'
@@ -1554,6 +1555,13 @@ export default function EventDetailPage() {
                                   </p>
                                 )}
                               </div>
+                              {event?.hostMemberId && Number(event.hostMemberId) !== Number(user?.id) && (
+                                <ContactInfoPopover
+                                  memberId={event.hostMemberId}
+                                  memberName={hostNameFallback}
+                                  iconClassName="text-orange-400 hover:text-orange-600 hover:bg-orange-100"
+                                />
+                              )}
                             </div>
                           </>
                         )
@@ -1608,6 +1616,13 @@ export default function EventDetailPage() {
                                 )}
                               </div>
                             </div>
+                            {/* Contact info popover */}
+                            {!isNoShow && Number(participant.id) !== Number(user?.id) && (
+                              <ContactInfoPopover
+                                memberId={participant.id}
+                                memberName={participant.displayName}
+                              />
+                            )}
                             {isHost && isEventStarted && (inOverlay || !isNoShow) && (
                               <button
                                 onClick={(e) => { e.stopPropagation(); toggleNoShow(participant) }}
