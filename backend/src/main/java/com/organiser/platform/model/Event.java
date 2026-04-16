@@ -197,8 +197,7 @@ public class Event {
         DRAFT,
         PUBLISHED,
         CANCELLED,
-        COMPLETED,
-        FULL
+        COMPLETED
     }
     
     public int getCurrentParticipantCount() {

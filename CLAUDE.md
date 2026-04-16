@@ -149,6 +149,18 @@ git commit -m "feat: describe the change"
 
 ## Business Domain Rules
 
+### Event Fullness — Always Derived from Count, Never from Status
+
+`FULL` is **not** a stored event status. Fullness is always computed as:
+```
+isFull = maxParticipants != null && currentParticipants >= maxParticipants
+```
+- **Frontend:** use `isFull` derived from `event.currentParticipants` and `event.maxParticipants`
+- **Backend:** use `getTotalHeadcount(event) >= event.getMaxParticipants()` inline
+- **Do not** add `FULL` back to `Event.EventStatus` or call `event.setStatus(FULL)` anywhere
+
+`EventStatus` valid values: `DRAFT`, `PUBLISHED`, `CANCELLED`, `COMPLETED`
+
 ### Event Timing
 Events have three time-related fields — always check all three before writing filtering logic:
 

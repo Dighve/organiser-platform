@@ -163,13 +163,6 @@ public class EventService {
             // Refresh the event to load the updated participants collection
             event = eventRepository.findById(event.getId())
                     .orElseThrow(() -> new RuntimeException("Event not found after save"));
-
-            // Update event status if host filled the last spot
-            if (event.getMaxParticipants() != null &&
-                    getTotalHeadcount(event) >= event.getMaxParticipants()) {
-                event.setStatus(Event.EventStatus.FULL);
-                event = eventRepository.save(event);
-            }
         }
 
         return convertToDTO(event);
@@ -571,13 +564,13 @@ public class EventService {
                     : String.format("Only %d spot%s left", remaining, remaining == 1 ? "" : "s"));
         }
         
-        boolean eventIsFull = event.getStatus() == Event.EventStatus.FULL;
+        boolean eventIsFull = event.getMaxParticipants() != null && getTotalHeadcount(event) >= event.getMaxParticipants();
 
         if (eventIsFull && event.getMaxWaitlist() == null) {
             throw new RuntimeException("Event is full");
         }
 
-        if (!eventIsFull && event.getStatus() != Event.EventStatus.PUBLISHED) {
+        if (event.getStatus() != Event.EventStatus.PUBLISHED) {
             throw new RuntimeException(String.format("Event is not open for registration - %s", event.getStatus()));
         }
 
@@ -659,12 +652,6 @@ public class EventService {
             event.getParticipants().add(participant);
         }
         
-        // Update event status if it's now full
-        if (event.getMaxParticipants() != null &&
-            getTotalHeadcount(event) >= event.getMaxParticipants()) {
-            event.setStatus(Event.EventStatus.FULL);
-        }
-        
         event = eventRepository.save(event);
         return convertToDTO(event);
     }
@@ -694,13 +681,6 @@ public class EventService {
             promoteFromWaitlist(event);
         }
 
-        // If the event was full and no one was promoted (or waitlist was empty), reopen it
-        if (event.getStatus() == Event.EventStatus.FULL
-                && event.getMaxParticipants() != null
-                && getTotalHeadcount(event) < event.getMaxParticipants()) {
-            event.setStatus(Event.EventStatus.PUBLISHED);
-        }
-        
         event = eventRepository.save(event);
         return convertToDTO(event);
     }

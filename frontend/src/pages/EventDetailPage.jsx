@@ -159,7 +159,8 @@ export default function EventDetailPage() {
   // Host is automatically registered as participant by backend
   const hasJoined = isAuthenticated && (participantIds.includes(Number(user?.id)) || isHost)
   const isWaitlisted = isAuthenticated && !hasJoined && userParticipant?.participationStatus === 'WAITLISTED'
-  const canJoinWaitlist = event?.status === 'FULL' && event?.maxWaitlist > 0 && (event?.waitlistCount ?? 0) < event?.maxWaitlist
+  const isFull = event?.maxParticipants != null && event?.currentParticipants >= event?.maxParticipants
+  const canJoinWaitlist = isFull && event?.maxWaitlist > 0 && (event?.waitlistCount ?? 0) < event?.maxWaitlist
   const waitlistPosition = isWaitlisted
     ? ((participantsData?.data || [])
         .filter(p => p.participationStatus === 'WAITLISTED')
@@ -854,7 +855,7 @@ export default function EventDetailPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleJoinClick}
-                  disabled={(!canJoinWaitlist && event?.status === 'FULL') || joinMutation.isLoading || isJoiningFlow}
+                  disabled={(!canJoinWaitlist && isFull) || joinMutation.isLoading || isJoiningFlow}
                   className="flex-1 py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
                 >
                   {joinMutation.isLoading || isJoiningFlow ? (
@@ -862,7 +863,7 @@ export default function EventDetailPage() {
                   ) : (
                     <Users className="h-4 w-4" />
                   )}
-                  {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : event?.status === 'FULL' ? 'Event Full' : 'Join'}
+                  {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join'}
                 </button>
                 <button
                   onClick={() => setIsManageOpen(true)}
@@ -947,7 +948,7 @@ export default function EventDetailPage() {
               // Not joined: Show Join / Join Waitlist / Event Full button
               <button
                 onClick={handleJoinClick}
-                disabled={(!canJoinWaitlist && event?.status === 'FULL') || joinMutation.isLoading || isJoiningFlow}
+                disabled={(!canJoinWaitlist && isFull) || joinMutation.isLoading || isJoiningFlow}
                 className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-base"
               >
                 {joinMutation.isLoading || isJoiningFlow ? (
@@ -955,7 +956,7 @@ export default function EventDetailPage() {
                 ) : (
                   <Users className="h-5 w-5" />
                 )}
-                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join Event'}
               </button>
             )
           ) : (
@@ -1517,10 +1518,10 @@ export default function EventDetailPage() {
                               {totalCount > 0 && (
                                 <span className="flex items-center gap-1.5 text-sm font-semibold text-purple-600">
                                   <span>👥 {totalCount}{event?.maxParticipants ? `/${event.maxParticipants}` : ''}</span>
-                                  {event?.status === 'FULL' && (
+                                  {isFull && (
                                     <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600">Full</span>
                                   )}
-                                  {event?.status === 'FULL' && event?.waitlistCount > 0 && (
+                                  {isFull && event?.waitlistCount > 0 && (
                                     <span className="text-[11px] font-medium text-orange-500">{event.waitlistCount} waiting</span>
                                   )}
                                 </span>
@@ -1864,7 +1865,7 @@ export default function EventDetailPage() {
                           ) : (
                             <Users className="h-5 w-5" />
                           )}
-                          {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : event?.status === 'FULL' ? 'Event Full' : 'Join as Participant'}
+                          {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join as Participant'}
                         </button>
                       )}
                       
@@ -2074,7 +2075,7 @@ export default function EventDetailPage() {
                     ) : (
                       <button
                         onClick={handleJoinClick}
-                        disabled={(!canJoinWaitlist && event?.status === 'FULL') || joinMutation.isLoading || isJoiningFlow}
+                        disabled={(!canJoinWaitlist && isFull) || joinMutation.isLoading || isJoiningFlow}
                         className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
                       >
                         {joinMutation.isLoading || isJoiningFlow ? (
@@ -2082,7 +2083,7 @@ export default function EventDetailPage() {
                         ) : (
                           <Users className="h-5 w-5" />
                         )}
-                        {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                        {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join Event'}
                       </button>
                     )
                   ) : (
@@ -2154,7 +2155,7 @@ export default function EventDetailPage() {
                   </div>
                 )}
 
-                {event?.status === 'FULL' && (
+                {isFull && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                     <p className="text-sm text-red-600 text-center font-semibold">
                       ⚠️ This event is currently full
