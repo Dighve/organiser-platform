@@ -14,6 +14,7 @@ import VerifyMagicLinkPage from './pages/VerifyMagicLinkPage'
 
 // Lazy-loaded pages - loaded on demand for better initial load time
 const EventsPage = lazy(() => import('./pages/EventsPage'))
+const EventAttendeesPage = lazy(() => import('./pages/EventAttendeesPage'))
 const EventDetailPage = lazy(() => import('./pages/EventDetailPage'))
 const CreateEventPage = lazy(() => import('./pages/CreateEventPage'))
 const EditEventPage = lazy(() => import('./pages/EditEventPage'))
@@ -34,6 +35,7 @@ const InvitePage = lazy(() => import('./pages/InvitePage'))
 const ReviewSubmissionPage = lazy(() => import('./pages/ReviewSubmissionPage'))
 const GroupReviewsPage = lazy(() => import('./pages/GroupReviewsPage'))
 const EventReviewsPage = lazy(() => import('./pages/EventReviewsPage'))
+const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -89,6 +91,7 @@ function getPageName(pathname) {
   if (/^\/events\/[^/]+\/review$/.test(pathname)) return 'Submit Review'
   if (/^\/events\/[^/]+\/edit$/.test(pathname)) return 'Edit Event'
   if (/^\/events\/[^/]+$/.test(pathname)) return 'Event Detail'
+  if (/^\/events\/[^/]+\/attendees$/.test(pathname)) return 'Event Attendees'
   if (/^\/groups\/[^/]+\/edit$/.test(pathname)) return 'Edit Group'
   if (/^\/groups\/[^/]+\/transfer$/.test(pathname)) return 'Transfer Ownership'
   if (/^\/groups\/[^/]+$/.test(pathname)) return 'Group Detail'
@@ -190,6 +193,11 @@ function App() {
             <ErrorBoundary name="EventDetailPage" title="Unable to load event" message="We're having trouble loading this event. Please try again.">
               <EventDetailPage />
             </ErrorBoundary>
+          </Suspense>
+        } />
+        <Route path="events/:id/attendees" element={
+          <Suspense fallback={<PageLoader />}>
+            <EventAttendeesPage />
           </Suspense>
         } />
         <Route path="events/:id/reviews" element={
@@ -310,6 +318,16 @@ function App() {
             <PrivateRoute>
               <Suspense fallback={<PageLoader />}>
                 <ProfilePage />
+              </Suspense>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="profile/my-reviews"
+          element={
+            <PrivateRoute>
+              <Suspense fallback={<PageLoader />}>
+                <MyReviewsPage />
               </Suspense>
             </PrivateRoute>
           }

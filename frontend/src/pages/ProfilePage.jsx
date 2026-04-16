@@ -6,8 +6,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAuthStore } from '../store/authStore'
 import { membersAPI } from '../lib/api'
 import ImagePositionModal from '../components/ImagePositionModal'
+import ContactInfoEditor from '../components/ContactInfoEditor'
+import ContactInfoDisplay from '../components/ContactInfoDisplay'
 import toast from 'react-hot-toast'
-import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Calendar, ArrowLeft } from 'lucide-react'
+import { Camera, Edit2, Save, X, Loader2, Mail, KeyRound, BadgeCheck, Shield, Calendar, Star, ArrowLeft, MessageCircle } from 'lucide-react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { useIsIOS } from '../hooks/useIsIOS'
@@ -39,11 +41,19 @@ export default function ProfilePage() {
   const [tempImageUrl, setTempImageUrl] = useState('')  // Temporary image for positioning
   const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 })  // Image focus position
   const fileInputRef = useRef(null)  // File input reference
+  const [contactEdits, setContactEdits] = useState([])  // Contact info being edited
 
   // ============================================================
   // DATA FETCHING
   // ============================================================
-  
+
+  // Fetch current user's contact info
+  const { data: contactsData } = useQuery({
+    queryKey: ['myContacts'],
+    queryFn: () => membersAPI.getMyContacts().then(res => res.data),
+    enabled: isAuthenticated,
+  })
+
   // Fetch current user's member data
   const { data: memberData, isLoading, error, refetch } = useQuery({
     queryKey: ['currentMember'],
@@ -80,6 +90,19 @@ export default function ProfilePage() {
     }
   }, [memberData])
 
+  // Sync contact edits with fetched contacts
+  useEffect(() => {
+    if (contactsData) {
+      setContactEdits(contactsData.map(c => ({
+        platform: c.platform,
+        contactValue: c.contactValue,
+        displayLabel: c.displayLabel || '',
+        visibility: c.visibility || 'GROUP_MEMBERS',
+        displayOrder: c.displayOrder || 0,
+      })))
+    }
+  }, [contactsData])
+
   // ============================================================
   // MUTATIONS
   // ============================================================
@@ -98,6 +121,19 @@ export default function ProfilePage() {
     },
   })
 
+  // Update contacts mutation
+  const updateContactsMutation = useMutation({
+    mutationFn: (data) => membersAPI.updateMyContacts(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['myContacts'])
+      toast.success('Contacts updated!')
+    },
+    onError: (error) => {
+      console.error('Contact update error:', error.response?.status, error.response?.data)
+      toast.error(error.response?.data?.message || 'Failed to update contacts')
+    },
+  })
+
   // ============================================================
   // EVENT HANDLERS
   // ============================================================
@@ -107,8 +143,11 @@ export default function ProfilePage() {
     updateProfileMutation.mutate({
       displayName: displayName || null,
       profilePhotoUrl: profilePhotoUrl || null,
-      imagePosition: JSON.stringify(imagePosition), // Send as JSON string
+      imagePosition: JSON.stringify(imagePosition),
     })
+    // Save contacts (only valid ones with a value)
+    const validContacts = contactEdits.filter(c => c.contactValue && c.contactValue.trim())
+    updateContactsMutation.mutate({ contacts: validContacts })
   }
 
   // Cancel editing and reset to original values
@@ -441,8 +480,8 @@ export default function ProfilePage() {
               ))}
             </div>
 
-            <div className="pt-2">
-              <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Event history</h3>
+            <div className="pt-2 space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500 mb-2">Activity</h3>
               <button
                 onClick={() => navigate('/events?search=:me :past')}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-indigo-100 text-sm font-semibold text-indigo-700 hover:border-indigo-200 hover:text-indigo-800 bg-indigo-50 shadow-sm"
@@ -450,6 +489,34 @@ export default function ProfilePage() {
                 <Calendar className="h-4 w-4" />
                 Event History
               </button>
+              <button
+                onClick={() => navigate('/profile/my-reviews')}
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-yellow-100 text-sm font-semibold text-yellow-700 hover:border-yellow-200 hover:text-yellow-800 bg-yellow-50 shadow-sm"
+              >
+                <Star className="h-4 w-4" />
+                My Reviews
+              </button>
+            </div>
+
+            {/* ========== CONTACT INFO SECTION ========== */}
+            <div className="pt-2 space-y-2">
+              <div className="flex items-center gap-2 mb-2">
+                <MessageCircle className="h-4 w-4 text-slate-400" />
+                <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Contact Info</h3>
+              </div>
+
+              {isEditing ? (
+                <ContactInfoEditor contacts={contactEdits} onChange={setContactEdits} />
+              ) : (
+                contactsData && contactsData.length > 0 ? (
+                  <ContactInfoDisplay contacts={contactsData} showPrivacy />
+                ) : (
+                  <div className="text-center py-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50/50">
+                    <MessageCircle className="h-6 w-6 text-slate-300 mx-auto mb-1" />
+                    <p className="text-xs text-slate-400">No contact methods added yet. Click <strong>Edit Profile</strong> to add.</p>
+                  </div>
+                )
+              )}
             </div>
 
             {isEditing && (

@@ -43,4 +43,7 @@ public class MemberDTO {
     private String banReason;
     private String joinQuestionAnswer;
     private String notes;
+    private String participationStatus; // e.g. REGISTERED, CONFIRMED, ATTENDED, NO_SHOW, CANCELLED, WAITLISTED
+    private LocalDateTime cancelledAt;
+    private LocalDateTime waitlistJoinedAt;
 }

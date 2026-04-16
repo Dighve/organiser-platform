@@ -205,7 +205,10 @@ export const eventsAPI = {
     api.get(`/events/organiser/my-events?page=${page}&size=${size}`),
   
   getEventParticipants: (id) => api.get(`/events/public/${id}/participants`),
-  
+
+  markNoShow: (eventId, memberId) => api.post(`/events/${eventId}/participants/${memberId}/no-show`),
+  unmarkNoShow: (eventId, memberId) => api.delete(`/events/${eventId}/participants/${memberId}/no-show`),
+
   getCalendarData: (id) => api.get(`/events/public/${id}/calendar`),
 }
 
@@ -291,7 +294,16 @@ export const membersAPI = {
 
   updateEmailNotifications: (enabled) => api.put('/members/me/email-notifications', { enabled }),
 
+  getSettings: () => api.get('/members/me/settings'),
+
+  updateSettings: (updates) => api.put('/members/me/settings', updates),
+
   deleteProfile: () => api.delete('/members/me'),
+
+  // Contact info
+  getMyContacts: () => api.get('/members/me/contacts'),
+  updateMyContacts: (data) => api.put('/members/me/contacts', data),
+  getMemberContacts: (memberId) => api.get(`/members/${memberId}/contacts`),
 }
 
 // Legal API
@@ -436,6 +448,9 @@ export const reviewsAPI = {
   
   // Get pending reviews for current user
   getPendingReviews: () => api.get('/reviews/pending'),
+
+  // Get all reviews submitted by the current user
+  getMyReviews: (page = 0, size = 20) => api.get(`/reviews/my-reviews?page=${page}&size=${size}`),
   
   // Flag a review (report inappropriate content)
   flagReview: (reviewId, reason) => 

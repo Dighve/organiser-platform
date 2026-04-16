@@ -273,6 +273,7 @@ export default function CreateEventPage() {
         elevationGainM: copiedEventData.elevationGainM || '',
         estimatedDurationHours: copiedEventData.estimatedDurationHours || '',
         maxParticipants: copiedEventData.maxParticipants || '',
+        maxWaitlist: copiedEventData.maxWaitlist || '',
         costPerPerson: copiedEventData.costPerPerson || 0,
         cancellationPolicy: copiedEventData.cancellationPolicy || '',
         imageUrl: copiedEventData.imageUrl || '',
@@ -522,6 +523,7 @@ export default function CreateEventPage() {
       latitude: data.latitude ? Number(data.latitude) : null,
       longitude: data.longitude ? Number(data.longitude) : null,
       maxParticipants: data.maxParticipants ? Number(data.maxParticipants) : null,
+      maxWaitlist: data.maxWaitlist ? Number(data.maxWaitlist) : null,
       minParticipants: data.minParticipants ? Number(data.minParticipants) : 1,
       price: data.price ? Number(data.price) : 0,  // Fixed: 'cost' -> 'price' to match backend
       difficultyLevel: data.difficultyLevel || null,
@@ -1233,7 +1235,7 @@ export default function CreateEventPage() {
           <input
             type="number" min="1"
             value={watch('maxParticipants') || ''}
-            onChange={(e) => { 
+            onChange={(e) => {
               const val = e.target.value
               if (val === '' || (/^\d+$/.test(val) && parseInt(val) >= 1)) {
                 setValue('maxParticipants', val, { shouldValidate: true })
@@ -1246,6 +1248,29 @@ export default function CreateEventPage() {
           <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
         </div>
       </div>
+
+      {watch('maxParticipants') && (
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Max waitlist</label>
+          <div className="relative">
+            <input
+              type="number" min="1"
+              value={watch('maxWaitlist') || ''}
+              onChange={(e) => {
+                const val = e.target.value
+                if (val === '' || (/^\d+$/.test(val) && parseInt(val) >= 1)) {
+                  setValue('maxWaitlist', val, { shouldValidate: true })
+                  updateFormData({ maxWaitlist: val })
+                }
+              }}
+              placeholder="Unlimited"
+              className="w-full pl-11 pr-4 py-4 text-[15px] border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white"
+            />
+            <Users className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-300" />
+          </div>
+          <p className="text-xs text-gray-400 mt-1 pl-1">Shown only when event is full. Leave blank for unlimited waitlist.</p>
+        </div>
+      )}
 
       <div>
         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Required gear</label>
@@ -1405,6 +1430,7 @@ export default function CreateEventPage() {
                     {formData.distanceKm && <span className="text-xs text-gray-600 font-medium">📏 {formData.distanceKm}km</span>}
                     {formData.elevationGainM && <span className="text-xs text-gray-600 font-medium">↑ {formData.elevationGainM}m</span>}
                     {formData.maxParticipants && <span className="text-xs text-gray-600 font-medium">👥 Max {formData.maxParticipants}</span>}
+                    {formData.maxWaitlist && <span className="text-xs text-gray-600 font-medium">⏳ Waitlist {formData.maxWaitlist}</span>}
                   </div>
                 </div>
                 <button type="button" onClick={() => goToStep(STEPS.DETAILS)} className="text-purple-600 text-xs font-bold flex-shrink-0 pt-0.5">Edit</button>
@@ -2438,6 +2464,32 @@ export default function CreateEventPage() {
         </div>
         <p className="hidden sm:block text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited participants</p>
       </div>
+
+      {/* ========== MAX WAITLIST ========== */}
+      {watch('maxParticipants') && (
+        <div>
+          <label className="flex items-center gap-2 text-base font-bold text-gray-900 mb-3">
+            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-yellow-500 shadow-lg">
+              <Users className="h-4 w-4 text-white" />
+            </div>
+            Max Waitlist
+          </label>
+          <div className="relative group">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-2xl opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
+            <input
+              {...register('maxWaitlist')}
+              type="number"
+              min="1"
+              className="relative w-full pl-11 sm:pl-14 pr-3 sm:pr-4 py-3 sm:py-5 text-base sm:text-lg border-2 border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 font-medium transition-all shadow-sm hover:shadow-md hover:border-orange-300 bg-white"
+              placeholder="10"
+            />
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-orange-500">
+              <Users className="h-6 w-6" />
+            </div>
+          </div>
+          <p className="hidden sm:block text-sm text-gray-500 mt-2 ml-1">💡 Leave blank for unlimited waitlist</p>
+        </div>
+      )}
 
       {/* ========== REQUIRED GEAR (Custom Tags) ========== */}
 

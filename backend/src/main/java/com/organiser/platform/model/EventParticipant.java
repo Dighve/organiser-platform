@@ -63,6 +63,9 @@ public class EventParticipant {
     
     @Column(name = "cancelled_at")
     private LocalDateTime cancelledAt;
+
+    @Column(name = "waitlist_joined_at")
+    private LocalDateTime waitlistJoinedAt;
     
     @Column(name = "attended")
     private Boolean attended;
@@ -83,6 +86,7 @@ public class EventParticipant {
         CONFIRMED,
         CANCELLED,
         ATTENDED,
-        NO_SHOW
+        NO_SHOW,
+        WAITLISTED
     }
 }

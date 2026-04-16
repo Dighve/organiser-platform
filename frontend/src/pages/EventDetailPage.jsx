@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { eventsAPI } from '../lib/api'
-import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, Share2, UserPlus, Mail, Star, ChevronRight, Info, Timer, Train, Car, Bus, Footprints, ArrowRight } from 'lucide-react'
+import { Calendar, MapPin, Users, DollarSign, Clock, Mountain, ArrowUp, Backpack, Package, FileText, ArrowLeft, LogIn, Lock, TrendingUp, Edit, Trash2, Eye, Copy, Loader, MoreHorizontal, MoreVertical, X, Minus, Plus, MessageSquare, MessageCircle, Share2, UserPlus, Mail, Star, ChevronRight, Info, Timer, Train, Car, Bus, Footprints, ArrowRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
@@ -12,6 +12,7 @@ import CommentSection from '../components/CommentSection'
 import ProfileAvatar from '../components/ProfileAvatar'
 import LoginModal from '../components/LoginModal'
 import AddToCalendar from '../components/AddToCalendar'
+import ContactInfoPopover from '../components/ContactInfoPopover'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
 import ShareButton from '../components/ShareButton'
@@ -59,6 +60,7 @@ export default function EventDetailPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const trackedEventRef = useRef(null)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
+  const [joinedAsWaitlisted, setJoinedAsWaitlisted] = useState(false)
   const [isGuidelinesModalOpen, setIsGuidelinesModalOpen] = useState(false)
   const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false)
   const [isManageOpen, setIsManageOpen] = useState(false)
@@ -77,6 +79,7 @@ export default function EventDetailPage() {
   const [showPublishConfirm, setShowPublishConfirm] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showFlyerModal, setShowFlyerModal] = useState(false)
+  const [noShowLoadingIds, setNoShowLoadingIds] = useState(new Set())
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -141,18 +144,30 @@ export default function EventDetailPage() {
   // Check user's relationship to this event
   const participantIds = [
     ...(event?.participantIds || []),
-    ...((participantsData?.data || []).map(p => p.id) || []),
+    ...((participantsData?.data || [])
+      .filter(p => p.participationStatus !== 'WAITLISTED' && p.participationStatus !== 'CANCELLED')
+      .map(p => p.id)),
   ].map(id => Number(id))
   const isEventOrganiser = event && isAuthenticated && Number(user?.id) === Number(event?.organiserId)
   const isHost = event && isAuthenticated && event.hostMemberId && Number(user?.id) === Number(event.hostMemberId)
-  // Host is automatically registered as participant by backend
-  const hasJoined = isAuthenticated && (participantIds.includes(Number(user?.id)) || isHost)
-  const currentHeadcount = event?.currentParticipants || 0
-
+  const isEventStarted = event?.eventDate && new Date(event.eventDate) <= new Date()
   // guest info for current user
   const userParticipant = (participantsData?.data || []).find(
     (p) => p?.id && user?.id && Number(p.id) === Number(user.id)
   )
+
+  // Host is automatically registered as participant by backend
+  const hasJoined = isAuthenticated && (participantIds.includes(Number(user?.id)) || isHost)
+  const isWaitlisted = isAuthenticated && !hasJoined && userParticipant?.participationStatus === 'WAITLISTED'
+  const isFull = event?.maxParticipants != null && event?.currentParticipants >= event?.maxParticipants
+  const canJoinWaitlist = isFull && event?.maxWaitlist > 0 && (event?.waitlistCount ?? 0) < event?.maxWaitlist
+  const waitlistPosition = isWaitlisted
+    ? ((participantsData?.data || [])
+        .filter(p => p.participationStatus === 'WAITLISTED')
+        .sort((a, b) => new Date(a.waitlistJoinedAt) - new Date(b.waitlistJoinedAt))
+        .findIndex(p => Number(p.id) === Number(user?.id)) + 1)
+    : 0
+  const currentHeadcount = event?.currentParticipants || 0
   const userGuestCount = userParticipant?.guestCount ? Number(userParticipant.guestCount) : 0
   const displayGuestCount = userGuestCount || guestCount || 0
 
@@ -225,13 +240,13 @@ export default function EventDetailPage() {
       setIsJoiningFlow(true)
     }
     
-    joinMutation.mutate({ guestCount: safeGuestCount })
+    joinMutation.mutate({ guestCount: safeGuestCount, isWaitlistJoin: canJoinWaitlist })
   }
 
   const handleSubmitJoinQuestion = () => {
     setIsJoinQuestionModalOpen(false)
     setIsJoiningFlow(true)
-    joinMutation.mutate({ guestCount: pendingGuestCount, joinQuestionAnswer: joinQuestionAnswer.trim() || undefined })
+    joinMutation.mutate({ guestCount: pendingGuestCount, joinQuestionAnswer: joinQuestionAnswer.trim() || undefined, isWaitlistJoin: canJoinWaitlist })
   }
 
   // Join event (register for event + auto-join group - Meetup.com pattern)
@@ -241,6 +256,7 @@ export default function EventDetailPage() {
       // Only show calendar modal for new joins, not guest count updates
       if (!isUpdatingGuests) {
         trackJoinEventCompleted(id, event?.title, variables?.guestCount || 0)
+        setJoinedAsWaitlisted(Boolean(variables?.isWaitlistJoin))
         setIsCalendarModalOpen(true)
       } else {
         // For updates, just show a success toast
@@ -333,6 +349,26 @@ export default function EventDetailPage() {
     },
   })
 
+  // Toggle no-show status for a participant (host only)
+  const toggleNoShow = async (participant) => {
+    const memberId = participant.id
+    setNoShowLoadingIds(prev => new Set(prev).add(memberId))
+    try {
+      if (participant.participationStatus === 'NO_SHOW') {
+        await eventsAPI.unmarkNoShow(id, memberId)
+        toast.success(`${participant.displayName} unmarked as no-show`)
+      } else {
+        await eventsAPI.markNoShow(id, memberId)
+        toast.success(`${participant.displayName} marked as no-show`)
+      }
+      queryClient.invalidateQueries(['eventParticipants', id])
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update no-show status')
+    } finally {
+      setNoShowLoadingIds(prev => { const next = new Set(prev); next.delete(memberId); return next })
+    }
+  }
+
   // Track event viewed once per unique event load
   useEffect(() => {
     if (event?.id && trackedEventRef.current !== event.id) {
@@ -414,7 +450,7 @@ export default function EventDetailPage() {
       
       // Auto-join the event
       setIsJoiningFlow(true) // Start joining flow for auto-join
-      joinMutation.mutate({ guestCount: 0 })
+      joinMutation.mutate({ guestCount: 0, isWaitlistJoin: canJoinWaitlist })
     }
   }, [isAuthenticated, id])
 
@@ -820,7 +856,7 @@ export default function EventDetailPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleJoinClick}
-                  disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
+                  disabled={(!canJoinWaitlist && isFull) || joinMutation.isLoading || isJoiningFlow}
                   className="flex-1 py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
                 >
                   {joinMutation.isLoading || isJoiningFlow ? (
@@ -828,7 +864,7 @@ export default function EventDetailPage() {
                   ) : (
                     <Users className="h-4 w-4" />
                   )}
-                  Join
+                  {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join'}
                 </button>
                 <button
                   onClick={() => setIsManageOpen(true)}
@@ -894,11 +930,26 @@ export default function EventDetailPage() {
                   </button>
                 </div>
               </div>
+            ) : isWaitlisted ? (
+              // On waitlist: show position + leave option
+              <div className="space-y-2">
+                <div className="w-full py-3 px-4 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg text-center">
+                  <p className="text-sm font-bold text-orange-700">#{waitlistPosition} on the waitlist</p>
+                  <p className="text-xs text-orange-600 mt-0.5">You'll be notified if a spot opens up</p>
+                </div>
+                <button
+                  onClick={() => setShowLeaveConfirm(true)}
+                  disabled={leaveMutation.isLoading}
+                  className="w-full py-2 px-4 text-sm font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Leave Waitlist
+                </button>
+              </div>
             ) : (
-              // Not joined: Show Join button
+              // Not joined: Show Join / Join Waitlist / Event Full button
               <button
                 onClick={handleJoinClick}
-                disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
+                disabled={(!canJoinWaitlist && isFull) || joinMutation.isLoading || isJoiningFlow}
                 className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg shadow-lg active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-2 text-base"
               >
                 {joinMutation.isLoading || isJoiningFlow ? (
@@ -906,7 +957,7 @@ export default function EventDetailPage() {
                 ) : (
                   <Users className="h-5 w-5" />
                 )}
-                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
+                {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join Event'}
               </button>
             )
           ) : (
@@ -1466,7 +1517,20 @@ export default function EventDetailPage() {
                                 <span>Host</span>
                               </div>
                               {totalCount > 0 && (
-                                <span className="text-sm font-semibold text-purple-600">👥 {totalCount}</span>
+                                <span className="flex items-center gap-1.5 text-sm font-semibold text-purple-600">
+                                  <span>👥 {totalCount}{event?.maxParticipants ? `/${event.maxParticipants}` : ''}</span>
+                                  {isFull && (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-600">Full</span>
+                                  )}
+                                  {isFull && event?.waitlistCount > 0 && (
+                                    <button
+                                      onClick={() => navigate(`/events/${id}/attendees?tab=waitlist`)}
+                                      className="text-[11px] font-medium text-orange-500 hover:text-orange-600 hover:underline"
+                                    >
+                                      {event.waitlistCount} waiting
+                                    </button>
+                                  )}
+                                </span>
                               )}
                             </h2>
                             <div 
@@ -1496,6 +1560,13 @@ export default function EventDetailPage() {
                                   </p>
                                 )}
                               </div>
+                              {event?.hostMemberId && Number(event.hostMemberId) !== Number(user?.id) && (
+                                <ContactInfoPopover
+                                  memberId={event.hostMemberId}
+                                  memberName={hostNameFallback}
+                                  iconClassName="text-orange-400 hover:text-orange-600 hover:bg-orange-100"
+                                />
+                              )}
                             </div>
                           </>
                         )
@@ -1506,59 +1577,97 @@ export default function EventDetailPage() {
                   {/* Attendees */}
                   <div className={hasHost ? '' : 'lg:col-span-2'}>
                     {(() => {
-                      // Calculate actual other attendees (excluding host)
-                      const otherAttendees = participantsData?.data?.filter(p => p.id !== event?.hostMemberId) || []
-                      const attendeeCount = otherAttendees.length
-                      
+                      const allParticipants = participantsData?.data?.filter(p => p.id !== event?.hostMemberId) || []
+                      const activeAttendees = allParticipants.filter(p => p.participationStatus !== 'NO_SHOW' && p.participationStatus !== 'WAITLISTED' && p.participationStatus !== 'CANCELLED')
+                      const visibleAttendees = activeAttendees.slice(0, 5)
+
+                      const AttendeeCard = ({ participant, inOverlay = false }) => {
+                        const isNoShow = participant.participationStatus === 'NO_SHOW'
+                        const isLoading = noShowLoadingIds.has(participant.id)
+                        return (
+                          <div className={`relative flex items-start space-x-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg transition-all ${isNoShow ? 'opacity-50' : ''}`}>
+                            <div
+                              className="flex items-start space-x-3 flex-1 min-w-0 cursor-pointer group"
+                              onClick={() => !isNoShow && navigate(`/members/${participant.id}`)}
+                            >
+                              <ProfileAvatar member={participant} size="md" className="flex-shrink-0" />
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <p className="font-semibold text-gray-900 truncate text-sm">
+                                    {participant.displayName || 'Anonymous'}
+                                  </p>
+                                  {isNoShow && (
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-600">
+                                      No show
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="flex items-center flex-wrap gap-2 text-xs text-gray-500">
+                                  <span>{new Date(participant.joinedAt).toLocaleDateString()}</span>
+                                  {participant.guestCount > 0 && (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/70 border border-purple-100 text-purple-700 font-semibold">
+                                      +{participant.guestCount} guest{participant.guestCount === 1 ? '' : 's'}
+                                    </span>
+                                  )}
+                                </div>
+                                {isEventOrganiser && event?.joinQuestion && participant.joinQuestionAnswer && (
+                                  <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t border-purple-100/50">
+                                    <MessageSquare className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-indigo-500" />
+                                    <p className="text-xs text-indigo-600 italic leading-relaxed">{participant.joinQuestionAnswer}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {/* Contact info popover */}
+                            {!isNoShow && Number(participant.id) !== Number(user?.id) && (
+                              <ContactInfoPopover
+                                memberId={participant.id}
+                                memberName={participant.displayName}
+                              />
+                            )}
+                            {isHost && isEventStarted && (inOverlay || !isNoShow) && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); toggleNoShow(participant) }}
+                                disabled={isLoading}
+                                className={`flex-shrink-0 text-xs px-2 py-1 rounded border transition-colors ${
+                                  isNoShow
+                                    ? 'border-gray-300 text-gray-600 hover:bg-gray-100'
+                                    : 'border-red-200 text-red-500 hover:bg-red-50'
+                                } disabled:opacity-50`}
+                              >
+                                {isLoading ? '...' : isNoShow ? 'Undo' : 'No show'}
+                              </button>
+                            )}
+                          </div>
+                        )
+                      }
+
                       return (
                         <>
                           <h2 className="flex items-center gap-2 text-base lg:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3 lg:mb-4">
                             <span className="text-lg lg:text-xl">👥</span>
                             <span>Other Attendees</span>
+                            {activeAttendees.length > 0 && (
+                              <span className="text-sm font-normal text-gray-400">({activeAttendees.length})</span>
+                            )}
                           </h2>
-                          {attendeeCount > 0 ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 lg:gap-4">
-                              {otherAttendees.map((participant) => (
-                          <div 
-                            key={participant.id}
-                            onClick={() => navigate(`/members/${participant.id}`)}
-                            className="flex items-start space-x-3 lg:space-x-4 p-3 lg:p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl hover:shadow-md lg:hover:shadow-lg transition-all cursor-pointer group hover:-translate-y-0.5 lg:hover:-translate-y-1"
-                          >
-                            <ProfileAvatar 
-                              member={participant} 
-                              size="md" 
-                              className="group-hover:scale-105 lg:group-hover:scale-110 transition-transform flex-shrink-0"
-                            />
-                            <div className="flex-1 min-w-0 space-y-1">
-                              <p className="font-semibold text-gray-900 truncate group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all text-sm lg:text-base">
-                                {participant.displayName || participant.email?.split('@')[0] || 'Anonymous'}
-                              </p>
-                              <div className="flex items-center flex-wrap gap-2 text-xs text-gray-500">
-                                <span>{new Date(participant.joinedAt).toLocaleDateString()}</span>
-                                {participant.guestCount > 0 && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/70 border border-purple-100 text-purple-700 font-semibold">
-                                    +{participant.guestCount} guest{participant.guestCount === 1 ? '' : 's'}
-                                  </span>
-                                )}
-                              </div>
-                              {isEventOrganiser && event?.joinQuestion && participant.joinQuestionAnswer && (
-                                <div className="flex items-start gap-1.5 mt-1.5 pt-1.5 border-t border-purple-100/50">
-                                  <MessageSquare className="h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-indigo-500" />
-                                  <p className="text-xs text-indigo-600 italic leading-relaxed">
-                                    {participant.joinQuestionAnswer}
-                                  </p>
-                                </div>
-                              )}
+                          {activeAttendees.length > 0 && (
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                              {visibleAttendees.map(p => <AttendeeCard key={p.id} participant={p} />)}
                             </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 lg:py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
-                        <Users className="h-8 w-8 lg:h-12 lg:w-12 mx-auto mb-2 lg:mb-3 text-gray-400" />
-                        <p className="text-gray-600 text-sm lg:text-base">No other attendees yet</p>
-                      </div>
-                    )}
+                          )}
+                          {activeAttendees.length === 0 && (
+                            <div className="text-center py-4 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
+                              <p className="text-gray-500 text-sm">No other attendees yet</p>
+                            </div>
+                          )}
+                          <button
+                            onClick={() => navigate(`/events/${id}/attendees`)}
+                            className="mt-3 w-full py-2 text-sm font-medium text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
+                          >
+                            See all members
+                          </button>
+
                         </>
                       )
                     })()}
@@ -1652,7 +1761,7 @@ export default function EventDetailPage() {
                       {!hasJoined && !isPastEvent && (
                         <button
                           onClick={handleJoinClick}
-                          disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
+                          disabled={joinMutation.isLoading || isJoiningFlow}
                           className="w-full py-3 px-6 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold rounded-xl hover:shadow-lg hover:shadow-green-500/50 transition-all transform hover:scale-105 disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                           {joinMutation.isLoading || isJoiningFlow ? (
@@ -1660,7 +1769,7 @@ export default function EventDetailPage() {
                           ) : (
                             <Users className="h-5 w-5" />
                           )}
-                          {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join as Participant'}
+                          {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join as Participant'}
                         </button>
                       )}
                       
@@ -1852,19 +1961,35 @@ export default function EventDetailPage() {
                       </>
                     )
                   ) : !isPastEvent ? (
-                    /* AUTHENTICATED NON-REGISTERED VIEW - Show Join button */
-                    <button
-                      onClick={handleJoinClick}
-                      disabled={event?.status === 'FULL' || joinMutation.isLoading || isJoiningFlow}
-                      className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
-                    >
-                      {joinMutation.isLoading || isJoiningFlow ? (
-                        <Loader className="h-5 w-5 animate-spin" />
-                      ) : (
-                        <Users className="h-5 w-5" />
-                      )}
-                      {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : event?.status === 'FULL' ? 'Event Full' : 'Join Event'}
-                    </button>
+                    /* AUTHENTICATED NON-REGISTERED VIEW - Show Join / Waitlist button */
+                    isWaitlisted ? (
+                      <div className="space-y-3">
+                        <div className="w-full py-3 px-4 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-xl text-center">
+                          <p className="font-bold text-orange-700">#{waitlistPosition} on the waitlist</p>
+                          <p className="text-sm text-orange-600 mt-0.5">You'll be notified if a spot opens up</p>
+                        </div>
+                        <button
+                          onClick={() => setShowLeaveConfirm(true)}
+                          disabled={leaveMutation.isLoading}
+                          className="w-full py-2 px-4 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-50"
+                        >
+                          Leave Waitlist
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={handleJoinClick}
+                        disabled={(!canJoinWaitlist && isFull) || joinMutation.isLoading || isJoiningFlow}
+                        className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:shadow-2xl hover:shadow-purple-500/50 transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none flex items-center justify-center gap-2"
+                      >
+                        {joinMutation.isLoading || isJoiningFlow ? (
+                          <Loader className="h-5 w-5 animate-spin" />
+                        ) : (
+                          <Users className="h-5 w-5" />
+                        )}
+                        {joinMutation.isLoading || isJoiningFlow ? 'Joining...' : canJoinWaitlist ? 'Join Waitlist' : isFull ? 'Event Full' : 'Join Event'}
+                      </button>
+                    )
                   ) : (
                     /* PAST EVENT - Non-registered user can share */
                     <div className="space-y-3">
@@ -1934,11 +2059,20 @@ export default function EventDetailPage() {
                   </div>
                 )}
 
-                {event?.status === 'FULL' && (
+                {isFull && (
                   <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                     <p className="text-sm text-red-600 text-center font-semibold">
                       ⚠️ This event is currently full
                     </p>
+                    {event?.waitlistCount > 0 && (
+                      <p className="text-xs text-red-500 text-center mt-1">
+                        {event.waitlistCount} {event.waitlistCount === 1 ? 'person' : 'people'} on the waitlist
+                        {event?.maxWaitlist ? ` · ${event.maxWaitlist - event.waitlistCount} waitlist spot${event.maxWaitlist - event.waitlistCount === 1 ? '' : 's'} left` : ''}
+                      </p>
+                    )}
+                    {event?.maxWaitlist && event?.waitlistCount >= event?.maxWaitlist && (
+                      <p className="text-xs text-red-500 text-center mt-1">Waitlist is also full</p>
+                    )}
                   </div>
                 )}
               </div>
@@ -2163,6 +2297,7 @@ export default function EventDetailPage() {
           onClose={() => setIsCalendarModalOpen(false)}
           calendarData={calendarData}
           eventTitle={event?.title || 'this event'}
+          isWaitlisted={joinedAsWaitlisted}
         />
       </div>
 

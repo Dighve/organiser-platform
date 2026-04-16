@@ -36,8 +36,10 @@ public class EventDTO {
     private BigDecimal latitude;
     private BigDecimal longitude;
     private Integer maxParticipants;
+    private Integer maxWaitlist;
     private Integer minParticipants;
     private Integer currentParticipants;
+    private Integer waitlistCount;
     private BigDecimal price;
     private Event.EventStatus status;
     private Event.DifficultyLevel difficultyLevel;

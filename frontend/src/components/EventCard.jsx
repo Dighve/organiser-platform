@@ -56,8 +56,8 @@ export default function EventCard({ event, isPast = false }) {
             LIVE
           </div>
         ) : event.maxParticipants && event.currentParticipants >= event.maxParticipants ? (
-          <div className="absolute top-2 left-2 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-            Full
+          <div className={`absolute top-2 left-2 px-3 py-1 rounded-full text-sm font-medium ${event.maxWaitlist > 0 && (event.waitlistCount ?? 0) < event.maxWaitlist ? 'bg-orange-500 text-white' : 'bg-red-500 text-white'}`}>
+            {event.maxWaitlist > 0 && (event.waitlistCount ?? 0) < event.maxWaitlist ? 'Join Waitlist' : 'Full'}
           </div>
         ) : (isPast || isPastLocal) ? (
           <div className="absolute top-2 left-2 bg-gray-700/80 text-white px-3 py-1 rounded-full text-sm font-medium">

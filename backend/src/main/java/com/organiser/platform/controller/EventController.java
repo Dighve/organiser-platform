@@ -120,6 +120,28 @@ public class EventController {
         return ResponseEntity.ok(eventService.leaveEvent(id, userId));
     }
     
+    @PostMapping("/{id}/participants/{memberId}/no-show")
+    public ResponseEntity<Void> markNoShow(
+            @PathVariable Long id,
+            @PathVariable Long memberId,
+            Authentication authentication
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        eventService.markNoShow(id, memberId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/participants/{memberId}/no-show")
+    public ResponseEntity<Void> unmarkNoShow(
+            @PathVariable Long id,
+            @PathVariable Long memberId,
+            Authentication authentication
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        eventService.unmarkNoShow(id, memberId, userId);
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEvent(
             @PathVariable Long id,
