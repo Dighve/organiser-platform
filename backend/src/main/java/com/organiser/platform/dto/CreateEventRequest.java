@@ -43,7 +43,10 @@ public class CreateEventRequest {
     
     @Positive(message = "Max participants must be positive")
     private Integer maxParticipants;
-    
+
+    @Positive(message = "Max waitlist must be positive")
+    private Integer maxWaitlist;
+
     private Integer minParticipants = 1;
     private BigDecimal price = BigDecimal.ZERO;
     private Event.DifficultyLevel difficultyLevel;

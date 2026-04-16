@@ -147,6 +147,7 @@ export default function EditEventPage() {
         latitude: event.latitude,
         longitude: event.longitude,
         maxParticipants: event.maxParticipants,
+        maxWaitlist: event.maxWaitlist,
         price: event.price || 0,
         difficultyLevel: event.difficultyLevel,
         paceLevel: event.paceLevel,
@@ -271,6 +272,7 @@ export default function EditEventPage() {
       latitude: data.latitude ? Number(data.latitude) : null,
       longitude: data.longitude ? Number(data.longitude) : null,
       maxParticipants: data.maxParticipants ? Number(data.maxParticipants) : null,
+      maxWaitlist: data.maxWaitlist ? Number(data.maxWaitlist) : null,
       minParticipants: 1,
       price: data.price ? Number(data.price) : 0,
       difficultyLevel: data.difficultyLevel || null,
@@ -826,6 +828,19 @@ export default function EditEventPage() {
           placeholder="20 (leave empty for unlimited)"
         />
       </div>
+
+      {watch('maxParticipants') && (
+        <div>
+          <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Max waitlist</label>
+          <input
+            type="number"
+            value={watch('maxWaitlist') || ''}
+            onChange={(e) => { setValue('maxWaitlist', e.target.value); updateFormData({ maxWaitlist: e.target.value }) }}
+            className="w-full px-4 py-4 text-[15px] border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+            placeholder="10 (leave empty for no waitlist)"
+          />
+        </div>
+      )}
 
       <div>
         <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">Required gear</label>

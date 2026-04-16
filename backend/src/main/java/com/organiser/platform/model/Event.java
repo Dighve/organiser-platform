@@ -102,7 +102,10 @@ public class Event {
     
     @Column(name = "max_participants")
     private Integer maxParticipants;
-    
+
+    @Column(name = "max_waitlist")
+    private Integer maxWaitlist;
+
     @Column(name = "min_participants")
     @Builder.Default
     private Integer minParticipants = 1;

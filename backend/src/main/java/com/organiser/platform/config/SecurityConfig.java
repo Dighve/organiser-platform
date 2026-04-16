@@ -120,6 +120,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/*/publish", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/join", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*/leave", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/participants/*/no-show", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/*/participants/*/no-show", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/events/*/participants", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/*/comments", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events/*/comments", "POST"),

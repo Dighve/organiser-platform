@@ -508,6 +508,80 @@ public class EmailService {
     }
 
     /**
+     * Send waitlist promotion email — member has been moved off the waitlist.
+     */
+    public void sendWaitlistPromotionEmail(
+            com.organiser.platform.model.Member member,
+            String eventTitle,
+            String groupName,
+            Long eventId) {
+
+        if (!Boolean.TRUE.equals(member.getEmailNotificationsEnabled())) {
+            return;
+        }
+
+        String eventUrl = frontendUrl + "/events/" + eventId;
+        String subject = "You're in! A spot opened up for " + eventTitle;
+        String escapedTitle = escapeHtml(eventTitle);
+        String escapedGroup = escapeHtml(groupName);
+        String settingsUrl = frontendUrl + "/settings";
+        String html = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#fdf2f8;">
+                <div style="max-width:600px;margin:0 auto;padding:40px 20px;">
+                    <div style="text-align:center;margin-bottom:24px;">
+                        <div style="font-size:40px;margin-bottom:12px;">🏔️</div>
+                        <h1 style="margin:0;background:linear-gradient(135deg,#9333ea 0%%,#ec4899 50%%,#f97316 100%%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-size:28px;font-weight:700;">OutMeets</h1>
+                    </div>
+                    <div style="background:white;border-radius:16px;padding:32px;box-shadow:0 4px 6px rgba(0,0,0,0.08);">
+                        <h2 style="margin-top:0;font-size:22px;color:#1f2937;">You're in! 🎉</h2>
+                        <p style="font-size:15px;color:#4b5563;line-height:1.6;">
+                            Great news — a spot opened up for <strong style="color:#9333ea;">%s</strong> with <strong>%s</strong>. You've been moved off the waitlist and are now registered.
+                        </p>
+                        <div style="text-align:center;margin:32px 0;">
+                            <a href="%s" style="display:inline-block;padding:14px 32px;background:linear-gradient(135deg,#9333ea,#ec4899);color:white;text-decoration:none;border-radius:12px;font-weight:700;font-size:16px;">
+                                View Event
+                            </a>
+                        </div>
+                        <p style="color:#9ca3af;font-size:12px;margin-bottom:0;padding-top:20px;border-top:1px solid #f3f4f6;">
+                            Don't want these emails? <a href="%s" style="color:#9333ea;text-decoration:underline;">Manage your notification settings</a>.
+                        </p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(escapedTitle, escapedGroup, eventUrl, settingsUrl);
+
+        if (resendApiKey == null || resendApiKey.isEmpty()) {
+            log.info("Waitlist promotion email for: {} — Event: {}", member.getEmail(), eventTitle);
+            return;
+        }
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(resendApiKey);
+
+            Map<String, Object> emailData = new HashMap<>();
+            emailData.put("from", fromEmail);
+            emailData.put("to", new String[]{member.getEmail()});
+            emailData.put("subject", subject);
+            emailData.put("html", html);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(emailData, headers);
+            restTemplate.postForObject("https://api.resend.com/emails", request, String.class);
+            log.info("Waitlist promotion email sent to {}", member.getEmail());
+        } catch (Exception e) {
+            log.error("Failed to send waitlist promotion email to {}: {}", member.getEmail(), e.getMessage());
+        }
+    }
+
+    /**
      * Send invitation email to a member.
      * Notifies member they've been invited to an event or group.
      */
