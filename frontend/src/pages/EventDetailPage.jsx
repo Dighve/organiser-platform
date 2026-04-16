@@ -78,8 +78,6 @@ export default function EventDetailPage() {
   const [showPublishConfirm, setShowPublishConfirm] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showFlyerModal, setShowFlyerModal] = useState(false)
-  const [showAllAttendees, setShowAllAttendees] = useState(false)
-  const [attendeeOverlayTab, setAttendeeOverlayTab] = useState('attendees')
   const [noShowLoadingIds, setNoShowLoadingIds] = useState(new Set())
 
   // ============================================
@@ -1643,7 +1641,7 @@ export default function EventDetailPage() {
                               </div>
                               {hasMore && (
                                 <button
-                                  onClick={() => setShowAllAttendees(true)}
+                                  onClick={() => navigate(`/events/${id}/attendees`)}
                                   className="mt-3 w-full py-2 text-sm font-medium text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors"
                                 >
                                   See all {activeAttendees.length} attendees
@@ -1652,7 +1650,7 @@ export default function EventDetailPage() {
                               )}
                               {!hasMore && isHost && (noShows.length > 0 || allParticipants.filter(p => p.participationStatus === 'CANCELLED').length > 0) && (
                                 <button
-                                  onClick={() => setShowAllAttendees(true)}
+                                  onClick={() => navigate(`/events/${id}/attendees`)}
                                   className="mt-3 w-full py-2 text-sm font-medium text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                                 >
                                   View no-shows &amp; cancellations
@@ -1665,7 +1663,7 @@ export default function EventDetailPage() {
                               <p className="text-gray-600 text-sm lg:text-base">No other attendees yet</p>
                               {waitlistedParticipants.length > 0 && (
                                 <button
-                                  onClick={() => { setAttendeeOverlayTab('waitlist'); setShowAllAttendees(true) }}
+                                  onClick={() => navigate(`/events/${id}/attendees?tab=waitlist`)}
                                   className="mt-3 text-sm font-medium text-orange-600 hover:text-orange-700"
                                 >
                                   View waitlist ({waitlistedParticipants.length})
@@ -1674,108 +1672,6 @@ export default function EventDetailPage() {
                             </div>
                           )}
 
-                          {/* All Attendees — Full screen */}
-                          {showAllAttendees && (
-                            <div className="fixed inset-0 z-50 bg-white flex flex-col">
-                              {/* Header */}
-                              <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 flex-shrink-0">
-                                <button
-                                  onClick={() => { setShowAllAttendees(false); setAttendeeOverlayTab('attendees') }}
-                                  className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-                                >
-                                  <ArrowLeft className="h-5 w-5 text-gray-700" />
-                                </button>
-                                <div className="flex-1 min-w-0">
-                                  <h2 className="font-bold text-gray-900 truncate">{event?.title}</h2>
-                                  <p className="text-xs text-gray-500">Members</p>
-                                </div>
-                              </div>
-
-                              {/* Tabs */}
-                              {(() => {
-                                const waitlistCount = allParticipants.filter(p => p.participationStatus === 'WAITLISTED').length
-                                const visibleTabs = [
-                                  { key: 'attendees', label: 'Attending', count: activeAttendees.length },
-                                  ...(waitlistCount > 0 ? [{ key: 'waitlist', label: 'Waitlist', count: waitlistCount }] : []),
-                                  ...(isHost ? [
-                                    { key: 'noshow', label: 'No shows', count: noShows.length },
-                                    { key: 'cancelled', label: 'Cancelled', count: allParticipants.filter(p => p.participationStatus === 'CANCELLED').length },
-                                  ] : []),
-                                ]
-                                return visibleTabs.length > 1 ? (
-                                  <div className="flex border-b border-gray-100 flex-shrink-0">
-                                    {visibleTabs.map(tab => (
-                                      <button
-                                        key={tab.key}
-                                        onClick={() => setAttendeeOverlayTab(tab.key)}
-                                        className={`flex-1 py-3 text-sm font-medium transition-colors border-b-2 ${
-                                          attendeeOverlayTab === tab.key
-                                            ? 'border-purple-600 text-purple-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700'
-                                        }`}
-                                      >
-                                        {tab.label}
-                                        {tab.count > 0 && (
-                                          <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                                            attendeeOverlayTab === tab.key ? 'bg-purple-100 text-purple-600' : 'bg-gray-100 text-gray-500'
-                                          }`}>
-                                            {tab.count}
-                                          </span>
-                                        )}
-                                      </button>
-                                    ))}
-                                  </div>
-                                ) : null
-                              })()}
-
-                              {/* Tab content */}
-                              <div className="overflow-y-auto flex-1 p-4 space-y-2">
-                                {attendeeOverlayTab === 'attendees' && (
-                                  activeAttendees.length > 0
-                                    ? activeAttendees.map(p => <AttendeeCard key={p.id} participant={p} inOverlay />)
-                                    : <p className="text-sm text-gray-500 text-center py-6">No attendees yet</p>
-                                )}
-                                {attendeeOverlayTab === 'waitlist' && (() => {
-                                  const waitlisted = allParticipants
-                                    .filter(p => p.participationStatus === 'WAITLISTED')
-                                    .sort((a, b) => new Date(a.waitlistJoinedAt) - new Date(b.waitlistJoinedAt))
-                                  return waitlisted.length > 0
-                                    ? waitlisted.map((p, idx) => (
-                                        <div key={p.id} className="flex items-center space-x-3 p-3 bg-orange-50 rounded-lg">
-                                          <span className="flex-shrink-0 w-6 h-6 rounded-full bg-orange-200 text-orange-700 text-xs font-bold flex items-center justify-center">{idx + 1}</span>
-                                          <ProfileAvatar member={p} size="md" className="flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-gray-900 text-sm truncate">{p.displayName || 'Anonymous'}</p>
-                                            <p className="text-xs text-gray-500">Joined {new Date(p.joinedAt).toLocaleDateString()}</p>
-                                          </div>
-                                        </div>
-                                      ))
-                                    : <p className="text-sm text-gray-500 text-center py-6">No one on the waitlist</p>
-                                })()}
-                                {isHost && attendeeOverlayTab === 'noshow' && (
-                                  noShows.length > 0
-                                    ? noShows.map(p => <AttendeeCard key={p.id} participant={p} inOverlay />)
-                                    : <p className="text-sm text-gray-500 text-center py-6">No no-shows</p>
-                                )}
-                                {isHost && attendeeOverlayTab === 'cancelled' && (() => {
-                                  const cancelled = allParticipants.filter(p => p.participationStatus === 'CANCELLED')
-                                  return cancelled.length > 0
-                                    ? cancelled.map(p => (
-                                        <div key={p.id} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg opacity-60">
-                                          <ProfileAvatar member={p} size="md" className="flex-shrink-0" />
-                                          <div className="flex-1 min-w-0">
-                                            <p className="font-semibold text-gray-900 text-sm truncate">{p.displayName || 'Anonymous'}</p>
-                                            <p className="text-xs text-gray-500">
-                                              Left {p.cancelledAt ? new Date(p.cancelledAt).toLocaleDateString() : '—'}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ))
-                                    : <p className="text-sm text-gray-500 text-center py-6">No cancellations</p>
-                                })()}
-                              </div>
-                            </div>
-                          )}
                         </>
                       )
                     })()}
