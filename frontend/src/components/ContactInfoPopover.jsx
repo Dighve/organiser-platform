@@ -6,17 +6,18 @@ import ContactInfoDisplay from './ContactInfoDisplay'
 
 // ============================================================
 // CONTACT INFO POPOVER
-// Shows a member's contacts in a floating card on chat icon click
+// Shows a member's contacts in a floating card on chat icon click.
+// Icon is HIDDEN if the member has no contacts visible to the viewer.
 // ============================================================
 export default function ContactInfoPopover({ memberId, memberName, iconClassName = 'text-purple-400 hover:text-purple-600 hover:bg-purple-100' }) {
   const [open, setOpen] = useState(false)
   const popoverRef = useRef(null)
 
-  // Fetch contacts only when popover is opened
-  const { data: contacts, isLoading } = useQuery({
+  // Pre-fetch contacts (cached 2 min) — determines icon visibility
+  const { data: contacts, isLoading, isFetched } = useQuery({
     queryKey: ['memberContacts', memberId],
     queryFn: () => membersAPI.getMemberContacts(memberId).then(res => res.data),
-    enabled: open && !!memberId,
+    enabled: !!memberId,
     staleTime: 2 * 60 * 1000,
   })
 
@@ -31,6 +32,11 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
+
+  // Hide the icon entirely if fetch is done and no contacts are visible
+  if (isFetched && (!contacts || contacts.length === 0)) {
+    return null
+  }
 
   return (
     <div className="relative" ref={popoverRef}>
@@ -65,12 +71,7 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
               </div>
             ) : contacts && contacts.length > 0 ? (
               <ContactInfoDisplay contacts={contacts} />
-            ) : (
-              <div className="text-center py-6">
-                <MessageCircle className="h-6 w-6 text-gray-300 mx-auto mb-2" />
-                <p className="text-xs text-gray-400">No contact info available</p>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}
