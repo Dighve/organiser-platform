@@ -59,6 +59,7 @@ export default function EventDetailPage() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const trackedEventRef = useRef(null)
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false)
+  const [joinedAsWaitlisted, setJoinedAsWaitlisted] = useState(false)
   const [isGuidelinesModalOpen, setIsGuidelinesModalOpen] = useState(false)
   const [isCalendarPickerOpen, setIsCalendarPickerOpen] = useState(false)
   const [isManageOpen, setIsManageOpen] = useState(false)
@@ -240,13 +241,13 @@ export default function EventDetailPage() {
       setIsJoiningFlow(true)
     }
     
-    joinMutation.mutate({ guestCount: safeGuestCount })
+    joinMutation.mutate({ guestCount: safeGuestCount, isWaitlistJoin: canJoinWaitlist })
   }
 
   const handleSubmitJoinQuestion = () => {
     setIsJoinQuestionModalOpen(false)
     setIsJoiningFlow(true)
-    joinMutation.mutate({ guestCount: pendingGuestCount, joinQuestionAnswer: joinQuestionAnswer.trim() || undefined })
+    joinMutation.mutate({ guestCount: pendingGuestCount, joinQuestionAnswer: joinQuestionAnswer.trim() || undefined, isWaitlistJoin: canJoinWaitlist })
   }
 
   // Join event (register for event + auto-join group - Meetup.com pattern)
@@ -256,6 +257,7 @@ export default function EventDetailPage() {
       // Only show calendar modal for new joins, not guest count updates
       if (!isUpdatingGuests) {
         trackJoinEventCompleted(id, event?.title, variables?.guestCount || 0)
+        setJoinedAsWaitlisted(Boolean(variables?.isWaitlistJoin))
         setIsCalendarModalOpen(true)
       } else {
         // For updates, just show a success toast
@@ -449,7 +451,7 @@ export default function EventDetailPage() {
       
       // Auto-join the event
       setIsJoiningFlow(true) // Start joining flow for auto-join
-      joinMutation.mutate({ guestCount: 0 })
+      joinMutation.mutate({ guestCount: 0, isWaitlistJoin: canJoinWaitlist })
     }
   }, [isAuthenticated, id])
 
@@ -2393,6 +2395,7 @@ export default function EventDetailPage() {
           onClose={() => setIsCalendarModalOpen(false)}
           calendarData={calendarData}
           eventTitle={event?.title || 'this event'}
+          isWaitlisted={joinedAsWaitlisted}
         />
       </div>
 
