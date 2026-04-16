@@ -163,11 +163,18 @@ public class EventService {
             // Refresh the event to load the updated participants collection
             event = eventRepository.findById(event.getId())
                     .orElseThrow(() -> new RuntimeException("Event not found after save"));
+
+            // Update event status if host filled the last spot
+            if (event.getMaxParticipants() != null &&
+                    getTotalHeadcount(event) >= event.getMaxParticipants()) {
+                event.setStatus(Event.EventStatus.FULL);
+                event = eventRepository.save(event);
+            }
         }
-        
+
         return convertToDTO(event);
     }
-    
+
     /**
      * Update an existing event.
      * Only the group organiser can update events.
