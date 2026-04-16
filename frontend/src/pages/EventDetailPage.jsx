@@ -1568,6 +1568,7 @@ export default function EventDetailPage() {
                     {(() => {
                       const allParticipants = participantsData?.data?.filter(p => p.id !== event?.hostMemberId) || []
                       const activeAttendees = allParticipants.filter(p => p.participationStatus !== 'NO_SHOW' && p.participationStatus !== 'WAITLISTED' && p.participationStatus !== 'CANCELLED')
+                      const waitlistedParticipants = allParticipants.filter(p => p.participationStatus === 'WAITLISTED')
                       const noShows = allParticipants.filter(p => p.participationStatus === 'NO_SHOW')
                       const visibleAttendees = activeAttendees.slice(0, 5)
                       const hasMore = activeAttendees.length > 5
@@ -1662,6 +1663,14 @@ export default function EventDetailPage() {
                             <div className="text-center py-6 lg:py-8 px-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg lg:rounded-xl">
                               <Users className="h-8 w-8 lg:h-12 lg:w-12 mx-auto mb-2 lg:mb-3 text-gray-400" />
                               <p className="text-gray-600 text-sm lg:text-base">No other attendees yet</p>
+                              {waitlistedParticipants.length > 0 && (
+                                <button
+                                  onClick={() => { setAttendeeOverlayTab('waitlist'); setShowAllAttendees(true) }}
+                                  className="mt-3 text-sm font-medium text-orange-600 hover:text-orange-700"
+                                >
+                                  View waitlist ({waitlistedParticipants.length})
+                                </button>
+                              )}
                             </div>
                           )}
 
