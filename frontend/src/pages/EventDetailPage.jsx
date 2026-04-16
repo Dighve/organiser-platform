@@ -1567,7 +1567,7 @@ export default function EventDetailPage() {
                   <div className={hasHost ? '' : 'lg:col-span-2'}>
                     {(() => {
                       const allParticipants = participantsData?.data?.filter(p => p.id !== event?.hostMemberId) || []
-                      const activeAttendees = allParticipants.filter(p => p.participationStatus !== 'NO_SHOW')
+                      const activeAttendees = allParticipants.filter(p => p.participationStatus !== 'NO_SHOW' && p.participationStatus !== 'WAITLISTED' && p.participationStatus !== 'CANCELLED')
                       const noShows = allParticipants.filter(p => p.participationStatus === 'NO_SHOW')
                       const visibleAttendees = activeAttendees.slice(0, 5)
                       const hasMore = activeAttendees.length > 5
