@@ -9,7 +9,7 @@ import AddToCalendar from './AddToCalendar'
  */
 export default function AddToCalendarModal({ isOpen, onClose, calendarData, eventTitle, isWaitlisted = false }) {
   const navigate = useNavigate()
-  
+
   if (!isOpen) return null
 
   const handleExploreEvents = () => {
@@ -20,11 +20,11 @@ export default function AddToCalendarModal({ isOpen, onClose, calendarData, even
   return (
     <>
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 animate-fade-in"
         onClick={onClose}
       />
-      
+
       {/* Modal Container - Scrollable */}
       <div className="fixed inset-0 z-50 overflow-y-auto pointer-events-none">
         <div className="min-h-screen px-4 py-8 flex items-center justify-center">
@@ -41,19 +41,19 @@ export default function AddToCalendarModal({ isOpen, onClose, calendarData, even
 
             {/* Desktop / tablet richer content */}
             <div className="hidden sm:block">
-              <div className={`p-8 text-center rounded-t-2xl ${isWaitlisted ? ‘bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400’ : ‘bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500’}`}>
+              <div className={`p-8 text-center rounded-t-2xl ${isWaitlisted ? 'bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400' : 'bg-gradient-to-r from-green-500 via-emerald-500 to-teal-500'}`}>
                 <div className="flex justify-center mb-4">
                   <div className="w-16 h-16 bg-white/20 backdrop-blur-lg rounded-full flex items-center justify-center">
                     <CheckCircle className="h-10 w-10 text-white" />
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2">
-                  {isWaitlisted ? "⏳ You’re on the Waitlist!" : "🎉 You’re In!"}
+                  {isWaitlisted ? "You're on the Waitlist! \u23f3" : "\uD83C\uDF89 You're In!"}
                 </h2>
                 <p className="text-white/90 text-sm">
                   {isWaitlisted
-                    ? <>We’ll notify you if a spot opens up for <span className="font-semibold">{eventTitle}</span></>
-                    : <>Successfully joined <span className="font-semibold">{eventTitle}</span></>
+                    ? <span>We&apos;ll notify you if a spot opens up for <span className="font-semibold">{eventTitle}</span></span>
+                    : <span>Successfully joined <span className="font-semibold">{eventTitle}</span></span>
                   }
                 </p>
               </div>
@@ -62,14 +62,14 @@ export default function AddToCalendarModal({ isOpen, onClose, calendarData, even
                 {isWaitlisted ? (
                   <div className="text-center space-y-2">
                     <p className="text-gray-600 text-sm">
-                      You’ll receive an email and notification as soon as a spot becomes available. Keep an eye out!
+                      You&apos;ll receive an email and notification as soon as a spot becomes available. Keep an eye out!
                     </p>
                   </div>
                 ) : (
                   <div className="text-center space-y-2">
                     <div className="flex items-center justify-center gap-2 text-gray-700">
                       <Calendar className="h-5 w-5 text-purple-600" />
-                      <h3 className="text-lg font-bold">Don’t Miss This Adventure!</h3>
+                      <h3 className="text-lg font-bold">Don&apos;t Miss This Adventure!</h3>
                     </div>
                     <p className="text-gray-600 text-sm">
                       Add this event to your calendar to get reminders and never miss out.
@@ -85,7 +85,7 @@ export default function AddToCalendarModal({ isOpen, onClose, calendarData, even
                   onClick={onClose}
                   className="w-full py-3 px-6 text-gray-700 hover:text-gray-900 font-semibold rounded-xl border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all"
                 >
-                  {isWaitlisted ? ‘Got it’ : ‘Maybe Later’}
+                  {isWaitlisted ? 'Got it' : 'Maybe Later'}
                 </button>
 
                 <button
@@ -101,7 +101,7 @@ export default function AddToCalendarModal({ isOpen, onClose, calendarData, even
             {/* Mobile minimal content */}
             <div className="sm:hidden p-6 space-y-4">
               <div className="text-center text-sm font-semibold text-gray-800">
-                {isWaitlisted ? "You’re on the waitlist ⏳" : "You’re all in 🎉"}
+                {isWaitlisted ? "You're on the waitlist \u23f3" : "You're all in \uD83C\uDF89"}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <button
