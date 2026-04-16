@@ -52,22 +52,25 @@ export default function EventAttendeesPage() {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5 text-gray-700" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="font-bold text-gray-900 truncate">{event?.title || 'Event'}</h1>
-          <p className="text-xs text-gray-500">Members</p>
+      <div className="border-b border-gray-100">
+        <div className="max-w-2xl mx-auto flex items-center gap-3 px-4 py-3">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-2 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-gray-700" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="font-bold text-gray-900 truncate">{event?.title || 'Event'}</h1>
+            <p className="text-xs text-gray-500">Members</p>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
       {tabs.length > 1 && (
-        <div className="flex border-b border-gray-100 flex-shrink-0">
+        <div className="border-b border-gray-100">
+        <div className="max-w-2xl mx-auto flex">
           {tabs.map(tab => (
             <button
               key={tab.key}
@@ -89,10 +92,12 @@ export default function EventAttendeesPage() {
             </button>
           ))}
         </div>
+        </div>
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-2xl mx-auto p-4 space-y-2">
         {isLoading ? (
           <div className="text-center py-12 text-gray-400 text-sm">Loading...</div>
         ) : (
@@ -143,6 +148,7 @@ export default function EventAttendeesPage() {
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   )
