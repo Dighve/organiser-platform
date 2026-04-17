@@ -6,7 +6,7 @@
 # Edge Functions for dynamic Open Graph tags
 [[edge_functions]]
   function = "og-tags"
-  path = "/events/*"
+  path = "/*"
 
 # SPA redirect rules (fallback to _redirects file)
 [[redirects]]
