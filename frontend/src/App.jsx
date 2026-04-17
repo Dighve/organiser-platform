@@ -36,6 +36,7 @@ const ReviewSubmissionPage = lazy(() => import('./pages/ReviewSubmissionPage'))
 const GroupReviewsPage = lazy(() => import('./pages/GroupReviewsPage'))
 const EventReviewsPage = lazy(() => import('./pages/EventReviewsPage'))
 const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'))
+const LondonDayHikesPage = lazy(() => import('./pages/LondonDayHikesPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -81,6 +82,7 @@ const PAGE_NAMES = {
   '/settings': 'Settings',
   '/notifications': 'Notifications',
   '/admin': 'Admin',
+  '/london/day-hikes': 'London Day Hikes',
   '/hiking-grade-faq': 'Hiking Grade FAQ',
   '/pace-faq': 'Pace FAQ',
   '/auth/verify': 'Verify Magic Link',
@@ -253,6 +255,11 @@ function App() {
         <Route path="groups" element={
           <Suspense fallback={<PageLoader />}>
             <BrowseGroupsPage />
+          </Suspense>
+        } />
+        <Route path="london/day-hikes" element={
+          <Suspense fallback={<PageLoader />}>
+            <LondonDayHikesPage />
           </Suspense>
         } />
         <Route path="hiking-grade-faq" element={
