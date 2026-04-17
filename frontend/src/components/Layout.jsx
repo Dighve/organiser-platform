@@ -448,6 +448,32 @@ export default function Layout() {
         <Outlet />
       </main>
 
+      {/* Footer — desktop only */}
+      <footer className="hidden lg:block bg-gray-900 text-gray-400">
+        <div className="max-w-7xl mx-auto px-8 py-10">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            {/* Logo + tagline */}
+            <div className="flex items-center gap-3">
+              <img src="/favicon1.svg" alt="OutMeets" className="w-8 h-8 opacity-90" />
+              <div>
+                <span className="text-white font-bold text-lg">OutMeets</span>
+                <p className="text-xs text-gray-500 mt-0.5">Connecting outdoor communities</p>
+              </div>
+            </div>
+
+            {/* Links */}
+            <nav className="flex items-center gap-8 text-sm">
+              <a href="#" className="hover:text-white transition-colors">About</a>
+              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+              <a href="mailto:support@outmeets.com" className="hover:text-white transition-colors">support@outmeets.com</a>
+            </nav>
+
+            {/* Copyright */}
+            <p className="text-xs text-gray-600">© 2026 OutMeets. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
       {/* Login Modal */}
       <LoginModal
         isOpen={loginModalOpen}

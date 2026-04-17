@@ -224,6 +224,10 @@ export default function NotificationBell({
                       <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
                         notification.notificationType === 'NEW_EVENT'
                           ? 'bg-gradient-to-br from-purple-500 to-pink-500'
+                          : notification.notificationType === 'MEMBER_JOINED'
+                          ? 'bg-gradient-to-br from-green-500 to-emerald-500'
+                          : notification.notificationType === 'MEMBER_LEFT'
+                          ? 'bg-gradient-to-br from-amber-500 to-orange-500'
                           : 'bg-gradient-to-br from-orange-500 to-pink-500'
                       }`}>
                         <Bell className="w-4 h-4 text-white" />
