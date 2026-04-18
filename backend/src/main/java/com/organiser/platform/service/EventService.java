@@ -450,9 +450,13 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByParticipant(Long memberId, Pageable pageable, boolean past) {
-        // Get all event participations for this member
-        List<EventParticipant> participations = eventParticipantRepository.findByMemberId(memberId);
-        
+        // Get active event participations for this member (exclude cancelled and waitlisted)
+        List<EventParticipant> participations = eventParticipantRepository.findByMemberId(memberId)
+                .stream()
+                .filter(ep -> ep.getStatus() != EventParticipant.ParticipationStatus.CANCELLED
+                        && ep.getStatus() != EventParticipant.ParticipationStatus.WAITLISTED)
+                .collect(Collectors.toList());
+
         // Extract event IDs
         List<Long> eventIds = participations.stream()
                 .map(ep -> ep.getEvent().getId())
@@ -591,6 +595,8 @@ public class EventService {
             }
         }
 
+        boolean willBeRegistered = false;
+
         if (existing != null && existingIsActive) {
             // Active record — update guest count / notes (not waitlisted, not cancelled)
             if (existing.getStatus() == EventParticipant.ParticipationStatus.WAITLISTED) {
@@ -617,6 +623,7 @@ public class EventService {
                 existing.setWaitlistJoinedAt(LocalDateTime.now());
             } else {
                 existing.setStatus(EventParticipant.ParticipationStatus.REGISTERED);
+                willBeRegistered = true;
             }
             existing.setCancelledAt(null);
             existing.setGuestCount(guests);
@@ -654,9 +661,19 @@ public class EventService {
                     .joinQuestionAnswer(joinQuestionAnswer != null && !joinQuestionAnswer.isBlank() ? joinQuestionAnswer : null)
                     .build();
             event.getParticipants().add(participant);
+            willBeRegistered = true;
         }
-        
+
         event = eventRepository.save(event);
+
+        if (willBeRegistered) {
+            try {
+                notificationService.createMemberJoinedNotification(event, member);
+            } catch (Exception e) {
+                log.warn("Failed to send join notification for event {} member {}: {}", eventId, memberId, e.getMessage());
+            }
+        }
+
         return convertToDTO(event);
     }
     
@@ -669,11 +686,14 @@ public class EventService {
     public EventDTO leaveEvent(Long eventId, Long memberId) {
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new RuntimeException("Event not found"));
-        
+
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new RuntimeException("Member not found"));
+
         // Find the participant record for this member and event
         EventParticipant participant = eventParticipantRepository.findByEventIdAndMemberId(eventId, memberId)
                 .orElseThrow(() -> new RuntimeException("Member is not registered for this event"));
-        
+
         // Soft-delete: keep the record so hosts can see who left and when
         participant.setStatus(EventParticipant.ParticipationStatus.CANCELLED);
         participant.setCancelledAt(LocalDateTime.now());
@@ -686,6 +706,13 @@ public class EventService {
         }
 
         event = eventRepository.save(event);
+
+        try {
+            notificationService.createMemberLeftNotification(event, member);
+        } catch (Exception e) {
+            log.warn("Failed to send leave notification for event {} member {}: {}", eventId, memberId, e.getMessage());
+        }
+
         return convertToDTO(event);
     }
     
