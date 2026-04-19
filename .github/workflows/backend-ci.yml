@@ -208,7 +208,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
-      url: https://api.outmeets.com
+      url: https://organiser-platform.onrender.com
     
     steps:
       - name: Checkout code
@@ -230,7 +230,7 @@ jobs:
       - name: Notify deployment
         run: |
           echo "✅ Production backend deployed!"
-          echo "API URL: https://api.outmeets.com"
+          echo "API URL: https://organiser-platform.onrender.com"
           echo "Commit: ${{ github.sha }}"
 
   health-check:
