@@ -28,6 +28,7 @@ async function injectMetaTags(context, { title, description, url, image, schema 
     .replace(/<meta property="og:url" content=".*?"\s*\/?>/, `<meta property="og:url" content="${escapeHtml(url)}">`)
     .replace(/<meta name="twitter:title" content=".*?"\s*\/?>/, `<meta name="twitter:title" content="${escapeHtml(title)}">`)
     .replace(/<meta name="twitter:description" content=".*?"\s*\/?>/, `<meta name="twitter:description" content="${escapeHtml(description)}">`)
+    .replace(/<meta name="twitter:image" content=".*?"\s*\/?>/, `<meta name="twitter:image" content="${escapeHtml(safeImage)}">`)
     .replace(/<meta name="twitter:url" content=".*?"\s*\/?>/, `<meta name="twitter:url" content="${escapeHtml(url)}">`);
 
   if (schema) {
