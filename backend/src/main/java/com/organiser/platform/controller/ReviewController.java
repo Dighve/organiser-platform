@@ -24,6 +24,12 @@ public class ReviewController {
         return ResponseEntity.ok(reviewService.getPendingReviews());
     }
 
+    @PostMapping("/reviews/dismiss/{eventId}")
+    public ResponseEntity<Void> dismissReviewPrompt(@PathVariable Long eventId) {
+        reviewService.dismissReviewPrompt(eventId);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/reviews/my-reviews")
     public ResponseEntity<Page<EventReviewDTO>> getMyReviews(
             @RequestParam(defaultValue = "0") int page,

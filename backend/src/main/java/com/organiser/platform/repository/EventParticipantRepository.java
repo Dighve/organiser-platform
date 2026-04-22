@@ -56,6 +56,7 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
         JOIN FETCH e.group g
         JOIN FETCH g.primaryOrganiser
         WHERE ep.reviewPromptSent = false
+          AND ep.reviewPromptDismissedAt IS NULL
           AND ep.status IN ('REGISTERED', 'CONFIRMED', 'ATTENDED')
           AND e.eventDate BETWEEN :windowStart AND :windowEnd
           AND NOT EXISTS (

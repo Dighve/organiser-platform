@@ -10,6 +10,7 @@ import lombok.ToString;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 /**
@@ -80,6 +81,9 @@ public class EventParticipant {
     @Column(name = "review_prompt_sent", nullable = false)
     @Builder.Default
     private Boolean reviewPromptSent = false;
+
+    @Column(name = "review_prompt_dismissed_at")
+    private Instant reviewPromptDismissedAt;
     
     public enum ParticipationStatus {
         REGISTERED,

@@ -449,6 +449,9 @@ export const reviewsAPI = {
   // Get pending reviews for current user
   getPendingReviews: () => api.get('/reviews/pending'),
 
+  // Dismiss a review prompt so it never shows again
+  dismissReviewPrompt: (eventId) => api.post(`/reviews/dismiss/${eventId}`),
+
   // Get all reviews submitted by the current user
   getMyReviews: (page = 0, size = 20) => api.get(`/reviews/my-reviews?page=${page}&size=${size}`),
   
