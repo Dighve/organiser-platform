@@ -463,8 +463,6 @@ export default function Layout() {
 
             {/* Links */}
             <nav className="flex items-center gap-8 text-sm">
-              <a href="#" className="hover:text-white transition-colors">About</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
               <a href="mailto:support@outmeets.com" className="hover:text-white transition-colors">support@outmeets.com</a>
             </nav>
 
