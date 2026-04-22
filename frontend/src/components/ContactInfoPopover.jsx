@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MessageCircle, X, Loader } from 'lucide-react'
 import { membersAPI } from '../lib/api'
@@ -8,9 +9,13 @@ import ContactInfoDisplay from './ContactInfoDisplay'
 // CONTACT INFO POPOVER
 // Shows a member's contacts in a floating card on chat icon click.
 // Icon is HIDDEN if the member has no contacts visible to the viewer.
+// Uses fixed positioning via portal to escape parent overflow/z-index
+// clipping (common on iOS Safari).
 // ============================================================
 export default function ContactInfoPopover({ memberId, memberName, iconClassName = 'text-purple-400 hover:text-purple-600 hover:bg-purple-100' }) {
   const [open, setOpen] = useState(false)
+  const [popoverStyle, setPopoverStyle] = useState({})
+  const buttonRef = useRef(null)
   const popoverRef = useRef(null)
 
   // Pre-fetch contacts (cached 2 min) — determines icon visibility
@@ -21,16 +26,48 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
     staleTime: 2 * 60 * 1000,
   })
 
+  // Calculate fixed position from button's viewport rect
+  const handleOpen = (e) => {
+    e.stopPropagation()
+    if (!open && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect()
+      const popoverWidth = 288 // w-72
+      const spaceOnRight = window.innerWidth - rect.right
+      const left = spaceOnRight >= popoverWidth
+        ? rect.right - popoverWidth
+        : Math.max(8, rect.right - popoverWidth)
+      setPopoverStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: Math.max(8, Math.min(left, window.innerWidth - popoverWidth - 8)),
+        width: popoverWidth,
+        zIndex: 9999,
+      })
+    }
+    setOpen(!open)
+  }
+
   // Close on click outside
   useEffect(() => {
     if (!open) return
     const handleClick = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+      if (
+        popoverRef.current && !popoverRef.current.contains(e.target) &&
+        buttonRef.current && !buttonRef.current.contains(e.target)
+      ) {
         setOpen(false)
       }
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  // Close on scroll (position would be stale)
+  useEffect(() => {
+    if (!open) return
+    const handleScroll = () => setOpen(false)
+    document.addEventListener('scroll', handleScroll, true)
+    return () => document.removeEventListener('scroll', handleScroll, true)
   }, [open])
 
   // Hide the icon entirely if fetch is done and no contacts are visible
@@ -39,17 +76,22 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
   }
 
   return (
-    <div className="relative" ref={popoverRef}>
+    <>
       <button
-        onClick={(e) => { e.stopPropagation(); setOpen(!open) }}
+        ref={buttonRef}
+        onClick={handleOpen}
         title={`${memberName || 'Member'}'s contact info`}
         className={`flex-shrink-0 p-2 rounded-lg transition-colors ${iconClassName}`}
       >
         <MessageCircle className="h-4 w-4" />
       </button>
 
-      {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 w-72 bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+      {open && createPortal(
+        <div
+          ref={popoverRef}
+          style={popoverStyle}
+          className="bg-white rounded-xl shadow-xl border border-gray-200 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150"
+        >
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-100">
             <p className="text-xs font-bold text-gray-700 truncate">
@@ -73,8 +115,9 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
               <ContactInfoDisplay contacts={contacts} />
             ) : null}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
-    </div>
+    </>
   )
 }

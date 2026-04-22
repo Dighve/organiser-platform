@@ -203,6 +203,60 @@ public class NotificationService {
     }
     
     /**
+     * Create notification for the event host when a member joins (confirmed, not waitlisted)
+     */
+    @Transactional
+    public void createMemberJoinedNotification(Event event, Member joiningMember) {
+        Member host = event.getHostMember();
+        if (host == null || host.getId().equals(joiningMember.getId())) {
+            return;
+        }
+        String joinerName = joiningMember.getDisplayName() != null
+            ? joiningMember.getDisplayName()
+            : joiningMember.getEmail().split("@")[0];
+        String title = joinerName + " joined " + event.getTitle();
+        String message = joinerName + " has joined your event \"" + event.getTitle() + "\"";
+
+        Notification notification = Notification.builder()
+            .member(host)
+            .notificationType(Notification.NotificationType.MEMBER_JOINED)
+            .title(title)
+            .message(message)
+            .relatedEvent(event)
+            .build();
+        notificationRepository.save(notification);
+        webPushService.sendToMember(host.getId(), title, message, "/events/" + event.getId());
+        log.info("Created MEMBER_JOINED notification for host {} for event {}", host.getId(), event.getId());
+    }
+
+    /**
+     * Create notification for the event host when a member leaves
+     */
+    @Transactional
+    public void createMemberLeftNotification(Event event, Member leavingMember) {
+        Member host = event.getHostMember();
+        if (host == null || host.getId().equals(leavingMember.getId())) {
+            return;
+        }
+        String leaverName = leavingMember.getDisplayName() != null
+            ? leavingMember.getDisplayName()
+            : leavingMember.getEmail().split("@")[0];
+        String title = leaverName + " left " + event.getTitle();
+        String message = leaverName + " has left your event \"" + event.getTitle() + "\"";
+
+        Notification notification = Notification.builder()
+            .member(host)
+            .notificationType(Notification.NotificationType.MEMBER_LEFT)
+            .title(title)
+            .message(message)
+            .relatedEvent(event)
+            .build();
+        notificationRepository.save(notification);
+        webPushService.sendToMember(host.getId(), title, message, "/events/" + event.getId());
+        log.info("Created MEMBER_LEFT notification for host {} for event {}", host.getId(), event.getId());
+    }
+
+    /**
      * Delete all notifications related to a group (used when permanently deleting group)
      */
     @Transactional

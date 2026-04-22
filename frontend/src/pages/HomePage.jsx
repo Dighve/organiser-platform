@@ -606,7 +606,7 @@ export default function HomePage() {
           )}
 
           {/* ========== YOUR EVENTS SECTION (SECOND ON MOBILE FOR UNAUTHENTICATED, FIRST FOR AUTHENTICATED) ========== */}
-          {isAuthenticated && (
+          {isAuthenticated && (yourEventsLoading || yourEvents.length > 0) && (
             <div className="order-1">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Your Events</h2>

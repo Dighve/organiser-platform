@@ -1,0 +1,43 @@
+# OutMeets
+
+OutMeets is an online platform for discovering and joining organised day hikes from London with local hiking groups.
+
+## What OutMeets does
+
+OutMeets connects hikers in and around London with organised group hiking events led by experienced local guides and group organisers. Events run to popular hiking areas reachable by train from London, including:
+
+- Surrey Hills (Area of Outstanding Natural Beauty)
+- Chilterns (rolling chalk hills and ancient beechwood)
+- South Downs National Park (open downland and coastal cliffs)
+- North Downs Way (National Trail through Surrey and Kent)
+- Other scenic trails within 1–2 hours of London
+
+## Who uses OutMeets
+
+- People looking to join day hike groups from London
+- Hikers who want to explore trails near London with a social group
+- Beginners wanting guided, welcoming hikes in the London area
+- Experienced hikers looking for organised advanced or long-distance routes
+- Hiking group organisers running events across South East England
+
+## Key features
+
+- Browse upcoming day hikes from London by date, difficulty, and location
+- Join existing hiking groups based in and around London
+- Events graded Beginner, Intermediate, Advanced, or Expert
+- Hike pace levels: Leisurely, Steady, Brisk
+- Events organised and led by experienced group organisers
+- Community-based platform — not a commercial tour operator
+
+## Key pages
+
+- https://www.outmeets.com/ — Homepage and event discovery
+- https://www.outmeets.com/london/day-hikes — Day hikes from London guide
+- https://www.outmeets.com/events — Browse all upcoming hikes
+- https://www.outmeets.com/groups — Browse hiking groups
+- https://www.outmeets.com/hiking-grade-faq — Hiking difficulty grade guide
+- https://www.outmeets.com/pace-faq — Hiking pace level guide
+
+## Contact
+
+Website: https://www.outmeets.com

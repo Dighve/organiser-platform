@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /profile
+Disallow: /settings
+Disallow: /notifications
+Disallow: /create-event
+Disallow: /events/*/edit
+Disallow: /groups/*/edit
+Disallow: /groups/create
+Disallow: /groups/*/transfer
+Disallow: /auth/
+
+Sitemap: https://www.outmeets.com/sitemap.xml
