@@ -1103,13 +1103,35 @@ public class EventService {
         // Get the primary organiser of the group (who is the event organiser)
         Long eventOrganiserId = event.getGroup().getPrimaryOrganiser().getId();
         Long groupId = event.getGroup().getId();
-        
+
+        // Reliability stats are host-only — bulk-fetch before streaming to avoid N+1
+        boolean requesterIsHost = requesterId != null
+                && event.getHostMember() != null
+                && event.getHostMember().getId().equals(requesterId);
+
+        java.util.Map<Long, Integer> joinedByMemberId = new java.util.HashMap<>();
+        java.util.Map<Long, Integer> noShowsByMemberId = new java.util.HashMap<>();
+        if (requesterIsHost) {
+            java.util.List<Long> memberIds = event.getParticipants().stream()
+                    .map(p -> p.getMember().getId())
+                    .collect(Collectors.toList());
+            java.util.List<EventParticipant.ParticipationStatus> joinedStatuses = java.util.List.of(
+                    EventParticipant.ParticipationStatus.REGISTERED,
+                    EventParticipant.ParticipationStatus.CONFIRMED,
+                    EventParticipant.ParticipationStatus.ATTENDED,
+                    EventParticipant.ParticipationStatus.NO_SHOW);
+            eventParticipantRepository.countJoinedByMemberIds(memberIds, joinedStatuses)
+                    .forEach(row -> joinedByMemberId.put((Long) row[0], Math.toIntExact((Long) row[1])));
+            eventParticipantRepository.countNoShowsByMemberIds(memberIds)
+                    .forEach(row -> noShowsByMemberId.put((Long) row[0], Math.toIntExact((Long) row[1])));
+        }
+
         return event.getParticipants().stream()
                 .map(participant -> {
                     Member member = participant.getMember();
                     boolean isDeleted = Boolean.FALSE.equals(member.getActive());
                     boolean isBanned = bannedMemberRepository.existsByGroupIdAndMemberId(groupId, member.getId());
-                    
+
                     // Determine display name: "Deleted user" for deleted, "Former Member" for banned, or actual name
                     String displayName;
                     if (isDeleted) {
@@ -1119,21 +1141,12 @@ public class EventService {
                     } else {
                         displayName = member.getDisplayName();
                     }
-                    
+
                     Integer totalEventsJoined = null;
                     Integer totalNoShows = null;
-                    if (!isDeleted && !isBanned) {
-                        long joined = eventParticipantRepository.countByMemberIdAndStatusIn(
-                                member.getId(),
-                                java.util.List.of(
-                                        EventParticipant.ParticipationStatus.REGISTERED,
-                                        EventParticipant.ParticipationStatus.CONFIRMED,
-                                        EventParticipant.ParticipationStatus.ATTENDED,
-                                        EventParticipant.ParticipationStatus.NO_SHOW));
-                        long noShows = eventParticipantRepository.countByMemberIdAndStatus(
-                                member.getId(), EventParticipant.ParticipationStatus.NO_SHOW);
-                        totalEventsJoined = (int) joined;
-                        totalNoShows = (int) noShows;
+                    if (requesterIsHost && !isDeleted && !isBanned) {
+                        totalEventsJoined = joinedByMemberId.getOrDefault(member.getId(), 0);
+                        totalNoShows = noShowsByMemberId.getOrDefault(member.getId(), 0);
                     }
 
                     return com.organiser.platform.dto.MemberDTO.builder()
