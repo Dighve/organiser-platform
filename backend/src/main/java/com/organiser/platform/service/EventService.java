@@ -1120,6 +1120,22 @@ public class EventService {
                         displayName = member.getDisplayName();
                     }
                     
+                    Integer totalEventsJoined = null;
+                    Integer totalNoShows = null;
+                    if (!isDeleted && !isBanned) {
+                        long joined = eventParticipantRepository.countByMemberIdAndStatusIn(
+                                member.getId(),
+                                java.util.List.of(
+                                        EventParticipant.ParticipationStatus.REGISTERED,
+                                        EventParticipant.ParticipationStatus.CONFIRMED,
+                                        EventParticipant.ParticipationStatus.ATTENDED,
+                                        EventParticipant.ParticipationStatus.NO_SHOW));
+                        long noShows = eventParticipantRepository.countByMemberIdAndStatus(
+                                member.getId(), EventParticipant.ParticipationStatus.NO_SHOW);
+                        totalEventsJoined = (int) joined;
+                        totalNoShows = (int) noShows;
+                    }
+
                     return com.organiser.platform.dto.MemberDTO.builder()
                             .id((isDeleted || isBanned) ? null : member.getId())
                             // PRIVACY: Never expose email in participant lists (Meetup.com approach)
@@ -1135,6 +1151,8 @@ public class EventService {
                             .participationStatus(participant.getStatus() != null ? participant.getStatus().name() : null)
                             .cancelledAt(participant.getCancelledAt())
                             .waitlistJoinedAt(participant.getWaitlistJoinedAt())
+                            .totalEventsJoined(totalEventsJoined)
+                            .totalNoShows(totalNoShows)
                             .build();
                 })
                 .collect(Collectors.toList());
