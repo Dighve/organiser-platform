@@ -116,7 +116,7 @@ export default function EventAttendeesPage() {
             <>
               {activeTab === 'attendees' && (
                 attending.length > 0
-                  ? attending.map(p => <MemberRow key={p.id} participant={p} onClick={() => navigate(`/members/${p.id}`)} showChat currentUserId={user?.id} />)
+                  ? attending.map(p => <MemberRow key={p.id} participant={p} onClick={() => navigate(`/members/${p.id}`)} showChat currentUserId={user?.id} showReliability={isHost} />)
                   : <Empty message="No attendees yet" />
               )}
 
@@ -141,6 +141,7 @@ export default function EventAttendeesPage() {
                         currentUserId={user?.id}
                         onUndo={isHost ? () => unmarkNoShowMutation.mutate(p.id) : undefined}
                         undoLoading={unmarkNoShowMutation.isPending && unmarkNoShowMutation.variables === p.id}
+                        showReliability={isHost}
                       />
                     ))
                   : <Empty message="No no-shows" />
@@ -160,19 +161,40 @@ export default function EventAttendeesPage() {
 }
 
 
-function MemberRow({ participant, badge, badgeColor, onClick, showChat, currentUserId, onUndo, undoLoading }) {
+function ReliabilityBadge({ totalEventsJoined, totalNoShows }) {
+  if (totalEventsJoined == null || totalEventsJoined < 2) return null
+  const rate = Math.round((totalNoShows / totalEventsJoined) * 100)
+  let className
+  if (rate === 0) {
+    className = 'bg-green-100 text-green-700'
+  } else if (rate <= 30) {
+    className = 'bg-amber-100 text-amber-700'
+  } else {
+    className = 'bg-red-100 text-red-700'
+  }
+  return (
+    <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${className}`}>
+      {rate}% no-show
+    </span>
+  )
+}
+
+function MemberRow({ participant, badge, badgeColor, onClick, showChat, currentUserId, onUndo, undoLoading, showReliability }) {
   return (
     <div className="flex items-center gap-3 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
       <div className="flex-shrink-0 cursor-pointer" onClick={onClick}>
         <ProfileAvatar member={participant} size="md" />
       </div>
       <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <p className="font-semibold text-gray-900 text-sm truncate hover:text-purple-600 transition-colors">{participant.displayName || 'Anonymous'}</p>
           {badge && (
             <span className={`text-xs px-1.5 py-0.5 rounded font-medium bg-${badgeColor}-100 text-${badgeColor}-600`}>
               {badge}
             </span>
+          )}
+          {showReliability && (
+            <ReliabilityBadge totalEventsJoined={participant.totalEventsJoined} totalNoShows={participant.totalNoShows} />
           )}
         </div>
         {participant.guestCount > 0 && (
