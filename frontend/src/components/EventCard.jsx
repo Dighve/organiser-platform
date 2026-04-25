@@ -109,6 +109,7 @@ export default function EventCard({ event, isPast = false }) {
 
             {event.groupName && (
               <div className="flex items-center gap-1 pt-1 text-xs text-gray-500">
+                <span>by</span>
                 <span className="truncate">{event.groupName}</span>
                 {event.groupTotalReviews >= 3 && event.groupAverageRating && (
                   <>
@@ -140,6 +141,7 @@ export default function EventCard({ event, isPast = false }) {
             )}
             {event.groupName && (
               <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                <span>by</span>
                 <span className="truncate">{event.groupName}</span>
                 {event.groupTotalReviews >= 3 && event.groupAverageRating && (
                   <>

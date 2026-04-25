@@ -548,6 +548,7 @@ export default function HomePage() {
                         </div>
                         {event.groupName && (
                           <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                            <span>by</span>
                             <span className="truncate">{event.groupName}</span>
                             {event.groupTotalReviews >= 3 && event.groupAverageRating && (
                               <>
@@ -702,6 +703,7 @@ export default function HomePage() {
                           </div>
                           {event.groupName && (
                             <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                              <span>by</span>
                               <span className="truncate">{event.groupName}</span>
                               {event.groupTotalReviews >= 3 && event.groupAverageRating && (
                                 <>
