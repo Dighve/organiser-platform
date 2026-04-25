@@ -108,9 +108,9 @@ export default function EventCard({ event, isPast = false }) {
             )}
 
             {event.groupName && (
-              <div className="flex items-center gap-1 pt-1 text-xs text-gray-500">
-                <span>by</span>
-                <span className="truncate">{event.groupName}</span>
+              <div className="flex items-center gap-1">
+                <span className="text-gray-400">by</span>
+                <span className="truncate text-gray-600">{event.groupName}</span>
                 {event.groupTotalReviews >= 3 && event.groupAverageRating && (
                   <>
                     <span className="text-gray-300">·</span>
@@ -140,15 +140,14 @@ export default function EventCard({ event, isPast = false }) {
               </div>
             )}
             {event.groupName && (
-              <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                <span>by</span>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span className="text-gray-400">by</span>
                 <span className="truncate">{event.groupName}</span>
                 {event.groupTotalReviews >= 3 && event.groupAverageRating && (
                   <>
                     <span className="text-gray-300">·</span>
                     <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
-                    <span className="font-semibold text-gray-700">{Number(event.groupAverageRating).toFixed(1)}</span>
-                    <span className="text-xs text-gray-400">({event.groupTotalReviews})</span>
+                    <span className="font-semibold">{Number(event.groupAverageRating).toFixed(1)}</span>
                   </>
                 )}
               </div>
