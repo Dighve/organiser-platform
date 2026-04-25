@@ -15,6 +15,7 @@ import AddToCalendar from '../components/AddToCalendar'
 import ContactInfoPopover from '../components/ContactInfoPopover'
 import AddToCalendarModal from '../components/AddToCalendarModal'
 import GroupGuidelinesModal from '../components/GroupGuidelinesModal'
+import RatingStars from '../components/RatingStars'
 import ShareButton from '../components/ShareButton'
 import EventFlyerModal from '../components/EventFlyerModal'
 import InviteMembersModal from '../components/InviteMembersModal'
@@ -1181,9 +1182,9 @@ export default function EventDetailPage() {
                     <p className="text-[11px] font-medium text-purple-500 uppercase tracking-wide leading-none mb-0.5">Organised by</p>
                     <h2 className="text-sm lg:text-base font-bold text-gray-900 truncate">{displayEvent.groupName}</h2>
                     {displayEvent.groupTotalReviews >= 3 && displayEvent.groupAverageRating && (
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 shrink-0" />
-                        <span className="text-xs font-semibold text-gray-700">{Number(displayEvent.groupAverageRating).toFixed(1)}</span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <RatingStars rating={Number(displayEvent.groupAverageRating)} size="sm" />
+                        <span className="text-xs text-gray-500">{displayEvent.groupTotalReviews} {displayEvent.groupTotalReviews === 1 ? 'review' : 'reviews'}</span>
                       </div>
                     )}
                   </div>
