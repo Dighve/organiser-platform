@@ -63,6 +63,7 @@ public class EventService {
     private final EventTransportLegRepository eventTransportLegRepository;
     private final WebPushService webPushService;
     private final EmailService emailService;
+    private final GroupRatingSummaryRepository groupRatingSummaryRepository;
     
     // ============================================================
     // PUBLIC METHODS - Event CRUD Operations
@@ -847,14 +848,16 @@ public class EventService {
                         ? event.getHostMember().getDisplayName()
                         : event.getHostMember().getEmail());
         }
-        
+
+        GroupRatingSummary groupRating = groupRatingSummaryRepository.findByGroupId(group.getId()).orElse(null);
+
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .description(event.getDescription())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
-                        ? primaryOrganiser.getDisplayName() 
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty()
+                        ? primaryOrganiser.getDisplayName()
                         : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
@@ -891,6 +894,8 @@ public class EventService {
                 .cancellationPolicy(event.getCancellationPolicy())
                 .averageRating(event.getAverageRating() != null ? new BigDecimal(event.getAverageRating()) : BigDecimal.ZERO)
                 .totalReviews(event.getTotalReviews() != null ? event.getTotalReviews() : 0)
+                .groupAverageRating(groupRating != null && groupRating.getAverageRating() != null ? new BigDecimal(groupRating.getAverageRating()) : null)
+                .groupTotalReviews(groupRating != null ? groupRating.getTotalReviews() : 0)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(true) // Default true for backward compatibility
@@ -953,14 +958,16 @@ public class EventService {
                         ? event.getHostMember().getDisplayName()
                         : event.getHostMember().getEmail());
         }
-        
+
+        GroupRatingSummary groupRating = groupRatingSummaryRepository.findByGroupId(group.getId()).orElse(null);
+
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .description(event.getDescription())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
-                        ? primaryOrganiser.getDisplayName() 
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty()
+                        ? primaryOrganiser.getDisplayName()
                         : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
@@ -997,6 +1004,8 @@ public class EventService {
                 .cancellationPolicy(event.getCancellationPolicy())
                 .averageRating(event.getAverageRating() != null ? new BigDecimal(event.getAverageRating()) : BigDecimal.ZERO)
                 .totalReviews(event.getTotalReviews() != null ? event.getTotalReviews() : 0)
+                .groupAverageRating(groupRating != null && groupRating.getAverageRating() != null ? new BigDecimal(groupRating.getAverageRating()) : null)
+                .groupTotalReviews(groupRating != null ? groupRating.getTotalReviews() : 0)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(isGroupMember)
@@ -1033,13 +1042,15 @@ public class EventService {
             throw new IllegalStateException("Group must be associated with an activity");
         }
         
+        GroupRatingSummary groupRating = groupRatingSummaryRepository.findByGroupId(group.getId()).orElse(null);
+
         // Return DTO with only basic information - no sensitive details
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
-                        ? primaryOrganiser.getDisplayName() 
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty()
+                        ? primaryOrganiser.getDisplayName()
                         : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
@@ -1073,6 +1084,8 @@ public class EventService {
                 .cancellationPolicy(null)
                 .averageRating(BigDecimal.ZERO)
                 .totalReviews(0)
+                .groupAverageRating(groupRating != null && groupRating.getAverageRating() != null ? new BigDecimal(groupRating.getAverageRating()) : null)
+                .groupTotalReviews(groupRating != null ? groupRating.getTotalReviews() : 0)
                 .updatedAt(null)
                 .userIsGroupMember(false)
                 .groupIsPublic(group.getIsPublic())

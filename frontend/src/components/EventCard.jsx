@@ -107,13 +107,16 @@ export default function EventCard({ event, isPast = false }) {
               </div>
             )}
 
-            {event.totalReviews >= 3 && (
-              <div className="flex items-center gap-1.5 pt-1">
-                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                <span className="font-semibold text-xs">{Number(event.averageRating).toFixed(1)}</span>
-                <span className="text-xs text-gray-500">
-                  ({event.totalReviews})
-                </span>
+            {event.groupName && (
+              <div className="flex items-center gap-1 pt-1 text-xs text-gray-500">
+                <span className="truncate">{event.groupName}</span>
+                {event.groupTotalReviews >= 3 && event.groupAverageRating && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 shrink-0" />
+                    <span className="font-semibold text-gray-700">{Number(event.groupAverageRating).toFixed(1)}</span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -135,15 +138,17 @@ export default function EventCard({ event, isPast = false }) {
                 <span className="truncate">{event.location}</span>
               </div>
             )}
-            {event.totalReviews >= 3 && (
-              <div className="flex items-center gap-2 mt-2">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold text-sm">{Number(event.averageRating).toFixed(1)}</span>
-                </div>
-                <span className="text-xs text-gray-600">
-                  ({event.totalReviews} {event.totalReviews === 1 ? 'review' : 'reviews'})
-                </span>
+            {event.groupName && (
+              <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                <span className="truncate">{event.groupName}</span>
+                {event.groupTotalReviews >= 3 && event.groupAverageRating && (
+                  <>
+                    <span className="text-gray-300">·</span>
+                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                    <span className="font-semibold text-gray-700">{Number(event.groupAverageRating).toFixed(1)}</span>
+                    <span className="text-xs text-gray-400">({event.groupTotalReviews})</span>
+                  </>
+                )}
               </div>
             )}
           </div>
