@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -23,6 +24,8 @@ public class CommentDTO {
     private Boolean deleted;
     private String content;
     private Boolean edited;
+    private Boolean pinned;
+    private Instant pinnedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Integer replyCount;

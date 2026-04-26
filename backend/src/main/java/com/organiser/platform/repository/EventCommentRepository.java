@@ -14,8 +14,11 @@ public interface EventCommentRepository extends JpaRepository<EventComment, Long
     /**
      * Find all comments for a specific event, ordered by creation date descending
      */
-    @Query("SELECT c FROM EventComment c WHERE c.event.id = :eventId ORDER BY c.createdAt DESC")
+    @Query("SELECT c FROM EventComment c WHERE c.event.id = :eventId ORDER BY c.pinned DESC, c.pinnedAt DESC, c.createdAt DESC")
     List<EventComment> findByEventIdOrderByCreatedAtDesc(@Param("eventId") Long eventId);
+
+    @Query("SELECT COUNT(c) FROM EventComment c WHERE c.event.id = :eventId AND c.pinned = true")
+    long countPinnedByEventId(@Param("eventId") Long eventId);
     
     /**
      * Count comments for a specific event

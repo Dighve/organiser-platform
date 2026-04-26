@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -146,6 +147,35 @@ public class EventCommentService {
         commentRepository.delete(comment);
     }
     
+    /**
+     * Toggle pin on a comment.
+     * Only the event host can pin/unpin. Max 3 pinned comments per event.
+     */
+    @Transactional
+    public CommentDTO togglePinComment(Long commentId, Long memberId) {
+        EventComment comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new RuntimeException("Comment not found"));
+
+        Event event = comment.getEvent();
+        if (event.getHostMember() == null || !event.getHostMember().getId().equals(memberId)) {
+            throw new RuntimeException("Only the event host can pin comments");
+        }
+
+        if (Boolean.TRUE.equals(comment.getPinned())) {
+            comment.setPinned(false);
+            comment.setPinnedAt(null);
+        } else {
+            long currentPinned = commentRepository.countPinnedByEventId(event.getId());
+            if (currentPinned >= 3) {
+                throw new RuntimeException("You can pin at most 3 comments per event");
+            }
+            comment.setPinned(true);
+            comment.setPinnedAt(Instant.now());
+        }
+
+        return convertToDTO(commentRepository.save(comment));
+    }
+
     // ============================================================
     // PUBLIC METHODS - Reply Operations
     // ============================================================
@@ -239,6 +269,8 @@ public class EventCommentService {
                 .deleted(deleted)
                 .content(comment.getContent())
                 .edited(comment.getEdited())
+                .pinned(comment.getPinned())
+                .pinnedAt(comment.getPinnedAt())
                 .createdAt(comment.getCreatedAt())
                 .updatedAt(comment.getUpdatedAt())
                 .replyCount(comment.getReplyCount())

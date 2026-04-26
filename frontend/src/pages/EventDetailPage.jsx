@@ -2095,7 +2095,7 @@ export default function EventDetailPage() {
         {/* ============================================ */}
         {!isAccessDenied && (
           <div className="mt-4 lg:mt-6 pb-24 lg:pb-0">
-            <CommentSection eventId={id} />
+            <CommentSection eventId={id} isHost={isHost} />
           </div>
         )}
       </div>

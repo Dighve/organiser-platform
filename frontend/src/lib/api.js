@@ -234,6 +234,9 @@ export const commentsAPI = {
   
   // Delete a reply
   deleteReply: (replyId) => api.delete(`/events/replies/${replyId}`),
+
+  // Toggle pin on a comment (host only)
+  pinComment: (commentId) => api.post(`/events/comments/${commentId}/pin`),
 }
 
 // Activity Types API
