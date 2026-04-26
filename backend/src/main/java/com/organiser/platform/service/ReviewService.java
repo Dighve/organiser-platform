@@ -89,6 +89,22 @@ public class ReviewService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public void dismissReviewPrompt(Long eventId) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Member not found"));
+
+        EventParticipant ep = eventParticipantRepository
+                .findByEventIdAndMemberId(eventId, member.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Participation not found"));
+
+        ep.setReviewPromptDismissedAt(Instant.now());
+        eventParticipantRepository.save(ep);
+    }
+
     public Page<EventReviewDTO> getMyReviews(int page, int size) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
