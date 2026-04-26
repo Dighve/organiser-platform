@@ -14,8 +14,10 @@ import com.organiser.platform.repository.*;
 import com.organiser.platform.util.EventTimingUtils;
 
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -63,6 +65,7 @@ public class EventService {
     private final EventTransportLegRepository eventTransportLegRepository;
     private final WebPushService webPushService;
     private final EmailService emailService;
+    private final GroupRatingSummaryRepository groupRatingSummaryRepository;
     
     // ============================================================
     // PUBLIC METHODS - Event CRUD Operations
@@ -309,8 +312,9 @@ public class EventService {
     @Transactional(readOnly = true)
     @Cacheable(value = "upcomingEvents", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
     public Page<EventDTO> getUpcomingEvents(Pageable pageable) {
-        return eventRepository.findUpcomingEvents(Instant.now(), EventTimingUtils.startOfToday(), pageable)
-                .map(this::convertToDTO);
+        Page<Event> page = eventRepository.findUpcomingEvents(Instant.now(), EventTimingUtils.startOfToday(), pageable);
+        Map<Long, GroupRatingSummary> ratingsMap = buildRatingsMap(page.getContent());
+        return page.map(event -> convertToDTO(event, ratingsMap.get(event.getGroup().getId())));
     }
     
     // ============================================================
@@ -322,9 +326,10 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public Page<EventDTO> getEventsByActivity(Long activityId, Pageable pageable) {
-        return eventRepository.findUpcomingEventsByActivityId(
-                Instant.now(), EventTimingUtils.startOfToday(), activityId, pageable
-        ).map(this::convertToDTO);
+        Page<Event> page = eventRepository.findUpcomingEventsByActivityId(
+                Instant.now(), EventTimingUtils.startOfToday(), activityId, pageable);
+        Map<Long, GroupRatingSummary> ratingsMap = buildRatingsMap(page.getContent());
+        return page.map(event -> convertToDTO(event, ratingsMap.get(event.getGroup().getId())));
     }
     
     /**
@@ -332,8 +337,9 @@ public class EventService {
      */
     @Transactional(readOnly = true)
     public Page<EventDTO> searchEvents(String keyword, Pageable pageable) {
-        return eventRepository.searchEvents(keyword, Instant.now(), EventTimingUtils.startOfToday(), pageable)
-                .map(this::convertToDTO);
+        Page<Event> page = eventRepository.searchEvents(keyword, Instant.now(), EventTimingUtils.startOfToday(), pageable);
+        Map<Long, GroupRatingSummary> ratingsMap = buildRatingsMap(page.getContent());
+        return page.map(event -> convertToDTO(event, ratingsMap.get(event.getGroup().getId())));
     }
 
     /**
@@ -356,7 +362,8 @@ public class EventService {
                 pageable
         );
 
-        return results.map(this::convertToDTO);
+        Map<Long, GroupRatingSummary> ratingsMap = buildRatingsMap(results.getContent());
+        return results.map(event -> convertToDTO(event, ratingsMap.get(event.getGroup().getId())));
     }
 
     private SearchTokens parseTokens(String query) {
@@ -437,10 +444,13 @@ public class EventService {
     public Page<EventDTO> getEventsByOrganiser(Long organiserId, Pageable pageable, boolean past) {
         Page<Event> page = eventRepository.findByOrganiserId(organiserId, pageable);
         Instant now = Instant.now();
-        List<EventDTO> filtered = page.getContent().stream()
+        List<Event> filteredEvents = page.getContent().stream()
                 .filter(e -> past ? EventTimingUtils.effectiveEnd(e).isBefore(now) : !EventTimingUtils.effectiveEnd(e).isBefore(now))
                 .sorted(past ? Comparator.comparing(Event::getEventDate).reversed() : Comparator.comparing(Event::getEventDate))
-                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+        Map<Long, GroupRatingSummary> ratingsMap = buildRatingsMap(filteredEvents);
+        List<EventDTO> filtered = filteredEvents.stream()
+                .map(event -> convertToDTO(event, ratingsMap.get(event.getGroup().getId())))
                 .collect(Collectors.toList());
         return new PageImpl<>(filtered, pageable, filtered.size());
     }
@@ -483,8 +493,9 @@ public class EventService {
         events.sort(comparator);
         
         // Convert to DTOs
+        Map<Long, GroupRatingSummary> ratingsMap = buildRatingsMap(events);
         List<EventDTO> eventDTOs = events.stream()
-                .map(this::convertToDTO)
+                .map(event -> convertToDTO(event, ratingsMap.get(event.getGroup().getId())))
                 .collect(Collectors.toList());
         
         // Create pageable response
@@ -501,8 +512,9 @@ public class EventService {
     @Transactional(readOnly = true)
     @Cacheable(value = "events", key = "'group_' + #groupId + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<EventDTO> getEventsByGroup(Long groupId, Pageable pageable) {
-        return eventRepository.findByGroupId(groupId, pageable)
-                .map(this::convertToDTO);
+        Page<Event> page = eventRepository.findByGroupId(groupId, pageable);
+        Map<Long, GroupRatingSummary> ratingsMap = buildRatingsMap(page.getContent());
+        return page.map(event -> convertToDTO(event, ratingsMap.get(event.getGroup().getId())));
     }
     
     // ============================================================
@@ -800,32 +812,53 @@ public class EventService {
                 .collect(Collectors.toList());
     }
 
+    private Map<Long, GroupRatingSummary> buildRatingsMap(List<Event> events) {
+        Set<Long> groupIds = events.stream()
+                .map(e -> e.getGroup().getId())
+                .collect(Collectors.toSet());
+        Map<Long, GroupRatingSummary> map = new HashMap<>();
+        groupRatingSummaryRepository.findByGroupIdIn(groupIds)
+                .forEach(r -> map.put(r.getGroupId(), r));
+        return map;
+    }
+
     private EventDTO convertToDTO(Event event) {
         if (event == null) {
             return null;
         }
-        
+        Group group = event.getGroup();
+        GroupRatingSummary groupRating = group != null
+                ? groupRatingSummaryRepository.findByGroupId(group.getId()).orElse(null)
+                : null;
+        return convertToDTO(event, groupRating);
+    }
+
+    private EventDTO convertToDTO(Event event, GroupRatingSummary groupRating) {
+        if (event == null) {
+            return null;
+        }
+
         // Get the group
         Group group = event.getGroup();
         if (group == null) {
             throw new IllegalStateException("Event must belong to a group");
         }
-        
+
         // Get the primary organiser from the group
         Member primaryOrganiser = group.getPrimaryOrganiser();
         if (primaryOrganiser == null) {
             throw new IllegalStateException("Group must have a primary organiser");
         }
-        
+
         // Get the activity from the group
         Activity activity = group.getActivity();
         if (activity == null) {
             throw new IllegalStateException("Group must be associated with an activity");
         }
-        
+
         // Get participants count (including guests)
         int participantCount = getTotalHeadcount(event);
-        
+
         // Get participant IDs for the DTO
         Set<Long> participantIds = event.getParticipants() != null ?
                 event.getParticipants().stream()
@@ -834,7 +867,7 @@ public class EventService {
                         .map(p -> p.getMember().getId())
                         .collect(Collectors.toSet()) :
                 new HashSet<>();
-        
+
         // Get host member info if present
         Long hostMemberId = null;
         String hostMemberName = null;
@@ -847,14 +880,14 @@ public class EventService {
                         ? event.getHostMember().getDisplayName()
                         : event.getHostMember().getEmail());
         }
-        
+
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .description(event.getDescription())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
-                        ? primaryOrganiser.getDisplayName() 
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty()
+                        ? primaryOrganiser.getDisplayName()
                         : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
@@ -889,8 +922,10 @@ public class EventService {
                 .requirements(event.getRequirements() != null ? new HashSet<>(event.getRequirements()) : new HashSet<>())
                 .includedItems(event.getIncludedItems() != null ? new HashSet<>(event.getIncludedItems()) : new HashSet<>())
                 .cancellationPolicy(event.getCancellationPolicy())
-                .averageRating(event.getAverageRating() != null ? new BigDecimal(event.getAverageRating()) : BigDecimal.ZERO)
+                .averageRating(event.getAverageRating() != null ? BigDecimal.valueOf(event.getAverageRating()) : BigDecimal.ZERO)
                 .totalReviews(event.getTotalReviews() != null ? event.getTotalReviews() : 0)
+                .groupAverageRating(groupRating != null && groupRating.getAverageRating() != null ? BigDecimal.valueOf(groupRating.getAverageRating()) : null)
+                .groupTotalReviews(groupRating != null ? groupRating.getTotalReviews() : 0)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(true) // Default true for backward compatibility
@@ -953,14 +988,16 @@ public class EventService {
                         ? event.getHostMember().getDisplayName()
                         : event.getHostMember().getEmail());
         }
-        
+
+        GroupRatingSummary groupRating = groupRatingSummaryRepository.findByGroupId(group.getId()).orElse(null);
+
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .description(event.getDescription())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
-                        ? primaryOrganiser.getDisplayName() 
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty()
+                        ? primaryOrganiser.getDisplayName()
                         : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
@@ -995,8 +1032,10 @@ public class EventService {
                 .requirements(event.getRequirements() != null ? new HashSet<>(event.getRequirements()) : new HashSet<>())
                 .includedItems(event.getIncludedItems() != null ? new HashSet<>(event.getIncludedItems()) : new HashSet<>())
                 .cancellationPolicy(event.getCancellationPolicy())
-                .averageRating(event.getAverageRating() != null ? new BigDecimal(event.getAverageRating()) : BigDecimal.ZERO)
+                .averageRating(event.getAverageRating() != null ? BigDecimal.valueOf(event.getAverageRating()) : BigDecimal.ZERO)
                 .totalReviews(event.getTotalReviews() != null ? event.getTotalReviews() : 0)
+                .groupAverageRating(groupRating != null && groupRating.getAverageRating() != null ? BigDecimal.valueOf(groupRating.getAverageRating()) : null)
+                .groupTotalReviews(groupRating != null ? groupRating.getTotalReviews() : 0)
                 .createdAt(event.getCreatedAt())
                 .updatedAt(event.getUpdatedAt())
                 .userIsGroupMember(isGroupMember)
@@ -1033,13 +1072,15 @@ public class EventService {
             throw new IllegalStateException("Group must be associated with an activity");
         }
         
+        GroupRatingSummary groupRating = groupRatingSummaryRepository.findByGroupId(group.getId()).orElse(null);
+
         // Return DTO with only basic information - no sensitive details
         return EventDTO.builder()
                 .id(event.getId())
                 .title(event.getTitle())
                 .organiserId(primaryOrganiser.getId())
-                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty() 
-                        ? primaryOrganiser.getDisplayName() 
+                .organiserName(primaryOrganiser.getDisplayName() != null && !primaryOrganiser.getDisplayName().isEmpty()
+                        ? primaryOrganiser.getDisplayName()
                         : primaryOrganiser.getEmail())
                 .activityTypeId(activity.getId())
                 .activityTypeName(activity.getName())
@@ -1073,6 +1114,8 @@ public class EventService {
                 .cancellationPolicy(null)
                 .averageRating(BigDecimal.ZERO)
                 .totalReviews(0)
+                .groupAverageRating(groupRating != null && groupRating.getAverageRating() != null ? BigDecimal.valueOf(groupRating.getAverageRating()) : null)
+                .groupTotalReviews(groupRating != null ? groupRating.getTotalReviews() : 0)
                 .updatedAt(null)
                 .userIsGroupMember(false)
                 .groupIsPublic(group.getIsPublic())

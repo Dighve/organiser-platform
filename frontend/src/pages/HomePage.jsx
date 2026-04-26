@@ -546,6 +546,19 @@ export default function HomePage() {
                           </svg>
                           <span className="truncate">{event.location}</span>
                         </div>
+                        {event.groupName && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="text-gray-400">by</span>
+                            <span className="truncate">{event.groupName}</span>
+                            {event.groupTotalReviews >= 3 && event.groupAverageRating && (
+                              <>
+                                <span className="text-gray-300">·</span>
+                                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                                <span className="font-semibold">{Number(event.groupAverageRating).toFixed(1)}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                         <div className="flex items-center gap-2">
@@ -687,6 +700,19 @@ export default function HomePage() {
                             </svg>
                             <span className="truncate">{event.location}</span>
                           </div>
+                          {event.groupName && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <span className="text-gray-400">by</span>
+                              <span className="truncate">{event.groupName}</span>
+                              {event.groupTotalReviews >= 3 && event.groupAverageRating && (
+                                <>
+                                  <span className="text-gray-300">·</span>
+                                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                                  <span className="font-semibold">{Number(event.groupAverageRating).toFixed(1)}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                           {/* Desktop: badge + text on left */}
