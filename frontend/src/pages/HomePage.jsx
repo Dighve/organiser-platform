@@ -100,10 +100,13 @@ export default function HomePage() {
   const pendingReviews = (pendingReviewsData || []).filter(r => !optimisticallyDismissed.includes(r.eventId))
 
   const dismissReview = useCallback((eventId) => {
-    setOptimisticallyDismissed(prev => [...prev, eventId])
-    reviewsAPI.dismissReviewPrompt(eventId)
-      .then(() => queryClient.invalidateQueries({ queryKey: ['pendingReviews'] }))
-      .catch(() => setOptimisticallyDismissed(prev => prev.filter(id => id !== eventId)))
+    setOptimisticallyDismissed(prev => {
+      if (prev.includes(eventId)) return prev
+      reviewsAPI.dismissReviewPrompt(eventId)
+        .then(() => queryClient.invalidateQueries({ queryKey: ['pendingReviews'] }))
+        .catch(() => setOptimisticallyDismissed(ids => ids.filter(id => id !== eventId)))
+      return [...prev, eventId]
+    })
   }, [queryClient])
 
   const { data: featureFlags, isLoading: featureFlagsLoading } = useQuery({
