@@ -134,7 +134,7 @@ export default function CommentSection({ eventId, isHost }) {
       queryClient.invalidateQueries(['eventComments', eventId])
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to pin comment')
+      toast.error(error.response?.data?.message || 'Failed to update pin')
     },
   })
 
@@ -364,6 +364,7 @@ export default function CommentSection({ eventId, isHost }) {
                               disabled={pinCommentMutation.isLoading}
                               className={`p-1.5 rounded-lg transition-colors hover:bg-white ${comment.pinned ? 'text-orange-500 hover:text-orange-600' : 'text-gray-400 hover:text-orange-500'}`}
                               title={comment.pinned ? 'Unpin comment' : 'Pin comment'}
+                              aria-label={comment.pinned ? 'Unpin comment' : 'Pin comment'}
                             >
                               <Pin className="h-3.5 w-3.5" />
                             </button>

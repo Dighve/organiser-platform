@@ -12,10 +12,11 @@ import java.util.List;
 public interface EventCommentRepository extends JpaRepository<EventComment, Long> {
     
     /**
-     * Find all comments for a specific event, ordered by creation date descending
+     * Find all comments for a specific event, ordered pinned-first (by pinnedAt desc),
+     * then by creation date descending.
      */
     @Query("SELECT c FROM EventComment c WHERE c.event.id = :eventId ORDER BY c.pinned DESC, c.pinnedAt DESC, c.createdAt DESC")
-    List<EventComment> findByEventIdOrderByCreatedAtDesc(@Param("eventId") Long eventId);
+    List<EventComment> findByEventIdOrderedForDisplay(@Param("eventId") Long eventId);
 
     @Query("SELECT COUNT(c) FROM EventComment c WHERE c.event.id = :eventId AND c.pinned = true")
     long countPinnedByEventId(@Param("eventId") Long eventId);

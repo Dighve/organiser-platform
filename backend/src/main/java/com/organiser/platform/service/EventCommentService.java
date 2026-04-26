@@ -68,7 +68,7 @@ public class EventCommentService {
             }
         }
         
-        List<EventComment> comments = commentRepository.findByEventIdOrderByCreatedAtDesc(eventId);
+        List<EventComment> comments = commentRepository.findByEventIdOrderedForDisplay(eventId);
         return comments.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
@@ -158,8 +158,11 @@ public class EventCommentService {
 
         Event event = comment.getEvent();
         if (event.getHostMember() == null || !event.getHostMember().getId().equals(memberId)) {
-            throw new RuntimeException("Only the event host can pin comments");
+            throw new IllegalArgumentException("Only the event host can pin comments");
         }
+
+        // Acquire a pessimistic write lock on the event row to serialise concurrent pin requests
+        eventRepository.findByIdWithLock(event.getId());
 
         if (Boolean.TRUE.equals(comment.getPinned())) {
             comment.setPinned(false);
@@ -167,7 +170,7 @@ public class EventCommentService {
         } else {
             long currentPinned = commentRepository.countPinnedByEventId(event.getId());
             if (currentPinned >= 3) {
-                throw new RuntimeException("You can pin at most 3 comments per event");
+                throw new IllegalArgumentException("You can pin at most 3 comments per event");
             }
             comment.setPinned(true);
             comment.setPinnedAt(Instant.now());
