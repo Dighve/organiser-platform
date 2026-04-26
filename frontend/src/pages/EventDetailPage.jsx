@@ -437,11 +437,21 @@ export default function EventDetailPage() {
   // AUTO-JOIN AFTER LOGIN - Meetup.com pattern
   // ============================================
   
+  // Auto-open login modal when arriving from embed with ?action=join and not authenticated
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get('action') === 'join' && !isAuthenticated) {
+      setReturnUrl(`/events/${id}?action=join`)
+      setIsLoginModalOpen(true)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Run once on mount only
+
   // Check URL for action=join parameter and auto-join if user just logged in
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const action = urlParams.get('action')
-    
+
     if (action === 'join' && isAuthenticated && !hasJoined && !joinMutation.isLoading) {
       // User just logged in and wants to join the event
       // Remove the action parameter from URL
@@ -1836,6 +1846,7 @@ export default function EventDetailPage() {
                               url={window.location.href}
                               imageUrl={displayEvent.imageUrl}
                               onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                              showEmbed={true}
                             />
                           </div>
                           
@@ -1928,6 +1939,7 @@ export default function EventDetailPage() {
                             url={window.location.href}
                             imageUrl={displayEvent.imageUrl}
                             onFlyerShare={isFlyerEnabled() ? () => setShowFlyerModal(true) : undefined}
+                            showEmbed={isHost}
                           />
                         </div>
 
