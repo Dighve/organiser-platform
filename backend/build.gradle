@@ -1,9 +1,9 @@
 plugins {
     id 'java'
     id 'jacoco'
-    id 'org.springframework.boot' version '3.1.5'
-    id 'io.spring.dependency-management' version '1.1.3'
-    id 'org.flywaydb.flyway' version '9.22.3'
+    id 'org.springframework.boot' version '3.3.13'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.flywaydb.flyway' version '10.22.0'
     id 'io.freefair.lombok' version '8.4'
 }
 
@@ -21,12 +21,12 @@ repositories {
 }
 
 ext {
-    springCloudVersion = '2022.0.4'
+    springCloudVersion = '2023.0.5'
     testcontainersVersion = '1.19.3'
     jwtVersion = '0.11.5'
     lombokVersion = '1.18.30'
     modelMapperVersion = '3.1.1'
-    flywayVersion = '9.22.3'
+    flywayVersion = '10.22.0'
 }
 
 configurations {
@@ -56,6 +56,7 @@ dependencies {
     
     // Database - Flyway migrations
     implementation "org.flywaydb:flyway-core:${flywayVersion}"
+    implementation "org.flywaydb:flyway-database-postgresql:${flywayVersion}"
     implementation "org.flywaydb:flyway-mysql:${flywayVersion}"
     
     // Database drivers

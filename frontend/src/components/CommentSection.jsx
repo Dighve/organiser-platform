@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader, X } from 'lucide-react'
+import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader, X, Pin } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import { commentsAPI, membersAPI } from '../lib/api'
@@ -10,7 +10,7 @@ import ProfileAvatar from './ProfileAvatar'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
-export default function CommentSection({ eventId }) {
+export default function CommentSection({ eventId, isHost }) {
   const queryClient = useQueryClient()
   const { isAuthenticated, user } = useAuthStore()
   const [newComment, setNewComment] = useState('')
@@ -124,6 +124,17 @@ export default function CommentSection({ eventId }) {
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || 'Failed to delete reply')
+    },
+  })
+
+  // Pin comment mutation
+  const pinCommentMutation = useMutation({
+    mutationFn: (commentId) => commentsAPI.pinComment(commentId),
+    onSuccess: (_, commentId) => {
+      queryClient.invalidateQueries(['eventComments', eventId])
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || 'Failed to update pin')
     },
   })
 
@@ -314,7 +325,13 @@ export default function CommentSection({ eventId }) {
             const commentLink = !isDeleted && comment.memberId ? `/members/${comment.memberId}` : null
 
             return (
-              <div key={comment.id} className="group">
+              <div key={comment.id} className={`group ${comment.pinned ? 'bg-orange-50/60 rounded-xl p-3 -mx-1 border border-orange-100' : ''}`}>
+                {comment.pinned && (
+                  <div className="flex items-center gap-1 text-orange-500 text-xs font-semibold mb-2 ml-1">
+                    <Pin className="h-3 w-3" />
+                    <span>Pinned</span>
+                  </div>
+                )}
                 {/* Comment */}
                 <div className="flex gap-3">
                   {commentLink ? (
@@ -340,24 +357,37 @@ export default function CommentSection({ eventId }) {
                             {comment.edited && <span className="ml-1">(edited)</span>}
                           </p>
                         </div>
-                        {isAuthenticated && user?.id === comment.memberId && (
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {isHost && (
                             <button
-                              onClick={() => startEditingComment(comment)}
-                              className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-white rounded-lg transition-colors"
-                              title="Edit comment"
+                              onClick={() => pinCommentMutation.mutate(comment.id)}
+                              disabled={pinCommentMutation.isLoading}
+                              className={`p-1.5 rounded-lg transition-colors hover:bg-white ${comment.pinned ? 'text-orange-500 hover:text-orange-600' : 'text-gray-400 hover:text-orange-500'}`}
+                              title={comment.pinned ? 'Unpin comment' : 'Pin comment'}
+                              aria-label={comment.pinned ? 'Unpin comment' : 'Pin comment'}
                             >
-                              <Edit2 className="h-4 w-4" />
+                              <Pin className="h-3.5 w-3.5" />
                             </button>
-                            <button
-                              onClick={() => handleDeleteComment(comment.id)}
-                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
-                              title="Delete comment"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
+                          )}
+                          {isAuthenticated && user?.id === comment.memberId && (
+                            <>
+                              <button
+                                onClick={() => startEditingComment(comment)}
+                                className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-white rounded-lg transition-colors"
+                                title="Edit comment"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteComment(comment.id)}
+                                className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-white rounded-lg transition-colors"
+                                title="Delete comment"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </div>
 
                       {editingComment === comment.id ? (

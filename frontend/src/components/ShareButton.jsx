@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react'
-import { Share2, Copy, Check, ChevronDown, MessageCircle, Mail, UserPlus } from 'lucide-react'
+import { Share2, Copy, Check, ChevronDown, MessageCircle, Mail, UserPlus, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { trackShareOpened, trackShareCompleted, trackShareMethodSelected } from '../lib/analytics'
 import InviteMembersModal from './InviteMembersModal'
 
-export default function ShareButton({ 
+export default function ShareButton({
   type = 'event', // 'event' or 'group'
   itemId, // event ID or group ID
   groupId, // group ID (for showing "Not Member" badge in invitations)
@@ -13,6 +13,7 @@ export default function ShareButton({
   url,
   imageUrl,
   onFlyerShare, // optional: opens EventFlyerModal when provided
+  showEmbed = false, // optional: show "Embed on website" option (host/organiser only)
   className = '',
   variant = 'primary', // 'primary', 'secondary', 'icon'
   size = 'md' // 'sm', 'md', 'lg'
@@ -20,6 +21,8 @@ export default function ShareButton({
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showInviteModal, setShowInviteModal] = useState(false)
+  const [showEmbedPanel, setShowEmbedPanel] = useState(false)
+  const [embedCopied, setEmbedCopied] = useState(false)
   const dropdownRef = useRef(null)
 
   // Close dropdown when clicking outside
@@ -36,8 +39,24 @@ export default function ShareButton({
 
   const handleShare = () => {
     trackShareOpened(type, url)
-    // Always toggle dropdown (like Add to Calendar)
+    setShowEmbedPanel(false)
     setIsOpen(!isOpen)
+  }
+
+  const getEmbedSnippet = () => {
+    const embedUrl = `${window.location.origin}/events/${itemId}/embed`
+    return `<iframe src="${embedUrl}" width="100%" height="380" frameborder="0" style="border-radius:12px;border:1px solid #e5e7eb;max-width:360px;display:block"></iframe>`
+  }
+
+  const copyEmbedSnippet = async () => {
+    try {
+      await navigator.clipboard.writeText(getEmbedSnippet())
+      setEmbedCopied(true)
+      toast.success('Embed code copied!')
+      setTimeout(() => setEmbedCopied(false), 2000)
+    } catch {
+      toast.error('Failed to copy embed code')
+    }
   }
 
   const copyToClipboard = async () => {
@@ -98,8 +117,17 @@ export default function ShareButton({
     action: () => { onFlyerShare(); setIsOpen(false) }
   }] : []
 
+  const embedOption = showEmbed ? [{
+    id: 'embed',
+    name: 'Embed on website',
+    icon: '🔗',
+    color: 'from-indigo-500 to-purple-600',
+    action: () => setShowEmbedPanel(true)
+  }] : []
+
   const shareOptions = [
     ...flyerOption,
+    ...embedOption,
     {
       id: 'invite',
       name: 'Invite Members',
@@ -179,37 +207,75 @@ export default function ShareButton({
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="relative mt-2 z-[100] w-full min-w-[280px] bg-white/95 backdrop-blur-lg rounded-xl shadow-2xl border-2 border-gray-100 animate-fade-in">
-          <div className="p-2 space-y-1">
-            {shareOptions.map((option) => (
+          {showEmbedPanel ? (
+            /* Embed panel */
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowEmbedPanel(false)}
+                  className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
+                <span className="font-semibold text-gray-800 text-sm">Embed on your website</span>
+              </div>
+              <p className="text-xs text-gray-500">Paste this into any website that supports HTML:</p>
+              <div className="bg-gray-50 rounded-lg border border-gray-200 p-3">
+                <code className="text-xs text-gray-700 break-all leading-relaxed font-mono">
+                  {getEmbedSnippet()}
+                </code>
+              </div>
               <button
-                key={option.id}
-                onClick={option.action}
-                className="group w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-200 text-left"
+                onClick={copyEmbedSnippet}
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg text-sm hover:opacity-90 transition-all"
               >
-                {/* Icon */}
-                <div className={`flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${option.color} text-white shadow-md group-hover:scale-110 transition-transform`}>
-                  <span className="text-xl">{option.icon}</span>
-                </div>
-                
-                {/* Name */}
-                <span className="flex-1 font-semibold text-gray-700 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
-                  {option.name}
-                </span>
-                
-                {/* Check icon for copied state */}
-                {option.id === 'copy' && copied && (
-                  <Check className="h-4 w-4 text-green-600" />
-                )}
+                {embedCopied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {embedCopied ? 'Copied!' : 'Copy embed code'}
               </button>
-            ))}
-          </div>
-          
-          {/* Helper Text */}
-          <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-t border-gray-100">
-            <p className="text-xs text-gray-600 text-center">
-              💡 Choose how you'd like to share
-            </p>
-          </div>
+              <a
+                href={`${window.location.origin}/events/${itemId}/embed`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-center text-xs text-purple-600 hover:underline"
+              >
+                Preview embed
+              </a>
+            </div>
+          ) : (
+            <>
+              <div className="p-2 space-y-1">
+                {shareOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={option.action}
+                    className="group w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 transition-all duration-200 text-left"
+                  >
+                    {/* Icon */}
+                    <div className={`flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br ${option.color} text-white shadow-md group-hover:scale-110 transition-transform`}>
+                      <span className="text-xl">{option.icon}</span>
+                    </div>
+
+                    {/* Name */}
+                    <span className="flex-1 font-semibold text-gray-700 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-purple-600 group-hover:to-pink-600 group-hover:bg-clip-text transition-all">
+                      {option.name}
+                    </span>
+
+                    {/* Check icon for copied state */}
+                    {option.id === 'copy' && copied && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Helper Text */}
+              <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-t border-gray-100">
+                <p className="text-xs text-gray-600 text-center">
+                  💡 Choose how you'd like to share
+                </p>
+              </div>
+            </>
+          )}
         </div>
       )}
 
