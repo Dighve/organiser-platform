@@ -1,9 +1,9 @@
 // ============================================================
 // IMPORTS
 // ============================================================
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Search, Lock, Star, X } from 'lucide-react'
 import { groupsAPI, eventsAPI, featureFlagsAPI, reviewsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
@@ -30,6 +30,7 @@ export default function HomePage() {
   // ============================================================
   const navigate = useNavigate()
   const { isAuthenticated, user } = useAuthStore()  // Global auth state
+  const queryClient = useQueryClient()
   
   // ============================================================
   // LOCAL STATE
@@ -37,9 +38,7 @@ export default function HomePage() {
   const [activeGroupTab, setActiveGroupTab] = useState('member')  // Tab selection: 'member' or 'organiser'
   const [hasInitializedTab, setHasInitializedTab] = useState(false)  // Track if tab has been auto-selected
   const [loginModalOpen, setLoginModalOpen] = useState(false)  // Login modal state
-  const [dismissedReviews, setDismissedReviews] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('dismissed-review-prompts') || '[]') } catch { return [] }
-  })
+  const [optimisticallyDismissed, setOptimisticallyDismissed] = useState([])
   
   // Check if user has already clicked discover before (localStorage)
   const [showDiscover, setShowDiscover] = useState(() => {
@@ -98,13 +97,17 @@ export default function HomePage() {
     staleTime: 5 * 60 * 1000,
   })
 
-  const pendingReviews = (pendingReviewsData || []).filter(r => !dismissedReviews.includes(r.eventId))
+  const pendingReviews = (pendingReviewsData || []).filter(r => !optimisticallyDismissed.includes(r.eventId))
 
-  const dismissReview = (eventId) => {
-    const updated = [...dismissedReviews, eventId]
-    setDismissedReviews(updated)
-    try { localStorage.setItem('dismissed-review-prompts', JSON.stringify(updated)) } catch {}
-  }
+  const dismissReview = useCallback((eventId) => {
+    setOptimisticallyDismissed(prev => {
+      if (prev.includes(eventId)) return prev
+      reviewsAPI.dismissReviewPrompt(eventId)
+        .then(() => queryClient.invalidateQueries({ queryKey: ['pendingReviews'] }))
+        .catch(() => setOptimisticallyDismissed(ids => ids.filter(id => id !== eventId)))
+      return [...prev, eventId]
+    })
+  }, [queryClient])
 
   const { data: featureFlags, isLoading: featureFlagsLoading } = useQuery({
     queryKey: ['featureFlags'],
@@ -546,6 +549,19 @@ export default function HomePage() {
                           </svg>
                           <span className="truncate">{event.location}</span>
                         </div>
+                        {event.groupName && (
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <span className="text-gray-400">by</span>
+                            <span className="truncate">{event.groupName}</span>
+                            {event.groupTotalReviews >= 3 && event.groupAverageRating && (
+                              <>
+                                <span className="text-gray-300">·</span>
+                                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                                <span className="font-semibold">{Number(event.groupAverageRating).toFixed(1)}</span>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                         <div className="flex items-center gap-2">
@@ -687,6 +703,19 @@ export default function HomePage() {
                             </svg>
                             <span className="truncate">{event.location}</span>
                           </div>
+                          {event.groupName && (
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <span className="text-gray-400">by</span>
+                              <span className="truncate">{event.groupName}</span>
+                              {event.groupTotalReviews >= 3 && event.groupAverageRating && (
+                                <>
+                                  <span className="text-gray-300">·</span>
+                                  <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400 shrink-0" />
+                                  <span className="font-semibold">{Number(event.groupAverageRating).toFixed(1)}</span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </div>
                         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                           {/* Desktop: badge + text on left */}

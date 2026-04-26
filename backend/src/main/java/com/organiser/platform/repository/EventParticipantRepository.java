@@ -28,6 +28,15 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
     
     long countByEventIdAndStatus(Long eventId, EventParticipant.ParticipationStatus status);
     
+    @Query("SELECT ep.member.id, COUNT(ep) FROM EventParticipant ep WHERE ep.member.id IN :memberIds AND ep.status IN :statuses GROUP BY ep.member.id")
+    java.util.List<Object[]> countJoinedByMemberIds(
+            @Param("memberIds") java.util.Collection<Long> memberIds,
+            @Param("statuses") java.util.Collection<EventParticipant.ParticipationStatus> statuses);
+
+    @Query("SELECT ep.member.id, COUNT(ep) FROM EventParticipant ep WHERE ep.member.id IN :memberIds AND ep.status = 'NO_SHOW' GROUP BY ep.member.id")
+    java.util.List<Object[]> countNoShowsByMemberIds(
+            @Param("memberIds") java.util.Collection<Long> memberIds);
+
     // Admin dashboard queries
     Long countByMemberId(Long memberId);
 
@@ -56,6 +65,7 @@ public interface EventParticipantRepository extends JpaRepository<EventParticipa
         JOIN FETCH e.group g
         JOIN FETCH g.primaryOrganiser
         WHERE ep.reviewPromptSent = false
+          AND ep.reviewPromptDismissedAt IS NULL
           AND ep.status IN ('REGISTERED', 'CONFIRMED', 'ATTENDED')
           AND e.eventDate BETWEEN :windowStart AND :windowEnd
           AND NOT EXISTS (

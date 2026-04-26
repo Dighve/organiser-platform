@@ -46,4 +46,6 @@ public class MemberDTO {
     private String participationStatus; // e.g. REGISTERED, CONFIRMED, ATTENDED, NO_SHOW, CANCELLED, WAITLISTED
     private LocalDateTime cancelledAt;
     private LocalDateTime waitlistJoinedAt;
+    private Integer totalEventsJoined;  // across all platform events (excludes CANCELLED/WAITLISTED)
+    private Integer totalNoShows;       // lifetime no-show count
 }

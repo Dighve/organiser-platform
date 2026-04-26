@@ -128,6 +128,7 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/events/comments/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/events/comments/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/events/comments/*/replies", "POST"),
+                                new AntPathRequestMatcher("/api/v1/events/comments/*/pin", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/replies/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/events/replies/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/events/organiser/my-events", "GET"),
@@ -142,7 +143,8 @@ public class SecurityConfig {
                                 new AntPathRequestMatcher("/api/v1/reviews/*", "DELETE"),
                                 new AntPathRequestMatcher("/api/v1/reviews/pending", "GET"),
                                 new AntPathRequestMatcher("/api/v1/reviews/my-reviews", "GET"),
-                                new AntPathRequestMatcher("/api/v1/reviews/*/flag", "POST")
+                                new AntPathRequestMatcher("/api/v1/reviews/*/flag", "POST"),
+                                new AntPathRequestMatcher("/api/v1/reviews/dismiss/*", "POST")
                         ).authenticated()
                         
                         // Group write operations - require authentication

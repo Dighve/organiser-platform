@@ -54,6 +54,8 @@ public class EventDTO {
     private String cancellationPolicy;
     private BigDecimal averageRating;
     private Integer totalReviews;
+    private BigDecimal groupAverageRating;
+    private Integer groupTotalReviews;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Set<Long> participantIds;
