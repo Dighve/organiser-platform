@@ -178,6 +178,7 @@ public class GroupService {
     /**
      * Get all groups a user is subscribed to.
      */
+    @Transactional(readOnly = true)
     @Cacheable(value = "groups", key = "'user_' + #memberId")
     public List<GroupDTO> getUserSubscribedGroups(Long memberId) {
         List<Subscription> subscriptions = subscriptionRepository.findByMemberId(memberId);
@@ -198,6 +199,7 @@ public class GroupService {
     /**
      * Get all groups organised by a specific user.
      */
+    @Transactional(readOnly = true)
     @Cacheable(value = "groups", key = "'organiser_' + #memberId")
     public List<GroupDTO> getUserOrganisedGroups(Long memberId) {
         List<Group> groups = groupRepository.findByPrimaryOrganiserId(memberId);
@@ -216,6 +218,7 @@ public class GroupService {
     /**
      * Get all public and active groups.
      */
+    @Transactional(readOnly = true)
     @Cacheable(value = "groups", key = "'public'")
     public List<GroupDTO> getAllPublicGroups() {
         List<Group> groups = groupRepository.findByIsPublicTrueAndActiveTrue();
@@ -237,6 +240,7 @@ public class GroupService {
     /**
      * Get group by ID with member count.
      */
+    @Transactional(readOnly = true)
     @Cacheable(value = "groups", key = "'group_' + #groupId")
     public GroupDTO getGroupById(Long groupId) {
         Group group = groupRepository.findById(groupId)
