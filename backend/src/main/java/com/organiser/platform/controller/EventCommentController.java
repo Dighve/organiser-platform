@@ -98,6 +98,18 @@ public class EventCommentController {
     }
     
     /**
+     * Toggle pin on a comment (host only)
+     */
+    @PostMapping("/comments/{commentId}/pin")
+    public ResponseEntity<CommentDTO> togglePinComment(
+            @PathVariable Long commentId,
+            Authentication authentication
+    ) {
+        Long userId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(commentService.togglePinComment(commentId, userId));
+    }
+
+    /**
      * Delete a reply (authenticated)
      */
     @DeleteMapping("/replies/{replyId}")
