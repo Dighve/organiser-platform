@@ -3,8 +3,9 @@ package com.organiser.platform.controller;
 import com.organiser.platform.dto.CalendarEventDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
-import com.organiser.platform.dto.JoinEventRequest;
 import com.organiser.platform.dto.EventSearchResponse;
+import com.organiser.platform.dto.JoinEventRequest;
+import com.organiser.platform.dto.OfflineBundleDTO;
 import com.organiser.platform.service.EventService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -218,6 +219,15 @@ public class EventController {
         return ResponseEntity.ok(eventService.getEventParticipants(id, requesterId));
     }
     
+    @GetMapping("/{id}/offline-bundle")
+    public ResponseEntity<OfflineBundleDTO> getOfflineBundle(
+            @PathVariable Long id,
+            Authentication authentication
+    ) {
+        Long memberId = getUserIdFromAuth(authentication);
+        return ResponseEntity.ok(eventService.buildOfflineBundle(id, memberId));
+    }
+
     @GetMapping("/public/{id}/calendar")
     public ResponseEntity<CalendarEventDTO> getCalendarData(
             @PathVariable Long id,

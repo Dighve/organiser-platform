@@ -4,8 +4,11 @@ package com.organiser.platform.service;
 // IMPORTS
 // ============================================================
 import com.organiser.platform.dto.CalendarEventDTO;
+import com.organiser.platform.dto.ContactInfoDTO;
 import com.organiser.platform.dto.CreateEventRequest;
 import com.organiser.platform.dto.EventDTO;
+import com.organiser.platform.dto.OfflineBundleDTO;
+import com.organiser.platform.dto.OfflineContactDTO;
 import com.organiser.platform.dto.TransportLegDTO;
 import com.organiser.platform.exception.AlreadyRegisteredException;
 import com.organiser.platform.model.*;
@@ -13,6 +16,7 @@ import java.math.BigDecimal;
 import com.organiser.platform.repository.*;
 import com.organiser.platform.util.EventTimingUtils;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,6 +70,7 @@ public class EventService {
     private final WebPushService webPushService;
     private final EmailService emailService;
     private final GroupRatingSummaryRepository groupRatingSummaryRepository;
+    private final ContactInfoService contactInfoService;
     
     // ============================================================
     // PUBLIC METHODS - Event CRUD Operations
@@ -1380,6 +1385,81 @@ public class EventService {
                           && p.getStatus() != EventParticipant.ParticipationStatus.WAITLISTED)
                 .mapToInt(p -> 1 + (p.getGuestCount() != null ? p.getGuestCount() : 0))
                 .sum();
+    }
+
+    // ============================================================
+    // OFFLINE BUNDLE
+    // ============================================================
+
+    /**
+     * Build a read-only offline snapshot of an event for a registered participant or host.
+     * - Attendees receive host contact info.
+     * - Hosts receive all attendee contact info.
+     */
+    @Transactional(readOnly = true)
+    public OfflineBundleDTO buildOfflineBundle(Long eventId, Long requesterId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new RuntimeException("Event not found"));
+
+        boolean isHost = event.getHostMember() != null &&
+                event.getHostMember().getId().equals(requesterId);
+
+        boolean isParticipant = event.getParticipants().stream()
+                .anyMatch(p -> p.getMember().getId().equals(requesterId) &&
+                        (p.getStatus() == EventParticipant.ParticipationStatus.REGISTERED ||
+                         p.getStatus() == EventParticipant.ParticipationStatus.CONFIRMED));
+
+        if (!isHost && !isParticipant) {
+            throw new org.springframework.security.access.AccessDeniedException("Not a participant of this event");
+        }
+
+        EventDTO eventDto = getEventById(eventId, requesterId);
+
+        List<OfflineContactDTO> contacts = new ArrayList<>();
+
+        // TODO: getVisibleContacts performs per-member DB queries (subscriptions + participations).
+        //  For large groups this is N+1. Optimise by bulk-fetching shared-group flags when needed.
+        if (isHost) {
+            for (EventParticipant participant : event.getParticipants()) {
+                Member member = participant.getMember();
+                if (!member.getId().equals(requesterId) &&
+                        Boolean.TRUE.equals(member.getActive()) &&
+                        participant.getStatus() != EventParticipant.ParticipationStatus.CANCELLED &&
+                        participant.getStatus() != EventParticipant.ParticipationStatus.WAITLISTED) {
+                    List<ContactInfoDTO> memberContacts =
+                            contactInfoService.getVisibleContacts(member.getId(), requesterId);
+                    if (!memberContacts.isEmpty()) {
+                        contacts.add(OfflineContactDTO.builder()
+                                .memberId(member.getId())
+                                .memberName(member.getDisplayName())
+                                .profilePhotoUrl(member.getProfilePhotoUrl())
+                                .contacts(memberContacts)
+                                .build());
+                    }
+                }
+            }
+        } else {
+            if (event.getHostMember() != null && Boolean.TRUE.equals(event.getHostMember().getActive())) {
+                Long hostId = event.getHostMember().getId();
+                List<ContactInfoDTO> hostContacts =
+                        contactInfoService.getVisibleContacts(hostId, requesterId);
+                if (!hostContacts.isEmpty()) {
+                    contacts.add(OfflineContactDTO.builder()
+                            .memberId(hostId)
+                            .memberName(event.getHostMember().getDisplayName())
+                            .profilePhotoUrl(event.getHostMember().getProfilePhotoUrl())
+                            .contacts(hostContacts)
+                            .build());
+                }
+            }
+        }
+
+        return OfflineBundleDTO.builder()
+                .event(eventDto)
+                .contacts(contacts)
+                .viewerRole(isHost ? "host" : "attendee")
+                .bundledAt(Instant.now())
+                .build();
     }
 
     // ============================================================
