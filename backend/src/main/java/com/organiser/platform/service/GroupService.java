@@ -523,6 +523,7 @@ public class GroupService {
      * Get all banned members for a group (organiser only).
      * Email addresses are NEVER exposed in member lists for privacy protection (Meetup.com approach).
      */
+    @Transactional(readOnly = true)
     public List<com.organiser.platform.dto.MemberDTO> getBannedMembers(Long groupId, Long organiserId) {
         // Verify group exists
         Group group = groupRepository.findById(groupId)
