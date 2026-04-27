@@ -29,7 +29,7 @@ self.addEventListener('fetch', (event) => {
   if (url.pathname.startsWith('/api/')) return;
   if (url.protocol === 'chrome-extension:') return;
   event.respondWith(
-    fetch(request).catch(() => caches.match(request))
+    fetch(request).catch(() => caches.match(request).then((cached) => cached || caches.match('/')))
   );
 });
 
