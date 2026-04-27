@@ -37,6 +37,7 @@ const GroupReviewsPage = lazy(() => import('./pages/GroupReviewsPage'))
 const EventReviewsPage = lazy(() => import('./pages/EventReviewsPage'))
 const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'))
 const LondonDayHikesPage = lazy(() => import('./pages/LondonDayHikesPage'))
+const EventEmbedPage = lazy(() => import('./pages/EventEmbedPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -178,6 +179,12 @@ function App() {
       <ServiceWorkerNavigationHandler />
       <PushNotificationPrompt />
       <Routes>
+        {/* Embed route — no Layout/nav, publicly accessible */}
+        <Route path="events/:id/embed" element={
+          <Suspense fallback={<div className="min-h-screen bg-white" />}>
+            <EventEmbedPage />
+          </Suspense>
+        } />
         <Route path="/" element={<Layout />}>
           <Route index element={
             <ErrorBoundary name="HomePage" title="Unable to load home page" message="We're having trouble loading the home page. Please try refreshing.">
