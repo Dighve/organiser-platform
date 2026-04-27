@@ -25,7 +25,8 @@ public interface BannedMemberRepository extends JpaRepository<BannedMember, Long
     /**
      * Get all banned members for a group
      */
-    List<BannedMember> findByGroupIdOrderByBannedAtDesc(Long groupId);
+    @Query("SELECT bm FROM BannedMember bm JOIN FETCH bm.member JOIN FETCH bm.bannedBy WHERE bm.group.id = :groupId ORDER BY bm.bannedAt DESC")
+    List<BannedMember> findByGroupIdOrderByBannedAtDesc(@Param("groupId") Long groupId);
     
     /**
      * Get all groups a member is banned from
