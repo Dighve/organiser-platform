@@ -49,6 +49,7 @@ public class ReviewService {
             EventParticipant.ParticipationStatus.ATTENDED
     );
     
+    @Transactional(readOnly = true)
     public List<PendingReviewDTO> getPendingReviews() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
@@ -105,6 +106,7 @@ public class ReviewService {
         eventParticipantRepository.save(ep);
     }
 
+    @Transactional(readOnly = true)
     public Page<EventReviewDTO> getMyReviews(int page, int size) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
@@ -117,18 +119,21 @@ public class ReviewService {
                 .map(EventReviewDTO::fromEntity);
     }
 
+    @Transactional(readOnly = true)
     public Page<EventReviewDTO> getEventReviews(Long eventId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return eventReviewRepository.findByEventId(eventId, pageable)
                 .map(EventReviewDTO::fromEntity);
     }
     
+    @Transactional(readOnly = true)
     public Page<EventReviewDTO> getGroupReviews(Long groupId, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return eventReviewRepository.findByGroupId(groupId, pageable)
                 .map(EventReviewDTO::fromEntity);
     }
     
+    @Transactional(readOnly = true)
     public EventReviewDTO getMyReviewForEvent(Long eventId) {
         // Get authenticated user
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
