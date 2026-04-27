@@ -1417,6 +1417,8 @@ public class EventService {
 
         List<OfflineContactDTO> contacts = new ArrayList<>();
 
+        // TODO: getVisibleContacts performs per-member DB queries (subscriptions + participations).
+        //  For large groups this is N+1. Optimise by bulk-fetching shared-group flags when needed.
         if (isHost) {
             for (EventParticipant participant : event.getParticipants()) {
                 Member member = participant.getMember();

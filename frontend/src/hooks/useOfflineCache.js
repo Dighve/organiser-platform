@@ -1,17 +1,27 @@
 import { useState, useEffect, useCallback } from 'react'
 import { saveOfflineBundle, loadOfflineBundle } from '../lib/offlineCache'
 import { eventsAPI } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 import toast from 'react-hot-toast'
 
 export function useOfflineCache(eventId) {
+  const { user } = useAuthStore()
+  const userId = user?.id ?? null
+
   const [isSaved, setIsSaved] = useState(false)
   const [savedAt, setSavedAt] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [cachedBundle, setCachedBundle] = useState(null)
 
   useEffect(() => {
-    if (!eventId) return
-    loadOfflineBundle(eventId)
+    // Reset state immediately so the previous event's data never bleeds through
+    setIsSaved(false)
+    setSavedAt(null)
+    setCachedBundle(null)
+
+    if (!eventId || !userId) return
+
+    loadOfflineBundle(eventId, userId)
       .then((record) => {
         if (record) {
           setIsSaved(true)
@@ -20,15 +30,15 @@ export function useOfflineCache(eventId) {
         }
       })
       .catch(() => {})
-  }, [eventId])
+  }, [eventId, userId])
 
   const save = useCallback(async () => {
-    if (isSaving) return
+    if (isSaving || !userId) return
     setIsSaving(true)
     try {
       const response = await eventsAPI.getOfflineBundle(eventId)
       const bundle = response.data
-      await saveOfflineBundle(eventId, bundle)
+      await saveOfflineBundle(eventId, userId, bundle)
       setIsSaved(true)
       setSavedAt(new Date())
       setCachedBundle(bundle)
@@ -38,7 +48,7 @@ export function useOfflineCache(eventId) {
     } finally {
       setIsSaving(false)
     }
-  }, [eventId, isSaving])
+  }, [eventId, userId, isSaving])
 
   return { isSaved, savedAt, isSaving, cachedBundle, save }
 }

@@ -739,13 +739,16 @@ export default function EventDetailPage() {
         )}
 
         {/* 1-hour pre-event offline prompt */}
-        {isAuthenticated && (hasJoined || isHost) && !isSaved && !isPastEvent && eventStart &&
-          eventStart - new Date() <= 60 * 60 * 1000 && eventStart - new Date() > 0 && (
+        {(() => {
+          const msUntilStart = eventStart ? eventStart - new Date() : null
+          return isAuthenticated && (hasJoined || isHost) && !isSaved && !isPastEvent &&
+            msUntilStart !== null && msUntilStart <= 60 * 60 * 1000 && msUntilStart > 0 && (
           <div className="lg:hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
             <p className="text-xs text-amber-800 font-medium">Going remote? Save this event for offline access.</p>
             <OfflineSaveButton isSaved={isSaved} savedAt={savedAt} isSaving={isSaving} onSave={save} />
           </div>
-        )}
+          )
+        })()}
 
         {/* ============================================ */}
         {/* MOBILE STICKY ACTION BAR - Bottom of screen */}
@@ -895,6 +898,9 @@ export default function EventDetailPage() {
                         Manage
                       </button>
                     </div>
+                    {!isPastEvent && (
+                      <OfflineSaveButton isSaved={isSaved} savedAt={savedAt} isSaving={isSaving} onSave={save} />
+                    )}
                   </div>
                 )}
               </div>

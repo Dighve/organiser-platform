@@ -1,8 +1,8 @@
 import { MapPin, Calendar, Mountain, WifiOff, ArrowLeft } from 'lucide-react'
 import { format, formatDistanceToNow } from 'date-fns'
 
-export default function OfflineEventView({ bundle, savedAt, onGoBack }) {
-  const { event, contacts, viewerRole } = bundle
+export default function OfflineEventView({ bundle = {}, savedAt, onGoBack }) {
+  const { event = {}, contacts = [], viewerRole } = bundle
   const eventDate = event.eventDate ? new Date(event.eventDate) : null
 
   return (
@@ -86,20 +86,29 @@ export default function OfflineEventView({ bundle, savedAt, onGoBack }) {
                 >
                   <p className="font-bold text-gray-900 mb-2">{person.memberName}</p>
                   <div className="space-y-1.5">
-                    {person.contacts.map((c, i) => (
-                      <a
-                        key={i}
-                        href={c.deepLink || undefined}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-sm text-purple-700 hover:underline"
-                      >
-                        <span className="font-medium capitalize">
-                          {c.displayLabel || c.platform.replace('_', ' ').toLowerCase()}:
-                        </span>
-                        <span>{c.contactValue}</span>
-                      </a>
-                    ))}
+                    {person.contacts.map((c, i) =>
+                      c.deepLink ? (
+                        <a
+                          key={i}
+                          href={c.deepLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 text-sm text-purple-700 hover:underline"
+                        >
+                          <span className="font-medium capitalize">
+                            {c.displayLabel || c.platform.replace('_', ' ').toLowerCase()}:
+                          </span>
+                          <span>{c.contactValue}</span>
+                        </a>
+                      ) : (
+                        <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                          <span className="font-medium capitalize">
+                            {c.displayLabel || c.platform.replace('_', ' ').toLowerCase()}:
+                          </span>
+                          <span>{c.contactValue}</span>
+                        </div>
+                      )
+                    )}
                   </div>
                 </div>
               ))}
