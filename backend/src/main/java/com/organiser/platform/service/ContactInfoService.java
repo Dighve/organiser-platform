@@ -188,6 +188,10 @@ public class ContactInfoService {
             case WHATSAPP -> {
                 // Accept phone number (with or without +) or already a link
                 String phone = v.replaceAll("[^0-9+]", "").replace("+", "");
+                // Normalise UK local format: 07... → 447...
+                if (phone.startsWith("0")) {
+                    phone = "44" + phone.substring(1);
+                }
                 yield "https://wa.me/" + phone;
             }
             case TELEGRAM -> {
