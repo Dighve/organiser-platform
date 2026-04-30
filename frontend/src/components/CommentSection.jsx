@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader, X, Pin, Link2 } from 'lucide-react'
@@ -270,6 +270,7 @@ export default function CommentSection({ eventId, isHost }) {
     }))
   }
 
+  const comments = useMemo(() => commentsData?.data || [], [commentsData])
   const visibleCount = 3
 
 
