@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader, X, Pin, Link2 } from 'lucide-react'
@@ -27,6 +27,7 @@ export default function CommentSection({ eventId, isHost }) {
   const [highlightedId, setHighlightedId] = useState(null)
   const [targetHash, setTargetHash] = useState(null)
   const [hasScrolled, setHasScrolled] = useState(false)
+  const newCommentRef = useRef(null)
 
   // Fetch current member data for avatar
   const { data: currentMemberData } = useQuery({
@@ -54,6 +55,7 @@ export default function CommentSection({ eventId, isHost }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['eventComments', eventId])
       setNewComment('')
+      if (newCommentRef.current) newCommentRef.current.style.height = 'auto'
       toast.success('Comment posted!')
     },
     onError: (error) => {
@@ -169,7 +171,7 @@ export default function CommentSection({ eventId, isHost }) {
     if (!targetHash || !commentsData || hasScrolled) return
 
     if (targetHash.startsWith('reply-')) {
-      const replyId = parseInt(targetHash.replace('reply-', ''))
+      const replyId = parseInt(targetHash.replace('reply-', ''), 10)
       const parentComment = comments.find(c => c.replies?.some(r => r.id === replyId))
       if (parentComment) {
         setExpandedReplies(prev => ({ ...prev, [parentComment.id]: true }))
@@ -320,6 +322,7 @@ export default function CommentSection({ eventId, isHost }) {
               <div className="flex-1">
                 <div className={`flex items-end gap-2 bg-white border-2 border-gray-200 px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all ${newComment.trim().length > 0 ? 'rounded-2xl' : 'rounded-full'}`}>
                   <textarea
+                    ref={newCommentRef}
                     value={newComment}
                     onChange={(e) => {
                       setNewComment(e.target.value)
@@ -507,7 +510,7 @@ export default function CommentSection({ eventId, isHost }) {
                           </div>
                         </form>
                       ) : (
-                        <div className="text-gray-700 whitespace-pre-wrap">
+                        <div className="text-gray-700 whitespace-pre-wrap break-words">
                           {renderMarkdown(comment.content)}
                         </div>
                       )}
@@ -670,7 +673,7 @@ export default function CommentSection({ eventId, isHost }) {
                                         </div>
                                       </form>
                                     ) : (
-                                      <div className="text-gray-700 text-sm whitespace-pre-wrap">
+                                      <div className="text-gray-700 text-sm whitespace-pre-wrap break-words">
                                         {renderMarkdown(reply.content)}
                                       </div>
                                     )}
