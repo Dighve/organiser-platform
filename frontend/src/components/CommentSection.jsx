@@ -48,7 +48,7 @@ export default function CommentSection({ eventId, isHost }) {
       return failureCount < 2
     },
   })
-  const comments = commentsData?.data || []
+  const comments = useMemo(() => commentsData?.data || [], [commentsData])
 
   // Create comment mutation
   const createCommentMutation = useMutation({
@@ -270,7 +270,6 @@ export default function CommentSection({ eventId, isHost }) {
     }))
   }
 
-  const comments = useMemo(() => commentsData?.data || [], [commentsData])
   const visibleCount = 3
 
 
