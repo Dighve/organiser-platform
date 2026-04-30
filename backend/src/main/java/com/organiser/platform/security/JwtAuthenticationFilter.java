@@ -78,12 +78,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            // Token expired — return 401 so the frontend can trigger token refresh
-            log.warn("JWT token expired: {}", e.getMessage());
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Token expired\",\"message\":\"JWT token has expired\"}");
-            return; // Don't continue filter chain
+            // Token expired — continue the filter chain without setting authentication.
+            // Spring Security's authorization rules (permitAll / authenticated) will apply
+            // correctly: public endpoints succeed, protected endpoints return 401/403.
+            // Short-circuiting here would bypass permitAll rules on public endpoints.
+            log.debug("JWT token expired, continuing as anonymous: {}", e.getMessage());
         } catch (Exception e) {
             // Other JWT errors (malformed, invalid signature, etc.) - continue to let Spring Security handle
             log.debug("JWT token validation failed: {}", e.getMessage());
