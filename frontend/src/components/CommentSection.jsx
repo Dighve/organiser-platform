@@ -141,16 +141,26 @@ export default function CommentSection({ eventId, isHost }) {
     },
   })
 
-  // Parse URL hash on mount to deep-link to a comment or reply
+  // Parse URL hash on mount and when it changes to deep-link to a comment or reply
   useEffect(() => {
-    const hash = window.location.hash
-    if (!hash) return
-    const match = hash.match(/^#(comment|reply)-(\d+)$/)
-    if (match) {
-      const id = `${match[1]}-${match[2]}`
-      setTargetHash(id)
-      setHighlightedId(id)
-      setShowAllComments(true)
+    const syncHashTarget = () => {
+      const hash = window.location.hash
+      if (!hash) return
+      const match = hash.match(/^#(comment|reply)-(\d+)$/)
+      if (match) {
+        const id = `${match[1]}-${match[2]}`
+        setTargetHash(id)
+        setHighlightedId(id)
+        setShowAllComments(true)
+        setHasScrolled(false)
+      }
+    }
+
+    syncHashTarget()
+    window.addEventListener('hashchange', syncHashTarget)
+
+    return () => {
+      window.removeEventListener('hashchange', syncHashTarget)
     }
   }, [])
 
@@ -171,23 +181,31 @@ export default function CommentSection({ eventId, isHost }) {
     }
 
     setHasScrolled(true)
-    setTimeout(() => {
+    let highlightTimerId
+    const scrollTimerId = setTimeout(() => {
       const el = document.getElementById(targetHash)
       if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-      setTimeout(() => setHighlightedId(null), 2500)
+      highlightTimerId = setTimeout(() => setHighlightedId(null), 2500)
     }, 200)
-  }, [targetHash, commentsData, hasScrolled])
+
+    return () => {
+      clearTimeout(scrollTimerId)
+      clearTimeout(highlightTimerId)
+    }
+  }, [targetHash, commentsData, hasScrolled, comments])
 
   const handleShareComment = (commentId) => {
-    const url = `${window.location.origin}${window.location.pathname}#comment-${commentId}`
-    navigator.clipboard.writeText(url)
+    const url = new URL(window.location.href)
+    url.hash = `comment-${commentId}`
+    navigator.clipboard.writeText(url.toString())
       .then(() => toast.success('Link copied!'))
       .catch(() => toast.error('Could not copy link'))
   }
 
   const handleShareReply = (replyId) => {
-    const url = `${window.location.origin}${window.location.pathname}#reply-${replyId}`
-    navigator.clipboard.writeText(url)
+    const url = new URL(window.location.href)
+    url.hash = `reply-${replyId}`
+    navigator.clipboard.writeText(url.toString())
       .then(() => toast.success('Link copied!'))
       .catch(() => toast.error('Could not copy link'))
   }
@@ -419,7 +437,7 @@ export default function CommentSection({ eventId, isHost }) {
                             {comment.edited && <span className="ml-1">(edited)</span>}
                           </p>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
                           <button
                             onClick={() => handleShareComment(comment.id)}
                             className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-white rounded-lg transition-colors"
@@ -593,7 +611,7 @@ export default function CommentSection({ eventId, isHost }) {
                                           {reply.edited && <span className="ml-1">(edited)</span>}
                                         </p>
                                       </div>
-                                      <div className="flex gap-1 opacity-0 group-hover/reply:opacity-100 transition-opacity">
+                                      <div className="flex gap-1 opacity-0 group-hover/reply:opacity-100 group-focus-within/reply:opacity-100 transition-opacity">
                                         <button
                                           onClick={() => handleShareReply(reply.id)}
                                           className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
