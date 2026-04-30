@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { MessageCircle, X, Loader } from 'lucide-react'
 import { membersAPI } from '../lib/api'
+import { useAuthStore } from '../store/authStore'
 import ContactInfoDisplay from './ContactInfoDisplay'
 
 // ============================================================
@@ -17,12 +18,13 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
   const [popoverStyle, setPopoverStyle] = useState({})
   const buttonRef = useRef(null)
   const popoverRef = useRef(null)
+  const { isAuthenticated } = useAuthStore()
 
   // Pre-fetch contacts (cached 2 min) — determines icon visibility
   const { data: contacts, isLoading, isFetched } = useQuery({
     queryKey: ['memberContacts', memberId],
     queryFn: () => membersAPI.getMemberContacts(memberId).then(res => res.data),
-    enabled: !!memberId,
+    enabled: !!memberId && isAuthenticated,
     staleTime: 2 * 60 * 1000,
   })
 
@@ -47,9 +49,14 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
     setOpen(!open)
   }
 
+  // Close popover when user logs out or auth expires
+  useEffect(() => {
+    if (!isAuthenticated) setOpen(false)
+  }, [isAuthenticated])
+
   // Close on click outside
   useEffect(() => {
-    if (!open) return
+    if (!open || !isAuthenticated) return
     const handleClick = (e) => {
       if (
         popoverRef.current && !popoverRef.current.contains(e.target) &&
@@ -60,17 +67,18 @@ export default function ContactInfoPopover({ memberId, memberName, iconClassName
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
-  }, [open])
+  }, [open, isAuthenticated])
 
   // Close on scroll (position would be stale)
   useEffect(() => {
-    if (!open) return
+    if (!open || !isAuthenticated) return
     const handleScroll = () => setOpen(false)
     document.addEventListener('scroll', handleScroll, true)
     return () => document.removeEventListener('scroll', handleScroll, true)
-  }, [open])
+  }, [open, isAuthenticated])
 
-  // Hide the icon entirely if fetch is done and no contacts are visible
+  // Hide the icon entirely for unauthenticated users or if fetch is done and no contacts are visible
+  if (!isAuthenticated) return null
   if (isFetched && (!contacts || contacts.length === 0)) {
     return null
   }
