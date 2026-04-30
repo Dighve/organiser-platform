@@ -114,6 +114,7 @@ public class SecurityConfig {
                         
                         // Event write operations - require authentication
                         .requestMatchers(
+                                new AntPathRequestMatcher("/api/v1/events/*/offline-bundle", "GET"),
                                 new AntPathRequestMatcher("/api/v1/events", "POST"),
                                 new AntPathRequestMatcher("/api/v1/events/*", "PUT"),
                                 new AntPathRequestMatcher("/api/v1/events/*", "DELETE"),

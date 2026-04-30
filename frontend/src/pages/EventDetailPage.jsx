@@ -22,6 +22,9 @@ import InviteMembersModal from '../components/InviteMembersModal'
 import { useFeatureFlags } from '../contexts/FeatureFlagContext'
 import { useIsIOS } from '../hooks/useIsIOS'
 import { useSmartBack } from '../hooks/useSmartBack'
+import { useOfflineCache } from '../hooks/useOfflineCache'
+import OfflineSaveButton from '../components/OfflineSaveButton'
+import OfflineEventView from '../components/OfflineEventView'
 import {
   trackEventViewed,
   trackJoinEventClicked,
@@ -81,6 +84,20 @@ export default function EventDetailPage() {
   const [showInviteModal, setShowInviteModal] = useState(false)
   const [showFlyerModal, setShowFlyerModal] = useState(false)
   const [noShowLoadingIds, setNoShowLoadingIds] = useState(new Set())
+
+  // Offline mode
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+  const { isSaved, savedAt, isSaving, cachedBundle, save } = useOfflineCache(id)
 
   // ============================================
   // DATA FETCHING - React Query hooks
@@ -495,6 +512,11 @@ export default function EventDetailPage() {
     )
   }
 
+  // Offline mode: show cached bundle when there is no network connection
+  if (!isOnline && cachedBundle) {
+    return <OfflineEventView bundle={cachedBundle} savedAt={savedAt} onGoBack={goBack} />
+  }
+
   // Check if event is in the past
   // Parse dates from backend (Instant/UTC timestamps)
   const eventStart = event?.eventDate ? new Date(event.eventDate) : null
@@ -716,6 +738,18 @@ export default function EventDetailPage() {
         </div>
         )}
 
+        {/* 1-hour pre-event offline prompt */}
+        {(() => {
+          const msUntilStart = eventStart ? eventStart - new Date() : null
+          return isAuthenticated && (hasJoined || isHost) && !isSaved && !isPastEvent &&
+            msUntilStart !== null && msUntilStart <= 60 * 60 * 1000 && msUntilStart > 0 && (
+          <div className="lg:hidden mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
+            <p className="text-xs text-amber-800 font-medium">Going remote? Save this event for offline access.</p>
+            <OfflineSaveButton isSaved={isSaved} savedAt={savedAt} isSaving={isSaving} onSave={save} />
+          </div>
+          )
+        })()}
+
         {/* ============================================ */}
         {/* MOBILE STICKY ACTION BAR - Bottom of screen */}
         {/* ============================================ */}
@@ -812,23 +846,28 @@ export default function EventDetailPage() {
                 </div>
                 {isHost ? (
                   // Host cannot leave - they're essential to the event
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        openGuestModal(displayGuestCount)
-                      }}
-                      className="flex-1 py-2.5 px-3 bg-white border-2 border-purple-200 text-purple-600 font-bold rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 text-sm"
-                    >
-                      <Users className="h-4 w-4" />
-                      Guests
-                    </button>
-                    <button
-                      onClick={() => setIsManageOpen(true)}
-                      className="flex-1 py-2.5 px-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
-                    >
-                      <Edit className="h-4 w-4" />
-                      Manage
-                    </button>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          openGuestModal(displayGuestCount)
+                        }}
+                        className="flex-1 py-2.5 px-3 bg-white border-2 border-purple-200 text-purple-600 font-bold rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Users className="h-4 w-4" />
+                        Guests
+                      </button>
+                      <button
+                        onClick={() => setIsManageOpen(true)}
+                        className="flex-1 py-2.5 px-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Manage
+                      </button>
+                    </div>
+                    {!isPastEvent && (
+                      <OfflineSaveButton isSaved={isSaved} savedAt={savedAt} isSaving={isSaving} onSave={save} />
+                    )}
                   </div>
                 ) : (
                   // Organiser but not host - can manage guests and leave
@@ -859,6 +898,9 @@ export default function EventDetailPage() {
                         Manage
                       </button>
                     </div>
+                    {!isPastEvent && (
+                      <OfflineSaveButton isSaved={isSaved} savedAt={savedAt} isSaving={isSaving} onSave={save} />
+                    )}
                   </div>
                 )}
               </div>
@@ -903,6 +945,10 @@ export default function EventDetailPage() {
                   </div>
                   <ChevronRight className="h-4 w-4 text-green-500 flex-shrink-0" />
                 </button>
+                {/* Offline save */}
+                {!isPastEvent && (
+                  <OfflineSaveButton isSaved={isSaved} savedAt={savedAt} isSaving={isSaving} onSave={save} />
+                )}
                 {/* Actions row */}
                 <div className="flex items-center gap-2">
                   <button

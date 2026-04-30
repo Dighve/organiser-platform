@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader, X, Pin } from 'lucide-react'
+import { MessageCircle, Send, Edit2, Trash2, CornerDownRight, Lock, Loader, X, Pin, Link2 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import toast from 'react-hot-toast'
 import { commentsAPI, membersAPI } from '../lib/api'
@@ -24,6 +24,10 @@ export default function CommentSection({ eventId, isHost }) {
   const [showAllComments, setShowAllComments] = useState(false)
   const [expandedReplies, setExpandedReplies] = useState({})
   const [showAllReplies, setShowAllReplies] = useState({})
+  const [highlightedId, setHighlightedId] = useState(null)
+  const [targetHash, setTargetHash] = useState(null)
+  const [hasScrolled, setHasScrolled] = useState(false)
+  const newCommentRef = useRef(null)
 
   // Fetch current member data for avatar
   const { data: currentMemberData } = useQuery({
@@ -51,6 +55,7 @@ export default function CommentSection({ eventId, isHost }) {
     onSuccess: () => {
       queryClient.invalidateQueries(['eventComments', eventId])
       setNewComment('')
+      if (newCommentRef.current) newCommentRef.current.style.height = 'auto'
       toast.success('Comment posted!')
     },
     onError: (error) => {
@@ -137,6 +142,75 @@ export default function CommentSection({ eventId, isHost }) {
       toast.error(error.response?.data?.message || 'Failed to update pin')
     },
   })
+
+  // Parse URL hash on mount and when it changes to deep-link to a comment or reply
+  useEffect(() => {
+    const syncHashTarget = () => {
+      const hash = window.location.hash
+      if (!hash) return
+      const match = hash.match(/^#(comment|reply)-(\d+)$/)
+      if (match) {
+        const id = `${match[1]}-${match[2]}`
+        setTargetHash(id)
+        setHighlightedId(id)
+        setShowAllComments(true)
+        setHasScrolled(false)
+      }
+    }
+
+    syncHashTarget()
+    window.addEventListener('hashchange', syncHashTarget)
+
+    return () => {
+      window.removeEventListener('hashchange', syncHashTarget)
+    }
+  }, [])
+
+  // When comments load, expand the parent comment if targeting a reply, then scroll
+  useEffect(() => {
+    if (!targetHash || !commentsData || hasScrolled) return
+
+    if (targetHash.startsWith('reply-')) {
+      const replyId = parseInt(targetHash.replace('reply-', ''), 10)
+      const parentComment = comments.find(c => c.replies?.some(r => r.id === replyId))
+      if (parentComment) {
+        setExpandedReplies(prev => ({ ...prev, [parentComment.id]: true }))
+        const replyIndex = parentComment.replies.findIndex(r => r.id === replyId)
+        if (replyIndex >= 3) {
+          setShowAllReplies(prev => ({ ...prev, [parentComment.id]: true }))
+        }
+      }
+    }
+
+    setHasScrolled(true)
+    let highlightTimerId
+    const scrollTimerId = setTimeout(() => {
+      const el = document.getElementById(targetHash)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      highlightTimerId = setTimeout(() => setHighlightedId(null), 2500)
+    }, 200)
+
+    return () => {
+      clearTimeout(scrollTimerId)
+      clearTimeout(highlightTimerId)
+    }
+  }, [targetHash, commentsData, hasScrolled, comments])
+
+  const handleShareComment = (commentId) => {
+    const url = new URL(window.location.href)
+    url.hash = `comment-${commentId}`
+    navigator.clipboard.writeText(url.toString())
+      .then(() => toast.success('Link copied!'))
+      .catch(() => toast.error('Could not copy link'))
+  }
+
+  const handleShareReply = (replyId) => {
+    const url = new URL(window.location.href)
+    url.hash = `reply-${replyId}`
+    navigator.clipboard.writeText(url.toString())
+      .then(() => toast.success('Link copied!'))
+      .catch(() => toast.error('Could not copy link'))
+  }
 
   const handleCreateComment = (e) => {
     e.preventDefault()
@@ -248,6 +322,7 @@ export default function CommentSection({ eventId, isHost }) {
               <div className="flex-1">
                 <div className={`flex items-end gap-2 bg-white border-2 border-gray-200 px-4 py-2 focus-within:border-purple-500 focus-within:ring-2 focus-within:ring-purple-200 transition-all ${newComment.trim().length > 0 ? 'rounded-2xl' : 'rounded-full'}`}>
                   <textarea
+                    ref={newCommentRef}
                     value={newComment}
                     onChange={(e) => {
                       setNewComment(e.target.value)
@@ -325,7 +400,15 @@ export default function CommentSection({ eventId, isHost }) {
             const commentLink = !isDeleted && comment.memberId ? `/members/${comment.memberId}` : null
 
             return (
-              <div key={comment.id} className={`group ${comment.pinned ? 'bg-orange-50/60 rounded-xl p-3 -mx-1 border border-orange-100' : ''}`}>
+              <div
+                key={comment.id}
+                id={`comment-${comment.id}`}
+                className={[
+                  'group transition-all duration-700',
+                  comment.pinned ? 'bg-orange-50/60 rounded-xl p-3 -mx-1 border border-orange-100' : '',
+                  highlightedId === `comment-${comment.id}` ? 'ring-2 ring-orange-400/70 shadow-lg shadow-purple-300/50 rounded-xl bg-gradient-to-r from-orange-50/50 to-purple-50/50' : '',
+                ].join(' ')}
+              >
                 {comment.pinned && (
                   <div className="flex items-center gap-1 text-orange-500 text-xs font-semibold mb-2 ml-1">
                     <Pin className="h-3 w-3" />
@@ -357,7 +440,15 @@ export default function CommentSection({ eventId, isHost }) {
                             {comment.edited && <span className="ml-1">(edited)</span>}
                           </p>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                          <button
+                            onClick={() => handleShareComment(comment.id)}
+                            className="p-1.5 text-gray-400 hover:text-purple-600 hover:bg-white rounded-lg transition-colors"
+                            title="Copy link to comment"
+                            aria-label="Copy link to comment"
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                          </button>
                           {isHost && (
                             <button
                               onClick={() => pinCommentMutation.mutate(comment.id)}
@@ -419,7 +510,7 @@ export default function CommentSection({ eventId, isHost }) {
                           </div>
                         </form>
                       ) : (
-                        <div className="text-gray-700 whitespace-pre-wrap">
+                        <div className="text-gray-700 whitespace-pre-wrap break-words">
                           {renderMarkdown(comment.content)}
                         </div>
                       )}
@@ -471,7 +562,14 @@ export default function CommentSection({ eventId, isHost }) {
                         {expandedReplies[comment.id] && (
                           <div className="mt-3 space-y-3 ml-4 border-l-2 border-purple-200 pl-4">
                             {(showAllReplies[comment.id] ? comment.replies : comment.replies.slice(0, 3)).map((reply) => (
-                              <div key={reply.id} className="group/reply flex gap-3">
+                              <div
+                                key={reply.id}
+                                id={`reply-${reply.id}`}
+                                className={[
+                                  'group/reply flex gap-3 transition-all duration-700 rounded-lg',
+                                  highlightedId === `reply-${reply.id}` ? 'ring-2 ring-orange-400/70 shadow-lg shadow-purple-300/50 bg-gradient-to-r from-orange-50/50 to-purple-50/50 p-2 -mx-2' : '',
+                                ].join(' ')}
+                              >
                                 {!reply.deleted && reply.memberId ? (
                                   <Link
                                     to={`/members/${reply.memberId}`}
@@ -516,24 +614,34 @@ export default function CommentSection({ eventId, isHost }) {
                                           {reply.edited && <span className="ml-1">(edited)</span>}
                                         </p>
                                       </div>
-                                      {isAuthenticated && user?.id === reply.memberId && (
-                                        <div className="flex gap-1 opacity-0 group-hover/reply:opacity-100 transition-opacity">
-                                          <button
-                                            onClick={() => startEditingReply(reply)}
-                                            className="p-1 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
-                                            title="Edit reply"
-                                          >
-                                            <Edit2 className="h-3.5 w-3.5" />
-                                          </button>
-                                          <button
-                                            onClick={() => handleDeleteReply(reply.id)}
-                                            className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                                            title="Delete reply"
-                                          >
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                          </button>
-                                        </div>
-                                      )}
+                                      <div className="flex gap-1 opacity-0 group-hover/reply:opacity-100 group-focus-within/reply:opacity-100 transition-opacity">
+                                        <button
+                                          onClick={() => handleShareReply(reply.id)}
+                                          className="p-1 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                                          title="Copy link to reply"
+                                          aria-label="Copy link to reply"
+                                        >
+                                          <Link2 className="h-3.5 w-3.5" />
+                                        </button>
+                                        {isAuthenticated && user?.id === reply.memberId && (
+                                          <>
+                                            <button
+                                              onClick={() => startEditingReply(reply)}
+                                              className="p-1 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                                              title="Edit reply"
+                                            >
+                                              <Edit2 className="h-3.5 w-3.5" />
+                                            </button>
+                                            <button
+                                              onClick={() => handleDeleteReply(reply.id)}
+                                              className="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                                              title="Delete reply"
+                                            >
+                                              <Trash2 className="h-3.5 w-3.5" />
+                                            </button>
+                                          </>
+                                        )}
+                                      </div>
                                     </div>
 
                                     {editingReply === reply.id ? (
@@ -565,7 +673,7 @@ export default function CommentSection({ eventId, isHost }) {
                                         </div>
                                       </form>
                                     ) : (
-                                      <div className="text-gray-700 text-sm whitespace-pre-wrap">
+                                      <div className="text-gray-700 text-sm whitespace-pre-wrap break-words">
                                         {renderMarkdown(reply.content)}
                                       </div>
                                     )}

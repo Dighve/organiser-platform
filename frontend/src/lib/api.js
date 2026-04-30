@@ -210,6 +210,8 @@ export const eventsAPI = {
   unmarkNoShow: (eventId, memberId) => api.delete(`/events/${eventId}/participants/${memberId}/no-show`),
 
   getCalendarData: (id) => api.get(`/events/public/${id}/calendar`),
+
+  getOfflineBundle: (id) => api.get(`/events/${id}/offline-bundle`),
 }
 
 // Comments API
