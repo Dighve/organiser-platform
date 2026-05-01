@@ -755,7 +755,7 @@ export default function CommentSection({ eventId, isHost }) {
       {/* Mobile: fixed input bar attached to keyboard */}
       {(commentModalOpen || replyModalComment) && (
         <div
-          className="fixed inset-x-0 bottom-0 z-50 bg-white border-t border-gray-200 lg:hidden"
+          className="fixed inset-x-0 bottom-0 z-[60] bg-white border-t border-gray-200 lg:hidden"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           <div className="flex items-end gap-2 px-3 py-2">

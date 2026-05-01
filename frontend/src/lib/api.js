@@ -96,10 +96,12 @@ api.interceptors.response.use(
         })
 
         const { token: newToken, refreshToken: newRefreshToken, userId, email, role, hasOrganiserRole } = response.data
-        
-        // Update store with new tokens (preserve hasOrganiserRole from refresh response)
+
+        // Update store with new tokens — merge into existing user to preserve profile fields
+        // (profilePhotoUrl, displayName, etc.) that the refresh endpoint does not return
+        const { user: currentUser } = useAuthStore.getState()
         login(
-          { id: userId, email, role, hasOrganiserRole },
+          { ...currentUser, id: userId, email, role, hasOrganiserRole },
           newToken,
           newRefreshToken
         )
