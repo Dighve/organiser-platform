@@ -8,6 +8,7 @@ import { X } from 'lucide-react'
 import App from './App'
 import './index.css'
 import { initAnalytics, trackPWAInstallPromptShown, trackPWAInstalled } from './lib/analytics'
+import './lib/tokenRefreshService' // activates proactive token refresh on startup
 
 // Google OAuth Client ID - Public value (not a secret, safe to commit)
 // Client ID is designed to be public - only Client Secret must be kept private

@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { useAuthStore } from '../store/authStore'
 import { trackAPIError } from './analytics'
+import { refreshAccessToken } from './tokenRefreshService'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
@@ -34,21 +35,6 @@ api.interceptors.request.use(
   }
 )
 
-// Track if we're currently refreshing to prevent multiple refresh requests
-let isRefreshing = false
-let failedQueue = []
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach(prom => {
-    if (error) {
-      prom.reject(error)
-    } else {
-      prom.resolve(token)
-    }
-  })
-  failedQueue = []
-}
-
 // Helper function to wait before retry
 const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -57,8 +43,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config
-    const { refreshToken, logout, login } = useAuthStore.getState()
-    
+
     // Track API errors in analytics
     if (error.response) {
       trackAPIError(
@@ -71,59 +56,20 @@ api.interceptors.response.use(
     } else if (error.code === 'ERR_NETWORK') {
       trackAPIError(originalRequest.url, 0, 'Network error')
     }
-    
-    // Handle 401 Unauthorized responses
-    if (error.response?.status === 401 && refreshToken && !originalRequest._retry) {
-      if (isRefreshing) {
-        // If already refreshing, queue this request
-        return new Promise((resolve, reject) => {
-          failedQueue.push({ resolve, reject })
-        }).then(token => {
-          originalRequest.headers.Authorization = `Bearer ${token}`
-          return api(originalRequest)
-        }).catch(err => {
-          return Promise.reject(err)
-        })
-      }
 
+    // 401 fallback: proactive refresh in tokenRefreshService should prevent this
+    // in normal operation, but this catches edge cases (clock skew, cold start, etc.)
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true
-      isRefreshing = true
-
       try {
-        // Attempt to refresh the token
-        const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-          refreshToken
-        })
-
-        const { token: newToken, refreshToken: newRefreshToken, userId, email, role, hasOrganiserRole } = response.data
-
-        // Merge into existing user to preserve profile fields (profilePhotoUrl, displayName, etc.)
-        // that the refresh endpoint does not return
-        const { user: currentUser } = useAuthStore.getState()
-        login(
-          { ...currentUser, id: userId, email, role, hasOrganiserRole },
-          newToken,
-          newRefreshToken
-        )
-
-        // Update the failed request with new token
+        const newToken = await refreshAccessToken()
         originalRequest.headers.Authorization = `Bearer ${newToken}`
-        
-        // Process queued requests
-        processQueue(null, newToken)
-        isRefreshing = false
-        
-        // Retry the original request
         return api(originalRequest)
-      } catch (refreshError) {
-        // Refresh failed, log out user
-        processQueue(refreshError, null)
-        isRefreshing = false
-        logout('Your session has expired. Please log in again.')
-        return Promise.reject(refreshError)
+      } catch {
+        return Promise.reject(error)
       }
     }
-    
+
     // Retry logic for network errors and specific status codes
     const retryCount = originalRequest.__retryCount || 0
     const shouldRetry = 
