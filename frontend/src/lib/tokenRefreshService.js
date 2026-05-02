@@ -105,7 +105,7 @@ if (typeof document !== 'undefined') {
 // Bootstrap: pick up any session that was rehydrated from localStorage before
 // this module was imported (i.e. on every page load where the user is already
 // logged in).
-;(function init() {
+(function init() {
   const { isAuthenticated, tokenExpiry, refreshToken } = useAuthStore.getState()
   if (isAuthenticated && tokenExpiry && refreshToken) {
     scheduleRefresh(tokenExpiry)
