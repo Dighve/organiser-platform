@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { WifiOff, Wifi, Calendar, MapPin, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { getAllOfflineBundles } from '../lib/offlineCache'
+import { useAuthStore } from '../store/authStore'
 
 // cacheKey format: "{userId}::{eventId}"
 function getEventId(cacheKey) {
@@ -11,6 +12,7 @@ function getEventId(cacheKey) {
 
 export default function OfflineSavedEventsPage() {
   const navigate = useNavigate()
+  const { user } = useAuthStore()
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
@@ -28,10 +30,16 @@ export default function OfflineSavedEventsPage() {
 
   useEffect(() => {
     getAllOfflineBundles()
-      .then((data) => setRecords([...data].sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt))))
+      .then((data) => {
+        const userPrefix = user?.id ? `${user.id}::` : null
+        const filtered = userPrefix
+          ? data.filter((r) => r.cacheKey.startsWith(userPrefix))
+          : data
+        setRecords([...filtered].sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt)))
+      })
       .catch(() => setRecords([]))
       .finally(() => setLoading(false))
-  }, [getAllOfflineBundles])
+  }, [user?.id])
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -17,12 +17,16 @@ import {
 
 const DISMISSED_KEY = 'outmeets-push-prompt-dismissed'
 
-function isDismissed() {
-  return localStorage.getItem(DISMISSED_KEY) === 'true'
+function dismissedKey(userId) {
+  return userId ? `${DISMISSED_KEY}::${userId}` : DISMISSED_KEY
+}
+
+function isDismissed(userId) {
+  return localStorage.getItem(dismissedKey(userId)) === 'true'
 }
 
 export default function PushNotificationPrompt() {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
   const [visible, setVisible] = useState(false)
   const [showIOSHint, setShowIOSHint] = useState(false)
 
@@ -31,7 +35,7 @@ export default function PushNotificationPrompt() {
 
     // ── iOS in browser (not yet installed as PWA) ─────────────────────────────
     if (isIOS() && !isStandalone()) {
-      if (!isDismissed()) {
+      if (!isDismissed(user?.id)) {
         const timer = setTimeout(() => {
           setShowIOSHint(true)
           trackNotificationPromptShown()
@@ -54,14 +58,14 @@ export default function PushNotificationPrompt() {
     }
 
     // Permission is 'default' — show prompt unless user has dismissed it
-    if (isDismissed()) return
+    if (isDismissed(user?.id)) return
 
     const timer = setTimeout(() => {
       setVisible(true)
       trackNotificationPromptShown()
     }, 3000)
     return () => clearTimeout(timer)
-  }, [isAuthenticated])
+  }, [isAuthenticated, user?.id])
 
   const handleEnable = async () => {
     setVisible(false)
@@ -78,7 +82,7 @@ export default function PushNotificationPrompt() {
     trackNotificationDismissed()
     setVisible(false)
     setShowIOSHint(false)
-    localStorage.setItem(DISMISSED_KEY, 'true')
+    localStorage.setItem(dismissedKey(user?.id), 'true')
   }
 
   // ── iOS "add to home screen" hint ────────────────────────────────────────────

@@ -66,10 +66,14 @@ export default function HomePage() {
     if (isOnline) return
     getAllOfflineBundles()
       .then((records) => {
-        if (records.length > 0) navigate('/offline-saved', { replace: true })
+        const userPrefix = user?.id ? `${user.id}::` : null
+        const hasUserRecords = userPrefix
+          ? records.some((r) => r.cacheKey.startsWith(userPrefix))
+          : records.length > 0
+        if (hasUserRecords) navigate('/offline-saved', { replace: true })
       })
       .catch(() => {})
-  }, [isOnline, navigate])
+  }, [isOnline, navigate, user?.id])
 
   // ============================================================
   // DATA FETCHING
