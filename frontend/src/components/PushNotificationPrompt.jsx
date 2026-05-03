@@ -1,14 +1,12 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Bell, X, Smartphone } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import {
   isPushSupported,
   getPermissionState,
   subscribeToPush,
-  isSubscribedLocally,
   isIOS,
   isStandalone,
-  PUSH_SUBSCRIPTION_KEY,
 } from '../lib/pushNotifications'
 import toast from 'react-hot-toast'
 import {
@@ -17,44 +15,23 @@ import {
   trackNotificationDismissed,
 } from '../lib/analytics'
 
-/**
- * Snooze key stores a timestamp (ms). Prompt is suppressed until that time.
- * On fresh login the snooze is bypassed so users are always asked after sign-in.
- * "Not now" snoozes for 7 days; enabling/denying snoozes for 30 days.
- */
-const SNOOZE_KEY = 'outmeets-push-prompt-snooze-until'
-const SNOOZE_NOT_NOW_MS = 7 * 24 * 60 * 60 * 1000   // 7 days
-const SNOOZE_ACTED_MS  = 30 * 24 * 60 * 60 * 1000   // 30 days
+const DISMISSED_KEY = 'outmeets-push-prompt-dismissed'
 
-function isSnoozed() {
-  const until = localStorage.getItem(SNOOZE_KEY)
-  return until && Date.now() < parseInt(until, 10)
-}
-
-function snooze(durationMs) {
-  localStorage.setItem(SNOOZE_KEY, String(Date.now() + durationMs))
+function isDismissed() {
+  return localStorage.getItem(DISMISSED_KEY) === 'true'
 }
 
 export default function PushNotificationPrompt() {
   const { isAuthenticated } = useAuthStore()
   const [visible, setVisible] = useState(false)
   const [showIOSHint, setShowIOSHint] = useState(false)
-  // Track the previous auth value to detect fresh login (false → true)
-  const prevAuthenticated = useRef(false)
 
   useEffect(() => {
-    const wasAuthenticated = prevAuthenticated.current
-    prevAuthenticated.current = isAuthenticated
-
     if (!isAuthenticated) return
 
-    const justLoggedIn = !wasAuthenticated && isAuthenticated
-
     // ── iOS in browser (not yet installed as PWA) ─────────────────────────────
-    // PushManager is only available on iOS when running as a standalone PWA.
-    // Show a one-time hint on fresh login so the user knows to install first.
     if (isIOS() && !isStandalone()) {
-      if (justLoggedIn && !isSnoozed()) {
+      if (!isDismissed()) {
         const timer = setTimeout(() => {
           setShowIOSHint(true)
           trackNotificationPromptShown()
@@ -65,53 +42,25 @@ export default function PushNotificationPrompt() {
     }
 
     if (!isPushSupported()) return
-    
-    // Don't show prompt if permission is denied
     if (getPermissionState() === 'denied') return
-    
-    // If permission is granted, verify there's an actual subscription before hiding prompt
+
     if (getPermissionState() === 'granted') {
-      const checkRealSubscription = async () => {
-        try {
-          const registration = await navigator.serviceWorker.ready
-          const subscription = await registration.pushManager.getSubscription()
-          if (subscription) {
-            // Real subscription exists - fix localStorage and don't show prompt
-            localStorage.setItem(PUSH_SUBSCRIPTION_KEY, 'true')
-            return
-          } else {
-            // Permission already granted but subscription missing — resubscribe silently
-            // without prompting the user (they already said yes in the browser)
-            subscribeToPush().catch(err => console.warn('Silent resubscribe failed:', err))
-          }
-        } catch (error) {
-          console.warn('Could not check push subscription:', error)
-        }
-      }
-      checkRealSubscription()
+      // Silent resubscribe if subscription is missing
+      navigator.serviceWorker.ready
+        .then(reg => reg.pushManager.getSubscription())
+        .then(sub => { if (!sub) subscribeToPush().catch(err => console.warn('Silent resubscribe failed:', err)) })
+        .catch(() => {})
       return
     }
 
-    // Permission is 'default' - show prompt if conditions are met
-    showPromptIfNeeded()
+    // Permission is 'default' — show prompt unless user has dismissed it
+    if (isDismissed()) return
 
-    function showPromptIfNeeded() {
-      // On fresh login: always prompt (bypass snooze) so the user is asked after every sign-in.
-      // On page reload while already authenticated: respect the snooze.
-      if (!justLoggedIn && isSnoozed()) return
-
-      const timer = setTimeout(() => {
-        setVisible(true)
-        trackNotificationPromptShown()
-      }, 3000)
-      
-      // Return cleanup function to clear timer on unmount
-      return timer
-    }
-    
-    // Call showPromptIfNeeded and return its cleanup
-    const cleanup = showPromptIfNeeded()
-    return cleanup ? () => clearTimeout(cleanup) : undefined
+    const timer = setTimeout(() => {
+      setVisible(true)
+      trackNotificationPromptShown()
+    }, 3000)
+    return () => clearTimeout(timer)
   }, [isAuthenticated])
 
   const handleEnable = async () => {
@@ -120,10 +69,8 @@ export default function PushNotificationPrompt() {
     if (result.success) {
       trackNotificationEnabled()
       toast.success('Notifications enabled!')
-      snooze(SNOOZE_ACTED_MS)
     } else {
       toast.error(result.reason || 'Could not enable notifications')
-      snooze(SNOOZE_NOT_NOW_MS)
     }
   }
 
@@ -131,7 +78,7 @@ export default function PushNotificationPrompt() {
     trackNotificationDismissed()
     setVisible(false)
     setShowIOSHint(false)
-    snooze(SNOOZE_NOT_NOW_MS)
+    localStorage.setItem(DISMISSED_KEY, 'true')
   }
 
   // ── iOS "add to home screen" hint ────────────────────────────────────────────
