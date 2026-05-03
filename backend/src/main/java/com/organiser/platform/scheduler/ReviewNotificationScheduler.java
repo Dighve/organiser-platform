@@ -3,6 +3,7 @@ package com.organiser.platform.scheduler;
 import com.organiser.platform.model.EventParticipant;
 import com.organiser.platform.repository.EventParticipantRepository;
 import com.organiser.platform.service.EmailService;
+import com.organiser.platform.service.ReviewPromptFlagService;
 import com.organiser.platform.service.WebPushService;
 import com.organiser.platform.util.EventTimingUtils;
 import lombok.RequiredArgsConstructor;
@@ -30,9 +31,10 @@ public class ReviewNotificationScheduler {
     private final EventParticipantRepository eventParticipantRepository;
     private final WebPushService webPushService;
     private final EmailService emailService;
+    private final ReviewPromptFlagService reviewPromptFlagService;
 
     @Scheduled(cron = "0 0 10 * * *") // 10:00 AM UTC daily
-    @Transactional
+    @Transactional(readOnly = true)
     public void sendReviewPrompts() {
         log.info("Review prompt scheduler started");
 
@@ -56,7 +58,7 @@ public class ReviewNotificationScheduler {
             // Precise time window: event must have ended at least 24h ago and no more than 30 days ago
             long hoursElapsed = ChronoUnit.HOURS.between(eventEnd, now);
             if (hoursElapsed > 30 * 24) {
-                ep.setReviewPromptSent(true); // expired — stop revisiting on future runs
+                reviewPromptFlagService.markPromptSent(ep); // expired — stop revisiting on future runs
                 skipped++;
                 continue;
             }
@@ -72,7 +74,7 @@ public class ReviewNotificationScheduler {
                     ? ep.getEvent().getHostMember().getId() : null;
 
             if (memberId.equals(organiserId) || memberId.equals(hostMemberId)) {
-                ep.setReviewPromptSent(true); // mark so we don't revisit on future runs
+                reviewPromptFlagService.markPromptSent(ep); // mark so we don't revisit on future runs
                 skipped++;
                 continue;
             }
@@ -94,7 +96,9 @@ public class ReviewNotificationScheduler {
                     ep.getEvent().getId()
             );
 
-            ep.setReviewPromptSent(true);
+            // Commit the flag in its own transaction immediately after sending so it
+            // survives any subsequent failure in this batch run.
+            reviewPromptFlagService.markPromptSent(ep);
             sent++;
         }
 
