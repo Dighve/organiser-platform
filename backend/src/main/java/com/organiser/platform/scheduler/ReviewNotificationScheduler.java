@@ -57,6 +57,7 @@ public class ReviewNotificationScheduler {
             long hoursElapsed = ChronoUnit.HOURS.between(eventEnd, now);
             if (hoursElapsed > 30 * 24) {
                 ep.setReviewPromptSent(true); // expired — stop revisiting on future runs
+                eventParticipantRepository.save(ep);
                 skipped++;
                 continue;
             }
@@ -73,6 +74,7 @@ public class ReviewNotificationScheduler {
 
             if (memberId.equals(organiserId) || memberId.equals(hostMemberId)) {
                 ep.setReviewPromptSent(true); // mark so we don't revisit on future runs
+                eventParticipantRepository.save(ep);
                 skipped++;
                 continue;
             }
@@ -95,6 +97,7 @@ public class ReviewNotificationScheduler {
             );
 
             ep.setReviewPromptSent(true);
+            eventParticipantRepository.save(ep);
             sent++;
         }
 
