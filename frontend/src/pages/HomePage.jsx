@@ -69,7 +69,6 @@ export default function HomePage() {
         if (records.length > 0) navigate('/offline-saved', { replace: true })
       })
       .catch(() => {})
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOnline, navigate])
 
   // ============================================================
