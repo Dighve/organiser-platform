@@ -38,6 +38,7 @@ const EventReviewsPage = lazy(() => import('./pages/EventReviewsPage'))
 const MyReviewsPage = lazy(() => import('./pages/MyReviewsPage'))
 const LondonDayHikesPage = lazy(() => import('./pages/LondonDayHikesPage'))
 const EventEmbedPage = lazy(() => import('./pages/EventEmbedPage'))
+const OfflineSavedEventsPage = lazy(() => import('./pages/OfflineSavedEventsPage'))
 
 // Loading fallback component
 function PageLoader() {
@@ -192,6 +193,11 @@ function App() {
             </ErrorBoundary>
           } />  
           <Route path="auth/verify" element={<VerifyMagicLinkPage />} />
+          <Route path="offline-saved" element={
+            <Suspense fallback={<PageLoader />}>
+              <OfflineSavedEventsPage />
+            </Suspense>
+          } />
         <Route path="events" element={
           <Suspense fallback={<PageLoader />}>
             <EventsPage />
