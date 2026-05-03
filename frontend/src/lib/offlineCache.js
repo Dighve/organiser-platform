@@ -44,6 +44,17 @@ export async function loadOfflineBundle(eventId, userId) {
   })
 }
 
+export async function getAllOfflineBundles() {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly')
+    const store = tx.objectStore(STORE_NAME)
+    const request = store.getAll()
+    request.onsuccess = () => resolve(request.result || [])
+    request.onerror = () => reject(request.error)
+  })
+}
+
 export async function clearOfflineBundle(eventId, userId) {
   const db = await openDB()
   const cacheKey = buildKey(eventId, userId)

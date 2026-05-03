@@ -9,6 +9,7 @@ import { groupsAPI, eventsAPI, featureFlagsAPI, reviewsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import LoginModal from '../components/LoginModal'
 import WelcomeScreen from '../components/WelcomeScreen'
+import { getAllOfflineBundles } from '../lib/offlineCache'
 
 function isEventLive(event) {
   if (!event?.eventDate) return false
@@ -39,6 +40,18 @@ export default function HomePage() {
   const [hasInitializedTab, setHasInitializedTab] = useState(false)  // Track if tab has been auto-selected
   const [loginModalOpen, setLoginModalOpen] = useState(false)  // Login modal state
   const [optimisticallyDismissed, setOptimisticallyDismissed] = useState([])
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
   
   // Check if user has already clicked discover before (localStorage)
   const [showDiscover, setShowDiscover] = useState(() => {
@@ -47,40 +60,57 @@ export default function HomePage() {
   })
 
   // ============================================================
+  // OFFLINE REDIRECT
+  // ============================================================
+  useEffect(() => {
+    if (isOnline) return
+    getAllOfflineBundles()
+      .then((records) => {
+        const userPrefix = user?.id ? `${user.id}::` : null
+        const hasUserRecords = userPrefix
+          ? records.some((r) => r.cacheKey.startsWith(userPrefix))
+          : records.length > 0
+        if (hasUserRecords) navigate('/offline-saved', { replace: true })
+      })
+      .catch(() => {})
+  }, [isOnline, navigate, user?.id])
+
+  // ============================================================
   // DATA FETCHING
   // ============================================================
-  
-  // Fetch user's subscribed groups (only if authenticated)
+
+  // Fetch user's subscribed groups (only if authenticated and online)
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
     queryKey: ['myGroups'],
     queryFn: () => groupsAPI.getMyGroups(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isOnline,
     staleTime: 5 * 60 * 1000, // 5 minutes - user's groups don't change often
     refetchOnWindowFocus: false,
   })
-  
-  // Fetch user's organised groups (only if authenticated and is organiser)
+
+  // Fetch user's organised groups (only if authenticated, is organiser, and online)
   const { data: organisedGroupsData, isLoading: organisedGroupsLoading } = useQuery({
     queryKey: ['myOrganisedGroups'],
     queryFn: () => groupsAPI.getMyOrganisedGroups(),
-    enabled: isAuthenticated && Boolean(user?.hasOrganiserRole),
+    enabled: isAuthenticated && Boolean(user?.hasOrganiserRole) && isOnline,
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchOnWindowFocus: false,
   })
-  
-  // Fetch user's events (only if authenticated)
+
+  // Fetch user's events (only if authenticated and online)
   const { data: yourEventsData, isLoading: yourEventsLoading } = useQuery({
     queryKey: ['myEvents'],
     queryFn: () => eventsAPI.getMyEvents(0, 10),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isOnline,
     staleTime: 5 * 60 * 1000, // 5 minutes - user's events don't change often
     refetchOnWindowFocus: false,
   })
-  
-  // Fetch all public events for discovery
+
+  // Fetch all public events for discovery (only when online)
   const { data: allEventsData, isLoading: allEventsLoading } = useQuery({
     queryKey: ['allEvents'],
     queryFn: () => eventsAPI.getUpcomingEvents(0, 10),
+    enabled: isOnline,
     // OPTIMIZED: Longer cache for better production performance
     // Events don't change frequently, so 10 minutes is safe
     staleTime: 10 * 60 * 1000, // 10 minutes - aggressive caching for production speed
@@ -88,12 +118,12 @@ export default function HomePage() {
     refetchOnWindowFocus: false, // Disable refetch on window focus to reduce API calls
     refetchOnMount: false, // Don't refetch if data is still fresh
   })
-  
-  // Fetch feature flags to check if welcome screen is enabled
+
+  // Fetch pending reviews (only if authenticated and online)
   const { data: pendingReviewsData } = useQuery({
     queryKey: ['pendingReviews'],
     queryFn: () => reviewsAPI.getPendingReviews().then(res => res.data),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && isOnline,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -112,6 +142,7 @@ export default function HomePage() {
   const { data: featureFlags, isLoading: featureFlagsLoading } = useQuery({
     queryKey: ['featureFlags'],
     queryFn: () => featureFlagsAPI.getFeatureFlagsMap(),
+    enabled: isOnline,
     staleTime: 5 * 60 * 1000, // 5 minutes - feature flags don't change often
     refetchOnWindowFocus: false,
   })
