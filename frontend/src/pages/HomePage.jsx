@@ -9,6 +9,7 @@ import { groupsAPI, eventsAPI, featureFlagsAPI, reviewsAPI } from '../lib/api'
 import { useAuthStore } from '../store/authStore'
 import LoginModal from '../components/LoginModal'
 import WelcomeScreen from '../components/WelcomeScreen'
+import { getAllOfflineBundles } from '../lib/offlineCache'
 
 function isEventLive(event) {
   if (!event?.eventDate) return false
@@ -47,9 +48,21 @@ export default function HomePage() {
   })
 
   // ============================================================
+  // OFFLINE REDIRECT
+  // ============================================================
+  useEffect(() => {
+    if (navigator.onLine) return
+    getAllOfflineBundles()
+      .then((records) => {
+        if (records.length > 0) navigate('/offline-saved', { replace: true })
+      })
+      .catch(() => {})
+  }, [navigate])
+
+  // ============================================================
   // DATA FETCHING
   // ============================================================
-  
+
   // Fetch user's subscribed groups (only if authenticated)
   const { data: groupsData, isLoading: groupsLoading } = useQuery({
     queryKey: ['myGroups'],
