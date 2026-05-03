@@ -1,32 +1,44 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { WifiOff, Calendar, MapPin, ChevronRight } from 'lucide-react'
+import { WifiOff, Wifi, Calendar, MapPin, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { getAllOfflineBundles } from '../lib/offlineCache'
+
+// cacheKey format: "{userId}::{eventId}"
+function getEventId(cacheKey) {
+  return cacheKey.split('::')[1]
+}
 
 export default function OfflineSavedEventsPage() {
   const navigate = useNavigate()
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   useEffect(() => {
     getAllOfflineBundles()
-      .then(setRecords)
+      .then((data) => setRecords([...data].sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt))))
       .catch(() => setRecords([]))
       .finally(() => setLoading(false))
-  }, [])
-
-  function getEventId(cacheKey) {
-    // cacheKey format: "{userId}::{eventId}"
-    return cacheKey.split('::')[1]
-  }
+  }, [getAllOfflineBundles])
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Offline banner */}
-      <div className="bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center gap-2 text-sm text-amber-800">
-        <WifiOff className="h-4 w-4 flex-shrink-0" />
-        <span>You're offline</span>
+      <div className={`border-b px-4 py-2.5 flex items-center gap-2 text-sm ${isOnline ? 'bg-green-50 border-green-200 text-green-800' : 'bg-amber-50 border-amber-200 text-amber-800'}`}>
+        {isOnline ? <Wifi className="h-4 w-4 flex-shrink-0" /> : <WifiOff className="h-4 w-4 flex-shrink-0" />}
+        <span>{isOnline ? 'Back online' : "You're offline"}</span>
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-6">
