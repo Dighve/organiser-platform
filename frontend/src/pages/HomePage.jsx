@@ -42,10 +42,11 @@ export default function HomePage() {
   const [optimisticallyDismissed, setOptimisticallyDismissed] = useState([])
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [offlineBundleChecked, setOfflineBundleChecked] = useState(navigator.onLine)
+  const [offlineBundleError, setOfflineBundleError] = useState(false)
 
   useEffect(() => {
-    const handleOnline = () => { setIsOnline(true); setOfflineBundleChecked(true) }
-    const handleOffline = () => { setIsOnline(false); setOfflineBundleChecked(false) }
+    const handleOnline = () => { setIsOnline(true); setOfflineBundleChecked(true); setOfflineBundleError(false) }
+    const handleOffline = () => { setIsOnline(false); setOfflineBundleChecked(false); setOfflineBundleError(false) }
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
     return () => {
@@ -74,7 +75,7 @@ export default function HomePage() {
         if (hasUserRecords) navigate('/offline-saved', { replace: true })
         else setOfflineBundleChecked(true)
       })
-      .catch(() => { setOfflineBundleChecked(true) })
+      .catch(() => { setOfflineBundleError(true); setOfflineBundleChecked(true) })
   }, [isOnline, navigate, user?.id])
 
   // ============================================================
@@ -243,7 +244,11 @@ export default function HomePage() {
   // ============================================================
   // OFFLINE STATE - No cached data and no offline bundles
   // ============================================================
-  if (!isOnline && offlineBundleChecked && !allEventsData && !yourEventsData) {
+  const hasAnyCachedData = allEventsData || yourEventsData || groupsData || organisedGroupsData
+  if (!isOnline && offlineBundleChecked && !hasAnyCachedData) {
+    const message = offlineBundleError
+      ? "Couldn't check your saved events. Check your connection and try again."
+      : "No saved events to show. Check your connection and try again."
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
         <div className="text-center max-w-sm">
@@ -253,7 +258,7 @@ export default function HomePage() {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">You're offline</h2>
-          <p className="text-gray-500 text-sm mb-6">No saved events to show. Check your connection and try again.</p>
+          <p className="text-gray-500 text-sm mb-6">{message}</p>
           <button
             onClick={() => window.location.reload()}
             className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/30 transition-all"
