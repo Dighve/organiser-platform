@@ -41,10 +41,12 @@ export default function HomePage() {
   const [loginModalOpen, setLoginModalOpen] = useState(false)  // Login modal state
   const [optimisticallyDismissed, setOptimisticallyDismissed] = useState([])
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [offlineBundleChecked, setOfflineBundleChecked] = useState(navigator.onLine)
+  const [offlineBundleError, setOfflineBundleError] = useState(false)
 
   useEffect(() => {
-    const handleOnline = () => setIsOnline(true)
-    const handleOffline = () => setIsOnline(false)
+    const handleOnline = () => { setIsOnline(true); setOfflineBundleChecked(true); setOfflineBundleError(false) }
+    const handleOffline = () => { setIsOnline(false); setOfflineBundleChecked(false); setOfflineBundleError(false) }
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
     return () => {
@@ -71,8 +73,9 @@ export default function HomePage() {
           ? records.some((r) => r.cacheKey.startsWith(userPrefix))
           : records.length > 0
         if (hasUserRecords) navigate('/offline-saved', { replace: true })
+        else setOfflineBundleChecked(true)
       })
-      .catch(() => {})
+      .catch(() => { setOfflineBundleError(true); setOfflineBundleChecked(true) })
   }, [isOnline, navigate, user?.id])
 
   // ============================================================
@@ -239,11 +242,40 @@ export default function HomePage() {
   }
 
   // ============================================================
+  // OFFLINE STATE - No cached data and no offline bundles
+  // ============================================================
+  const hasAnyCachedData = allEventsData || yourEventsData || groupsData || organisedGroupsData
+  if (!isOnline && offlineBundleChecked && !hasAnyCachedData) {
+    const message = offlineBundleError
+      ? "Couldn't check your saved events. Check your connection and try again."
+      : "No saved events to show. Check your connection and try again."
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-100 flex items-center justify-center">
+            <svg className="w-10 h-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M18.364 5.636a9 9 0 010 12.728M15.536 8.464a5 5 0 010 7.072M6.343 17.657a9 9 0 010-12.728M9.172 15.536a5 5 0 010-7.072M12 12h.01" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">You're offline</h2>
+          <p className="text-gray-500 text-sm mb-6">{message}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ============================================================
   // LOADING STATE - Wait for feature flags to resolve
   // ============================================================
   // Prevent flash by showing blank screen while feature flags load
   // Only applies to first-time visitors who haven't cached the flags yet
-  if (featureFlagsLoading && showDiscover) {
+  if (isOnline && featureFlagsLoading && showDiscover) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-500 via-purple-600 to-indigo-700 flex items-center justify-center">
         <div className="text-center">
